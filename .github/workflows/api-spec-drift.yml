@@ -1,0 +1,162 @@
+name: API Spec Drift
+
+# Opens a "docs need updating" PR whenever the customer-facing API surface
+# moves in production.
+#
+# How it fires: the axilio backend's deploy_orchestrator, on a successful
+# *production* deploy, syncs the freshly generated OpenAPI spec into
+# axilioai/platform-python and fires two repository_dispatch events — one to
+# platform-python (regenerate the SDK) and one here (docs-spec-updated). This
+# workflow is the docs half of that fan-out.
+#
+# Why a scaffolded PR and not an auto-generated one: the api-reference/ pages
+# are hand-written prose shaped around the Python SDK, not generated from the
+# spec (docs.json has no `openapi` field). So this can't write the docs — it
+# diffs the new spec against the committed baseline in .spec/openapi.json,
+# turns the delta into a checklist of changed endpoints + the pages most
+# likely affected, refreshes the baseline, and opens a PR for a human to fill
+# in. The guarantee is "an API change can't ship without a docs PR landing in
+# the queue", not "the docs write themselves".
+#
+# Production-only, mirroring the SDK regen gate: staging specs can carry
+# endpoints prod doesn't have yet, and the public docs must reflect what's
+# actually live behind api.axilio.ai.
+
+on:
+  repository_dispatch:
+    types: [docs-spec-updated]
+  # Manual re-run: re-diff the current production spec against the baseline
+  # without waiting for a deploy. Useful after editing the diff script or to
+  # recover if a previous run's PR was closed without merging.
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  # The just-deployed spec lives here in the public SDK repo — the backend
+  # PUT it there immediately before dispatching us, so it's the freshest
+  # production spec by the time this runs.
+  SPEC_REPO: axilioai/platform-python
+  SPEC_PATH_IN_REPO: specs/production/openapi.json
+  # Baseline we diff against and then advance, committed in this repo.
+  BASELINE: .spec/openapi.json
+
+jobs:
+  open-drift-pr:
+    name: Open API drift PR
+    # Skip non-production dispatches. workflow_dispatch has no client_payload,
+    # so allow it through unconditionally.
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.client_payload.environment == 'production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch latest production spec
+        env:
+          # Public repo, but use a token when present to dodge anonymous
+          # rate limits and to allow the SPEC_REPO to be made private later
+          # without breaking this fetch. GITHUB_TOKEN can't read another repo,
+          # so prefer the dedicated cross-repo token if configured.
+          GH_TOKEN: ${{ secrets.SPEC_READ_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # --header v3.raw makes the Contents API return the file bytes
+          # directly (not base64-wrapped JSON), and it's always fresh —
+          # unlike raw.githubusercontent.com, which can lag by minutes.
+          gh api \
+            --header "Accept: application/vnd.github.v3.raw" \
+            "repos/${SPEC_REPO}/contents/${SPEC_PATH_IN_REPO}" \
+            > /tmp/new-openapi.json
+
+          # Fail loud if we got an error body instead of a spec — a bad token
+          # or a moved path should stop here, not open a garbage PR.
+          if ! python3 -c "import json,sys; json.load(open('/tmp/new-openapi.json'))" 2>/dev/null; then
+            echo "::error title=Spec fetch failed::Could not fetch a valid ${SPEC_PATH_IN_REPO} from ${SPEC_REPO}. Check the SPEC_READ_TOKEN secret and that the path still exists."
+            head -c 400 /tmp/new-openapi.json
+            exit 1
+          fi
+
+      - name: Diff against baseline
+        id: diff
+        env:
+          BACKEND_VERSION: ${{ github.event.client_payload.backend_version }}
+          AXILIO_SHA: ${{ github.event.client_payload.axilio_sha }}
+        run: |
+          # First-ever run (or baseline deleted): seed it and exit without a
+          # PR — there's nothing to diff against yet.
+          if [[ ! -f "$BASELINE" ]]; then
+            mkdir -p "$(dirname "$BASELINE")"
+            cp /tmp/new-openapi.json "$BASELINE"
+            echo "Seeded baseline at ${BASELINE}; no diff on first run."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          python3 scripts/spec_diff.py "$BASELINE" /tmp/new-openapi.json > /tmp/drift.md
+
+          if head -1 /tmp/drift.md | grep -q "DRIFT: yes"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "API surface unchanged; nothing to PR."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Advance baseline
+        if: steps.diff.outputs.changed == 'true'
+        # The PR carries the new baseline so that once it merges, the next
+        # deploy diffs against this spec — not the one from two releases ago.
+        run: cp /tmp/new-openapi.json "$BASELINE"
+
+      - name: Assemble PR body
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          BACKEND_VERSION: ${{ github.event.client_payload.backend_version || 'unknown' }}
+          AXILIO_SHA: ${{ github.event.client_payload.axilio_sha || 'manual' }}
+          AXILIO_REF: ${{ github.event.client_payload.axilio_ref || 'manual' }}
+        run: |
+          {
+            echo "The production API surface moved. This PR refreshes the drift"
+            echo "baseline (\`${BASELINE}\`) and lists what changed so the"
+            echo "hand-written \`api-reference/\` pages can be brought back in sync."
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Backend version | \`${BACKEND_VERSION}\` |"
+            echo "| Axilio source SHA | \`${AXILIO_SHA}\` |"
+            echo "| Axilio source ref | \`${AXILIO_REF}\` |"
+            echo "| Spec source | \`${SPEC_REPO}/${SPEC_PATH_IN_REPO}\` |"
+            echo
+            echo "> [!IMPORTANT]"
+            echo "> The checklist below is generated from the spec diff. The docs"
+            echo "> are hand-written prose, so **a human must edit the MDX** — merging"
+            echo "> this PR with only the baseline bump leaves the docs stale."
+            echo
+            cat /tmp/drift.md
+          } > /tmp/pr-body.md
+
+      - name: Open drift PR
+        if: steps.diff.outputs.changed == 'true'
+        # Single reused branch — successive deploys update the same PR and
+        # checklist rather than stacking duplicates. The branch holds two
+        # kinds of change once a human picks it up: the auto baseline bump
+        # plus their MDX edits.
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: docs-drift/api
+          base: main
+          labels: docs-drift
+          title: "docs: API surface changed — review reference pages"
+          commit-message: |
+            chore(spec): advance drift baseline
+
+            Auto-generated by .github/workflows/api-spec-drift.yml.
+            Source: ${{ env.SPEC_REPO }}@${{ github.event.client_payload.axilio_sha || 'manual' }}
+          body-path: /tmp/pr-body.md
