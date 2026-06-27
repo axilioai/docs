@@ -8,3 +8,6 @@ drafts/
 
 # Tooling — not docs pages
 .spec/
+
+# gstack tooling state
+.gstack/
