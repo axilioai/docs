@@ -28,6 +28,30 @@
   line-height: 1.15;
 }
 
+/* Type scale (DESIGN.md): give the mono hero real presence — the default 30px/500
+   reads weak — and tighten body to 16px for density. */
+#content-area h1,
+.prose h1 {
+  font-size: 2.25rem;
+  font-weight: 600;
+}
+#content-area h2,
+.prose h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+#content-area h3,
+.prose h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+#content-area p,
+#content-area li,
+.prose p,
+.prose li {
+  font-size: 16px;
+}
+
 /* Inline code: a quiet surface chip instead of default styling, so SDK symbols
    read as objects in the prose. */
 :not(pre) > code {
