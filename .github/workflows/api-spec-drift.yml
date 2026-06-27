@@ -1,0 +1,89 @@
+name: API Spec Drift
+
+# Opens a per-version "review the reference docs" PR when the backend ships a
+# new *production* API version.
+#
+# How it fires: the backend's production deploy pipeline, on a successful
+# deploy, syncs the freshly generated OpenAPI spec into axilioai/platform-python
+# and — only when the spec's info.version actually changed — fires a
+# docs-spec-updated repository_dispatch at this repo. The dispatch carries the
+# previous + new backend version and the list of backend PRs that landed
+# between them.
+#
+# Why version-keyed: info.version only moves on a real customer-facing API
+# change (a CI gate enforces the bump), so this never fires for prose-only
+# spec edits. One PR per version, on its own branch, keeps each release's docs
+# review self-contained.
+#
+# Why a PR and not auto-generated docs: the api-reference/ pages are
+# hand-written prose shaped around the Python SDK (docs.json has no `openapi`
+# field), so this can't write the docs. It points the author at the backend
+# PRs that drove the change. The guarantee is "a new API version can't ship
+# without a docs PR landing in the queue."
+
+on:
+  repository_dispatch:
+    types: [docs-spec-updated]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-drift-pr:
+    name: Open per-version docs PR
+    # Production only — staging carries unreleased surface that must never
+    # reach the public docs.
+    if: github.event.client_payload.environment == 'production'
+    runs-on: ubuntu-latest
+    env:
+      NEW_VERSION: ${{ github.event.client_payload.backend_version }}
+      PREV_VERSION: ${{ github.event.client_payload.prev_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record version + assemble PR body
+        env:
+          # base64-encoded Markdown list of contributing backend PRs, built by
+          # the backend side (which has the git history). Decoded here so we
+          # don't have to wrestle newlines through the dispatch payload.
+          PRS_B64: ${{ github.event.client_payload.contributing_prs_b64 }}
+        run: |
+          # The committed marker is the diff that lets create-pull-request open
+          # a PR — and it records which version this repo's docs last caught up
+          # to. The backend reads it as the floor for the next PR's PR list.
+          mkdir -p .spec
+          printf '%s\n' "${NEW_VERSION}" > .spec/backend-version
+
+          {
+            echo "The backend shipped a new **production API version**: \`${PREV_VERSION:-none}\` → \`${NEW_VERSION}\`."
+            echo
+            echo "The \`api-reference/\` pages are hand-written prose, so they don't"
+            echo "update automatically. Review the backend PRs below and edit the"
+            echo "affected MDX **on this branch** before merging."
+            echo
+            echo "> [!IMPORTANT]"
+            echo "> Merging this PR as-is updates no docs — it only records the"
+            echo "> version marker. A human must edit the reference pages."
+            echo
+            echo "## Contributing backend PRs"
+            echo
+            if [[ -n "${PRS_B64}" ]]; then
+              echo "${PRS_B64}" | base64 -d
+            else
+              echo "_No PRs detected in range — see the backend's release history for this version._"
+            fi
+          } > /tmp/pr-body.md
+
+      - name: Open per-version docs PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          # One branch per version — a new version opens a new PR rather than
+          # updating a prior, possibly-unmerged one. Re-deploys of the same
+          # version update the existing PR in place.
+          branch: docs-drift/v${{ env.NEW_VERSION }}
+          base: main
+          labels: docs-drift
+          title: "docs: review API reference for backend v${{ env.NEW_VERSION }}"
+          commit-message: "chore(spec): record backend v${{ env.NEW_VERSION }}"
+          body-path: /tmp/pr-body.md
