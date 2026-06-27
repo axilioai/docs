@@ -5,3 +5,7 @@
 # Draft content
 drafts/
 *.draft.mdx
+
+# Tooling — not docs pages
+.spec/
+scripts/
