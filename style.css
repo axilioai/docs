@@ -1,0 +1,45 @@
+/* Axilio docs — applies DESIGN.md.
+   IBM Plex Mono everywhere, dark-first, signal green #18E299.
+   The font / color / dark-default live in docs.json; this is the
+   readability + polish layer on top. */
+
+:root {
+  --axl-green: #18e299;
+  --axl-green-deep: #0c8c5e;
+}
+
+/* Mono body needs more leading + a slightly looser measure than a sans would.
+   Without this, IBM Plex Mono prose reads cramped. */
+#content-area p,
+#content-area li,
+.prose p,
+.prose li {
+  line-height: 1.75;
+}
+
+/* Headings: tighten so mono at large sizes doesn't sprawl. */
+#content-area h1,
+#content-area h2,
+#content-area h3,
+.prose h1,
+.prose h2,
+.prose h3 {
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+/* Inline code: a quiet surface chip instead of default styling, so SDK symbols
+   read as objects in the prose. */
+:not(pre) > code {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  font-size: 0.9em;
+}
+
+/* Section dividers as hairlines, matching the marketing site's restraint. */
+#content-area hr,
+.prose hr {
+  border-color: rgba(255, 255, 255, 0.1);
+}
