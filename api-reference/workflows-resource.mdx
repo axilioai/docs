@@ -1,0 +1,286 @@
+---
+title: "Workflows Resource: Create and Version Your Automations"
+sidebarTitle: "Workflows"
+description: "Create, read, update, and delete the automation scripts that Axilio executes as runs — each workflow stores a name, description, and Python code body."
+---
+
+`client.workflows` is the CRUD interface for the automation scripts you author and version in Axilio. A workflow stores a name, an optional description, and a `code` body — the Python script that runs inside the sandbox when you trigger a run. The `list()` method returns lightweight `WorkflowSummary` objects that omit the code body to keep responses fast; call `get()` with a specific ID when you need the full script. You can create and update workflows programmatically from CI pipelines, making it straightforward to deploy automation changes alongside your application code.
+
+```python
+from axilio.platform import Client
+
+with Client() as client:
+    workflow = client.workflows.create(
+        name="Checkout flow",
+        code="from axilio.drivers import MobileDriver\n...",
+        description="End-to-end checkout test on Android",
+    )
+    print(workflow.id)
+```
+
+## `list()`
+
+```python
+client.workflows.list() -> list[WorkflowSummary]
+```
+
+Returns a compact summary of every workflow in your organisation. The `code` body is omitted from list results — call `get()` to retrieve it for a specific workflow. Results are ordered by most recently updated first.
+
+**Returns** `list[WorkflowSummary]` — see [WorkflowSummary](#workflowsummary).
+
+```python
+with Client() as client:
+    for wf in client.workflows.list():
+        print(wf.id, wf.name, wf.updated_at)
+```
+
+## `get()`
+
+```python
+client.workflows.get(workflow_id: str) -> Workflow
+```
+
+Fetches the full workflow record including the `code` body.
+
+<ParamField body="workflow_id" type="str" required>
+  The UUID of the workflow to retrieve.
+</ParamField>
+
+**Returns** [`Workflow`](#workflow).
+
+```python
+with Client() as client:
+    wf = client.workflows.get("wf_01j2abc...")
+    print(wf.name)
+    print(wf.code)
+```
+
+## `create()`
+
+```python
+client.workflows.create(
+    *,
+    name: str,
+    code: str,
+    description: str | None = None,
+) -> Workflow
+```
+
+Creates a new workflow and returns the full record including the server-assigned `id` and timestamps. All parameters are keyword-only.
+
+<ParamField body="name" type="str" required>
+  A short, human-readable name for the workflow displayed in the dashboard and
+  CLI. Must be non-empty.
+</ParamField>
+
+<ParamField body="code" type="str" required>
+  The Python script body that will execute inside the sandbox. The code has
+  access to the full Axilio SDK and may call `MobileDriver.connect()` to
+  interact with the allocated device.
+</ParamField>
+
+<ParamField body="description" type="str | None" default="None">
+  Optional longer description. Displayed in the dashboard and included in run
+  audit logs.
+</ParamField>
+
+**Returns** [`Workflow`](#workflow) with `id`, `created_at`, and `updated_at` populated by the server.
+
+<CodeGroup>
+
+```python Minimal
+with Client() as client:
+    wf = client.workflows.create(
+        name="Smoke test",
+        code="from axilio.drivers import MobileDriver\ndriver = MobileDriver.connect()\ndriver.observe()",
+    )
+    print(wf.id)
+```
+
+```python With description
+with Client() as client:
+    code = open("tests/smoke_test.py").read()
+
+    wf = client.workflows.create(
+        name="Nightly smoke test",
+        code=code,
+        description="Verifies core user journeys on Android after each deployment.",
+    )
+```
+
+</CodeGroup>
+
+## `update()`
+
+```python
+client.workflows.update(
+    workflow_id: str,
+    *,
+    name: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+) -> Workflow
+```
+
+Performs a partial update on an existing workflow. Supply only the fields you want to change; omitted fields retain their current values. Returns the full updated record.
+
+<ParamField body="workflow_id" type="str" required>
+  UUID of the workflow to update. Passed as a positional argument.
+</ParamField>
+
+<ParamField body="name" type="str | None" default="None">
+  New display name. Leave as `None` to keep the existing name.
+</ParamField>
+
+<ParamField body="code" type="str | None" default="None">
+  New script body. Leave as `None` to keep the existing code. Updating the
+  code does not affect the `code` snapshot stored in historical `Run` records.
+</ParamField>
+
+<ParamField body="description" type="str | None" default="None">
+  New description. Leave as `None` to keep the existing description.
+</ParamField>
+
+**Returns** [`Workflow`](#workflow) reflecting the updated state.
+
+```python
+with Client() as client:
+    updated_code = open("tests/smoke_test_v2.py").read()
+
+    wf = client.workflows.update(
+        "wf_01j2abc...",
+        code=updated_code,
+        description="v2 — adds payment flow coverage",
+    )
+    print(wf.updated_at)
+```
+
+<Note>
+  Updating a workflow's `code` only affects future runs. Runs that are already
+  queued, starting, or executing continue to use the code snapshot that was
+  captured when they were created.
+</Note>
+
+## `delete()`
+
+```python
+client.workflows.delete(workflow_id: str) -> None
+```
+
+Permanently deletes a workflow. Associated `Run` records are retained for audit purposes. You cannot delete a workflow that has a run currently in a `queued`, `starting`, or `running` state — cancel those runs first.
+
+<ParamField body="workflow_id" type="str" required>
+  UUID of the workflow to delete.
+</ParamField>
+
+**Returns** `None`.
+
+```python
+with Client() as client:
+    client.workflows.delete("wf_01j2abc...")
+    print("Workflow deleted")
+```
+
+<Warning>
+  Deletion is permanent and cannot be undone. Export the workflow `code` body
+  with `get()` before deleting if you need an archive copy.
+</Warning>
+
+---
+
+## Response types
+
+### `Workflow`
+
+The full workflow record returned by `get()`, `create()`, and `update()`.
+
+<ResponseField name="id" type="str">
+  Server-assigned UUID, e.g. `"wf_01j2abc..."`.
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  Display name of the workflow.
+</ResponseField>
+
+<ResponseField name="description" type="str | None">
+  Optional longer description, or `None` if not set.
+</ResponseField>
+
+<ResponseField name="code" type="str">
+  The full Python script body.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime">
+  UTC timestamp of when the workflow was created.
+</ResponseField>
+
+<ResponseField name="updated_at" type="datetime">
+  UTC timestamp of the most recent update to any field.
+</ResponseField>
+
+<ResponseField name="last_run_at" type="datetime | None">
+  UTC timestamp of the most recently triggered run, or `None` if the workflow
+  has never been executed.
+</ResponseField>
+
+### `WorkflowSummary`
+
+The compact record returned by `list()`. Identical to `Workflow` but omits the `code` body to keep list responses lightweight.
+
+<ResponseField name="id" type="str">UUID of the workflow.</ResponseField>
+
+<ResponseField name="name" type="str">Display name.</ResponseField>
+
+<ResponseField name="description" type="str | None">Optional description.</ResponseField>
+
+<ResponseField name="created_at" type="datetime">UTC creation timestamp.</ResponseField>
+
+<ResponseField name="updated_at" type="datetime">UTC last-modified timestamp.</ResponseField>
+
+<ResponseField name="last_run_at" type="datetime | None">
+  UTC timestamp of the most recent run, or `None`.
+</ResponseField>
+
+---
+
+## Full example: deploy workflow from CI
+
+The following pattern reads a script from disk and upserts it — creating the workflow on first run and updating it on subsequent runs.
+
+```python
+import os
+from axilio.platform import Client
+
+WORKFLOW_NAME = "E2E checkout test"
+
+def deploy_workflow(code: str) -> str:
+    """Create or update the named workflow. Returns the workflow ID."""
+    with Client() as client:
+        existing = next(
+            (wf for wf in client.workflows.list() if wf.name == WORKFLOW_NAME),
+            None,
+        )
+
+        if existing is None:
+            wf = client.workflows.create(
+                name=WORKFLOW_NAME,
+                code=code,
+                description="Deployed automatically from CI",
+            )
+            print(f"Created workflow {wf.id}")
+        else:
+            wf = client.workflows.update(existing.id, code=code)
+            print(f"Updated workflow {wf.id}")
+
+        return wf.id
+
+
+if __name__ == "__main__":
+    script = open("tests/e2e_checkout.py").read()
+    workflow_id = deploy_workflow(script)
+
+    # Trigger a run immediately
+    with Client() as client:
+        run = client.runs.create(workflow_id=workflow_id)
+        print(f"Run {run.id} is {run.status}")
+```

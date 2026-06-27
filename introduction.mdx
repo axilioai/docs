@@ -1,0 +1,91 @@
+---
+title: "Introduction to Axilio — The Phone Cloud for Agents"
+sidebarTitle: "Introduction"
+description: "Axilio puts real Android phones on live carrier networks under your code. Automate any mobile app with vision-native control and parallel sessions."
+---
+
+Axilio is a cloud-hosted mobile automation platform that puts real Android handsets — connected to live carrier networks — under programmatic control. Unlike emulators or screenshot-replay tools, your code talks to physical hardware: calls connect, push notifications arrive on schedule, carrier-gated flows behave exactly as they would for a real user. You request a device through the SDK, drive it with a clean chainable API, and release it when you're done. Axilio handles provisioning, networking, and teardown so you can focus entirely on the automation logic.
+
+## Why Axilio
+
+Most mobile automation runs inside emulators that diverge from production hardware in ways that matter — missing sensors, spoofed network stacks, and artificial latency. Axilio eliminates that class of problem entirely.
+
+<CardGroup cols={2}>
+  <Card title="Real hardware" icon="mobile">
+    Every device is a physical Android handset, not a virtual machine. Carrier features, hardware sensors, and OEM-specific behaviour all work as expected.
+  </Card>
+  <Card title="Live carrier networks" icon="signal">
+    Devices hold genuine SIM cards on real carrier networks. SMS OTPs, voice calls, and carrier-gated app features work without any mocking layer.
+  </Card>
+  <Card title="Vision-native control" icon="eye">
+    The `MobileDriver` exposes both deterministic OCR selectors and natural-language queries backed by Argus, Axilio's vision inference service. Describe what you see; the driver finds it.
+  </Card>
+  <Card title="Parallel execution" icon="bolt">
+    Spin up dozens of independent device sessions concurrently. Each session is isolated, billed per second, and released automatically when your code exits.
+  </Card>
+</CardGroup>
+
+## Core SDK concepts
+
+The Python SDK ships two primary entry points that work together: a platform client that manages device lifecycle and account resources, and a driver that controls the device you've acquired.
+
+### `axilio.platform.Client`
+
+`Client` is your connection to the Axilio API. Construct it once per process — it holds the HTTP connection pool and your credentials — and share it across calls. Every resource in the platform is accessible as an attribute:
+
+```python
+from axilio.platform import Client
+
+client = Client()  # reads AXILIO_API_KEY from the environment
+```
+
+Through `Client` you can allocate devices (`client.mobile`), manage workflows and runs (`client.workflows`, `client.runs`), inspect usage and billing (`client.usage`, `client.billing`), and administer API keys and organisation members (`client.api_keys`, `client.org`).
+
+### `axilio.drivers.MobileDriver`
+
+`MobileDriver` wraps a `DeviceHandle` returned by `client.mobile.allocate()` (or `client.mobile.session()`) and exposes a selector-based control surface for the live device. Every selector returns an `Element` whose action methods chain fluently:
+
+```python
+from axilio.drivers import MobileDriver
+
+with client.mobile.session(platform="android") as device:
+    driver = MobileDriver(device)
+
+    driver.find_text("Sign in").tap()
+    driver.find_text("Email").type_into("you@example.com")
+    driver.find(query="the blue Continue button").tap()
+    png = driver.screenshot()
+```
+
+`find_text` uses fast on-device OCR; `find` sends a natural-language query to Argus for anything that text alone can't pin down.
+
+## Argus — vision inference
+
+Argus is Axilio's cloud vision inference service. It runs object detection (YOLO), OCR (free and premium engines), and a VLM-backed element locator that accepts plain-English descriptions of UI elements. The `MobileDriver` calls Argus transparently when you use `driver.find(query=...)`, but you can also call it directly through `client.argus` to run inference over arbitrary images — useful for custom screenshot analysis, labelling pipelines, or pre-computing OCR results before driving a session.
+
+## Navigate the docs
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install the SDK, set your API key, and run your first device session in under five minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Create API keys, pass credentials securely, and manage key rotation.
+  </Card>
+  <Card title="MobileDriver" icon="mobile" href="/concepts/mobile-driver">
+    Selectors, actions, screen snapshots, and everything the driver can do.
+  </Card>
+  <Card title="Workflows & Runs" icon="diagram-project" href="/concepts/workflows-and-runs">
+    Package automation as reusable workflows and trigger them via the API.
+  </Card>
+  <Card title="Parallel Execution" icon="bolt" href="/guides/parallel-execution">
+    Run many device sessions concurrently and process results in bulk.
+  </Card>
+  <Card title="Argus API Reference" icon="eye" href="/api-reference/argus/overview">
+    Direct access to vision inference — detect, OCR, and locate elements in images.
+  </Card>
+</CardGroup>
+
+<Note>
+  Axilio is in **early access**. The SDK surface is still expanding and APIs may change between minor versions before 1.0. Pin a specific version in your dependency file for reproducible builds, and watch the changelog for breaking changes.
+</Note>

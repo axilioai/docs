@@ -1,0 +1,396 @@
+---
+title: "MobileDriver: Selectors, Gestures, and Interactions"
+sidebarTitle: "Controlling Devices"
+description: "Master every selector mode, action, gesture, wait strategy, and hardware key in the MobileDriver API to build reliable mobile automation scripts."
+---
+
+Once you have a `DeviceHandle` from an allocation, you wrap it with `MobileDriver` to control the device. The driver communicates with an on-device agent over a low-latency channel and exposes a chainable API where every selector returns an `Element` that you act on directly. This guide covers the full driver surface — from the three selector modes and their trade-offs, through gestures and hardware keys, to screenshot capture and production-grade waiting strategies.
+
+## Connecting the driver
+
+Inside a workflow sandbox, use `MobileDriver.connect()` to pair with the pre-allocated device automatically. In scripts that manage their own allocation (e.g. when using `client.mobile.session()`), pass the `DeviceHandle` directly to the constructor.
+
+<Tabs>
+  <Tab title="Inside a workflow sandbox">
+    ```python
+    from axilio.drivers.mobile import MobileDriver
+
+    # The sandbox pre-allocates a device; connect() finds it automatically.
+    driver = MobileDriver.connect()
+    ```
+  </Tab>
+  <Tab title="With client.mobile.session()">
+    ```python
+    from axilio.platform import Client
+    from axilio.drivers import MobileDriver
+
+    client = Client()
+
+    with client.mobile.session(platform="android") as device:
+        driver = MobileDriver(device)
+        # drive the device here
+    ```
+  </Tab>
+</Tabs>
+
+## The three selector modes
+
+`MobileDriver` gives you three complementary ways to locate UI elements, each suited to different situations.
+
+### Mode 1 — find_text (fast, OCR-based)
+
+`find_text()` runs on-device OCR to find the first element whose text matches your query. It is the fastest selector and should be your default choice whenever you know the exact (or approximate) text that appears on screen.
+
+```python
+# Case-insensitive substring match (default).
+el = driver.find_text("Sign in")
+
+# Exact match — useful when multiple elements share similar text.
+el = driver.find_text("Sign in", exact=True)
+
+# Returns None if the text isn't found — check before acting.
+el = driver.find_text("Optional Banner")
+if el is not None:
+    el.tap()
+```
+
+`find_all_text()` returns every matching element at once — useful for asserting counts or iterating a list.
+
+```python
+# All elements containing "Notification" (case-insensitive).
+items = driver.find_all_text(contains="Notification")
+
+# All elements matching a regex.
+prices = driver.find_all_text(pattern=r"\$\d+\.\d{2}")
+
+for price_el in prices:
+    print(price_el.text, price_el.center)
+```
+
+### Mode 2 — find with VLM (semantic, natural language)
+
+`find()` sends a natural-language query to Axilio's vision-language model (Argus). Use it when the target element has no stable text — icons, images, unlabelled buttons — or when describing intent is clearer than matching a string.
+
+```python
+# Describe the element as a human would.
+heart_icon = driver.find(query="the heart icon next to the comment count")
+heart_icon.tap()
+
+# Override the model or set an explicit timeout.
+avatar = driver.find(
+    query="the user's circular profile photo in the top-right corner",
+    timeout=15.0,
+    model="argus-v2",
+)
+avatar.tap()
+```
+
+`find()` raises `ElementNotFoundError` if no element matches — it never returns `None`. Wrap calls in `try/except` when the element's presence is conditional.
+
+<Note>
+`find()` makes a round-trip to the VLM on Axilio's infrastructure. It is significantly slower than `find_text()`. Use it only when OCR-based selectors aren't sufficient — for example, to click an icon that has no text label.
+</Note>
+
+### Mode 3 — observe + batch query (snapshot)
+
+`observe()` captures a single screen snapshot and returns a `Screen` object you can query multiple times without additional network round-trips. Use it when you need to inspect several elements in one frame, or when you want to branch on screen state without re-running OCR.
+
+```python
+screen = driver.observe()
+
+# Inspect the snapshot.
+print(f"Screen: {screen.width}×{screen.height}, {len(screen.texts)} text elements")
+print(f"Captured at: {screen.captured_at.isoformat()}")
+
+# Query the snapshot — no extra OCR calls.
+sign_in_btn = screen.find_text("Sign in")
+cancel_btn  = screen.find_text("Cancel")
+
+if sign_in_btn is not None:
+    sign_in_btn.tap()
+elif cancel_btn is not None:
+    cancel_btn.tap()
+```
+
+`Screen` exposes the same `find_text()` and `find_all_text()` methods as the driver, but operates on the already-captured data rather than issuing a new observation. This is the most efficient pattern when you need to make multiple decisions about the same screen state.
+
+## OCR engines
+
+Both `find_text()` and `observe()` accept an `ocr_engine` parameter:
+
+| Value | Speed | Quality | Cost |
+|-------|-------|---------|------|
+| `"free"` | Fast | Good for most UI text | Included |
+| `"premium"` | Moderate | Higher accuracy for small/stylised text | Billed per call |
+
+```python
+# Default — use for most cases.
+el = driver.find_text("Submit", ocr_engine="free")
+
+# Switch to premium only when the free engine misreads text reliably.
+el = driver.find_text("Ü̴s̷e̸r̵n̷a̷m̵e̷", ocr_engine="premium")
+```
+
+<Tip>
+Start with `"free"`. Switch to `"premium"` only when you observe consistent mis-reads in the free engine — for example, stylised fonts, very small text, or text on a low-contrast background.
+</Tip>
+
+## Element actions
+
+Every `find_text()`, `find()`, and `observe().find_text()` call returns an `Element`. Actions chain directly off the element.
+
+### tap
+
+```python
+driver.find_text("Continue").tap()
+```
+
+### long_press
+
+Holds the element for `duration_ms` milliseconds. Defaults to 800 ms, which triggers most long-press context menus.
+
+```python
+driver.find_text("Message").long_press()
+driver.find_text("Photo").long_press(duration_ms=1200)
+```
+
+### type_into
+
+`type_into()` taps the element to focus it, then types the provided string. Use it on text fields and search boxes.
+
+```python
+driver.find_text("Email").type_into("you@example.com")
+driver.find_text("Password").type_into("s3cr3t!")
+```
+
+### swipe_to
+
+Swipes from one element's center to another's. Useful for reordering lists or dismissing cards.
+
+```python
+items = driver.find_all_text(contains="Task")
+if len(items) >= 2:
+    items[0].swipe_to(items[1], duration_ms=400)
+```
+
+## Driver-level gestures
+
+For gestures that don't start from a found element, use the driver's coordinate-based methods. Coordinates use frame-space pixels with the top-left origin.
+
+### tap at coordinates
+
+```python
+driver.tap({"x": 540, "y": 960})
+```
+
+### swipe
+
+```python
+# Scroll down: swipe from bottom-center to top-center.
+driver.swipe(
+    start={"x": 540, "y": 1600},
+    end={"x": 540, "y": 400},
+    duration_ms=300,
+)
+
+# Scroll up.
+driver.swipe(
+    start={"x": 540, "y": 400},
+    end={"x": 540, "y": 1600},
+    duration_ms=300,
+)
+```
+
+### type_text vs type_into
+
+`driver.type_text()` types into whichever field currently has focus. Use it after you've already tapped a field or after the keyboard is already showing. `element.type_into()` combines the tap and the type in one call — prefer it unless focus is already in the right place.
+
+```python
+# The field is already focused (e.g. after a previous type_into left the cursor here).
+driver.type_text(" — appended text")
+
+# Tap-then-type in one step (preferred for first entry).
+driver.find_text("Search").type_into("Axilio")
+```
+
+## Hardware keys
+
+`driver.key_press()` sends HID consumer-page key codes. Import the `Key` constants from `axilio.drivers.mobile`.
+
+```python
+from axilio.drivers.mobile import Key
+
+driver.key_press(Key.HOME)        # Go to the home screen
+driver.key_press(Key.BACK)        # Navigate back
+driver.key_press(Key.RECENTS)     # Open the recents / app-switcher
+driver.key_press(Key.MENU)        # Open the overflow menu
+driver.key_press(Key.POWER)       # Power button
+driver.key_press(Key.VOLUME_UP)   # Raise volume
+driver.key_press(Key.VOLUME_DOWN) # Lower volume
+```
+
+<CardGroup cols={2}>
+  <Card title="Navigation keys" icon="arrow-left">
+    `Key.HOME`, `Key.BACK`, `Key.RECENTS`, `Key.MENU` — the standard Android navigation bar.
+  </Card>
+  <Card title="Media & system keys" icon="volume-high">
+    `Key.VOLUME_UP`, `Key.VOLUME_DOWN`, `Key.MUTE`, `Key.PLAY_PAUSE`, `Key.NEXT_TRACK`, `Key.PREV_TRACK`, `Key.POWER`.
+  </Card>
+</CardGroup>
+
+## Waiting for UI state
+
+Real apps have animations, network calls, and loading states. Use the `wait_*` methods instead of `time.sleep()` to make your automation both faster and more reliable.
+
+### wait_for_text
+
+Polls until the target text appears on screen or `timeout` elapses. Returns the `Element` when found, raises `TimeoutError` if not.
+
+```python
+from axilio.drivers.mobile import TimeoutError as DeviceTimeoutError
+
+try:
+    el = driver.wait_for_text("Dashboard", timeout=15.0)
+    el.tap()
+except DeviceTimeoutError:
+    print("Dashboard never appeared — taking a debug screenshot")
+    with open("debug.png", "wb") as f:
+        f.write(driver.screenshot())
+    raise
+```
+
+### wait_until_gone
+
+Polls until the target text disappears. Use it to confirm that loading spinners, toasts, or modals have cleared before proceeding.
+
+```python
+driver.tap({"x": 540, "y": 960})           # submit the form
+driver.wait_until_gone("Submitting…", timeout=20.0)
+driver.wait_for_text("Success", timeout=10.0)
+```
+
+### wait_for (predicate-based)
+
+The most flexible wait: pass any callable that receives a `Screen` and returns a truthy value when ready. Returns the `Screen` that satisfied the predicate.
+
+```python
+def both_buttons_visible(screen):
+    return (
+        screen.find_text("Accept") is not None
+        and screen.find_text("Decline") is not None
+    )
+
+screen = driver.wait_for(both_buttons_visible, timeout=15.0)
+screen.find_text("Accept").tap()
+```
+
+## Taking screenshots
+
+`driver.screenshot()` captures the current frame and returns PNG-encoded bytes. Write them to disk, attach them to test reports, or send them to an image assertion service.
+
+```python
+png_bytes = driver.screenshot()
+
+with open("step_3_confirmation.png", "wb") as f:
+    f.write(png_bytes)
+```
+
+## Handling errors
+
+<Accordion title="ElementNotFoundError">
+
+Raised by `find()` and as an alternative return path when you call `.tap()` or other actions on a `None` result from `find_text()`. Always check `find_text()` return values before acting.
+
+```python
+from axilio.drivers.mobile import ElementNotFoundError
+
+try:
+    el = driver.find(query="the red dismiss button")
+    el.tap()
+except ElementNotFoundError:
+    # Element wasn't on screen — proceed with the alternative flow.
+    driver.key_press(Key.BACK)
+```
+
+</Accordion>
+
+<Accordion title="TimeoutError">
+
+Raised by `wait_for_text()`, `wait_until_gone()`, and `wait_for()` when the deadline passes. It is retryable — the underlying condition may appear if you extend the timeout.
+
+```python
+from axilio.drivers.mobile import TimeoutError as DeviceTimeoutError
+
+try:
+    driver.wait_for_text("Welcome", timeout=10.0)
+except DeviceTimeoutError:
+    # Take a screenshot so you can diagnose what was on screen.
+    png = driver.screenshot()
+    raise
+```
+
+</Accordion>
+
+## Complete example: sign up flow
+
+The following realistic example opens an app, navigates a sign-up form, submits it, and verifies the success state — demonstrating all three selector modes and proper wait/error handling.
+
+```python
+import time
+from axilio.platform import Client, AxilioError
+from axilio.drivers import MobileDriver
+from axilio.drivers.mobile import Key, TimeoutError as DeviceTimeoutError, ElementNotFoundError
+
+client = Client()
+
+
+def sign_up(email: str, password: str) -> bytes:
+    """Complete the sign-up flow and return a screenshot of the home screen."""
+
+    with client.mobile.session(platform="android", apps=["com.example.myapp"]) as device:
+        driver = MobileDriver(device)
+
+        # 1. Wait for the app's splash screen to clear.
+        driver.wait_until_gone("Loading…", timeout=20.0)
+
+        # 2. Tap "Create Account" — use find() because the button is an image-label.
+        driver.find(query="the 'Create Account' button below the logo", timeout=10.0).tap()
+
+        # 3. Fill in the email field (type_into taps then types).
+        driver.find_text("Email address").type_into(email)
+
+        # 4. Fill in the password field.
+        driver.find_text("Password").type_into(password)
+
+        # 5. Accept terms — the checkbox has no text, so we use VLM.
+        driver.find(query="the terms and conditions checkbox").tap()
+
+        # 6. Dismiss the keyboard and submit.
+        driver.key_press(Key.BACK)
+        driver.find_text("Sign Up").tap()
+
+        # 7. Wait for the server round-trip.
+        driver.wait_until_gone("Creating account…", timeout=30.0)
+
+        # 8. Verify success using a batch observe to check multiple signals at once.
+        screen = driver.observe()
+        success_el  = screen.find_text("Welcome")
+        profile_btn = screen.find_text("Profile")
+
+        if success_el is None or profile_btn is None:
+            # Something went wrong — grab a diagnostic screenshot.
+            png = driver.screenshot()
+            with open("signup_failure.png", "wb") as f:
+                f.write(png)
+            raise RuntimeError("Sign-up did not reach the home screen")
+
+        # 9. Return a confirmation screenshot.
+        return driver.screenshot()
+
+
+if __name__ == "__main__":
+    png = sign_up("alice@example.com", "SuperSecret123!")
+    with open("signup_success.png", "wb") as f:
+        f.write(png)
+    print("Sign-up succeeded. Screenshot saved.")
+```

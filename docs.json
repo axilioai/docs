@@ -1,72 +1,116 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mintlify Starter Kit",
-  "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
+  "name": "Axilio",
+  "theme": "luma",
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "https://media.brand.dev/68977f89-295d-4ba9-80af-dda2f855f77d.svg",
+    "dark": "https://media.brand.dev/68977f89-295d-4ba9-80af-dda2f855f77d.svg"
+  },
+  "favicon": "https://media.brand.dev/b940ee9b-0609-40a3-a46c-0ab010f866ae.svg",
+  "colors": {
+    "primary": "#7bcab0",
+    "light": "#0c7f5c",
+    "dark": "#0c1613"
+  },
+  "font": {
+    "headings": { "family": "IBM Plex Mono" },
+    "body": { "family": "IBM Plex Mono" }
   },
   "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
     "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "type": "github",
+      "href": "https://github.com/axilioai/platform-python"
     }
   },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/devices",
+              "concepts/mobile-driver",
+              "concepts/workflows-and-runs",
+              "concepts/sandbox-mode"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/allocating-devices",
+              "guides/controlling-devices",
+              "guides/running-workflows",
+              "guides/parallel-execution",
+              "guides/best-practices"
+            ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
+              "platform/billing",
+              "platform/usage",
+              "platform/organizations",
+              "platform/api-keys"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/errors",
+              "reference/configuration",
+              "reference/changelog"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "SDK Reference",
+            "pages": [
+              "api-reference/client",
+              "api-reference/mobile-resource",
+              "api-reference/mobile-driver",
+              "api-reference/workflows-resource",
+              "api-reference/runs-resource"
+            ]
+          },
+          {
+            "group": "Argus Vision API",
+            "pages": [
+              "api-reference/argus/overview",
+              "api-reference/argus/infer",
+              "api-reference/argus/locate",
+              "api-reference/argus/models"
+            ]
+          },
+          {
+            "group": "Account & Billing API",
+            "pages": [
+              "api-reference/billing-resource",
+              "api-reference/usage-resource",
+              "api-reference/api-keys-resource",
+              "api-reference/org-resource"
+            ]
+          }
+        ]
+      }
     ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "website": "https://axilio.ai"
     }
   }
 }

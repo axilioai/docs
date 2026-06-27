@@ -1,0 +1,188 @@
+---
+title: "Organizations: Manage Members, Roles, and Invitations"
+sidebarTitle: "Organizations"
+description: "Manage your Axilio organization: inspect membership, invite teammates, assign roles, and remove members — all from the SDK or dashboard."
+---
+
+Every Axilio account belongs to an **organization** — the unit that owns API keys, accumulates billing charges, and determines who can access what. When you create a Axilio account, a personal organization is provisioned for you automatically. If you collaborate with a team, your organization is the shared scope under which all your workflows, devices, and invoices live. The `client.org` resource gives you programmatic access to your organization's identity and full membership lifecycle.
+
+<Warning>
+  The `invite()` and `remove_member()` methods are **local-mode only**. Workflow scripts executing inside a sandbox VM cannot add or remove humans from the organization they run on behalf of. These operations are intentionally restricted to your local machine or a trusted CI environment. Calling them from a sandbox raises `SandboxPermissionError`.
+</Warning>
+
+## Getting organization info
+
+Call `client.org.current()` to fetch the organization the current API key is scoped to. This is a read operation available in both local and sandbox mode.
+
+```python
+import axilio
+
+client = axilio.Client()
+
+org = client.org.current()
+print(org.id)    # "org_01j9abc123def456"
+print(org.name)  # "Acme Automation"
+print(org.slug)  # "acme-automation"
+```
+
+### Organization fields
+
+<ResponseField name="org.id" type="str">
+  Unique, immutable organization identifier. Use this when contacting support or referencing your org in audit logs.
+</ResponseField>
+<ResponseField name="org.name" type="str">
+  Display name of the organization, editable from the dashboard.
+</ResponseField>
+<ResponseField name="org.slug" type="str">
+  URL-safe slug derived from the org name. Used in dashboard URLs and certain API paths.
+</ResponseField>
+<ResponseField name="org.created_at" type="datetime">
+  UTC timestamp when the organization was created.
+</ResponseField>
+<ResponseField name="org.onboarding_completed_at" type="datetime | None">
+  UTC timestamp when the onboarding checklist was completed. `None` if onboarding is still in progress.
+</ResponseField>
+
+## Listing members
+
+Call `client.org.members()` to retrieve every current member of your organization. This is a read operation available in both local and sandbox mode.
+
+```python
+members = client.org.members()
+
+for m in members:
+    print(f"{m.name:<25}  {m.email:<35}  {m.role:<8}  joined {m.joined_at.date()}")
+```
+
+```
+Alice Nguyen              alice@acme.com                       owner    joined 2024-03-12
+Bob Okafor                bob@acme.com                         admin    joined 2024-05-01
+Carol Reyes               carol@acme.com                       member   joined 2025-01-20
+Dan Marsh                 dan@acme.com                         viewer   joined 2025-06-15
+```
+
+### Member fields
+
+<ResponseField name="member.user_id" type="str">
+  Unique, immutable user identifier. Pass this to `remove_member()` when you need to remove someone from the org.
+</ResponseField>
+<ResponseField name="member.email" type="str">
+  The email address associated with the user's Axilio account.
+</ResponseField>
+<ResponseField name="member.name" type="str">
+  The user's display name as set in their profile.
+</ResponseField>
+<ResponseField name="member.role" type="Role">
+  The user's role within this organization. See [Roles](#roles) below.
+</ResponseField>
+<ResponseField name="member.joined_at" type="datetime">
+  UTC timestamp when the user accepted their invitation and joined the organization.
+</ResponseField>
+
+## Roles
+
+Axilio uses a four-level role hierarchy. Each level grants all the permissions of the levels below it.
+
+| Role | Permissions |
+|---|---|
+| `"viewer"` | Read-only access: view workflows, runs, usage, and billing data. Cannot execute workflows or change any settings. |
+| `"member"` | Everything in `viewer`, plus: create and run workflows, allocate devices, and read API keys. |
+| `"admin"` | Everything in `member`, plus: manage API keys (create, revoke), invite and remove members, and change member roles up to `admin`. |
+| `"owner"` | Full access. Can upgrade or downgrade the subscription, delete the organization, and promote members to `owner`. Only one `owner` per organization. |
+
+<Info>
+  The `owner` role cannot be granted via `invite()` or `remove_member()`. Transfer ownership from the [Axilio dashboard](https://axilio.ai) under **Settings → Organization**.
+</Info>
+
+## Inviting a member
+
+Call `client.org.invite(email, role)` to send an email invitation. The invitee receives a link they must click to accept; they are not added to `members()` until they do. This method is **local-mode only**.
+
+```python
+# Invite a new engineer as a member
+invitation = client.org.invite("newdev@acme.com", role="member")
+
+print(invitation.id)          # "inv_01j9xyz789"
+print(invitation.expires_at)  # datetime(2025, 7, 22, ..., tzinfo=UTC)
+```
+
+<ParamField path="email" type="str" required>
+  The email address to invite. If the address already belongs to an existing Axilio user, they receive the invitation at that address. If not, they are prompted to create an account first.
+</ParamField>
+<ParamField path="role" type="Role" required>
+  The role to assign upon acceptance. Must be one of `"viewer"`, `"member"`, or `"admin"`. You cannot invite someone directly to `"owner"`.
+</ParamField>
+
+### Invitation fields
+
+<ResponseField name="invitation.id" type="str">
+  Unique invitation identifier. Use this to reference the pending invite in support requests.
+</ResponseField>
+<ResponseField name="invitation.email" type="str">
+  The address the invitation was sent to.
+</ResponseField>
+<ResponseField name="invitation.role" type="Role">
+  The role that will be assigned when the invitation is accepted.
+</ResponseField>
+<ResponseField name="invitation.invited_at" type="datetime">
+  UTC timestamp when the invitation was created.
+</ResponseField>
+<ResponseField name="invitation.expires_at" type="datetime">
+  UTC timestamp after which the invitation link becomes invalid. Invitations expire after 7 days by default. Re-invite the user if the link expires.
+</ResponseField>
+
+## Removing a member
+
+Call `client.org.remove_member(user_id)` to immediately revoke a user's access to the organization. Pass the `user_id` from a `Member` object returned by `members()`. This method is **local-mode only**.
+
+```python
+# Remove a member by user_id
+members = client.org.members()
+
+target = next(m for m in members if m.email == "former-contractor@acme.com")
+client.org.remove_member(target.user_id)
+
+print(f"Removed {target.name} from the organization.")
+```
+
+<Warning>
+  Removing a member does not automatically revoke API keys they created. After removing a member, audit your active keys with `client.api_keys.list()` and revoke any keys associated with the departed user. See the [API Keys](/platform/api-keys) page for details.
+</Warning>
+
+## Full membership workflow example
+
+The following example shows the complete lifecycle: listing current members, inviting a new teammate, and cleaning up a former member.
+
+<CodeGroup>
+```python Invite a new teammate
+from datetime import datetime, timezone
+import axilio
+
+client = axilio.Client()
+
+# Review existing team before inviting
+members = client.org.members()
+print(f"Current team size: {len(members)}")
+
+# Send the invitation
+inv = client.org.invite("new-analyst@acme.com", role="viewer")
+print(f"Invitation sent to {inv.email}, expires {inv.expires_at.date()}")
+```
+
+```python Remove a departed member
+import axilio
+
+client = axilio.Client()
+
+members = client.org.members()
+
+# Find the member to remove
+departed = next((m for m in members if m.email == "ex-employee@acme.com"), None)
+
+if departed:
+    client.org.remove_member(departed.user_id)
+    print(f"Access revoked for {departed.name}.")
+else:
+    print("Member not found — may have already been removed.")
+```
+</CodeGroup>

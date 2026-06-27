@@ -1,0 +1,328 @@
+---
+title: "Runs Resource: Schedule and Monitor Workflow Executions"
+sidebarTitle: "Runs"
+description: "Enqueue workflow runs, pass runtime variables, poll for terminal status, and cancel in-progress executions using client.runs in Python."
+---
+
+`client.runs` lets you trigger, inspect, and cancel executions of your automation workflows. When you call `create()`, Axilio enqueues the run and returns immediately with a `Run` object whose `status` is `"queued"` — the actual execution happens asynchronously inside a sandbox. To track progress, poll `get()` on the returned run ID until `status` reaches a terminal value (`"succeeded"`, `"failed"`, or `"canceled"`). You can also pass key/value `variables` at creation time; the running script receives them as environment variables, letting you parameterise workflows without modifying code.
+
+```python
+from axilio.platform import Client
+import time
+
+with Client() as client:
+    run = client.runs.create(
+        workflow_id="wf_01j2abc...",
+        variables={"ENV": "staging", "TARGET_USER": "demo@example.com"},
+    )
+    print(f"Enqueued run {run.id} — status: {run.status}")
+
+    # Poll until terminal
+    while run.status not in ("succeeded", "failed", "canceled"):
+        time.sleep(5)
+        run = client.runs.get(run.id)
+
+    print(f"Finished with status: {run.status}")
+    if run.error:
+        print(f"Error: {run.error}")
+```
+
+## `list()`
+
+```python
+client.runs.list(
+    *,
+    workflow_id: str | None = None,
+    limit: int = 50,
+) -> list[RunSummary]
+```
+
+Returns a list of recent runs, optionally filtered to a single workflow. Results are ordered most-recent-first. Large fields (`variables`, `code`, `error`) are omitted from summary records — call `get()` when you need them.
+
+<ParamField body="workflow_id" type="str | None" default="None">
+  Filter to runs belonging to a specific workflow. Omit to list runs across
+  all workflows in your organisation.
+</ParamField>
+
+<ParamField body="limit" type="int" default="50">
+  Maximum number of run summaries to return. Valid range is `1`–`200`.
+</ParamField>
+
+**Returns** `list[RunSummary]` — see [RunSummary](#runsummary).
+
+```python
+with Client() as client:
+    recent = client.runs.list(workflow_id="wf_01j2abc...", limit=10)
+    for r in recent:
+        print(r.id, r.status, r.finished_at)
+```
+
+## `get()`
+
+```python
+client.runs.get(run_id: str) -> Run
+```
+
+Fetches the full run record including `variables`, the resolved `code` snapshot, and any `error` message.
+
+<ParamField body="run_id" type="str" required>
+  The UUID of the run to retrieve.
+</ParamField>
+
+**Returns** [`Run`](#run).
+
+```python
+with Client() as client:
+    run = client.runs.get("run_01j2xyz...")
+    print(run.status, run.error)
+```
+
+## `create()`
+
+```python
+client.runs.create(
+    *,
+    workflow_id: str,
+    variables: dict[str, str] | None = None,
+) -> Run
+```
+
+Enqueues a new run of the specified workflow and returns immediately with `status="queued"`. The run transitions through `"starting"` → `"running"` → `"succeeded"` or `"failed"` as the sandbox processes it. Poll `get()` to track progress.
+
+<ParamField body="workflow_id" type="str" required>
+  UUID of the workflow to execute.
+</ParamField>
+
+<ParamField body="variables" type="dict[str, str] | None" default="None">
+  Optional string-to-string mapping of runtime variables. The executing script
+  can read these to parameterise behaviour without code changes. Keys and
+  values must both be strings.
+</ParamField>
+
+**Returns** [`Run`](#run) with `status="queued"`.
+
+<CodeGroup>
+
+```python Without variables
+with Client() as client:
+    run = client.runs.create(workflow_id="wf_01j2abc...")
+    print(run.id, run.status)  # run_01j2xyz... queued
+```
+
+```python With variables
+with Client() as client:
+    run = client.runs.create(
+        workflow_id="wf_01j2abc...",
+        variables={
+            "ENVIRONMENT": "production",
+            "TEST_ACCOUNT": "qa+prod@example.com",
+            "DEVICE_PLATFORM": "android",
+        },
+    )
+```
+
+</CodeGroup>
+
+<Note>
+  `create()` returns as soon as the run is accepted by the queue. It does **not**
+  wait for the workflow to start or finish. Use the [polling pattern](#polling-pattern)
+  below to wait for a terminal status.
+</Note>
+
+## `cancel()`
+
+```python
+client.runs.cancel(run_id: str) -> Run
+```
+
+Requests cancellation of the specified run. The backend transitions the run to `"canceled"` once it actually stops — this is near-instant for queued runs but may take a moment for runs that are actively executing inside a sandbox. The returned `Run` object reflects the state at the moment of the request, not the final canceled state; poll `get()` to confirm.
+
+<ParamField body="run_id" type="str" required>
+  UUID of the run to cancel.
+</ParamField>
+
+**Returns** [`Run`](#run) reflecting the state immediately after the cancel request.
+
+```python
+with Client() as client:
+    run = client.runs.cancel("run_01j2xyz...")
+    print(run.status)   # "canceled" or still "running" if mid-execution
+
+    # Confirm the run reached a terminal state
+    while run.status not in ("succeeded", "failed", "canceled"):
+        time.sleep(2)
+        run = client.runs.get(run.id)
+    print(f"Final status: {run.status}")
+```
+
+---
+
+## Polling pattern
+
+Because `create()` returns immediately, you need to poll `get()` to determine when a run has finished. Here is a reusable helper that blocks until the run reaches a terminal status:
+
+```python
+import time
+from axilio.platform import Client
+
+TERMINAL = {"succeeded", "failed", "canceled"}
+
+def wait_for_run(client: Client, run_id: str, poll_seconds: float = 5.0) -> "Run":
+    """Block until the run reaches a terminal status and return the final Run."""
+    while True:
+        run = client.runs.get(run_id)
+        if run.status in TERMINAL:
+            return run
+        time.sleep(poll_seconds)
+
+
+with Client() as client:
+    run = client.runs.create(workflow_id="wf_01j2abc...")
+    print(f"Started run {run.id}")
+
+    final = wait_for_run(client, run.id)
+
+    if final.status == "succeeded":
+        print("Workflow completed successfully")
+    elif final.status == "failed":
+        print(f"Workflow failed: {final.error}")
+    else:
+        print(f"Run was {final.status}")
+```
+
+<Tip>
+  For long-running workflows, increase `poll_seconds` to reduce API call volume.
+  A 10–30 second interval is reasonable for workflows that run for several
+  minutes. Future versions of the API will support a Server-Sent Events (SSE)
+  endpoint so you can subscribe to status changes without polling.
+</Tip>
+
+---
+
+## Response types
+
+### `Run`
+
+The full run record, returned by `get()`, `create()`, and `cancel()`.
+
+<ResponseField name="id" type="str">
+  Server-assigned UUID for this run, e.g. `"run_01j2xyz..."`.
+</ResponseField>
+
+<ResponseField name="workflow_id" type="str">
+  UUID of the workflow that was executed.
+</ResponseField>
+
+<ResponseField name="status" type="RunStatus">
+  Current lifecycle status. One of `"queued"`, `"starting"`, `"running"`,
+  `"succeeded"`, `"failed"`, or `"canceled"`. Terminal statuses are
+  `"succeeded"`, `"failed"`, and `"canceled"`.
+</ResponseField>
+
+<ResponseField name="variables" type="dict[str, str]">
+  The variables passed at creation time, or an empty dict if none were
+  supplied.
+</ResponseField>
+
+<ResponseField name="code" type="str">
+  The snapshot of the workflow's script body at the moment this run was
+  dispatched. This is preserved independently of later edits to the workflow,
+  ensuring historical runs are reproducible.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime">
+  UTC timestamp of when the run was enqueued.
+</ResponseField>
+
+<ResponseField name="started_at" type="datetime | None">
+  UTC timestamp of when the sandbox began executing the script, or `None` if
+  the run has not yet left the `"queued"` state.
+</ResponseField>
+
+<ResponseField name="finished_at" type="datetime | None">
+  UTC timestamp of when the run reached a terminal status, or `None` if still
+  in progress.
+</ResponseField>
+
+<ResponseField name="error" type="str | None">
+  Human-readable error message when `status` is `"failed"`, otherwise `None`.
+</ResponseField>
+
+### `RunSummary`
+
+The compact record returned by `list()`. Large fields (`variables`, `code`, `error`) are omitted.
+
+<ResponseField name="id" type="str">UUID of the run.</ResponseField>
+
+<ResponseField name="workflow_id" type="str">UUID of the parent workflow.</ResponseField>
+
+<ResponseField name="status" type="RunStatus">
+  Current lifecycle status. Same values as `Run.status`.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime">UTC enqueue timestamp.</ResponseField>
+
+<ResponseField name="started_at" type="datetime | None">
+  UTC timestamp when execution started, or `None`.
+</ResponseField>
+
+<ResponseField name="finished_at" type="datetime | None">
+  UTC timestamp when the run finished, or `None`.
+</ResponseField>
+
+### Run status lifecycle
+
+```
+queued → starting → running → succeeded
+                            ↘ failed
+              ↓ (cancel)
+           canceled
+```
+
+| Status | Terminal | Description |
+|---|---|---|
+| `queued` | No | Accepted by Axilio; waiting for a sandbox slot |
+| `starting` | No | Sandbox is booting and allocating a device |
+| `running` | No | Script is actively executing |
+| `succeeded` | **Yes** | Script exited with code `0` |
+| `failed` | **Yes** | Script raised an unhandled exception or exited non-zero |
+| `canceled` | **Yes** | Canceled by an explicit `cancel()` call |
+
+---
+
+## Full example: CI integration
+
+```python
+import sys
+import time
+from axilio.platform import Client
+
+WORKFLOW_ID = "wf_01j2abc..."
+TERMINAL = {"succeeded", "failed", "canceled"}
+
+def run_ci_check(environment: str) -> int:
+    """Trigger a run and return an exit code suitable for CI."""
+    with Client() as client:
+        run = client.runs.create(
+            workflow_id=WORKFLOW_ID,
+            variables={"ENVIRONMENT": environment},
+        )
+        print(f"[axilio] Run {run.id} enqueued")
+
+        while run.status not in TERMINAL:
+            time.sleep(10)
+            run = client.runs.get(run.id)
+            print(f"[axilio] {run.status}...")
+
+        if run.status == "succeeded":
+            print("[axilio] ✓ All checks passed")
+            return 0
+        else:
+            print(f"[axilio] ✗ Run {run.status}: {run.error}")
+            return 1
+
+
+if __name__ == "__main__":
+    env = sys.argv[1] if len(sys.argv) > 1 else "staging"
+    sys.exit(run_ci_check(env))
+```

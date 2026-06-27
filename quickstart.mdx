@@ -1,47 +1,102 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Quickstart: Run and Automate Your First Device Session"
+sidebarTitle: "Quickstart"
+description: "Install the Axilio SDK, set your API key, and automate a real Android device in the cloud — from zero to a working session in under five minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+This guide walks you from a fresh Python environment to a working device session. By the end you'll have allocated a real Android phone, run a short automation sequence on it, and released it — all in fewer than twenty lines of code. You'll need Python 3.10 or newer and an Axilio account; sign up for free at [axilio.ai](https://axilio.ai).
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
 
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+### Install the SDK
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+Install the `axilio` package from PyPI. Axilio requires **Python 3.10 or later**.
 
-    ```bash
-    your-cli start
-    ```
-  </Step>
-</Steps>
+```bash
+pip install axilio
+```
+
+If you're using a `requirements.txt` or `pyproject.toml`, pin to the current minor version for reproducible builds — the SDK is in early access and the surface may change before 1.0.
+
+```text requirements.txt
+axilio>=0.1,<0.2
+```
+
+### Create an API key
+
+Every request to Axilio authenticates with an API key. Generate one from your dashboard at [axilio.ai](https://axilio.ai) under **Settings → API Keys**, then click **New key**, give it a descriptive name (e.g. `local-dev`), and copy the secret immediately — it is shown only once.
+
+See the [Authentication guide](/authentication) for full details, including how to create keys programmatically and how to rotate them.
+
+### Set the environment variable
+
+Axilio reads your key from the `AXILIO_API_KEY` environment variable by default. Export it in your shell before running any script:
+
+```bash
+export AXILIO_API_KEY="ax_live_••••••••••••••••"
+```
+
+For persistent configuration, add the export to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.) or use a secrets manager. Never hard-code the key in source files or commit it to version control.
+
+### Run your first automation
+
+The snippet below allocates an Android device, wraps it with a `MobileDriver`, runs a short sequence of interactions, and releases the device automatically when the `with` block exits.
+
+```python
+from axilio.platform import Client
+from axilio.drivers import MobileDriver
+
+# Construct the client once — reads AXILIO_API_KEY from the environment.
+client = Client()
+
+# Allocate a device, drive it, and release it — all in one context manager.
+with client.mobile.session(platform="android") as device:
+    driver = MobileDriver(device)
+
+    # Tap a button identified by its on-screen label (fast OCR path).
+    driver.find_text("Sign in").tap()
+
+    # Type into the focused field.
+    driver.find_text("Email").type_into("you@example.com")
+
+    # Describe an element in plain English — Argus locates it for you.
+    driver.find(query="the blue Continue button").tap()
+
+    # Capture the current screen as PNG bytes.
+    png = driver.screenshot()
+    print(f"Screenshot captured: {len(png)} bytes")
+
+print("Session complete — device released.")
+```
 
 <Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
-
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+  `client.mobile.session()` is the recommended all-in-one approach. It calls `allocate()` on entry and `deallocate()` on exit — even if your code raises an exception — so the device is never left stranded and billing stops immediately. If you need to hold a device across multiple function calls or threads, use `client.mobile.allocate()` and `client.mobile.deallocate()` explicitly, but make sure to pair every allocate with a deallocate in a `finally` block.
 </Tip>
+
+### What to expect
+
+When you run the script, Axilio:
+
+1. **Allocates a device** — a real Android handset is reserved for your session. Allocation typically completes within a few seconds depending on fleet availability.
+2. **Runs your automation** — each driver call sends instructions to the device over a low-latency control channel. `find_text` uses on-device OCR; `find(query=...)` sends a vision query to Argus.
+3. **Releases the device** — when the `with` block exits (normally or via exception), `deallocate()` is called automatically and the device returns to the pool.
+4. **Bills per second** — you are charged only for the wall-clock duration between allocation and deallocation. Check your usage at any time with `client.usage.sessions()`.
+
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn all the ways to pass credentials and how to manage your API keys.
+  </Card>
+  <Card title="MobileDriver" icon="mobile" href="/concepts/mobile-driver">
+    Explore the full selector and action API — OCR, vision queries, swipes, and more.
+  </Card>
+  <Card title="Workflows & Runs" icon="diagram-project" href="/concepts/workflows-and-runs">
+    Package your automation as a reusable workflow and trigger it via the API.
+  </Card>
+  <Card title="Parallel Execution" icon="bolt" href="/guides/parallel-execution">
+    Scale up by running many device sessions concurrently.
+  </Card>
+</CardGroup>
