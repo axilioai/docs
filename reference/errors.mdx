@@ -1,0 +1,268 @@
+---
+title: "Error Reference: Platform and Driver SDK Exceptions"
+sidebarTitle: "Errors"
+description: "Complete reference for every exception raised by the Axilio SDK, including HTTP status codes, retryability, and patterns for robust error handling."
+---
+
+The Axilio SDK raises structured exceptions rather than generic Python errors, so you can catch exactly the condition you care about. Errors fall into two independent hierarchies: **platform errors** (imported from `axilio`) reflect HTTP-level responses from the Axilio backend, while **driver errors** (imported from `axilio.drivers.mobile`) reflect conditions reported by the on-device automation daemon over the Unix socket connection. Both hierarchies share the name `AxilioError` for their base class, but they are distinct classes living in different modules — catching `axilio.AxilioError` does **not** catch `axilio.drivers.mobile.AxilioError`, and vice versa.
+
+## Error Hierarchy
+
+```
+axilio.AxilioError                    # platform base — HTTP errors
+├── UnauthorizedError                 # 401
+├── NotFoundError                     # 404
+├── RateLimitError                    # 429
+├── ServerError                       # 5xx
+├── SandboxPermissionError            # no HTTP code — mode violation
+└── AllocationMismatchError           # no HTTP code — config mismatch
+
+axilio.drivers.mobile.AxilioError     # driver base — daemon wire errors
+├── UnknownOpError
+├── InvalidArgsError
+├── NoAllocationError
+├── NotConnectedError
+├── DeviceOfflineError                # retryable=True
+├── UnauthorizedError
+├── InternalError
+├── CanceledError
+├── ConnectionError
+├── ElementNotFoundError
+└── TimeoutError                      # retryable=True
+```
+
+---
+
+## Platform Errors (`axilio`)
+
+Platform errors are raised when the Axilio HTTP API returns a non-successful response, or when the SDK itself detects a mode violation before making a network call. Every platform error exposes three attributes:
+
+<ResponseField name="message" type="str">
+  Human-readable description of what went wrong.
+</ResponseField>
+
+<ResponseField name="status_code" type="int | None">
+  The HTTP status code returned by the backend. `None` for SDK-only errors such as `SandboxPermissionError` and `AllocationMismatchError`.
+</ResponseField>
+
+<ResponseField name="body" type="str">
+  Raw response body from the backend, useful for debugging. Empty string for SDK-only errors.
+</ResponseField>
+
+### Platform Error Classes
+
+| Exception | Status Code | Retryable | When it's raised |
+|-----------|-------------|-----------|------------------|
+| `AxilioError` | varies / `None` | — | Base class; catch as a fallback for any platform error |
+| `UnauthorizedError` | 401 | No | API key is missing, malformed, or has been revoked |
+| `NotFoundError` | 404 | No | Resource doesn't exist or isn't visible to your API key |
+| `RateLimitError` | 429 | Yes | You've exceeded your plan's request rate; back off and retry |
+| `ServerError` | 5xx | Yes | Transient backend failure; safe to retry with exponential backoff |
+| `SandboxPermissionError` | None | No | Sandbox-mode code tried a write-only operation (e.g. revoking API keys) |
+| `AllocationMismatchError` | None | No | `devices.allocate()` kwargs don't match the device the sandbox actually provisioned |
+
+<Warning>
+  `SandboxPermissionError` and `AllocationMismatchError` are raised **before** any HTTP request is made. You cannot retry them — fix the logic in your workflow instead.
+</Warning>
+
+---
+
+## Driver Errors (`axilio.drivers.mobile`)
+
+Driver errors are raised when the on-device automation daemon reports a problem executing a mobile action. They travel over the local Unix socket connection between the SDK and the daemon process running alongside your allocated device.
+
+Every driver error exposes two key attributes:
+
+<ResponseField name="message" type="str">
+  Human-readable description of the failure from the daemon.
+</ResponseField>
+
+<ResponseField name="code" type="str">
+  Machine-readable wire code (e.g. `"device_offline"`, `"timeout"`). Useful for logging and metrics.
+</ResponseField>
+
+<ResponseField name="retryable" type="bool">
+  `True` when the daemon considers the failure transient and safe to retry without changes. Check this attribute rather than hard-coding which error classes to retry — it reflects the daemon's own knowledge of the failure.
+</ResponseField>
+
+### Driver Error Classes
+
+| Exception | `retryable` default | When it's raised |
+|-----------|---------------------|------------------|
+| `AxilioError` | `False` | Base class; catch as a fallback for any driver error |
+| `UnknownOpError` | `False` | SDK and daemon are on incompatible versions (version skew) |
+| `InvalidArgsError` | `False` | Action arguments failed daemon-side validation |
+| `NoAllocationError` | `False` | Daemon has no active device allocation — call `allocate()` first |
+| `NotConnectedError` | `False` | Daemon couldn't reach the on-device agent; check device connectivity |
+| `DeviceOfflineError` | **`True`** | Device is transiently unavailable; retry after a short delay |
+| `UnauthorizedError` | `False` | Session token was rejected by the on-device agent |
+| `InternalError` | `False` | Unclassified failure inside the daemon |
+| `CanceledError` | `False` | Operation was canceled due to deadline exceeded or context cancellation |
+| `ConnectionError` | `False` | SDK couldn't open the Unix socket to the daemon |
+| `ElementNotFoundError` | `False` | UI selector matched no elements on screen |
+| `TimeoutError` | **`True`** | A `wait_*` poll loop or operation deadline was exceeded |
+
+<Note>
+  The `retryable` attribute is set by the daemon at the wire level, not hard-coded in the SDK. For `DeviceOfflineError` and `TimeoutError`, the default is `True`, but the daemon can override this per-response. Always check `.retryable` on the caught exception rather than on the class.
+</Note>
+
+---
+
+## Catching Errors
+
+### Catch a specific platform error
+
+Import errors from the `axilio` module and place more-specific handlers before broader ones.
+
+```python
+import axilio
+from axilio import Client
+
+client = Client()
+
+try:
+    run = client.runs.get("run_abc123")
+except axilio.UnauthorizedError:
+    # API key is invalid — don't retry; fix the key
+    print("Check your AXILIO_API_KEY value.")
+except axilio.NotFoundError:
+    # The run ID doesn't exist or isn't yours
+    print("Run not found.")
+except axilio.RateLimitError:
+    # Slow down — the backend has rate limited you
+    print("Rate limited. Back off and try again.")
+except axilio.ServerError as exc:
+    # Transient backend issue — safe to retry
+    print(f"Server error {exc.status_code}: {exc.message}")
+except axilio.AxilioError as exc:
+    # Catch-all for any other platform error
+    print(f"Unexpected platform error: {exc.message} (body: {exc.body})")
+```
+
+### Catch a specific driver error
+
+Import driver errors from `axilio.drivers.mobile`.
+
+```python
+import axilio.drivers.mobile as mobile_errors
+from axilio import Client
+
+client = Client()
+device = client.mobile.allocate(platform="ios")
+
+try:
+    device.driver.tap(selector="//XCUIElementTypeButton[@name='Login']")
+except mobile_errors.ElementNotFoundError:
+    print("Login button not found — check your selector.")
+except mobile_errors.NotConnectedError:
+    print("Lost contact with on-device agent.")
+except mobile_errors.DeviceOfflineError as exc:
+    # retryable=True — the device will come back
+    print(f"Device offline (retryable={exc.retryable}): {exc.message}")
+except mobile_errors.AxilioError as exc:
+    print(f"Driver error [{exc.code}]: {exc.message}")
+```
+
+### Use `.retryable` to decide whether to retry driver calls
+
+Rather than enumerating every retryable error class, check the `.retryable` attribute on the caught exception. This keeps your retry logic future-proof as the daemon evolves.
+
+```python
+import time
+import axilio.drivers.mobile as mobile_errors
+
+MAX_ATTEMPTS = 4
+BASE_DELAY = 1.0  # seconds
+
+def tap_with_retry(driver, selector: str) -> None:
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            driver.tap(selector=selector)
+            return
+        except mobile_errors.AxilioError as exc:
+            if exc.retryable and attempt < MAX_ATTEMPTS:
+                delay = BASE_DELAY * (2 ** (attempt - 1))
+                print(f"Attempt {attempt} failed ({exc.code}), retrying in {delay}s…")
+                time.sleep(delay)
+            else:
+                raise
+```
+
+---
+
+## Retry Loop for Transient Platform Errors
+
+The built-in `Client` automatically retries `RateLimitError` and `ServerError` with exponential backoff (configurable via `max_retries` and `retry_base_delay`). If you need manual control — for example, in a long-running workflow that manages its own retry budget — implement a loop like the one below.
+
+```python
+import time
+import axilio
+from axilio import Client
+
+client = Client()
+
+RETRYABLE = (axilio.RateLimitError, axilio.ServerError)
+MAX_ATTEMPTS = 5
+BASE_DELAY = 0.5
+
+def get_run_with_retry(run_id: str):
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            return client.runs.get(run_id)
+        except RETRYABLE as exc:
+            if attempt == MAX_ATTEMPTS:
+                raise
+            delay = BASE_DELAY * (2 ** (attempt - 1))
+            print(
+                f"[attempt {attempt}] {type(exc).__name__} "
+                f"(status={exc.status_code}), retrying in {delay:.1f}s"
+            )
+            time.sleep(delay)
+```
+
+<Tip>
+  Disable the built-in retry logic with `Client(max_retries=0)` before wrapping calls in your own retry loop, to avoid double-retrying the same request.
+</Tip>
+
+---
+
+## Catching `AxilioError` as a Catch-All
+
+Use the base `AxilioError` as a last-resort catch block when you want to handle any SDK error in one place — for example, to log and re-raise, or to fail a workflow step cleanly. Because the two hierarchies are independent, you need two separate catch-all clauses if your code mixes platform and driver calls.
+
+```python
+import axilio
+import axilio.drivers.mobile as driver_errors
+from axilio import Client
+
+client = Client()
+
+try:
+    device = client.mobile.allocate(platform="android")
+    device.driver.tap(selector="//android.widget.Button[@text='Start']")
+except driver_errors.AxilioError as exc:
+    # Any driver/daemon error
+    print(f"Driver error [{exc.code}] retryable={exc.retryable}: {exc.message}")
+    raise
+except axilio.AxilioError as exc:
+    # Any platform/HTTP error
+    print(f"Platform error (HTTP {exc.status_code}): {exc.message}")
+    raise
+```
+
+<Warning>
+  Never silence `AxilioError` with a bare `except axilio.AxilioError: pass` — you'll hide genuine failures. Always at minimum log `exc.message` and re-raise or return a meaningful sentinel.
+</Warning>
+
+---
+
+## Platform vs Driver Errors: Quick Reference
+
+<CardGroup cols={2}>
+  <Card title="Platform errors — axilio" icon="cloud">
+    Raised by HTTP API calls. Carry `.status_code` and `.body`. The built-in client retries `RateLimitError` and `ServerError` automatically. Import from `axilio`.
+  </Card>
+  <Card title="Driver errors — axilio.drivers.mobile" icon="mobile">
+    Raised by on-device automation actions. Carry `.code` and `.retryable`. Check `.retryable` on the caught instance before deciding to retry. Import from `axilio.drivers.mobile`.
+  </Card>
+</CardGroup>

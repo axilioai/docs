@@ -1,0 +1,241 @@
+---
+title: "Creating, Triggering, and Monitoring Workflow Runs"
+sidebarTitle: "Running Workflows"
+description: "Create workflows via the dashboard or SDK, pass runtime variables, poll runs to completion, cancel in-progress jobs, and list execution history."
+---
+
+Workflows are reusable automation scripts that Axilio executes inside isolated sandboxes — each run gets its own cloud device, pre-configured environment, and clean Python runtime. You define the logic once (either in the dashboard or via the SDK) and trigger runs on demand, passing different variables each time. This guide covers the complete lifecycle: authoring, triggering, monitoring, and canceling workflow runs.
+
+## Workflow script structure
+
+A workflow script is a plain Python file. Inside the sandbox, `MobileDriver.connect()` automatically pairs with the pre-allocated device — you don't call `client.mobile.allocate()` yourself. Use the `VARIABLES` dictionary (injected at runtime) to read any values you passed when creating the run.
+
+```python
+# example_workflow.py — this is the code you author and store in a workflow
+from axilio.drivers.mobile import MobileDriver, Key
+from axilio.drivers.mobile import TimeoutError as DeviceTimeoutError
+
+# VARIABLES is injected by the Axilio sandbox at run time.
+# Access values with VARIABLES.get("key", "default").
+search_query = VARIABLES.get("search_query", "Axilio")
+max_results  = int(VARIABLES.get("max_results", "5"))
+
+driver = MobileDriver.connect()
+
+# Wait for the app to load, then run the search.
+driver.wait_until_gone("Loading", timeout=20.0)
+driver.find_text("Search").type_into(search_query)
+driver.key_press(Key.HOME)  # dismiss keyboard
+
+# Collect the first N results.
+results = driver.find_all_text(contains=search_query)[:max_results]
+for item in results:
+    print(item.text, item.center)
+```
+
+<Note>
+`VARIABLES` is a plain `dict[str, str]` — all values are strings. Cast to `int` or `float` where needed.
+</Note>
+
+## Creating a workflow
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Steps>
+      <Step title="Open the Workflows page">
+        Navigate to **Workflows** in the left sidebar of the [Axilio dashboard](https://app.axilio.ai).
+      </Step>
+      <Step title="Create a new workflow">
+        Click **New Workflow** in the top-right corner. Give the workflow a descriptive name and an optional description — both are visible to your team.
+      </Step>
+      <Step title="Write your script">
+        Paste or type your Python automation script in the code editor. The editor provides syntax highlighting and inline error detection. Use `VARIABLES["key"]` to reference runtime inputs.
+      </Step>
+      <Step title="Configure the device">
+        Under **Device settings**, choose the target platform (`android` or `iphone`), an optional location, and any required pre-installed apps.
+      </Step>
+      <Step title="Save">
+        Click **Save**. Axilio validates the script and stores it. Note the workflow ID shown in the URL — you'll use it when triggering runs from the SDK.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="SDK">
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+
+    # Read the script from a local file.
+    with open("example_workflow.py") as f:
+        code = f.read()
+
+    workflow = client.workflows.create(
+        name="Search and scrape results",
+        code=code,
+        description="Searches an app and returns the top N results.",
+    )
+
+    print(f"Workflow created: {workflow.id}")
+    ```
+
+    `client.workflows.create()` accepts:
+
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `name` | `str` | Yes | A short, human-readable name. |
+    | `code` | `str` | Yes | The full Python script as a string. |
+    | `description` | `str \| None` | No | Optional longer description. |
+  </Tab>
+</Tabs>
+
+## Triggering a run
+
+Call `client.runs.create()` to enqueue a new execution of the workflow. The call returns immediately with `status="queued"` — the run has been accepted but not yet dispatched to a sandbox.
+
+```python
+run = client.runs.create(
+    workflow_id="wf_01hx...",
+    variables={
+        "search_query": "mobile automation",
+        "max_results": "10",
+    },
+)
+
+print(f"Run {run.id} created — status: {run.status}")
+```
+
+All `variables` values must be strings. The workflow script receives them in the `VARIABLES` dict.
+
+## Polling a run to completion
+
+`client.runs.get()` fetches the latest state of a run. Poll it until `status` reaches a terminal state: `"succeeded"`, `"failed"`, or `"canceled"`.
+
+```python
+import time
+
+TERMINAL = {"succeeded", "failed", "canceled"}
+POLL_INTERVAL = 5  # seconds
+
+while run.status not in TERMINAL:
+    time.sleep(POLL_INTERVAL)
+    run = client.runs.get(run.id)
+    print(f"  [{run.status}] checked at {time.strftime('%H:%M:%S')}")
+
+if run.status == "succeeded":
+    print("Run completed successfully.")
+elif run.status == "failed":
+    print(f"Run failed: {run.error}")
+else:
+    print("Run was canceled.")
+```
+
+`Run` has these fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `str` | Unique run identifier. |
+| `workflow_id` | `str` | The workflow that was executed. |
+| `status` | `RunStatus` | One of `queued`, `starting`, `running`, `succeeded`, `failed`, `canceled`. |
+| `variables` | `dict[str, str]` | The variables passed at creation time. |
+| `code` | `str` | The workflow code *as executed* (snapshot at dispatch time). |
+| `created_at` | `datetime` | When the run was enqueued. |
+| `started_at` | `datetime \| None` | When execution began (None if still queued). |
+| `finished_at` | `datetime \| None` | When execution ended (None if still running). |
+| `error` | `str \| None` | Error message if `status == "failed"`. |
+
+## Canceling a run
+
+Call `client.runs.cancel()` to request cancellation. If the run is still `"queued"`, cancellation is immediate. If it is already `"running"`, the sandbox will stop as soon as possible and the status transitions to `"canceled"`.
+
+```python
+canceled_run = client.runs.cancel(run.id)
+print(f"Cancellation requested — current status: {canceled_run.status}")
+```
+
+<Warning>
+`cancel()` is a request, not an instant stop. A run that is actively executing inside a sandbox may take a few seconds to reach `"canceled"` status after you call `cancel()`. If you need to confirm the cancellation, poll `client.runs.get(run.id)` until the status is `"canceled"`.
+</Warning>
+
+## Listing past runs
+
+`client.runs.list()` returns a lightweight `RunSummary` for each run, ordered by creation time (newest first).
+
+```python
+# All recent runs across all workflows (default limit 50).
+summaries = client.runs.list()
+
+# Scope to a specific workflow.
+summaries = client.runs.list(workflow_id="wf_01hx...", limit=20)
+
+for s in summaries:
+    duration = (
+        (s.finished_at - s.started_at).total_seconds()
+        if s.started_at and s.finished_at
+        else None
+    )
+    print(f"{s.id}  {s.status:10s}  {duration:.1f}s" if duration else f"{s.id}  {s.status}")
+```
+
+`RunSummary` contains `id`, `workflow_id`, `status`, `created_at`, `started_at`, and `finished_at`. To get `variables`, `code`, and `error`, call `client.runs.get(summary.id)`.
+
+## Complete end-to-end example
+
+The following example creates a workflow from a local file, triggers a run with variables, polls until done, and prints the result.
+
+```python
+import time
+from pathlib import Path
+from axilio.platform import Client, AxilioError
+
+client = Client()
+
+WORKFLOW_SCRIPT = """\
+from axilio.drivers.mobile import MobileDriver
+
+driver = MobileDriver.connect()
+
+city = VARIABLES.get("city", "London")
+driver.wait_until_gone("Loading", timeout=20.0)
+driver.find_text("Search").type_into(city)
+driver.wait_for_text(city, timeout=10.0)
+screen = driver.observe()
+print("Texts on screen:", [el.text for el in screen.texts])
+"""
+
+
+def main():
+    # 1. Create (or reuse) the workflow.
+    workflow = client.workflows.create(
+        name="City search demo",
+        code=WORKFLOW_SCRIPT,
+        description="Searches for a city and logs visible text.",
+    )
+    print(f"Workflow: {workflow.id}")
+
+    # 2. Trigger a run with runtime variables.
+    run = client.runs.create(
+        workflow_id=workflow.id,
+        variables={"city": "Tokyo"},
+    )
+    print(f"Run enqueued: {run.id} — status: {run.status}")
+
+    # 3. Poll to completion.
+    TERMINAL = {"succeeded", "failed", "canceled"}
+    while run.status not in TERMINAL:
+        time.sleep(5)
+        run = client.runs.get(run.id)
+        print(f"  status: {run.status}")
+
+    # 4. Report the outcome.
+    if run.status == "succeeded":
+        elapsed = (run.finished_at - run.started_at).total_seconds()
+        print(f"Succeeded in {elapsed:.1f}s")
+    elif run.status == "failed":
+        print(f"Failed: {run.error}")
+    else:
+        print("Run was canceled.")
+
+
+if __name__ == "__main__":
+    main()
+```

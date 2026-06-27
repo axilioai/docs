@@ -1,0 +1,244 @@
+---
+title: "Billing Resource — Plans, Invoices & Balance"
+sidebarTitle: "Billing"
+description: "Query your account balance, manage subscription plans, and retrieve historical invoices using the client.billing resource."
+---
+
+The `client.billing` resource gives you programmatic access to your Axilio account's financial state. You can read your current balance, inspect your active subscription, pull invoice history for any time window, and — when running in local mode — upgrade or downgrade your plan. All read methods (`balance`, `subscription`, `invoices`) work in both local and sandbox modes; the write methods (`upgrade`, `downgrade`) are restricted to local mode because sandbox scripts cannot modify the subscription of the org they run on behalf of.
+
+<Note>
+  Access this resource as `client.billing` on any instantiated `Client`. No extra import is required — the attribute is wired automatically when the client is constructed.
+</Note>
+
+---
+
+## `balance()`
+
+Returns the current account balance for your organisation. The balance is stored internally in **microdollars** (integer arithmetic, no floating-point rounding), and the returned `Balance` object exposes a `.dollars` property for human-readable display.
+
+**Available in:** local mode · sandbox mode
+
+```python
+balance = client.billing.balance()
+
+print(balance.currency)          # "USD"
+print(balance.microdollars)      # e.g. 4_250_000
+print(f"${balance.dollars:.2f}") # "$4.25"
+```
+
+### Returns — `Balance`
+
+<ResponseField name="microdollars" type="int" required>
+  Current balance expressed as an integer number of microdollars (1 USD = 1 000 000 microdollars). Using integers avoids floating-point rounding errors on monetary values.
+</ResponseField>
+
+<ResponseField name="currency" type="str" required>
+  ISO 4217 currency code. Always `"USD"` in the current API version.
+</ResponseField>
+
+<ResponseField name="dollars" type="float">
+  Computed property — `microdollars / 1_000_000`. Convenient for display; do not use for arithmetic comparisons.
+</ResponseField>
+
+---
+
+## `subscription()`
+
+Returns the currently active subscription, including the plan tier, billing period, payment status, and whether the subscription is set to cancel at the end of the current period.
+
+**Available in:** local mode · sandbox mode
+
+```python
+sub = client.billing.subscription()
+
+print(sub.plan)                  # "pro"
+print(sub.status)                # "active"
+print(sub.current_period_end)    # datetime(2025, 8, 1, 0, 0, tzinfo=UTC)
+print(sub.cancel_at_period_end)  # False
+```
+
+### Returns — `Subscription`
+
+<ResponseField name="plan" type="str" required>
+  The active plan tier. One of `"free"`, `"hobby"`, `"pro"`, `"business"`, or `"enterprise"`. The `"free"` value indicates no paid subscription is active.
+</ResponseField>
+
+<ResponseField name="status" type="str" required>
+  Billing status of the subscription. One of `"active"`, `"trialing"`, `"past_due"`, or `"canceled"`.
+</ResponseField>
+
+<ResponseField name="current_period_start" type="datetime" required>
+  UTC datetime marking the start of the current billing period.
+</ResponseField>
+
+<ResponseField name="current_period_end" type="datetime" required>
+  UTC datetime marking the end of the current billing period. Invoices are generated at or shortly after this time.
+</ResponseField>
+
+<ResponseField name="cancel_at_period_end" type="bool" required>
+  `True` when a downgrade or cancellation is scheduled for the end of the current period. The plan continues at its current tier until `current_period_end`.
+</ResponseField>
+
+---
+
+## `invoices(start, end)`
+
+Returns all invoices whose creation timestamps fall within the **half-open interval `[start, end)`** — that is, invoices created on or after `start` and strictly before `end`. This matches the backend's `billing_history` query semantics exactly.
+
+**Available in:** local mode · sandbox mode
+
+<ParamField path="start" type="datetime" required>
+  Beginning of the query window (inclusive). Must be a timezone-aware `datetime` object.
+</ParamField>
+
+<ParamField path="end" type="datetime" required>
+  End of the query window (exclusive). Must be a timezone-aware `datetime` object and must be after `start`.
+</ParamField>
+
+<CodeGroup>
+```python Last 90 days
+from datetime import datetime, timedelta, timezone
+
+now   = datetime.now(timezone.utc)
+start = now - timedelta(days=90)
+
+invoices = client.billing.invoices(start=start, end=now)
+
+for inv in invoices:
+    print(inv.id, inv.status, f"${inv.amount_microdollars / 1_000_000:.2f}")
+```
+
+```python Calendar month
+from datetime import datetime, timezone
+
+start = datetime(2025, 6,  1, tzinfo=timezone.utc)
+end   = datetime(2025, 7,  1, tzinfo=timezone.utc)
+
+invoices = client.billing.invoices(start=start, end=end)
+```
+</CodeGroup>
+
+### Returns — `list[Invoice]`
+
+Each element is an `Invoice` object with the following fields:
+
+<ResponseField name="id" type="str" required>
+  Unique invoice identifier, prefixed `inv_`. Pass this to the Axilio dashboard or support when querying a specific charge.
+</ResponseField>
+
+<ResponseField name="amount_microdollars" type="int" required>
+  Total amount charged, in microdollars. Divide by `1_000_000` to obtain the dollar figure.
+</ResponseField>
+
+<ResponseField name="currency" type="str" required>
+  ISO 4217 currency code for the invoice. Always `"USD"` in the current API version.
+</ResponseField>
+
+<ResponseField name="status" type="str" required>
+  Payment status of the invoice. One of `"paid"`, `"open"`, `"void"`, or `"uncollectible"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime" required>
+  UTC datetime when the invoice was generated by the billing backend.
+</ResponseField>
+
+<ResponseField name="hosted_invoice_url" type="str | None" required>
+  URL to the Stripe-hosted invoice page, or `None` for invoices that were not backed by a Stripe charge (for example, trial-period records).
+</ResponseField>
+
+---
+
+## `upgrade(plan)`
+
+Switches your organisation to a higher-tier plan immediately. The new plan becomes active at the moment the call succeeds; the backend bills a prorated amount for the remainder of the current billing period.
+
+**Available in:** local mode only
+
+<Warning>
+  Calling `upgrade()` inside a sandbox script raises `SandboxPermissionError`. Sandbox-mode code has a read-only account surface and cannot modify the subscription of the org it runs on behalf of.
+</Warning>
+
+<ParamField path="plan" type="str" required>
+  The target plan tier to upgrade to. Must be one of `"hobby"`, `"pro"`, `"business"`, or `"enterprise"`, and must be strictly higher than your current plan.
+</ParamField>
+
+<CodeGroup>
+```python Upgrade to Pro
+from axilio import Client
+
+client = Client(api_key="axl_live_...")
+
+sub = client.billing.upgrade(plan="pro")
+print(sub.plan)   # "pro"
+print(sub.status) # "active"
+```
+
+```python Guard against sandbox mode
+from axilio import Client, SandboxPermissionError
+
+client = Client(api_key="axl_live_...")
+
+try:
+    sub = client.billing.upgrade(plan="business")
+except SandboxPermissionError as exc:
+    print("Cannot upgrade from a sandbox script:", exc)
+```
+</CodeGroup>
+
+### Returns — `Subscription`
+
+Returns the updated `Subscription` object reflecting the new plan. See [the `Subscription` fields](#returns-subscription) documented under `subscription()` above.
+
+---
+
+## `downgrade(plan)`
+
+Schedules a move to a lower-tier plan at the **end of the current billing period**. The subscription continues at the current tier until `current_period_end`; after that point the plan changes and the reduced billing rate takes effect. On success, `cancel_at_period_end` on the returned subscription will be `True`.
+
+**Available in:** local mode only
+
+<Warning>
+  Calling `downgrade()` inside a sandbox script raises `SandboxPermissionError` for the same reason as `upgrade()` — sandbox code cannot alter its owner's subscription.
+</Warning>
+
+<Tip>
+  Check `cancel_at_period_end` on the returned `Subscription` to confirm the scheduled change, or call `client.billing.subscription()` at any point to see whether a downgrade is pending.
+</Tip>
+
+<ParamField path="plan" type="str" required>
+  The target plan tier to move to at period end. Must be one of `"free"`, `"hobby"`, `"pro"`, or `"business"`, and must be strictly lower than your current plan. Use `"free"` to cancel the paid subscription entirely.
+</ParamField>
+
+<CodeGroup>
+```python Schedule a downgrade
+from axilio import Client
+
+client = Client(api_key="axl_live_...")
+
+sub = client.billing.downgrade(plan="hobby")
+print(sub.plan)                  # "pro"  ← still on Pro until period ends
+print(sub.cancel_at_period_end)  # True
+print(sub.current_period_end)    # datetime when "hobby" kicks in
+```
+
+```python Cancel paid subscription (downgrade to free)
+sub = client.billing.downgrade(plan="free")
+print(sub.cancel_at_period_end)  # True
+```
+</CodeGroup>
+
+### Returns — `Subscription`
+
+Returns the updated `Subscription` object. Note that `plan` still reflects the **currently active** tier; the downgrade takes effect at `current_period_end`, which is when the plan value will change.
+
+---
+
+## Error Reference
+
+| Exception | When it is raised |
+|---|---|
+| `SandboxPermissionError` | `upgrade()` or `downgrade()` called from a sandbox-mode client. |
+| `UnauthorizedError` | API key is missing, malformed, or has been revoked. |
+| `NotFoundError` | The org associated with the API key has no active subscription record. |
+| `RateLimitError` | Too many requests in a short window — back off and retry. |
+| `ServerError` | Transient backend error (5xx) — safe to retry with exponential backoff. |

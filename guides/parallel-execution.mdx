@@ -1,0 +1,194 @@
+---
+title: "Scale Up: Running Concurrent Mobile Device Sessions"
+sidebarTitle: "Parallel Execution"
+description: "Fan out hundreds of concurrent device sessions with ThreadPoolExecutor, handle rate limits gracefully, and scale further with the workflow engine."
+---
+
+One of Axilio's core strengths is that you can run thousands of device sessions at the same time — each one isolated on its own physical hardware. Whether you're validating an app across a matrix of locales, stress-testing a backend with concurrent user flows, or scraping data from many accounts simultaneously, the pattern is the same: fan out as many `client.mobile.session()` contexts as you need, let Axilio's scheduler dispatch devices, and collect results when each session finishes. This guide shows you how to do that safely and efficiently.
+
+## Why parallel execution matters
+
+Sequential automation — one device, one task at a time — is a bottleneck. If a single session takes 30 seconds and you have 600 tasks, that's five hours of wall-clock time. Running 60 sessions in parallel collapses it to five minutes. Axilio handles the infrastructure complexity: device selection, sandbox provisioning, network routing, and cleanup all happen server-side. Your code only needs to describe *what* to do, not *where* to do it.
+
+<Info>
+Each `session()` context acquires exactly one physical device. Two sessions running concurrently are fully isolated — they never share state, storage, or network identity.
+</Info>
+
+## Fan out with ThreadPoolExecutor
+
+The simplest way to run sessions in parallel from a Python script is `concurrent.futures.ThreadPoolExecutor`. Each worker thread opens its own `session()` context, drives its device independently, and returns a result (or raises an exception) that you can collect in the main thread.
+
+```python
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from axilio.platform import Client, RateLimitError, AxilioError
+from axilio.drivers import MobileDriver
+
+client = Client()
+
+
+def run_session(task_id: int, search_query: str) -> dict:
+    """One unit of work — runs in its own thread with its own device."""
+    with client.mobile.session(platform="android", timeout=90.0) as device:
+        driver = MobileDriver(device)
+
+        driver.wait_until_gone("Loading", timeout=20.0)
+        driver.find_text("Search").type_into(search_query)
+        driver.wait_for_text(search_query, timeout=10.0)
+
+        results = driver.find_all_text(contains=search_query)
+        return {
+            "task_id": task_id,
+            "query": search_query,
+            "hits": len(results),
+            "device": device.device_name,
+        }
+
+
+def run_parallel(tasks: list[str], max_workers: int = 10) -> list[dict]:
+    """Fan out tasks across up to max_workers concurrent sessions."""
+    results = []
+    futures = {}
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        for i, query in enumerate(tasks):
+            future = pool.submit(run_session, i, query)
+            futures[future] = query
+
+        for future in as_completed(futures):
+            query = futures[future]
+            try:
+                result = future.result()
+                results.append(result)
+                print(f"✓ '{query}' — {result['hits']} hits on {result['device']}")
+            except Exception as exc:
+                print(f"✗ '{query}' — {exc}")
+
+    return results
+
+
+if __name__ == "__main__":
+    queries = [f"search term {i}" for i in range(10)]
+    all_results = run_parallel(queries, max_workers=10)
+    print(f"\nCompleted {len(all_results)}/{len(queries)} tasks")
+```
+
+## Session isolation
+
+Every session runs on a dedicated physical device with a freshly provisioned sandbox. Sessions share nothing:
+
+- **Storage** — app data, caches, and credentials are wiped between allocations.
+- **Network identity** — each device has its own IP address and carrier profile.
+- **State** — a crash, hang, or assertion error in one session cannot affect another.
+
+This means you can safely pass different credentials, locales, or payloads to each worker without any coordination between threads.
+
+## Load balancing and queuing
+
+You don't need to implement your own queue or back-pressure logic. When you call `allocate()` (or enter a `session()` context), Axilio's scheduler:
+
+1. Finds the best-matching free device based on your `platform`, `location`, and `apps` filter.
+2. If no device is immediately free, queues the request and blocks until one becomes available (up to `timeout` seconds).
+3. Dispatches the device once it's free and returns the `DeviceHandle`.
+
+The `timeout` parameter is your knob for controlling how long a worker will wait before giving up. For batch jobs with a large `max_workers` pool, set `timeout` generously (90–120 seconds) — the first wave of workers will be dispatched immediately, and subsequent ones will receive devices as earlier sessions finish.
+
+<Tip>
+Set `max_workers` to a value slightly above your expected concurrent capacity. Workers that can't immediately acquire a device will wait in the Python thread pool's work queue, consuming no resources beyond a thread stack until a device becomes available.
+</Tip>
+
+## Handling RateLimitError
+
+Axilio enforces per-organisation rate limits on allocation requests. If you fan out too many workers too quickly, some requests will receive a `RateLimitError` (HTTP 429). Implement exponential back-off and retry in each worker.
+
+```python
+import time
+import random
+from axilio.platform import Client, RateLimitError, AxilioError
+from axilio.drivers import MobileDriver
+
+client = Client()
+
+
+def run_session_with_backoff(task_id: int, payload: str, max_retries: int = 4) -> dict:
+    for attempt in range(1, max_retries + 1):
+        try:
+            with client.mobile.session(platform="android", timeout=90.0) as device:
+                driver = MobileDriver(device)
+                driver.wait_for_text("Home", timeout=15.0)
+                # ... your task logic here ...
+                return {"task_id": task_id, "status": "ok"}
+
+        except RateLimitError:
+            if attempt == max_retries:
+                raise
+            # Exponential backoff with full jitter.
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            print(f"[task {task_id}] Rate limited — backing off {wait:.1f}s (attempt {attempt})")
+            time.sleep(wait)
+
+        except AxilioError as exc:
+            print(f"[task {task_id}] Non-retryable error: {exc}")
+            raise
+```
+
+<Warning>
+Do not set `max_workers` to an arbitrarily high number (e.g. 1000) hoping the server will absorb it. Flooding the allocation endpoint with more requests than your plan allows will trigger sustained rate limiting across all workers. Check your plan's concurrency limit in the [Axilio dashboard](https://app.axilio.ai/billing) and stay below it.
+</Warning>
+
+## Cost implications
+
+Parallel sessions multiply your per-second device cost linearly. Running 50 concurrent sessions for one minute costs the same as running one session for 50 minutes. Factor this into your design:
+
+- **Batch wisely** — group tasks to keep sessions busy for their full duration. Starting a session just to tap once and exit wastes allocation overhead.
+- **Release promptly** — the `session()` context manager releases the device the moment the `with` block exits. Avoid holding devices idle with `time.sleep()` between tasks.
+- **Monitor usage** — call `client.usage.metrics()` to track active sessions and spend in real time.
+
+## Large-scale parallelism with the workflow engine
+
+For hundreds or thousands of concurrent tasks, the `client.runs.create()` approach is more efficient than managing a `ThreadPoolExecutor` yourself. The workflow engine handles queuing, retries, and concurrency at the infrastructure level — your code just fires off run requests and polls results.
+
+```python
+import time
+from axilio.platform import Client
+
+client = Client()
+WORKFLOW_ID = "wf_01hx..."  # created in advance
+
+# Fan out 200 runs — the engine queues and dispatches them as devices free up.
+run_ids = []
+for i in range(200):
+    run = client.runs.create(
+        workflow_id=WORKFLOW_ID,
+        variables={"task_index": str(i), "payload": f"item_{i}"},
+    )
+    run_ids.append(run.id)
+
+print(f"Submitted {len(run_ids)} runs")
+
+# Poll all runs until done.
+TERMINAL = {"succeeded", "failed", "canceled"}
+pending = set(run_ids)
+
+while pending:
+    time.sleep(10)
+    still_pending = set()
+    for run_id in pending:
+        run = client.runs.get(run_id)
+        if run.status not in TERMINAL:
+            still_pending.add(run_id)
+        else:
+            print(f"  {run_id}: {run.status}")
+    pending = still_pending
+
+print("All runs complete.")
+```
+
+<CardGroup cols={2}>
+  <Card title="ThreadPoolExecutor" icon="code">
+    Best for dozens of concurrent sessions when you need direct control, custom retry logic, or in-process result handling. Each thread holds an active Python `session()` context.
+  </Card>
+  <Card title="client.runs.create()" icon="rocket">
+    Best for hundreds or thousands of tasks. The workflow engine queues runs server-side, dispatches devices efficiently, and persists results — no long-running Python process required.
+  </Card>
+</CardGroup>

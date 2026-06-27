@@ -1,0 +1,165 @@
+---
+title: "Axilio Client: Single Entry Point for the Python SDK"
+sidebarTitle: "Client"
+description: "Configure authentication, HTTP behaviour, and access every resource through a single Client instance that you construct once per process."
+---
+
+The `Client` class is the single entry point for every Axilio operation. You construct one instance — typically at process startup — and share it across your application. The client resolves your API key from the environment when you don't supply one explicitly, creates an internal HTTP connection pool with configurable retry behaviour, and exposes every product surface as a typed resource property. When you're done, call `.close()` or use the client as a context manager so the underlying connection pool is released cleanly.
+
+```python
+from axilio.platform import Client
+
+with Client() as client:
+    locations = client.mobile.locations()
+    print(locations)
+```
+
+## Constructor
+
+```python
+Client(
+    *,
+    api_key: str | None = None,
+    base_url: str | None = None,
+    timeout: float = 30.0,
+    max_retries: int = 3,
+    retry_base_delay: float = 0.5,
+)
+```
+
+All parameters are keyword-only. The constructor raises `ValueError` immediately if no API key can be resolved from any source.
+
+<ParamField body="api_key" type="str | None" default="None">
+  Your Axilio API key. When omitted the client checks the `AXILIO_API_KEY`
+  environment variable first. In sandbox mode it also accepts the value of
+  `AXILIO_SANDBOX_TOKEN` as a fallback. If none of these are set a `ValueError`
+  is raised at construction time.
+</ParamField>
+
+<ParamField body="base_url" type="str | None" default="None">
+  Override the API root. Resolution order: explicit argument → `AXILIO_BASE_URL`
+  environment variable → `https://api.axilio.ai`. Trailing slashes are stripped
+  automatically.
+</ParamField>
+
+<ParamField body="timeout" type="float" default="30.0">
+  Per-request timeout in seconds applied to every HTTP call made through this
+  client instance.
+</ParamField>
+
+<ParamField body="max_retries" type="int" default="3">
+  Maximum number of times a failed request is retried before the exception is
+  re-raised. Only retryable errors (network failures, `429`, `5xx`) trigger a
+  retry.
+</ParamField>
+
+<ParamField body="retry_base_delay" type="float" default="0.5">
+  Base delay in seconds used for exponential back-off between retries. The
+  actual delay for attempt `n` is `retry_base_delay * 2^(n-1)` with jitter.
+</ParamField>
+
+### Environment variable resolution
+
+| Variable | Purpose |
+|---|---|
+| `AXILIO_API_KEY` | Primary API key source when `api_key` is not passed explicitly |
+| `AXILIO_SANDBOX_TOKEN` | Accepted as the API key when the client detects sandbox mode |
+| `AXILIO_BASE_URL` | Override the API root without touching code |
+| `AXILIO_ATLAS_ENDPOINT` | Set alongside `AXILIO_SANDBOX_TOKEN` to activate sandbox mode |
+
+<Note>
+  Sandbox mode is activated automatically when **both** `AXILIO_SANDBOX_TOKEN`
+  and `AXILIO_ATLAS_ENDPOINT` are present in the environment. You do not need
+  to configure this manually.
+</Note>
+
+## Resource properties
+
+Once constructed, every Axilio product surface is available as an attribute on the client. All resources share the same underlying HTTP connection pool and authentication credentials.
+
+| Property | Type | Description |
+|---|---|---|
+| `client.mobile` | `MobileResource` | Allocate, release, and discover physical devices |
+| `client.workflows` | `WorkflowsResource` | Create, read, update, and delete automation scripts |
+| `client.runs` | `RunsResource` | Schedule and monitor workflow executions |
+| `client.billing` | `BillingResource` | Query invoices and payment methods |
+| `client.usage` | `UsageResource` | Retrieve device-minute and API usage metrics |
+| `client.api_keys` | `APIKeysResource` | Manage programmatic API keys for your organisation |
+| `client.org` | `OrgResource` | Read and update organisation settings |
+| `client.argus` | `ArgusResource` | Access the Argus vision model directly |
+
+## Read-only properties
+
+<ParamField body="client.base_url" type="str">
+  The resolved API root URL that all HTTP requests are made against, with any
+  trailing slash stripped.
+</ParamField>
+
+<ParamField body="client.api_key" type="str">
+  The resolved API key in use. Treat this as a secret — avoid logging it.
+</ParamField>
+
+<ParamField body="client.mode" type="Mode">
+  Either `Mode.LOCAL` or `Mode.SANDBOX`. Determined at construction time by
+  inspecting the environment; see the sandbox environment variables above.
+</ParamField>
+
+## Methods
+
+### `close()`
+
+```python
+client.close() -> None
+```
+
+Releases the underlying HTTP connection pool. After calling `close()` the client instance must not be reused. Prefer the context manager form so this is called automatically.
+
+### Context manager
+
+`Client` implements the context manager protocol. Use it with `with` to ensure `close()` is called even if an exception occurs inside the block.
+
+<CodeGroup>
+
+```python Recommended pattern
+from axilio.platform import Client
+
+with Client() as client:
+    handle = client.mobile.allocate(platform="android")
+    # ... use handle ...
+# Connection pool is closed automatically here
+```
+
+```python Manual close
+from axilio.platform import Client
+
+client = Client()
+try:
+    handle = client.mobile.allocate(platform="android")
+    # ... use handle ...
+finally:
+    client.close()
+```
+
+```python Environment-based key
+import os
+from axilio.platform import Client
+
+os.environ["AXILIO_API_KEY"] = "axlio_live_..."
+
+with Client() as client:
+    print(client.mode)   # Mode.LOCAL
+    print(client.base_url)  # https://api.axilio.ai
+```
+
+</CodeGroup>
+
+<Tip>
+  Construct one `Client` per process and share it across threads. The internal
+  HTTP pool is thread-safe. Creating a new client for every request wastes
+  connections and incurs unnecessary TLS handshake overhead.
+</Tip>
+
+<Warning>
+  Never hard-code your API key in source code. Use the `AXILIO_API_KEY`
+  environment variable or a secrets manager that injects it at runtime.
+</Warning>

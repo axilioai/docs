@@ -1,0 +1,241 @@
+---
+title: "Org Resource — Members, Roles, and Invitations"
+sidebarTitle: "Organization"
+description: "Read your organisation's profile, manage members, send invitations, and remove users using the client.org resource."
+---
+
+The `client.org` resource gives you programmatic access to your Axilio organisation's identity and membership. You can read the organisation's profile and current member list in both local and sandbox modes, making it straightforward for workflow scripts to look up teammates. Mutating operations — inviting a new member or removing an existing one — are restricted to local mode only, because sandbox scripts cannot add or remove humans from the organisation they run on behalf of. Role assignments follow a four-level hierarchy: `"viewer"` < `"member"` < `"admin"` < `"owner"`.
+
+<Note>
+  Access this resource as `client.org` on any instantiated `Client`. Both read methods work in sandbox mode; `invite()` and `remove_member()` raise `SandboxPermissionError` in sandbox mode.
+</Note>
+
+---
+
+## `current()`
+
+Returns the organisation that the current API key is scoped to. Every API key in Axilio belongs to exactly one org, so this method always returns a single `Organization` object — there is no ambiguity about which org the key authenticates.
+
+**Available in:** local mode · sandbox mode
+
+```python
+org = client.org.current()
+
+print(org.id)    # "org_01jx4abc..."
+print(org.name)  # "Acme Automation Co."
+print(org.slug)  # "acme-automation"
+```
+
+### Returns — `Organization`
+
+<ResponseField name="id" type="str" required>
+  Unique organisation identifier, prefixed `org_`. Stable for the lifetime of the organisation.
+</ResponseField>
+
+<ResponseField name="name" type="str" required>
+  Display name of the organisation as set in the Axilio dashboard.
+</ResponseField>
+
+<ResponseField name="slug" type="str" required>
+  URL-safe lowercase slug derived from the organisation name. Used in Axilio dashboard URLs and webhook routing.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime" required>
+  UTC datetime when the organisation was first created.
+</ResponseField>
+
+<ResponseField name="onboarding_completed_at" type="datetime | None" required>
+  UTC datetime when the organisation completed the Axilio onboarding flow, or `None` if onboarding has not been finished yet.
+</ResponseField>
+
+---
+
+## `members()`
+
+Returns all current members of the organisation — every user who has accepted an invitation or was present at org creation. Pending invitations (not yet accepted) are not included; use `invite()` to see what invitations you have issued.
+
+**Available in:** local mode · sandbox mode
+
+```python
+members = client.org.members()
+
+for member in members:
+    print(f"{member.name:25s}  {member.email:35s}  role={member.role}")
+```
+
+### Returns — `list[Member]`
+
+<ResponseField name="user_id" type="str" required>
+  Unique user identifier. Pass this to `remove_member()` to remove the user from the org.
+</ResponseField>
+
+<ResponseField name="email" type="str" required>
+  Email address associated with the user's Axilio account.
+</ResponseField>
+
+<ResponseField name="name" type="str" required>
+  Full display name of the member as set on their Axilio profile.
+</ResponseField>
+
+<ResponseField name="role" type="str" required>
+  The member's role within the organisation. One of `"viewer"`, `"member"`, `"admin"`, or `"owner"`. Roles are hierarchical — higher roles subsume the permissions of all lower roles.
+
+  | Role | Typical permissions |
+  |---|---|
+  | `"viewer"` | Read-only access to dashboards and usage reports |
+  | `"member"` | Can create and run workflows |
+  | `"admin"` | Can manage members, billing, and API keys |
+  | `"owner"` | Full control; can delete the organisation |
+</ResponseField>
+
+<ResponseField name="joined_at" type="datetime" required>
+  UTC datetime when the user accepted their invitation and joined the org.
+</ResponseField>
+
+---
+
+## `invite(email, role)`
+
+Sends an email invitation to the provided address. The backend generates a time-limited invite link and emails it to the recipient; when they click the link and accept, they appear in `members()` with the role you specified. The `Invitation` object returned by this call represents the pending invite.
+
+**Available in:** local mode only
+
+<Warning>
+  Calling `invite()` from a sandbox-mode client raises `SandboxPermissionError`. Sandbox scripts running inside a workflow VM cannot add new humans to the organisation.
+</Warning>
+
+<ParamField path="email" type="str" required>
+  Email address of the person to invite. Axilio sends the invitation to this address. If the address already belongs to a current org member, the call raises `NotFoundError` (the backend treats it as a conflict on the existing membership).
+</ParamField>
+
+<ParamField path="role" type="Role" required>
+  The role to assign when the invitee accepts. Must be one of `"viewer"`, `"member"`, `"admin"`, or `"owner"`. You can only invite users to roles at or below your own role — for example, an `"admin"` cannot invite an `"owner"`.
+</ParamField>
+
+<CodeGroup>
+```python Invite a new team member
+from axilio import Client
+from axilio.org.types import Role
+
+client = Client(api_key="axl_live_...")
+
+invitation = client.org.invite(
+    email="alice@example.com",
+    role="member",
+)
+
+print(invitation.id)          # "inv_01jx..."
+print(invitation.email)       # "alice@example.com"
+print(invitation.role)        # "member"
+print(invitation.expires_at)  # datetime when invite link expires
+```
+
+```python Invite an admin
+invitation = client.org.invite(
+    email="bob@example.com",
+    role="admin",
+)
+print(f"Invite sent to {invitation.email}, expires {invitation.expires_at:%Y-%m-%d}")
+```
+</CodeGroup>
+
+### Returns — `Invitation`
+
+<ResponseField name="id" type="str" required>
+  Unique invitation identifier, prefixed `inv_`. You can use this to reference the invitation in support requests.
+</ResponseField>
+
+<ResponseField name="email" type="str" required>
+  The email address the invitation was sent to — echoes back the `email` you passed.
+</ResponseField>
+
+<ResponseField name="role" type="str" required>
+  The role that will be assigned when the invitee accepts. One of `"viewer"`, `"member"`, `"admin"`, or `"owner"`.
+</ResponseField>
+
+<ResponseField name="invited_at" type="datetime" required>
+  UTC datetime when the invitation was created and the email was dispatched.
+</ResponseField>
+
+<ResponseField name="expires_at" type="datetime" required>
+  UTC datetime after which the invite link becomes invalid. Once expired, the invitation must be re-sent — contact the invitee or call `invite()` again.
+</ResponseField>
+
+---
+
+## `remove_member(user_id)`
+
+Immediately removes a member from the organisation. The user loses access to all org resources, workflows, and billing data as soon as the call succeeds. This operation does not affect any work the user has already submitted — in-flight workflow runs they started continue to completion.
+
+**Available in:** local mode only
+
+<Warning>
+  Member removal is **immediate and permanent**. The user will not receive any notification from the API; if you want to inform them, do so separately before calling `remove_member()`. You cannot remove the organisation's sole `"owner"`.
+</Warning>
+
+<Tip>
+  Before removing a member, consider calling `members()` first to confirm the `user_id` and double-check the role — you cannot remove an `"owner"` account while they are the only owner in the org.
+</Tip>
+
+<ParamField path="user_id" type="str" required>
+  The `user_id` of the member to remove, as returned by `members()`. Attempting to remove a `user_id` that is not a current member raises `NotFoundError`.
+</ParamField>
+
+<CodeGroup>
+```python Remove a specific member
+client.org.remove_member(user_id="usr_01jx4abc...")
+# Returns None on success
+```
+
+```python Look up user_id then remove
+members = client.org.members()
+
+target = next(
+    (m for m in members if m.email == "alice@example.com"),
+    None,
+)
+
+if target:
+    client.org.remove_member(user_id=target.user_id)
+    print(f"Removed {target.name} ({target.email})")
+else:
+    print("Member not found")
+```
+</CodeGroup>
+
+### Returns — `None`
+
+`remove_member()` returns `None` on success. It raises `NotFoundError` if the `user_id` is not a current member of the org.
+
+---
+
+## Role Type Reference
+
+The `Role` type is a string literal union used throughout `client.org`:
+
+```python
+Role = Literal["viewer", "member", "admin", "owner"]
+```
+
+| Value | Description |
+|---|---|
+| `"viewer"` | Read-only access. Can view dashboards, usage reports, and workflow results. Cannot run or create workflows. |
+| `"member"` | Standard access. Can create, edit, and run workflows. Cannot manage members or billing. |
+| `"admin"` | Elevated access. Can manage members, API keys, and billing in addition to all `"member"` capabilities. |
+| `"owner"` | Full control. Can do everything an `"admin"` can, plus delete the organisation. An org must always have at least one `"owner"`. |
+
+<Tip>
+  Follow the principle of least privilege when assigning roles. Most automation scripts only need `"member"` access; reserve `"admin"` and `"owner"` for humans who genuinely manage the account.
+</Tip>
+
+---
+
+## Error Reference
+
+| Exception | When it is raised |
+|---|---|
+| `SandboxPermissionError` | `invite()` or `remove_member()` called from a sandbox-mode client. |
+| `UnauthorizedError` | API key is missing, malformed, or has been revoked. |
+| `NotFoundError` | `remove_member()` target `user_id` is not a current member, or `invite()` target email is already a member. |
+| `RateLimitError` | Too many requests in a short window — back off and retry. |
+| `ServerError` | Transient backend error (5xx) — safe to retry with exponential backoff. |

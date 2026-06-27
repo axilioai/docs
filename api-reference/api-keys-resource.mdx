@@ -1,0 +1,186 @@
+---
+title: "API Keys Resource — List, Create, and Revoke Keys"
+sidebarTitle: "API Keys"
+description: "List active API keys, mint new keys, and permanently revoke existing ones for your organisation using the client.api_keys resource."
+---
+
+The `client.api_keys` resource lets you manage the API keys that authenticate calls to Axilio. You can enumerate all active keys for your organisation, create new keys and retrieve their plaintext secret at issuance time, and permanently revoke keys that are no longer needed. Because API key management is a privileged account operation, **all three methods are restricted to local mode** — sandbox scripts running inside a VM cannot mint or revoke keys for the org they belong to.
+
+<Note>
+  All `client.api_keys` methods raise `SandboxPermissionError` when called from a sandbox-mode client. If you need to rotate keys programmatically, run that code as a local script with a `Client` initialised using your personal API key, not from within a workflow execution.
+</Note>
+
+---
+
+## `list()`
+
+Returns all currently active (non-revoked) API keys for your organisation. The response includes metadata such as the key name, its `prefix` (the first eight characters, safe to log), and usage timestamps — but never the full plaintext secret. To retrieve a key's secret, you must call `create()` and capture the returned value immediately.
+
+**Available in:** local mode only
+
+```python
+keys = client.api_keys.list()
+
+for key in keys:
+    last_used = key.last_used_at.strftime("%Y-%m-%d") if key.last_used_at else "never"
+    print(f"{key.name:20s}  prefix={key.prefix}  last used={last_used}")
+```
+
+### Returns — `list[APIKey]`
+
+Each element is an `APIKey` object:
+
+<ResponseField name="id" type="str" required>
+  Unique key identifier. Use this value when calling `revoke()`.
+</ResponseField>
+
+<ResponseField name="name" type="str" required>
+  Human-readable label you assigned to the key at creation time. Names are not unique — two keys can share the same name.
+</ResponseField>
+
+<ResponseField name="prefix" type="str" required>
+  The first eight characters of the key. Safe to log and display. Use it to identify a key in audit logs without exposing the secret.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime" required>
+  UTC datetime when the key was created.
+</ResponseField>
+
+<ResponseField name="last_used_at" type="datetime | None" required>
+  UTC datetime of the most recent authenticated request made with this key, or `None` if the key has never been used. Useful for identifying stale keys that can be safely revoked.
+</ResponseField>
+
+---
+
+## `create(name)`
+
+Mints a new API key for your organisation and returns the full plaintext secret exactly once. After this call returns, Axilio stores only a hash of the secret — you cannot retrieve the plaintext again. Store the returned `secret` value in a secrets manager or environment variable immediately.
+
+**Available in:** local mode only
+
+<Warning>
+  The `secret` field on the returned `APIKeyCreated` object is the **only time** the plaintext key is ever visible. If you lose it before storing it, you must revoke the key and create a new one. There is no "show secret" endpoint.
+</Warning>
+
+<ParamField path="name" type="str" required>
+  A human-readable label for the key. Choose a name that identifies the service or script that will use it — for example, `"ci-pipeline"` or `"nightly-regression-bot"`. Names do not need to be unique across your org.
+</ParamField>
+
+<CodeGroup>
+```python Create and store a key
+import os
+from axilio import Client
+
+client = Client(api_key=os.environ["AXILIO_ADMIN_KEY"])
+
+created = client.api_keys.create(name="nightly-regression-bot")
+
+# Store the secret NOW — it won't be retrievable after this
+print(f"Key ID:  {created.id}")
+print(f"Prefix:  {created.prefix}")
+print(f"Secret:  {created.secret}")  # write to vault / env immediately
+```
+
+```python Create then verify with list()
+created = client.api_keys.create(name="ci-pipeline")
+
+# Confirm it appears in the listing
+keys = client.api_keys.list()
+ids  = [k.id for k in keys]
+assert created.id in ids, "New key should appear in list immediately"
+```
+</CodeGroup>
+
+### Returns — `APIKeyCreated`
+
+<ResponseField name="id" type="str" required>
+  Unique key identifier. Store this alongside the secret so you can revoke the key by ID later.
+</ResponseField>
+
+<ResponseField name="name" type="str" required>
+  The label you provided when creating the key.
+</ResponseField>
+
+<ResponseField name="secret" type="str" required>
+  The full plaintext API key. This is the value your services pass in the `Authorization` header (or as `AXILIO_API_KEY`). **Visible this one time only — store it immediately.**
+</ResponseField>
+
+<ResponseField name="prefix" type="str" required>
+  The first eight characters of the secret. Identical to the `prefix` field you will see in subsequent `list()` calls.
+</ResponseField>
+
+<ResponseField name="created_at" type="datetime" required>
+  UTC datetime when the key was created.
+</ResponseField>
+
+---
+
+## `revoke(key_id)`
+
+Permanently revokes an API key. The key stops authenticating new requests immediately after the call succeeds. Any requests that were already in-flight at the moment of revocation complete normally — only subsequent requests are rejected.
+
+**Available in:** local mode only
+
+<Warning>
+  Revocation is **permanent and immediate**. There is no undo or grace period. Make sure you have rotated the key to a replacement before calling `revoke()`.
+</Warning>
+
+<Tip>
+  To rotate a key safely: call `create()` to mint a replacement, update your service or environment to use the new secret, verify that traffic is flowing on the new key (check `last_used_at` on the new entry), then call `revoke()` on the old key's ID.
+</Tip>
+
+<ParamField path="key_id" type="str" required>
+  The `id` of the key to revoke, as returned by `list()` or `create()`. Revoking a key that is already revoked raises `NotFoundError`.
+</ParamField>
+
+<CodeGroup>
+```python Revoke by ID
+client.api_keys.revoke(key_id="key_01jx4abc...")
+# Returns None on success — no response body
+```
+
+```python Safe rotation workflow
+import os
+from axilio import Client
+
+client = Client(api_key=os.environ["AXILIO_ADMIN_KEY"])
+
+# 1. Mint replacement
+new_key = client.api_keys.create(name="ci-pipeline-v2")
+print("New secret:", new_key.secret)  # save to secrets manager
+
+# 2. (deploy new secret to services, wait for traffic to shift)
+
+# 3. Revoke old key
+old_key_id = os.environ["OLD_KEY_ID"]
+client.api_keys.revoke(key_id=old_key_id)
+print("Old key revoked.")
+```
+
+```python Revoke all keys not used in 90 days
+from datetime import datetime, timedelta, timezone
+
+cutoff = datetime.now(timezone.utc) - timedelta(days=90)
+
+for key in client.api_keys.list():
+    if key.last_used_at is None or key.last_used_at < cutoff:
+        print(f"Revoking stale key: {key.name} ({key.prefix}...)")
+        client.api_keys.revoke(key_id=key.id)
+```
+</CodeGroup>
+
+### Returns — `None`
+
+`revoke()` returns `None` on success. Raise a `NotFoundError` if the `key_id` does not match any active key in your organisation.
+
+---
+
+## Error Reference
+
+| Exception | When it is raised |
+|---|---|
+| `SandboxPermissionError` | Any `client.api_keys` method called from a sandbox-mode client. |
+| `UnauthorizedError` | The API key used to authenticate the SDK client is missing or revoked. |
+| `NotFoundError` | `revoke()` was called with a `key_id` that does not exist or is already revoked. |
+| `RateLimitError` | Too many requests in a short window — back off and retry. |
+| `ServerError` | Transient backend error (5xx) — safe to retry with exponential backoff. |

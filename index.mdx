@@ -1,20 +1,79 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Axilio: The Phone Cloud for Agents"
+sidebarTitle: "Home"
+description: "Real Android phones on carrier networks, controlled by a vision-native Python SDK. Build reliable mobile agents that run at scale."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Axilio gives your agents a real place to work. Instead of brittle emulators or scripted browsers, you get genuine Android hardware on live carrier networks — allocated on demand, driven by a semantic SDK, and observable at every step.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install the SDK, get an API key, and run your first mobile session in minutes.
+  </Card>
+  <Card title="Mobile Driver" icon="mobile" href="/concepts/mobile-driver">
+    Learn how to find elements, tap, type, and control any Android app.
+  </Card>
+  <Card title="Argus Vision API" icon="eye" href="/api-reference/argus/overview">
+    Run OCR, icon detection, and VLM-backed element locating on any image.
+  </Card>
+  <Card title="Workflows & Runs" icon="play" href="/concepts/workflows-and-runs">
+    Script automation workflows and schedule them across the fleet.
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## How Axilio Works
+
+Axilio is built around three primitives:
+
+- **Devices** — real Android phones allocated from the fleet, billed per second
+- **MobileDriver** — a vision-native SDK that drives each device using natural language selectors
+- **Workflows** — Python scripts you author in the dashboard and run via the API
+
+<Steps>
+  <Step title="Install the SDK">
+    ```bash
+    pip install axilio
+    ```
+  </Step>
+  <Step title="Set your API key">
+    ```bash
+    export AXILIO_API_KEY=axl_your_key_here
+    ```
+  </Step>
+  <Step title="Allocate a device and drive it">
+    ```python
+    from axilio.platform import Client
+    from axilio.drivers import MobileDriver
+
+    client = Client()
+
+    with client.mobile.session() as device:
+        driver = MobileDriver.connect()
+        driver.find_text("Sign in").tap()
+        driver.find_text("Email").type_into("you@example.com")
+    ```
+  </Step>
+</Steps>
+
+## Explore the Docs
+
+<CardGroup cols={3}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Create and manage API keys.
+  </Card>
+  <Card title="Device Allocation" icon="server" href="/guides/allocating-devices">
+    Allocate, pin, and release devices.
+  </Card>
+  <Card title="Controlling Devices" icon="gamepad" href="/guides/controlling-devices">
+    Tap, type, swipe, and screenshot.
+  </Card>
+  <Card title="Parallel Execution" icon="bolt" href="/guides/parallel-execution">
+    Run thousands of sessions concurrently.
+  </Card>
+  <Card title="Billing" icon="credit-card" href="/platform/billing">
+    Understand per-second pricing and invoices.
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/reference/errors">
+    Handle errors and retries gracefully.
+  </Card>
+</CardGroup>

@@ -1,0 +1,283 @@
+---
+title: "Workflows and Runs: Scripts, Runs, and Variables"
+sidebarTitle: "Workflows & Runs"
+description: "Learn how to create and manage workflow scripts on the Axilio platform, trigger runs, pass variables, and track execution status through to completion."
+---
+
+A **workflow** is a Python script stored and versioned on the Axilio platform. A **run** is a single execution of that script in an isolated sandbox environment, with a dedicated device pre-allocated for the duration of the script. This separation between the script definition (the workflow) and its executions (the runs) lets you trigger the same automation repeatedly, vary its behavior at runtime by injecting variables, and audit every execution independently. You can author workflows in the Axilio dashboard's built-in editor, or manage them programmatically through the SDK.
+
+## Workflows
+
+### What a workflow contains
+
+A workflow stores your Python automation script as a string. The script has access to the full Axilio SDK and runs inside a sandbox where `MobileDriver.connect()` binds directly to the pre-allocated device. Workflows also carry a human-readable `name`, an optional `description`, and timestamps for when they were created, last modified, and last executed.
+
+```python
+WORKFLOW_CODE = """
+import axilio
+from axilio.drivers.mobile import MobileDriver
+
+client = axilio.Client()
+
+with client.mobile.session() as handle:
+    with MobileDriver.connect() as driver:
+        driver.wait_for_text("Home", timeout=20.0)
+        screenshot = driver.screenshot()
+        print(f"Captured {len(screenshot)} bytes")
+"""
+```
+
+### Creating a workflow
+
+Create workflows either through the Axilio dashboard or via `client.workflows.create()`:
+
+<CodeGroup>
+```python SDK
+workflow = client.workflows.create(
+    name="Instagram login check",
+    code=WORKFLOW_CODE,
+    description="Verifies the login flow completes without errors.",
+)
+print(workflow.id)  # Save this — you'll use it to create runs.
+```
+
+```python Dashboard
+# 1. Open the Axilio dashboard and navigate to Workflows.
+# 2. Click "New Workflow".
+# 3. Give it a name and paste or write your script in the editor.
+# 4. Click "Save".
+```
+</CodeGroup>
+
+### Workflow CRUD
+
+<Accordion title="list() — retrieve all workflows">
+  Returns a list of `WorkflowSummary` objects. The summary omits the full script body to keep the response light. Call `get()` for the complete `Workflow` including `code`.
+
+  ```python
+  summaries = client.workflows.list()
+  for wf in summaries:
+      print(wf.id, wf.name, wf.last_run_at)
+  ```
+</Accordion>
+
+<Accordion title="get() — fetch a single workflow">
+  Returns the full `Workflow` object including the script body.
+
+  ```python
+  workflow = client.workflows.get("wf_abc123")
+  print(workflow.code)
+  ```
+</Accordion>
+
+<Accordion title="update() — edit name, code, or description">
+  All three fields are optional — pass only what you want to change.
+
+  ```python
+  workflow = client.workflows.update(
+      "wf_abc123",
+      name="Instagram login check v2",
+      code=NEW_WORKFLOW_CODE,
+  )
+  ```
+</Accordion>
+
+<Accordion title="delete() — remove a workflow">
+  Deletes the workflow definition. Existing run records are preserved for audit purposes.
+
+  ```python
+  client.workflows.delete("wf_abc123")
+  ```
+</Accordion>
+
+### Workflow data types
+
+<ResponseField name="id" type="str">
+  Unique workflow identifier. Use this as `workflow_id` when creating runs.
+</ResponseField>
+
+<ResponseField name="name" type="str">
+  A human-readable label for the workflow, visible in the dashboard and in run records.
+</ResponseField>
+
+<ResponseField name="description" type="str | None">
+  An optional longer description of what the workflow does.
+</ResponseField>
+
+<ResponseField name="code" type="str">
+  The full Python script. Only present on the `Workflow` type (returned by `get()`, `create()`, `update()`); absent from `WorkflowSummary` (returned by `list()`).
+</ResponseField>
+
+<ResponseField name="created_at / updated_at" type="datetime">
+  UTC timestamps for when the workflow was first saved and when it was last modified.
+</ResponseField>
+
+<ResponseField name="last_run_at" type="datetime | None">
+  UTC timestamp of the most recent run. `None` if the workflow has never been executed.
+</ResponseField>
+
+---
+
+## Runs
+
+A **run** is a single, isolated execution of a workflow. Each run receives its own sandbox environment with a dedicated device. The run's `code` field captures the script exactly as it was at dispatch time, so later edits to the workflow never alter the record of what actually executed.
+
+### Run lifecycle
+
+```
+queued → starting → running → succeeded
+                            ↘ failed
+                  → canceled
+```
+
+| Status | Meaning |
+|---|---|
+| `queued` | The run has been accepted and is waiting for a sandbox to become available. |
+| `starting` | A sandbox is being provisioned and the device is being allocated. |
+| `running` | The script is actively executing. |
+| `succeeded` | The script completed without raising an unhandled exception. |
+| `failed` | The script raised an unhandled exception or the sandbox encountered an error. |
+| `canceled` | A cancellation was requested and the run stopped. |
+
+### Creating a run
+
+Call `client.runs.create()` with the target workflow's ID. The call returns immediately with status `"queued"` — the script has not started yet.
+
+```python
+run = client.runs.create(
+    workflow_id="wf_abc123",
+    variables={"username": "alice@example.com", "target_app": "com.instagram.android"},
+)
+print(run.id, run.status)  # e.g. "run_xyz789", "queued"
+```
+
+### Variables
+
+Variables are key-value string pairs that you pass at run creation time. Inside the workflow script, read them from the `AXILIO_VAR_*` environment variables, or use your own injection pattern.
+
+```python
+# At run creation:
+run = client.runs.create(
+    workflow_id="wf_abc123",
+    variables={
+        "username": "alice@example.com",
+        "password": "s3cr3t",
+    },
+)
+```
+
+```python
+# Inside the workflow script:
+import os
+
+username = os.environ["AXILIO_VAR_USERNAME"]
+password = os.environ["AXILIO_VAR_PASSWORD"]
+```
+
+<Warning>
+  All variable values are strings. Convert to other types inside the script as needed. Variables are stored in the run record — do not use them for secrets in production; use a secrets manager and reference those at runtime instead.
+</Warning>
+
+### Polling run status
+
+`client.runs.create()` returns immediately. Poll `client.runs.get(run_id)` to check progress:
+
+```python
+import time
+import axilio
+
+client = axilio.Client()
+run = client.runs.create(workflow_id="wf_abc123")
+
+# Poll until terminal status
+while run.status in ("queued", "starting", "running"):
+    time.sleep(5)
+    run = client.runs.get(run.id)
+
+print(f"Run finished with status: {run.status}")
+if run.error:
+    print(f"Error: {run.error}")
+```
+
+<Tip>
+  For production pipelines, consider using a webhook or a scheduled poller rather than a tight loop. A 5-second poll interval is a reasonable starting point for most workflows.
+</Tip>
+
+### Canceling a run
+
+Send a cancellation request with `client.runs.cancel(run_id)`. If the run is still `queued`, it transitions to `canceled` almost immediately. If it is already `running`, the sandbox receives a stop signal and finishes within a few seconds.
+
+```python
+canceled_run = client.runs.cancel(run.id)
+print(canceled_run.status)  # "canceled"
+```
+
+### Listing runs
+
+Retrieve a list of recent runs, optionally filtered by workflow:
+
+```python
+# All recent runs across all workflows
+runs = client.runs.list()
+
+# Runs for a specific workflow
+runs = client.runs.list(workflow_id="wf_abc123", limit=20)
+
+for r in runs:
+    print(r.id, r.status, r.created_at)
+```
+
+### Run data types
+
+<ResponseField name="id" type="str">
+  Unique run identifier.
+</ResponseField>
+
+<ResponseField name="workflow_id" type="str">
+  The workflow this run belongs to.
+</ResponseField>
+
+<ResponseField name="status" type="RunStatus">
+  One of `"queued"`, `"starting"`, `"running"`, `"succeeded"`, `"failed"`, or `"canceled"`.
+</ResponseField>
+
+<ResponseField name="variables" type="dict[str, str]">
+  The key-value variables passed at `create()` time. Present on the full `Run` object (returned by `get()` and `create()`).
+</ResponseField>
+
+<ResponseField name="code" type="str">
+  The exact script that was dispatched. Captured at run creation time so workflow edits don't change the historical record.
+</ResponseField>
+
+<ResponseField name="created_at / started_at / finished_at" type="datetime | None">
+  UTC timestamps for when the run was enqueued, when execution began, and when it ended. `started_at` and `finished_at` are `None` until those transitions occur.
+</ResponseField>
+
+<ResponseField name="error" type="str | None">
+  Error message from the last failure. `None` when the run succeeded or is still in progress.
+</ResponseField>
+
+---
+
+## Inside a workflow script
+
+When your workflow script executes in a sandbox, `MobileDriver.connect()` pairs automatically with the pre-allocated device. You do not need to pass a `DeviceHandle` — the sandbox handles the pairing for you.
+
+```python
+import axilio
+from axilio.drivers.mobile import MobileDriver
+
+# In sandbox mode, Client() auto-detects AXILIO_SANDBOX_TOKEN.
+client = axilio.Client()
+
+with client.mobile.session() as handle:
+    print(f"Running on: {handle.device_name}")
+
+    with MobileDriver.connect() as driver:
+        # Automate the device
+        driver.wait_for_text("Home", timeout=30.0)
+        driver.find_text("Search").type_into("axilio")
+        driver.key_press(Key.HOME)
+```
+
+See [Sandbox Mode](/concepts/sandbox-mode) for details on how the sandbox environment differs from local mode and which operations are restricted.

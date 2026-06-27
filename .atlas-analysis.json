@@ -1,0 +1,148 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Axilio",
+  "projectDescription": "Axilio is a cloud-hosted mobile automation platform that provides real Android phones on carrier networks, controlled via a vision-native Python SDK for building and running mobile agents at scale.",
+  "theme": "luma",
+  "primaryColor": "#7bcab0",
+  "lightColor": "#0c7f5c",
+  "darkColor": "#0c1613",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/devices",
+              "concepts/mobile-driver",
+              "concepts/workflows-and-runs",
+              "concepts/sandbox-mode"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/allocating-devices",
+              "guides/controlling-devices",
+              "guides/running-workflows",
+              "guides/parallel-execution",
+              "guides/best-practices"
+            ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
+              "platform/billing",
+              "platform/usage",
+              "platform/organizations",
+              "platform/api-keys"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/errors",
+              "reference/configuration",
+              "reference/changelog"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "SDK Reference",
+            "pages": [
+              "api-reference/client",
+              "api-reference/mobile-resource",
+              "api-reference/mobile-driver",
+              "api-reference/workflows-resource",
+              "api-reference/runs-resource"
+            ]
+          },
+          {
+            "group": "Argus Vision API",
+            "pages": [
+              "api-reference/argus/overview",
+              "api-reference/argus/infer",
+              "api-reference/argus/locate",
+              "api-reference/argus/models"
+            ]
+          },
+          {
+            "group": "Account & Billing API",
+            "pages": [
+              "api-reference/billing-resource",
+              "api-reference/usage-resource",
+              "api-reference/api-keys-resource",
+              "api-reference/org-resource"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real Android phones on carrier networks for reliable mobile automation",
+    "Vision-native semantic SDK — find elements by label, description, or icon appearance",
+    "Parallel fleet execution with automatic load balancing and session isolation",
+    "Argus vision service: YOLO icon detection, OCR (free/premium), and VLM-backed element locator",
+    "Workflow scripting and scheduled runs via the dashboard and SDK",
+    "Full session replay and per-step trace for production debugging",
+    "Per-second billing with no data transfer fees or proxy surcharges",
+    "Sandbox mode for safe workflow testing without consuming real device-minutes",
+    "Organization management, API key management, and role-based access"
+  ],
+  "publicApiSurface": [
+    "Client(api_key, base_url, timeout, max_retries, retry_base_delay)",
+    "client.mobile.available(platform, location, apps)",
+    "client.mobile.locations()",
+    "client.mobile.supported_apps(platform, category)",
+    "client.mobile.allocate(platform, location, apps, timeout) -> DeviceHandle",
+    "client.mobile.deallocate(allocation_id)",
+    "client.mobile.session(platform, location, apps, timeout) -> DeviceHandle [context manager]",
+    "MobileDriver.connect(socket_path) -> MobileDriver",
+    "driver.observe(ocr_engine) -> Screen",
+    "driver.find_text(text, exact, ocr_engine) -> Element | None",
+    "driver.find_all_text(contains, pattern, ocr_engine) -> list[Element]",
+    "driver.find(query, timeout, ocr_engine, model) -> Element",
+    "driver.wait_for_text(text, timeout, poll_ms, exact, ocr_engine) -> Element",
+    "driver.wait_until_gone(text, timeout, poll_ms, exact, ocr_engine)",
+    "driver.wait_for(predicate, timeout, poll_ms) -> Screen",
+    "driver.tap(coords)",
+    "driver.long_press(coords, duration_ms)",
+    "driver.swipe(start, end, duration_ms)",
+    "driver.type_text(text)",
+    "driver.key_press(key)",
+    "driver.screenshot() -> bytes",
+    "Element.tap()",
+    "Element.long_press(duration_ms)",
+    "Element.type_into(text)",
+    "Element.swipe_to(other, duration_ms)",
+    "Screen.find_text(text, exact) -> Element | None",
+    "Screen.find_all_text(contains, pattern) -> list[Element]",
+    "Key.HOME / BACK / MENU / VOLUME_UP / VOLUME_DOWN / POWER ...",
+    "client.workflows.list() / get() / create() / update() / delete()",
+    "client.runs.list() / get() / create(workflow_id, variables) / cancel()",
+    "client.billing.balance() / subscription() / invoices() / upgrade() / downgrade()",
+    "client.usage.metrics(start, end, granularity) / sessions(start, end, workflow_id)",
+    "client.api_keys.list() / create(name) / revoke(key_id)",
+    "client.org.current() / members() / invite(email, role) / remove_member(user_id)",
+    "client.argus.infer(image, inference_type, confidence_threshold, nms_iou_threshold, ocr_engine)",
+    "client.argus.locate(image, query, texts)",
+    "POST /api/v1/inference/infer",
+    "POST /api/v1/inference/locate",
+    "GET /api/v1/inference/models",
+    "AxilioError / UnauthorizedError / NotFoundError / RateLimitError / ServerError / SandboxPermissionError / AllocationMismatchError"
+  ]
+}

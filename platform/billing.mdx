@@ -1,0 +1,200 @@
+---
+title: "Billing: View Balance, Invoices, and Plans | Axilio"
+sidebarTitle: "Billing"
+description: "Understand how Axilio bills per second of device time, manage your plan, check your balance, and pull historical invoices via the SDK."
+---
+
+Axilio charges you only for the time a physical phone is allocated to your automation — billing starts the moment a device is assigned to your workflow and stops the second it is released. There are no setup fees, no data-transfer surcharges, and no proxy markups. Starting from **$0.65 per phone hour** (billed per second), the cost you see is the cost you pay. All plans include carrier-grade IPs by default, so you never need to source a separate mobile proxy service.
+
+## How billing works
+
+Every automation session maps directly to an allocation lifecycle:
+
+<Steps>
+  <Step title="Device allocated">
+    The clock starts when Axilio assigns a physical phone to your workflow run. This happens at the first `devices.allocate()` call (or automatically when a sandbox VM spins up).
+  </Step>
+  <Step title="Automation runs">
+    Compute time accrues in real seconds. There is no minimum session length — a two-second health-check costs roughly the same as two seconds of manual tapping.
+  </Step>
+  <Step title="Device deallocated">
+    The clock stops the instant the device is released — either by your code calling `devices.release()`, your workflow completing, or a timeout firing. Idle time between steps still counts if the phone remains allocated.
+  </Step>
+  <Step title="Invoice generated">
+    At the end of each billing period, Axilio rolls all sessions into an invoice and charges your payment method on file via Stripe.
+  </Step>
+</Steps>
+
+<Note>
+  The **Fair Usage Policy** applies to all plans. Sustained allocations with no active interactions may be reclaimed after an inactivity timeout. Set explicit timeouts in your workflows to avoid unexpected charges from stuck sessions.
+</Note>
+
+## Plans
+
+Axilio offers two primary plan types. Both include carrier-grade IPs, no data-transfer fees, and no proxy surcharges.
+
+<CardGroup cols={2}>
+  <Card title="Pay As You Go" icon="gauge">
+    No monthly commitment. You add credit to your account and pay per second of actual device time consumed. Ideal for workloads with unpredictable or bursty volume. Unused balance **does not roll over** between billing periods — top up only what you expect to use within the period.
+  </Card>
+  <Card title="Dedicated Phones" icon="mobile">
+    Reserve one or more physical phones exclusively for your organization. Your dedicated devices are always available — no queue, no contention with other tenants. Priced as a recurring rental subscription; the rental charge covers the device reservation and includes a per-second allocation rate for active use.
+  </Card>
+</CardGroup>
+
+<Info>
+  Unused **Pay As You Go** balance does not roll over to the next billing period. Purchase credit close to when you plan to use it to avoid forfeit.
+</Info>
+
+## What's included on every plan
+
+- **Carrier-grade IPs** — each phone routes traffic through a real mobile carrier network, no extra proxy subscription required
+- **No data transfer fees** — inbound and outbound traffic from devices is included
+- **No proxy surcharges** — the IP layer is built in; you are not paying a separate proxy markup
+- **Stripe-powered payments** — Axilio does not store your card details; Stripe handles all payment processing
+
+## Checking your balance
+
+Call `client.billing.balance()` from either local or sandbox mode to retrieve your current credit balance.
+
+```python
+import axilio
+
+client = axilio.Client()
+
+balance = client.billing.balance()
+print(f"Current balance: ${balance.dollars:.4f}")
+# Current balance: $14.2350
+```
+
+<ResponseField name="balance.microdollars" type="int">
+  Raw balance expressed in millionths of a US dollar. Use this for precise arithmetic to avoid floating-point rounding.
+</ResponseField>
+<ResponseField name="balance.dollars" type="float">
+  Convenience property: `microdollars / 1_000_000`. Suitable for display; avoid using in financial calculations.
+</ResponseField>
+<ResponseField name="balance.currency" type="str">
+  ISO 4217 currency code. Currently always `"USD"`.
+</ResponseField>
+
+## Viewing your subscription
+
+Call `client.billing.subscription()` to inspect your active plan, billing period, and cancellation state.
+
+```python
+sub = client.billing.subscription()
+
+print(sub.plan)                   # "pro"
+print(sub.status)                 # "active"
+print(sub.current_period_end)     # datetime(2025, 8, 1, 0, 0, tzinfo=UTC)
+print(sub.cancel_at_period_end)   # False
+```
+
+<ResponseField name="subscription.plan" type="Literal['free', 'hobby', 'pro', 'business', 'enterprise']">
+  Your current plan tier. `"free"` means no paid subscription is active.
+</ResponseField>
+<ResponseField name="subscription.status" type="Literal['active', 'past_due', 'canceled', 'trialing']">
+  Stripe subscription status. A `"past_due"` status means a payment attempt failed; automation continues briefly while Stripe retries.
+</ResponseField>
+<ResponseField name="subscription.current_period_start" type="datetime">
+  UTC timestamp for the start of the current billing period.
+</ResponseField>
+<ResponseField name="subscription.current_period_end" type="datetime">
+  UTC timestamp for the end of the current billing period. This is also the date your balance resets on Pay As You Go.
+</ResponseField>
+<ResponseField name="subscription.cancel_at_period_end" type="bool">
+  `True` if a downgrade or cancellation is scheduled to take effect at `current_period_end`.
+</ResponseField>
+
+## Viewing invoices
+
+Call `client.billing.invoices(start, end)` to retrieve historical invoices. The interval is **half-open** — `start` is inclusive, `end` is exclusive — matching the convention used throughout the billing backend.
+
+```python
+from datetime import datetime, timezone
+
+invoices = client.billing.invoices(
+    start=datetime(2025, 1, 1, tzinfo=timezone.utc),
+    end=datetime(2025, 7, 1, tzinfo=timezone.utc),
+)
+
+for inv in invoices:
+    amount = inv.amount_microdollars / 1_000_000
+    print(f"{inv.created_at.date()}  {inv.status:<14}  ${amount:.2f}  {inv.id}")
+```
+
+<Warning>
+  Always pass **timezone-aware** `datetime` objects. Naive datetimes (without `tzinfo`) may be interpreted inconsistently across DST boundaries and will raise a `ValueError` in a future SDK version.
+</Warning>
+
+<ResponseField name="invoice.id" type="str">
+  Unique invoice identifier. Pass this to your accounting system or to [axilio.ai](https://axilio.ai) to download a PDF.
+</ResponseField>
+<ResponseField name="invoice.amount_microdollars" type="int">
+  Total charged, in millionths of a dollar.
+</ResponseField>
+<ResponseField name="invoice.currency" type="str">
+  ISO 4217 currency code, currently always `"USD"`.
+</ResponseField>
+<ResponseField name="invoice.status" type="Literal['paid', 'open', 'void', 'uncollectible']">
+  Stripe invoice status. `"open"` means the invoice exists but payment has not yet settled.
+</ResponseField>
+<ResponseField name="invoice.created_at" type="datetime">
+  UTC timestamp when the invoice was created.
+</ResponseField>
+<ResponseField name="invoice.hosted_invoice_url" type="str | None">
+  A Stripe-hosted URL where you can view or download the invoice. May be `None` for older invoices.
+</ResponseField>
+
+## Upgrading your plan
+
+Call `client.billing.upgrade(plan=...)` to move to a higher-tier plan immediately. This method is **local-mode only** — workflow scripts running inside a sandbox VM cannot change your subscription.
+
+```python
+# Upgrade from hobby → pro, effective immediately
+sub = client.billing.upgrade(plan="pro")
+print(sub.plan)   # "pro"
+print(sub.status) # "active"
+```
+
+<Warning>
+  `billing.upgrade()` and `billing.downgrade()` raise `SandboxPermissionError` when called from sandbox-executed workflow code. Run plan changes from your local machine or a trusted CI environment, not from inside a scheduled automation.
+</Warning>
+
+## Downgrading your plan
+
+Call `client.billing.downgrade(plan=...)` to move to a lower-tier plan. The change **takes effect at the end of your current billing period** — your current plan remains active until then, and `subscription.cancel_at_period_end` will read `True`.
+
+```python
+# Schedule a downgrade from pro → hobby at period end
+sub = client.billing.downgrade(plan="hobby")
+
+print(sub.cancel_at_period_end)  # True
+print(sub.current_period_end)    # datetime when hobby kicks in
+```
+
+<Tip>
+  If you change your mind after scheduling a downgrade, contact support or use the [Axilio dashboard](https://axilio.ai) to cancel the pending downgrade before your billing period ends.
+</Tip>
+
+## Managing payment methods
+
+Axilio uses [Stripe](https://stripe.com) to process all payments. Your card number, CVC, and billing address are stored exclusively by Stripe — Axilio never has access to your raw payment details. To add, update, or remove a payment method, visit [axilio.ai](https://axilio.ai) and navigate to **Settings → Billing**.
+
+## Cost optimization tips
+
+<Accordion title="Use observe() caching to reduce vision-model calls">
+  Every call to `find()` with a visual model incurs inference cost on top of device time. Cache stable UI elements with `observe()` so subsequent steps re-use the cached bounding box instead of running a full inference pass. On screens with static navigation, this can cut inference spend by 50–80%.
+</Accordion>
+
+<Accordion title="Set tight timeouts on every workflow step">
+  An allocated phone that stalls waiting for a slow network response or an unhandled exception keeps billing the clock. Pass an explicit `timeout_seconds` argument to long-running steps so the device is released promptly rather than sitting idle.
+</Accordion>
+
+<Accordion title="Prefer find_text over find for text-based targets">
+  `find_text()` uses on-device OCR, which is included at no extra cost. `find()` dispatches a vision-model inference request that incurs a per-inference charge. If the element you're targeting has a stable text label, use `find_text()` and reserve `find()` for visual or icon-based targets.
+</Accordion>
+
+<Accordion title="Release devices as early as possible">
+  Call `devices.release()` the moment your workflow logic is complete rather than letting Python's garbage collector trigger cleanup. Even a few seconds of unnecessary hold time multiplies across many concurrent runs.
+</Accordion>
