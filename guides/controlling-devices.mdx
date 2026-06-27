@@ -299,7 +299,7 @@ with open("step_3_confirmation.png", "wb") as f:
 
 <Accordion title="ElementNotFoundError">
 
-Raised by `find()` and as an alternative return path when you call `.tap()` or other actions on a `None` result from `find_text()`. Always check `find_text()` return values before acting.
+Raised by `find()` when the VLM cannot locate a matching element. Note that `find_text()` returns `None` rather than raising — calling `.tap()` on a `None` result will raise a plain `AttributeError`, which is harder to diagnose. Always check `find_text()` return values before acting on them.
 
 ```python
 from axilio.drivers.mobile import ElementNotFoundError

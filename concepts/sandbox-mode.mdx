@@ -8,34 +8,32 @@ Axilio operates in two distinct execution contexts: **local mode**, where you ru
 
 ## How mode detection works
 
-When you construct `axilio.Client()`, it calls `axilio._mode.detect()` internally. Detection inspects two environment variables:
+When you construct `Client()`, it inspects the environment to determine which mode to enter. Two environment variables govern this:
 
 | Environment variable | Set by | Purpose |
 |---|---|---|
 | `AXILIO_API_KEY` | You, in your local environment | Authenticates your local SDK session |
 | `AXILIO_SANDBOX_TOKEN` | Axilio platform, automatically | Short-lived token injected into each workflow run's sandbox |
-| `AXILIO_ATLAS_ENDPOINT` | Axilio platform, automatically | Internal endpoint for the sandbox runtime |
 
-If **both** `AXILIO_SANDBOX_TOKEN` and `AXILIO_ATLAS_ENDPOINT` are present, the client enters sandbox mode. Otherwise, it falls back to local mode.
+When `AXILIO_SANDBOX_TOKEN` is present (injected automatically by the platform), the client enters sandbox mode. Otherwise, it falls back to local mode and uses `AXILIO_API_KEY`.
 
 ```python
-import axilio
+from axilio.platform import Client
 
-client = axilio.Client()
-print(client.mode)  # Mode.LOCAL or Mode.SANDBOX
+client = Client()
+print(client.mode)  # "local" or "sandbox"
 ```
 
-You can compare the mode using the `Mode` enum:
+You can compare the mode using string equality or the `client.mode` value directly:
 
 ```python
-from axilio import Client
-from axilio._mode import Mode
+from axilio.platform import Client
 
 client = Client()
 
-if client.mode == Mode.SANDBOX:
+if client.mode == "sandbox":
     print("Running inside a workflow sandbox")
-elif client.mode == Mode.LOCAL:
+elif client.mode == "local":
     print("Running locally")
 ```
 
@@ -49,10 +47,10 @@ In local mode, the client authenticates using your `AXILIO_API_KEY`. You have fu
 
 ```python
 import os
-import axilio
+from axilio.platform import Client
 
 # Either set AXILIO_API_KEY in your environment, or pass it explicitly:
-client = axilio.Client(api_key=os.environ["AXILIO_API_KEY"])
+client = Client(api_key=os.environ["AXILIO_API_KEY"])
 
 # Allocate a device, drive it, and clean up
 with client.mobile.session(platform="android") as handle:
@@ -61,14 +59,14 @@ with client.mobile.session(platform="android") as handle:
 
 ## Sandbox mode
 
-In sandbox mode, your script is executing inside a workflow run. The Axilio platform has already allocated a device for the run before your script starts. You interact with that device through `MobileDriver.connect()`, which pairs automatically with the pre-allocated VM device over a local daemon socket — no signaling URL or token handling required.
+In sandbox mode, your script is executing inside a workflow run. The Axilio platform has already allocated a device for the run before your script starts. You interact with that device through `MobileDriver.connect()`, which pairs automatically with the pre-allocated device over the local daemon socket — no signaling URL or token handling required.
 
 ```python
-import axilio
+from axilio.platform import Client
 from axilio.drivers.mobile import MobileDriver
 
 # Client() auto-detects sandbox mode from environment variables.
-client = axilio.Client()
+client = Client()
 
 # In sandbox: session() returns a handle to the pre-allocated device.
 with client.mobile.session() as handle:
@@ -92,7 +90,9 @@ Because the platform allocates the device before your script starts, `client.mob
 If your script calls `client.mobile.allocate()` with `platform`, `location`, or `apps` arguments that do not match the device that was actually pre-allocated, Axilio raises `AllocationMismatchError` rather than silently ignoring the mismatch. This catches copy-paste errors when migrating a local script to a workflow.
 
 ```python
-from axilio.errors import AllocationMismatchError
+from axilio.platform import AllocationMismatchError, Client
+
+client = Client()
 
 try:
     handle = client.mobile.allocate(platform="iphone")  # But sandbox has Android
@@ -131,7 +131,9 @@ Any of the following calls will raise `SandboxPermissionError` when executed in 
 </CardGroup>
 
 ```python
-from axilio.errors import SandboxPermissionError
+from axilio.platform import Client, SandboxPermissionError
+
+client = Client()
 
 # This will raise in sandbox mode:
 try:
@@ -162,7 +164,7 @@ members = client.org.members()
 
     **Device allocation:** `client.mobile.allocate()` acquires a new device from the fleet. Billing starts immediately.
 
-    **`MobileDriver.connect()`:** Requires an active sandbox or a transport configured with a `DeviceHandle`. Full local driving is available when the local transport is wired.
+    **`MobileDriver` usage:** Pass the `DeviceHandle` returned by `allocate()` or `session()` directly to `MobileDriver(handle)` to begin driving the device.
 
     **Account writes:** All operations permitted — billing changes, API key management, org management.
 
@@ -186,12 +188,11 @@ members = client.org.members()
 Use `client.mode` to adapt your script's behavior based on the execution context:
 
 ```python
-import axilio
-from axilio._mode import Mode
+from axilio.platform import Client
 
-client = axilio.Client()
+client = Client()
 
-if client.mode == Mode.SANDBOX:
+if client.mode == "sandbox":
     # In a workflow run — device is pre-allocated.
     with client.mobile.session() as handle:
         automate(handle)

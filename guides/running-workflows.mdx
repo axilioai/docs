@@ -25,7 +25,7 @@ driver = MobileDriver.connect()
 # Wait for the app to load, then run the search.
 driver.wait_until_gone("Loading", timeout=20.0)
 driver.find_text("Search").type_into(search_query)
-driver.key_press(Key.HOME)  # dismiss keyboard
+driver.key_press(Key.BACK)  # dismiss keyboard
 
 # Collect the first N results.
 results = driver.find_all_text(contains=search_query)[:max_results]

@@ -67,7 +67,7 @@ client = Client(
 </ParamField>
 
 <ParamField body="max_retries" type="int" default="3">
-  Maximum number of automatic retry attempts for transient errors (`RateLimitError` and `ServerError`). The initial attempt counts as attempt 1, so `max_retries=3` means up to 3 total attempts. Set to `0` to disable all automatic retries and handle them yourself.
+  Maximum number of automatic retry attempts for transient errors (`RateLimitError` and `ServerError`). This is the number of *extra* attempts after the initial one, so `max_retries=3` means up to 4 total attempts (1 initial + 3 retries). Set to `0` to disable all automatic retries and handle them yourself.
 </ParamField>
 
 <ParamField body="retry_base_delay" type="float" default="0.5">
@@ -94,14 +94,13 @@ After constructing the client, you can inspect the resolved configuration throug
 
 ```python
 from axilio import Client
-from axilio._mode import Mode
 
 client = Client()
 
 print(client.base_url)   # "https://api.axilio.ai"
 print(client.api_key)    # "axlio_sk_live_..."
 
-if client.mode is Mode.SANDBOX:
+if client.mode == "sandbox":
     print("Running inside a workflow sandbox.")
 else:
     print("Running in local mode.")
@@ -128,21 +127,22 @@ The client automatically detects its execution context and switches authenticati
 
 The client retries failed requests automatically when the failure is considered transient. Only `RateLimitError` (HTTP 429) and `ServerError` (HTTP 5xx) trigger automatic retries — `UnauthorizedError`, `NotFoundError`, and SDK-only errors like `SandboxPermissionError` are never retried.
 
-The backoff formula is:
+The backoff uses **full jitter** to avoid thundering-herd problems. The delay before each retry is sampled uniformly from `[0, ceiling]`, where:
 
 ```
-delay = retry_base_delay × 2^(attempt - 1)
+ceiling = min(retry_base_delay × 2^attempt, 30.0)
 ```
 
-With the defaults (`retry_base_delay=0.5`, `max_retries=3`):
+`attempt` is zero-indexed (0 for the first retry). With the defaults (`retry_base_delay=0.5`, `max_retries=3`), there are up to 4 total attempts (1 initial + 3 retries):
 
-| Attempt | Delay before attempt |
-|---------|----------------------|
-| 1 (initial) | — |
-| 2 | 0.5 s |
-| 3 | 1.0 s |
+| Attempt | Ceiling before attempt | Actual delay |
+|---------|------------------------|--------------|
+| 1 (initial) | — | — |
+| 2 (retry 1) | 0.5 s | random in [0, 0.5 s] |
+| 3 (retry 2) | 1.0 s | random in [0, 1.0 s] |
+| 4 (retry 3) | 2.0 s | random in [0, 2.0 s] |
 
-After `max_retries` attempts the exception is re-raised. The `timeout` applies independently to each attempt in the sequence.
+After the final attempt the exception is re-raised. The `timeout` applies independently to each attempt in the sequence. A `Retry-After` header on the response overrides the computed backoff (capped at 30 s).
 
 <Tip>
   If you manage retry logic in your own workflow orchestration layer, construct the client with `Client(max_retries=0)` to prevent double-retrying. The SDK's built-in retry is most useful for fire-and-forget scripts and one-off API calls.
@@ -242,7 +242,7 @@ with Client(api_key="axlio_sk_live_...", timeout=60.0) as client:
 ```python Aggressive retry tuning
 from axilio import Client
 
-# 5 attempts, starting with a 1 s delay (1 s, 2 s, 4 s, 8 s)
+# 6 total attempts (1 initial + 5 retries); ceilings of 1 s, 2 s, 4 s, 8 s, 16 s
 with Client(max_retries=5, retry_base_delay=1.0) as client:
     result = client.runs.list()
 ```

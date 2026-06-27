@@ -66,12 +66,15 @@ Run `/infer` once per unique frame. Store the `ocr_results` and the `hash_result
 
   `null` when `matched_text_index` is set or `found` is `false`.
 
+  **HTTP response fields:**
   <Expandable title="LocateBBox fields">
     <ResponseField name="x" type="integer">Top-left x coordinate, in pixels (≥ 0).</ResponseField>
     <ResponseField name="y" type="integer">Top-left y coordinate, in pixels (≥ 0).</ResponseField>
     <ResponseField name="width" type="integer">Width of the box in pixels (> 0).</ResponseField>
     <ResponseField name="height" type="integer">Height of the box in pixels (> 0).</ResponseField>
   </Expandable>
+
+  **Python SDK:** The `bbox` field on the `LocateResult` object is a `BoundingBox` with `x1, y1, x2, y2` pixel coordinates, consistent with `/infer` detections.
 </ResponseField>
 
 <ResponseField name="matched_text_index" type="integer | null">
@@ -115,8 +118,20 @@ with open("screenshot.png", "rb") as f:
 infer_result = client.argus.infer(image_bytes, inference_type="combined")
 
 # Step 2: build grounding context from OCR output
+# TextElement.bbox must be normalised to [0, 1]; OcrResult.bbox is in pixels.
+from axilio.argus import BoundingBox
+w = infer_result.image_width
+h = infer_result.image_height
 texts = [
-    TextElement(text=r.text, bbox=r.bbox)
+    TextElement(
+        text=r.text,
+        bbox=BoundingBox(
+            x1=r.bbox.x1 / w,
+            y1=r.bbox.y1 / h,
+            x2=r.bbox.x2 / w,
+            y2=r.bbox.y2 / h,
+        ),
+    )
     for r in infer_result.ocr_results
 ]
 
@@ -135,7 +150,7 @@ if location.found:
     else:
         # Free-form VLM bbox
         b = location.bbox
-        print(f"VLM bbox: x={b.x} y={b.y} w={b.width} h={b.height}")
+        print(f"VLM bbox: x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}")
 else:
     print("Element not found on screen")
 ```
@@ -157,7 +172,8 @@ location = client.argus.locate(
     texts=texts,
     model="anthropic/claude-sonnet-4-5",
 )
-print(f"Used: {location.model}  cost: ${location.cost_microdollars / 1_000_000:.6f}")
+if location.found:
+    print(f"Element found  confidence={location.confidence:.2f}")
 ```
 
 ```bash HTTP — with texts grounding
@@ -203,7 +219,7 @@ curl -X POST https://api.axilio.ai/api/v1/inference/locate \
   "model": "anthropic/claude-sonnet-4-5",
   "cost_microdollars": 5100,
   "latency_ms": 1230,
-  "bbox": { "x1": 238, "y1": 1152, "x2": 844, "y2": 1298 },
+  "bbox": { "x": 238, "y": 1152, "width": 606, "height": 146 },
   "matched_text_index": null,
   "prompt_tokens": 1600,
   "completion_tokens": 24
@@ -233,7 +249,7 @@ When the VLM locates an element, it returns its answer in exactly one of two for
 | Field | When it's set | How to use it |
 |---|---|---|
 | `matched_text_index` | The element is a text label the VLM matched to one of your `texts` entries | Index into the `texts` list you passed — look up the original `OcrResult` from `/infer` for its pixel-precise `bbox` |
-| `bbox` | The element is a non-text UI component (icon, image, input) or no `texts` were provided | Use `x, y, width, height` directly — origin is top-left, units are pixels |
+| `bbox` | The element is a non-text UI component (icon, image, input) or no `texts` were provided | HTTP: `x, y, width, height` (top-left origin, pixels). SDK `LocateResult.bbox`: `x1, y1, x2, y2` pixel coordinates. |
 
 The two are mutually exclusive. When `found` is `true`, exactly one of them is non-`null`.
 
@@ -269,9 +285,9 @@ if not location.found:
     # Banner may have already been dismissed — continue normally
     pass
 else:
-    # Tap the element
+    # Tap the element — bbox uses x1,y1,x2,y2 pixel coordinates
     b = location.bbox
-    driver.tap(x=b.x + b.width // 2, y=b.y + b.height // 2)
+    driver.tap(x=(b.x1 + b.x2) // 2, y=(b.y1 + b.y2) // 2)
 ```
 
 <Note>

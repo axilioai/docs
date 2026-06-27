@@ -240,24 +240,37 @@ YOLO often produces multiple overlapping bounding boxes for a single object. Non
 
 ## Using Hash Results for Frame Deduplication
 
-The `hash_result` field lets you avoid re-running inference on frames that haven't changed. After your first `/infer` call, store the response keyed by `phash`. On subsequent frames, compute or compare the hash before sending a new request:
+The `hash_result` field in the HTTP response lets you avoid re-running inference on frames that haven't changed. The perceptual hash is part of the raw JSON response body and is not exposed on the `InferenceResult` SDK object — use the HTTP API directly when you want to implement hash-based caching:
 
 ```python
-from axilio.argus import InferenceResult
+import base64
+import httpx
 
-cache: dict[str, InferenceResult] = {}
+cache: dict[str, dict] = {}
 
-def analyse(client, image_bytes: bytes) -> InferenceResult:
-    # Quick pre-check: infer once, then use hash for cache key
-    result = client.argus.infer(image_bytes, inference_type="combined")
-    phash = result.hash_result.phash if result.hash_result else None
+def analyse_http(api_key: str, image_bytes: bytes) -> dict:
+    """Call /infer over HTTP and cache by perceptual hash."""
+    payload = {
+        "image": base64.b64encode(image_bytes).decode(),
+        "inference_type": "combined",
+    }
+    resp = httpx.post(
+        "https://api.axilio.ai/api/v1/inference/infer",
+        headers={"X-Axilio-Api-Key": api_key},
+        json=payload,
+    )
+    resp.raise_for_status()
+    data = resp.json()["data"]
+
+    hash_result = data.get("hash_result")
+    phash = hash_result["phash"] if hash_result else None
 
     if phash and phash in cache:
-        return cache[phash]          # identical frame — skip billing
+        return cache[phash]   # identical frame — skip billing
 
     if phash:
-        cache[phash] = result
-    return result
+        cache[phash] = data
+    return data
 ```
 
 <Tip>
@@ -269,12 +282,24 @@ def analyse(client, image_bytes: bytes) -> InferenceResult:
 When you need to find a specific element after analysing a frame, pass the `ocr_results` from `/infer` directly to `/locate` as grounding context. This avoids re-running OCR inside the VLM call and reduces both latency and cost:
 
 ```python
-from axilio.argus import TextElement
+from axilio.argus import BoundingBox, TextElement
 
 infer_result = client.argus.infer(image_bytes, inference_type="combined")
 
+w = infer_result.image_width
+h = infer_result.image_height
+
+# TextElement.bbox must be normalised to [0, 1]; OcrResult.bbox is in pixels.
 texts = [
-    TextElement(text=r.text, bbox=r.bbox)
+    TextElement(
+        text=r.text,
+        bbox=BoundingBox(
+            x1=r.bbox.x1 / w,
+            y1=r.bbox.y1 / h,
+            x2=r.bbox.x2 / w,
+            y2=r.bbox.y2 / h,
+        ),
+    )
     for r in infer_result.ocr_results
 ]
 

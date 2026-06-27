@@ -159,9 +159,11 @@ with device:
 | `platform` | `"android"` \| `"iphone"` | The OS of the allocated device. |
 | `location` | `str` | The location ID where the device resides. |
 | `expires_at` | `datetime` | UTC timestamp when the lease expires automatically. |
+| `signaling_url` | `str` | WebRTC signaling endpoint for the device connection. |
+| `signaling_token` | `str` | Short-lived credential used to authenticate the signaling session. |
 
 <Info>
-`expires_at` is a hard deadline set by the Axilio backend. If your automation runs longer than expected and the lease expires, the device will be reclaimed even if you haven't called `deallocate()`. Poll `expires_at` in long-running jobs and extend or re-allocate before the deadline.
+`expires_at` is a hard deadline set by the Axilio backend. If your automation runs longer than expected and the lease expires, the device will be reclaimed even if you haven't called `deallocate()`. Monitor `expires_at` in long-running jobs and re-allocate a fresh device before the deadline if needed.
 </Info>
 
 ## Handling allocation timeout
