@@ -22,7 +22,7 @@ Every Axilio device is a real Android phone connected to a carrier network — n
     ```
   </Step>
   <Step title="Use the device">
-    Pass the `DeviceHandle` to `MobileDriver.connect()` inside a sandbox workflow, or use the handle's metadata to connect via your own transport. All driver interactions happen within this step.
+    Wrap the `DeviceHandle` with a `MobileDriver` to control the device. All driver interactions happen within this step. See [MobileDriver](/concepts/mobile-driver) for the full selector and action API.
   </Step>
   <Step title="Deallocate the device">
     Release the device so it returns to the fleet and billing stops. Call `handle.deallocate()` explicitly, or let the `session()` context manager do it automatically — including when exceptions occur.
@@ -42,9 +42,9 @@ Every Axilio device is a real Android phone connected to a carrier network — n
 The `session()` context manager calls `allocate()` on entry and `deallocate()` on exit, even if an exception propagates. Use it in preference to raw `allocate()` / `deallocate()` calls.
 
 ```python
-import axilio
+from axilio.platform import Client
 
-client = axilio.Client()
+client = Client()
 
 with client.mobile.session(
     platform="android",

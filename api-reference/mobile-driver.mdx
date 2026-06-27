@@ -549,7 +549,7 @@ An immutable snapshot of one observed frame. Returned by `observe()` and `wait_f
 </ResponseField>
 
 <ResponseField name="icons" type="list[IconBox]">
-  All YOLO-detected icon bounding boxes in the frame.
+  All detected icon bounding boxes in the frame.
 </ResponseField>
 
 <ResponseField name="hash" type="str">
@@ -577,7 +577,7 @@ A detected icon region. Unlike `Element`, an `IconBox` carries no text and no dr
 
 <ResponseField name="bbox" type="BBox">Bounding box in frame-space pixels.</ResponseField>
 <ResponseField name="center" type="Coords">Pre-computed center of the bounding box.</ResponseField>
-<ResponseField name="confidence" type="float">YOLO detection confidence in `[0.0, 1.0]`.</ResponseField>
+<ResponseField name="confidence" type="float">Detection confidence in `[0.0, 1.0]`.</ResponseField>
 
 ### `BBox`
 
@@ -616,7 +616,7 @@ A `TypedDict` representing a point in frame-space pixels.
 | `ConnectionError` | No | SDK could not open the Unix socket |
 
 ```python
-from axilio.drivers.mobile._errors import ElementNotFoundError, TimeoutError
+from axilio.drivers import ElementNotFoundError, TimeoutError
 
 try:
     el = driver.find(query="confirm button", timeout=5.0)

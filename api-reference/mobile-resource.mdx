@@ -240,6 +240,20 @@ An active device allocation. All fields are read-only. You can use a `DeviceHand
   this as a secret.
 </ResponseField>
 
+<ResponseField name="ice_servers" type="list[IceServer]">
+  Pre-minted STUN/TURN server credentials used by the SDK to establish the
+  WebRTC control channel to the on-device agent. You do not normally need to
+  use these directly.
+</ResponseField>
+
+#### `DeviceHandle.close()`
+
+```python
+device.close() -> None
+```
+
+Closes the underlying transport connection. The next method call on the same handle will reconnect automatically. Use this to free the connection when you want to pause driving without releasing the device allocation.
+
 #### `DeviceHandle.deallocate()`
 
 ```python

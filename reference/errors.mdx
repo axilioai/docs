@@ -58,7 +58,7 @@ Platform errors are raised when the Axilio HTTP API returns a non-successful res
 | `NotFoundError` | 404 | No | Resource doesn't exist or isn't visible to your API key |
 | `RateLimitError` | 429 | Yes | You've exceeded your plan's request rate; back off and retry |
 | `ServerError` | 5xx | Yes | Transient backend failure; safe to retry with exponential backoff |
-| `SandboxPermissionError` | None | No | Sandbox-mode code tried a write-only operation (e.g. revoking API keys) |
+| `SandboxPermissionError` | None | No | Sandbox-mode code tried a local-mode-only operation (e.g. revoking API keys) |
 | `AllocationMismatchError` | None | No | `devices.allocate()` kwargs don't match the device the sandbox actually provisioned |
 
 <Warning>

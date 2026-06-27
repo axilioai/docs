@@ -108,7 +108,7 @@ print(sub.cancel_at_period_end)   # False
 
 ## Viewing invoices
 
-Call `client.billing.invoices(start, end)` to retrieve historical invoices. The interval is **half-open** — `start` is inclusive, `end` is exclusive — matching the convention used throughout the billing backend.
+Call `client.billing.invoices(start, end)` to retrieve historical invoices. The interval is **half-open** — `start` is inclusive, `end` is exclusive.
 
 ```python
 from datetime import datetime, timezone

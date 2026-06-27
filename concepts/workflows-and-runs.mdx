@@ -14,10 +14,10 @@ A workflow stores your Python automation script as a string. The script has acce
 
 ```python
 WORKFLOW_CODE = """
-import axilio
+from axilio.platform import Client
 from axilio.drivers.mobile import MobileDriver
 
-client = axilio.Client()
+client = Client()
 
 with client.mobile.session() as handle:
     with MobileDriver.connect() as driver:
@@ -184,9 +184,9 @@ password = os.environ["AXILIO_VAR_PASSWORD"]
 
 ```python
 import time
-import axilio
+from axilio.platform import Client
 
-client = axilio.Client()
+client = Client()
 run = client.runs.create(workflow_id="wf_abc123")
 
 # Poll until terminal status
@@ -264,11 +264,11 @@ for r in runs:
 When your workflow script executes in a sandbox, `MobileDriver.connect()` pairs automatically with the pre-allocated device. You do not need to pass a `DeviceHandle` — the sandbox handles the pairing for you.
 
 ```python
-import axilio
-from axilio.drivers.mobile import MobileDriver
+from axilio.platform import Client
+from axilio.drivers.mobile import MobileDriver, Key
 
 # In sandbox mode, Client() auto-detects AXILIO_SANDBOX_TOKEN.
-client = axilio.Client()
+client = Client()
 
 with client.mobile.session() as handle:
     print(f"Running on: {handle.device_name}")

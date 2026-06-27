@@ -339,27 +339,28 @@ driver.key_press(Key.MUTE)        # Mute
 The following example shows a typical login automation that combines multiple selector strategies, wait helpers, and direct actions:
 
 ```python
+from axilio.platform import Client
 from axilio.drivers.mobile import MobileDriver, Key
-import axilio
 
-client = axilio.Client()
+client = Client()
 
 with client.mobile.session(apps=["com.example.myapp"]) as handle:
-    with MobileDriver.connect() as driver:
-        # Wait for the app's splash screen to clear
-        driver.wait_until_gone("Loading", timeout=15.0)
+    driver = MobileDriver(handle)
 
-        # Tap the email field and type credentials
-        driver.find_text("Email").type_into("user@example.com")
-        driver.find_text("Password").type_into("s3cr3t!")
+    # Wait for the app's splash screen to clear
+    driver.wait_until_gone("Loading", timeout=15.0)
 
-        # Tap the Sign In button
-        driver.find_text("Sign In").tap()
+    # Tap the email field and type credentials
+    driver.find_text("Email").type_into("user@example.com")
+    driver.find_text("Password").type_into("s3cr3t!")
 
-        # Wait until the dashboard is ready
-        driver.wait_for_text("Dashboard", timeout=20.0)
+    # Tap the Sign In button
+    driver.find_text("Sign In").tap()
 
-        # Take a screenshot to confirm
-        png = driver.screenshot()
-        print(f"Screenshot captured: {len(png)} bytes")
+    # Wait until the dashboard is ready
+    driver.wait_for_text("Dashboard", timeout=20.0)
+
+    # Take a screenshot to confirm
+    png = driver.screenshot()
+    print(f"Screenshot captured: {len(png)} bytes")
 ```
