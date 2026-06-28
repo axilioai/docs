@@ -57,33 +57,67 @@
             ]
           },
           {
-            "group": "Core Concepts",
-            "icon": "cube",
+            "group": "Devices",
+            "icon": "mobile",
             "pages": [
-              "concepts/devices",
-              "concepts/mobile-driver",
-              "concepts/workflows-and-runs",
-              "concepts/sandbox-mode"
+              "devices/overview",
+              "devices/allocate",
+              "devices/discover",
+              "devices/timeouts"
+            ]
+          },
+          {
+            "group": "Controlling the Device",
+            "icon": "hand-pointer",
+            "pages": [
+              "driver/overview",
+              "driver/find-by-text",
+              "driver/find-with-vision",
+              "driver/read-the-screen",
+              "driver/actions",
+              "driver/hardware-keys",
+              "driver/waiting",
+              "driver/screenshots"
+            ]
+          },
+          {
+            "group": "Workflows & Runs",
+            "icon": "diagram-project",
+            "pages": [
+              "workflows/overview",
+              "workflows/create",
+              "workflows/run",
+              "workflows/monitor",
+              "workflows/sandbox-mode"
+            ]
+          },
+          {
+            "group": "Scaling",
+            "icon": "bolt",
+            "pages": [
+              "scaling/parallel-sessions",
+              "scaling/rate-limits",
+              "scaling/workflow-engine"
             ]
           },
           {
             "group": "Guides",
             "icon": "book",
             "pages": [
-              "guides/allocating-devices",
-              "guides/controlling-devices",
-              "guides/running-workflows",
-              "guides/parallel-execution",
               "guides/best-practices"
             ]
           },
           {
-            "group": "Platform",
-            "icon": "building",
+            "group": "Account & Billing",
+            "icon": "credit-card",
             "pages": [
-              "platform/billing",
-              "platform/usage",
-              "platform/organizations",
+              "billing/overview",
+              "billing/balance-and-invoices",
+              "billing/plans",
+              "usage/metrics",
+              "usage/sessions",
+              "org/overview",
+              "org/members",
               "platform/api-keys"
             ]
           },
@@ -148,6 +182,19 @@
       }
     ]
   },
+  "redirects": [
+    { "source": "/concepts/devices", "destination": "/devices/overview" },
+    { "source": "/concepts/mobile-driver", "destination": "/driver/overview" },
+    { "source": "/concepts/workflows-and-runs", "destination": "/workflows/overview" },
+    { "source": "/concepts/sandbox-mode", "destination": "/workflows/sandbox-mode" },
+    { "source": "/guides/allocating-devices", "destination": "/devices/allocate" },
+    { "source": "/guides/controlling-devices", "destination": "/driver/overview" },
+    { "source": "/guides/running-workflows", "destination": "/workflows/create" },
+    { "source": "/guides/parallel-execution", "destination": "/scaling/parallel-sessions" },
+    { "source": "/platform/billing", "destination": "/billing/overview" },
+    { "source": "/platform/usage", "destination": "/usage/metrics" },
+    { "source": "/platform/organizations", "destination": "/org/overview" }
+  ],
   "footer": {
     "socials": {
       "website": "https://axilio.ai"

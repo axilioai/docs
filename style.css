@@ -13,6 +13,67 @@
   border-radius: 0 !important;
 }
 
+/* ── Typography scale — match the rest of the brand ────────────────────────────
+   axilio.ai and the dashboard run small and dense: UI text is overwhelmingly
+   text-xs (12px) / text-sm (14px) IBM Plex Mono, headings text-xl…3xl. The maple
+   defaults render ~16px body + large headings, which read "blown up" against that.
+   We step the whole surface down a touch (root) and set an explicit, smaller
+   content scale so the docs feel like the same product. Keep this the source of
+   truth alongside DESIGN.md's scale. */
+
+/* Gentle global step-down: 16 → 15px root shrinks chrome (nav, sidebar, TOC,
+   components) proportionally so nothing feels zoomed in. */
+html {
+  font-size: 15px;
+}
+
+/* Body / prose — 14px mono, generous line-height for long-form readability. */
+#content-area,
+#content-area p,
+#content-area li {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* Headings — smaller and tighter than maple's defaults; mono wants negative
+   tracking at display sizes. Sizes are in rem so they ride the 15px root. */
+#content-area h1 {
+  font-size: 1.95rem;   /* ~29px */
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+#content-area h2 {
+  font-size: 1.45rem;   /* ~22px */
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+#content-area h3 {
+  font-size: 1.15rem;   /* ~17px */
+  line-height: 1.25;
+  font-weight: 600;
+}
+#content-area h4 {
+  font-size: 1rem;      /* ~15px */
+  font-weight: 600;
+}
+
+/* The title subtitle (frontmatter description, when the theme renders it) and any
+   lead paragraph should not balloon — keep it close to body size, just muted. */
+#content-area h1 + p,
+#content-area .lead {
+  font-size: 0.95rem;   /* ~14.25px */
+  line-height: 1.55;
+}
+
+/* Code blocks — 13px so dense snippets don't dominate the page. */
+#content-area pre,
+#content-area pre code {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 /* ── Responsive card grids — let homepage Columns reflow 1→2→3→4 by width
    instead of locking to a fixed `cols`. Add className="responsive-columns". ─ */
 .responsive-columns {

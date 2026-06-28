@@ -41,10 +41,15 @@ it.
   (`docs.json` → `fonts`). The previous `font` block was silently ignored; verify
   the computed font is actually IBM Plex Mono, not Inter.
 - **Readability tuning (required, since body is mono):**
-  - Body size 15px, line-height 1.7
+  - Root stepped down to **15px** (from the maple 16px default) so the whole
+    surface matches the dense sizing on axilio.ai + the dashboard, which run
+    mostly `text-xs` (12px) / `text-sm` (14px) mono. The maple defaults read
+    "blown up" against the rest of the brand.
+  - Body size **14px**, line-height 1.65
   - Measure capped ~72ch
   - Headings tighter: line-height ~1.15, letter-spacing -0.01em
-- **Scale (px):** h1 40 / h2 28 / h3 20 / body 15 / small 13 / code 13.5
+- **Scale:** h1 ~29px (1.95rem) / h2 ~22px (1.45rem) / h3 ~17px (1.15rem) /
+  body 14px / code 13px. Implemented in `style.css`, not just specified here.
 
 ## Color
 Dark-first. The canvas, surfaces, and borders are a neutral near-black grayscale
@@ -136,42 +141,71 @@ CSS/MDX:
 - No abstract phone illustrations — real device screencaps only
 - No Inter/Roboto/system fonts — IBM Plex Mono is the typeface
 
+## Information architecture — one page, one job
+The single most important rule, and the one the docs most often broke: **every
+page does exactly one job.** A reader who wants one thing must never have to read
+two other things to find it. Pages are short (one scroll, ~150–400 words) and
+plentiful — many focused pages beat a few dense ones.
+
+There are exactly three page types. Never mix them on one page.
+
+- **Concept page** — explains *one* idea and its mental model, for the evaluator
+  who wants to understand X before committing. ~250–400 words. A diagram or a
+  3-bullet loop, a "when to use what" comparison, and links out to the tasks that
+  use it. **No full API surface, no step-by-step tutorial.**
+- **Task page** — walks *one* outcome, for the builder. ~150–350 words. Lead with
+  the canonical snippet; one or two sentences on the key parameter or gotcha;
+  done. One job per page — if it needs a second `##` for a genuinely different
+  task, that's a second page.
+- **Reference page** — pure lookup, for the experienced user who forgot a param.
+  Signatures and tables, near-zero prose. Most reference lives in the **API
+  Reference tab**; Docs-tab pages link into it rather than repeating it.
+
+**Hard rules that keep pages honest:**
+- **Lead with the answer.** First screen = what the page does + the canonical
+  snippet. No backstory, no "in this guide we will…", before the code.
+- **Don't repeat the API.** The API Reference tab is the source of truth for full
+  signatures and field tables. A task page shows the one call it's about and links
+  to the reference for the rest. Never re-document a whole resource in a guide.
+- **One "complete example" for the whole product**, in a single recipes/quickstart
+  location — not pasted at the bottom of every page.
+- **"Under the hood" is opt-in and lives only on concept pages**, as a short final
+  section for the curious. Never wedge mechanism essays into a task page.
+- **If two pages would say the same thing, write it once and link.** The old
+  `concepts/*` and `guides/*` overlap is the anti-pattern: same content, three
+  places. Concept explains; tasks link to the concept.
+
 ## Voice & content patterns
 The look is the instrument panel; the *writing* is the operator's manual — plain,
 direct, and confident, written by someone who has actually run this in production.
-These patterns are how every page should read.
 
 - **Framer line.** Every page opens with one tight sentence under the title that
   says what the page is and who it's for — not a marketing paragraph. Then get to
-  the work. ("A how-to guide for common tasks." not "In this comprehensive guide
-  we will explore…")
-- **Explain the why, not just the what.** State the mechanism and the reason
-  behind it. The reader should finish a section understanding *why* the API is
-  shaped this way, so they can reason about cases the docs don't cover.
+  the work. ("Allocate a device and guarantee it's released." not "In this
+  comprehensive guide we will explore…")
 - **Second person, active voice, present tense.** "You allocate a device." Use
   "we" for platform behavior ("we bill per second"). Contractions are fine.
-- **Numbered `<Steps>` for every procedure**, with a bolded lead per step. One
-  action per step. Inline-comment the code so each line earns its place.
-- **`## Under the hood`** — a short deep-dive section on concept pages that
-  explains the real mechanism (sockets, signaling, lifecycle, billing math) for
-  the reader who wants to know how the machine actually works. Optional but
-  encouraged on every concept page.
-- **`## Common issues`** — troubleshooting near the end of task pages: symptom →
-  cause → fix, as a tight list or `<AccordionGroup>`. Pulled straight from real
-  failure modes, not hypotheticals.
-- **Pro tips** — a short bulleted list of non-obvious, earned advice, each line a
-  bolded lead + one sentence. Use a `<Tip>` for a single one, a list for several.
+- **Explain the why in one line, not a paragraph.** State the mechanism behind the
+  one thing this page does, so the reader can reason past the docs — but keep it
+  to a sentence on a task page. Deep mechanism goes on the concept page's "Under
+  the hood", never on tasks.
+- **Numbered `<Steps>` for procedures**, with a bolded lead per step, one action
+  each. Inline-comment code so each line earns its place.
+- **`## Common issues`** — optional short troubleshooting near the end of a task
+  page: symptom → cause → fix, as a tight list or `<AccordionGroup>`. Real failure
+  modes only. Keep it to the issues specific to *this* task.
+- **Pro tips** — a `<Tip>` for one piece of non-obvious earned advice; a short
+  bulleted list (bolded lead + one sentence) for several. Don't pad.
 - **Callouts:** use Mintlify's themed components (`<Note>`, `<Tip>`, `<Warning>`,
-  `<Info>`, `<Check>`) — they read better in our dark theme than raw
-  `> [!NOTE]` blockquotes. Reserve `<Warning>` for things that cost money, leak
+  `<Info>`, `<Check>`). Reserve `<Warning>` for things that cost money, leak
   secrets, or strand a device.
-- **Reference tables** for anything enumerable (errors, statuses, params, billing
-  events). Tables over prose whenever the data is structured.
+- **Reference tables** for anything enumerable (errors, statuses, params). Tables
+  over prose whenever the data is structured.
 - **Cross-link generously.** Every concept the reader might not know links to its
-  page on first mention. Dead-ends are a bug.
+  page on first mention. Dead-ends are a bug — but a link is how you keep a page
+  short, so link instead of re-explaining.
 - **Code is the source of truth.** Show the real call, runnable, with the import.
-  Use `<CodeGroup>` tabs for genuine variants (lifecycle styles, languages), never
-  to pad.
+  Use `<CodeGroup>` tabs for genuine variants (lifecycle styles), never to pad.
 
 ## Decisions Log
 | Date | Decision | Rationale |
@@ -181,3 +215,5 @@ These patterns are how every page should read.
 | 2026-06-27 | Sharp corners site-wide (radius 0) | One bold global move; mono + sharp is Axilio's signature. Supersedes the earlier 4/6/8px radius scale |
 | 2026-06-27 | Principled CSS over !important soup | Identity comes from config + a few global rules (no-radius) + minimal targeted fixes. Reset our aggressive overrides to match this discipline |
 | 2026-06-27 | Operator's-manual voice + content patterns | Studied a set of production engineering runbooks: direct voice, framer lines, explain-the-why, "Under the hood", "Common issues", pro tips. Codified as the writing standard; keep Mintlify themed callouts over raw GitHub blockquotes |
+| 2026-06-27 | Shrink the type scale to match the front-end | The maple defaults (~16px body, large headings) rendered "blown up" next to axilio.ai + the dashboard, whose UI text is mostly 12–14px mono. The prescribed scale was never actually implemented in CSS. Stepped root to 15px + explicit 14px body / smaller headings in `style.css`; updated the scale here to match what ships |
+| 2026-06-27 | One page, one job — split dense pages into many focused ones | Pages averaged 1,000–1,900 words and mixed concept + tutorial + full API reference + essay, forcing a full read to find one thing. `concepts/*` and `guides/*` were ~90% duplicates of each other and of the API Reference tab. New model: three page types (concept / task / reference), never mixed; lead with the answer; ~150–400 words; link instead of repeat. The "Under the hood" and exhaustive-example patterns were a primary cause of bloat and are now restricted to concept pages / one recipes location |
