@@ -109,8 +109,10 @@ CSS/MDX:
 - **Approach:** grid-disciplined, left-aligned. Technical content is never
   centered.
 - **Max content width:** ~720px measure for prose; full width for tables/code.
-- **Border radius:** small and consistent — sm 4px / md 6px / lg 8px. No pill
-  shapes, no uniformly-bubbly corners.
+- **Border radius:** zero, everywhere. Sharp corners site-wide are Axilio's bold
+  global signature. Reinforces the instrument-panel read: no pill shapes, no
+  rounded SaaS chrome. Enforced once in `style.css` with a global
+  `border-radius: 0` rule, not per-element.
 - **Signature patterns:**
   - **`//section` markers** — section headers prefixed with a muted `//` comment,
     matching the marketing site (`//PRODUCT`, `//WHY AXILIO`).
@@ -134,8 +136,48 @@ CSS/MDX:
 - No abstract phone illustrations — real device screencaps only
 - No Inter/Roboto/system fonts — IBM Plex Mono is the typeface
 
+## Voice & content patterns
+The look is the instrument panel; the *writing* is the operator's manual — plain,
+direct, and confident, written by someone who has actually run this in production.
+These patterns are how every page should read.
+
+- **Framer line.** Every page opens with one tight sentence under the title that
+  says what the page is and who it's for — not a marketing paragraph. Then get to
+  the work. ("A how-to guide for common tasks." not "In this comprehensive guide
+  we will explore…")
+- **Explain the why, not just the what.** State the mechanism and the reason
+  behind it. The reader should finish a section understanding *why* the API is
+  shaped this way, so they can reason about cases the docs don't cover.
+- **Second person, active voice, present tense.** "You allocate a device." Use
+  "we" for platform behavior ("we bill per second"). Contractions are fine.
+- **Numbered `<Steps>` for every procedure**, with a bolded lead per step. One
+  action per step. Inline-comment the code so each line earns its place.
+- **`## Under the hood`** — a short deep-dive section on concept pages that
+  explains the real mechanism (sockets, signaling, lifecycle, billing math) for
+  the reader who wants to know how the machine actually works. Optional but
+  encouraged on every concept page.
+- **`## Common issues`** — troubleshooting near the end of task pages: symptom →
+  cause → fix, as a tight list or `<AccordionGroup>`. Pulled straight from real
+  failure modes, not hypotheticals.
+- **Pro tips** — a short bulleted list of non-obvious, earned advice, each line a
+  bolded lead + one sentence. Use a `<Tip>` for a single one, a list for several.
+- **Callouts:** use Mintlify's themed components (`<Note>`, `<Tip>`, `<Warning>`,
+  `<Info>`, `<Check>`) — they read better in our dark theme than raw
+  `> [!NOTE]` blockquotes. Reserve `<Warning>` for things that cost money, leak
+  secrets, or strand a device.
+- **Reference tables** for anything enumerable (errors, statuses, params, billing
+  events). Tables over prose whenever the data is structured.
+- **Cross-link generously.** Every concept the reader might not know links to its
+  page on first mention. Dead-ends are a bug.
+- **Code is the source of truth.** Show the real call, runnable, with the import.
+  Use `<CodeGroup>` tabs for genuine variants (lifecycle styles, languages), never
+  to pad.
+
 ## Decisions Log
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-06-27 | Adopt dark-first IBM Plex Mono + #18E299 system | Match the existing brand on axilio.ai and axilio/frontend; the docs were the only off-brand surface |
 | 2026-06-27 | Retire #7bcab0 | Not a real brand color; logo fill is #18E299 |
+| 2026-06-27 | Sharp corners site-wide (radius 0) | One bold global move; mono + sharp is Axilio's signature. Supersedes the earlier 4/6/8px radius scale |
+| 2026-06-27 | Principled CSS over !important soup | Identity comes from config + a few global rules (no-radius) + minimal targeted fixes. Reset our aggressive overrides to match this discipline |
+| 2026-06-27 | Operator's-manual voice + content patterns | Studied a set of production engineering runbooks: direct voice, framer lines, explain-the-why, "Under the hood", "Common issues", pro tips. Codified as the writing standard; keep Mintlify themed callouts over raw GitHub blockquotes |

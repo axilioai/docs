@@ -4,7 +4,9 @@ sidebarTitle: "Mobile Driver"
 description: "Understand how MobileDriver pairs with a device, which selector strategies to use, and how to chain element actions and polling helpers."
 ---
 
-`MobileDriver` is your primary interface for automating a device. It connects to the on-device agent inside a sandbox, then exposes a chainable selector surface that lets you find elements by text, describe them in natural language, or capture the full screen as a typed snapshot. Every selector returns an `Element` you can immediately act on — tap it, type into it, long-press it, or swipe from it to another element — without ever needing to track raw pixel coordinates yourself. For cases where you need precise control, the driver also exposes low-level methods that accept explicit coordinates.
+The one object you'll use most: find elements, act on them, and wait for the screen to settle.
+
+`MobileDriver` connects to the on-device agent and gives you a chainable selector surface. You find elements by text, describe them in plain English, or snapshot the whole screen — and every selector hands back an `Element` you can act on directly: tap it, type into it, long-press it, swipe from it. You never track raw pixel coordinates yourself, though the driver exposes coordinate-level methods for the cases that need them.
 
 ## Connecting to a device
 
@@ -333,6 +335,18 @@ driver.key_press(Key.VOLUME_UP)   # Volume up
 driver.key_press(Key.VOLUME_DOWN) # Volume down
 driver.key_press(Key.MUTE)        # Mute
 ```
+
+## Under the hood
+
+Every selector resolves the same way, and understanding that loop explains the speed trade-offs.
+
+1. **Capture.** The driver asks the on-device agent for the current frame. In a workflow sandbox this travels over a local Unix socket; for a remotely-allocated device it rides the same peer connection the [`DeviceHandle`](/concepts/devices) opened. Either way you're looking at a real frame from real glass.
+2. **Locate.** `find_text()` runs OCR on that frame on the device — milliseconds, no network hop. `find(query=...)` ships the frame to [Argus](/api-reference/argus/overview) and waits for the vision model to return coordinates — one round-trip, noticeably slower. `observe()` does the capture+OCR once and hands you a `Screen` you can query repeatedly for free.
+3. **Act.** The resulting `Element` carries a `center`, and actions (`tap`, `type_into`, `swipe_to`) send input events back to the agent, which replays them as actual touches. There is no DOM and no accessibility tree in the path — what you act on is what's literally rendered.
+
+<Tip>
+  This is the whole reason `find_text()` is the default and `find()` is the escape hatch: text search is local and cheap, vision search is remote and powerful. Batch reads with `observe()` when you need to check several things on one screen — it collapses N OCR round-trips into one.
+</Tip>
 
 ## Complete example
 

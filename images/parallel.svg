@@ -1,0 +1,24 @@
+<svg width="400" height="240" viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Parallel device sessions">
+  <rect width="400" height="240" fill="#0A0A0A"/>
+  <rect x="0.5" y="0.5" width="399" height="239" stroke="#1A1A1A"/>
+  <rect x="24" y="24" width="352" height="26" fill="#0F0F0F" stroke="#1A1A1A"/>
+  <circle cx="40" cy="37" r="3" fill="#10B981"/>
+  <text x="54" y="41" font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="1.5" fill="#A3A3A3">FLEET // 1024 SESSIONS</text>
+  <g fill="#10B981">
+    <rect x="24" y="72" width="14" height="14"/><rect x="46" y="72" width="14" height="14"/><rect x="68" y="72" width="14" height="14"/>
+    <rect x="90" y="72" width="14" height="14"/><rect x="112" y="72" width="14" height="14"/>
+  </g>
+  <g fill="#161616">
+    <rect x="134" y="72" width="14" height="14"/><rect x="156" y="72" width="14" height="14"/><rect x="178" y="72" width="14" height="14"/>
+    <rect x="24" y="94" width="14" height="14"/><rect x="46" y="94" width="14" height="14"/>
+  </g>
+  <rect x="68" y="94" width="14" height="14" fill="#FBBF24"/>
+  <g fill="#161616">
+    <rect x="90" y="94" width="14" height="14"/><rect x="112" y="94" width="14" height="14"/><rect x="134" y="94" width="14" height="14"/>
+    <rect x="156" y="94" width="14" height="14"/><rect x="178" y="94" width="14" height="14"/>
+  </g>
+  <rect x="24" y="138" width="352" height="1" fill="#1A1A1A"/>
+  <text x="24" y="166" font-family="IBM Plex Mono, monospace" font-size="13" fill="#FAFAFA">Fan out concurrently</text>
+  <text x="24" y="188" font-family="IBM Plex Mono, monospace" font-size="11" fill="#737373">isolated // billed per second</text>
+  <text x="24" y="214" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="1" fill="#10B981">5 ACTIVE // 1 BUSY</text>
+</svg>

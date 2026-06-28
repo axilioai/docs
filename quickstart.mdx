@@ -4,7 +4,9 @@ sidebarTitle: "Quickstart"
 description: "Install the Axilio SDK, set your API key, and automate a real Android device in the cloud — from zero to a working session in under five minutes."
 ---
 
-This guide walks you from a fresh Python environment to a working device session. By the end you'll have allocated a real Android phone, run a short automation sequence on it, and released it — all in fewer than twenty lines of code. You'll need Python 3.10 or newer and an Axilio account; sign up for free at [axilio.ai](https://axilio.ai).
+From a fresh Python environment to a real phone running your code, in under five minutes.
+
+By the end you'll have allocated a real Android phone, run a short automation on it, and released it — in fewer than twenty lines. You'll need Python 3.10+ and an Axilio account ([sign up free](https://axilio.ai)).
 
 <Steps>
 
@@ -40,9 +42,10 @@ For persistent configuration, add the export to your shell profile (`~/.zshrc`, 
 
 ### Run your first automation
 
-The snippet below allocates an Android device, wraps it with a `MobileDriver`, runs a short sequence of interactions, and releases the device automatically when the `with` block exits.
+The snippet below allocates an Android device, wraps it with a `MobileDriver`, runs a short sequence of interactions, and releases the device. The **Context manager** tab is the recommended approach; the **Explicit** tab shows the equivalent manual lifecycle when you need to hold a device across function or thread boundaries.
 
-```python
+<CodeGroup>
+```python Context manager
 from axilio.platform import Client
 from axilio.drivers import MobileDriver
 
@@ -69,6 +72,29 @@ with client.mobile.session(platform="android") as device:
 print("Session complete — device released.")
 ```
 
+```python Explicit
+from axilio.platform import Client
+from axilio.drivers import MobileDriver
+
+client = Client()
+
+# Allocate manually — you own teardown from here.
+device = client.mobile.allocate(platform="android")
+try:
+    driver = MobileDriver(device)
+    driver.find_text("Sign in").tap()
+    driver.find_text("Email").type_into("you@example.com")
+    driver.find(query="the blue Continue button").tap()
+    png = driver.screenshot()
+    print(f"Screenshot captured: {len(png)} bytes")
+finally:
+    # Always pair allocate() with deallocate() — even on exceptions.
+    client.mobile.deallocate(device)
+
+print("Session complete — device released.")
+```
+</CodeGroup>
+
 <Tip>
   `client.mobile.session()` is the recommended all-in-one approach. It calls `allocate()` on entry and `deallocate()` on exit — even if your code raises an exception — so the device is never left stranded and billing stops immediately. If you need to hold a device across multiple function calls or threads, use `client.mobile.allocate()` and `client.mobile.deallocate()` explicitly, but make sure to pair every allocate with a deallocate in a `finally` block.
 </Tip>
@@ -84,19 +110,45 @@ When you run the script, Axilio:
 
 </Steps>
 
+## Common issues
+
+A few things trip people up on the first run. If your script didn't behave, start here.
+
+<AccordionGroup>
+  <Accordion title="AuthenticationError / 401 on the first call" icon="key">
+    Your key isn't reaching the client. Confirm the variable is exported in the *same* shell that runs the script (`echo $AXILIO_API_KEY`), and that you copied the full secret. Keys are shown once — if you lost it, create a new one. See [Authentication](/authentication).
+  </Accordion>
+  <Accordion title="The script hangs on session()" icon="hourglass">
+    `session()` waits up to `timeout` seconds (default 60) for a device matching your constraints to come free. A narrow `apps`/`location` combination can mean a longer wait. Drop the constraints to grab the nearest free device, or raise `timeout`. See [Devices](/concepts/devices#allocation-timeout).
+  </Accordion>
+  <Accordion title="find_text() returns None and the next line crashes" icon="triangle-exclamation">
+    OCR didn't see that string yet — the screen may still be loading. Never act on an unchecked `find_text()` result; poll with `wait_for_text(...)` instead, or guard with `if el:`. See [Best practices](/guides/best-practices).
+  </Accordion>
+  <Accordion title="The device was billed longer than my script ran" icon="receipt">
+    Something exited without releasing the device. Always use `with client.mobile.session(...)` — it deallocates even on exceptions. A raw `allocate()` with no `finally` leaks the lease until `expires_at`.
+  </Accordion>
+</AccordionGroup>
+
+## Pro tips
+
+- **Keep one `session()` for the whole run.** Allocation has a fixed cost; re-allocating per action wastes time and money. Do all your work inside a single block.
+- **Reach for `find_text()` first.** On-device OCR returns in milliseconds; `find(query=...)` round-trips to Argus and is slower. Use vision only when there's no readable text.
+- **Pin your SDK version.** The surface changes before 1.0 — `axilio>=0.1,<0.2` keeps builds reproducible.
+- **Screenshot on failure.** Wrap your flow in `try/except` and call `driver.screenshot()` in the handler; it's the single most useful debugging artifact.
+
 ## Next steps
 
-<CardGroup cols={2}>
-  <Card title="Authentication" icon="key" href="/authentication">
+<Columns className="responsive-columns" cols={2}>
+  <Card title="Authentication" icon="key" iconType="sharp-solid" href="/authentication">
     Learn all the ways to pass credentials and how to manage your API keys.
   </Card>
-  <Card title="MobileDriver" icon="mobile" href="/concepts/mobile-driver">
+  <Card title="MobileDriver" icon="mobile" iconType="sharp-solid" href="/concepts/mobile-driver">
     Explore the full selector and action API — OCR, vision queries, swipes, and more.
   </Card>
-  <Card title="Workflows & Runs" icon="diagram-project" href="/concepts/workflows-and-runs">
+  <Card title="Workflows & Runs" icon="diagram-project" iconType="sharp-solid" href="/concepts/workflows-and-runs">
     Package your automation as a reusable workflow and trigger it via the API.
   </Card>
-  <Card title="Parallel Execution" icon="bolt" href="/guides/parallel-execution">
+  <Card title="Parallel Execution" icon="bolt" iconType="sharp-solid" href="/guides/parallel-execution">
     Scale up by running many device sessions concurrently.
   </Card>
-</CardGroup>
+</Columns>

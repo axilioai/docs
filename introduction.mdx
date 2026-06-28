@@ -4,34 +4,36 @@ sidebarTitle: "Introduction"
 description: "Axilio puts real Android phones on live carrier networks under your code. Automate any mobile app with vision-native control and parallel sessions."
 ---
 
-Axilio is a cloud-hosted mobile automation platform that puts real Android handsets — connected to live carrier networks — under programmatic control. Unlike emulators or screenshot-replay tools, your code talks to physical hardware: calls connect, push notifications arrive on schedule, carrier-gated flows behave exactly as they would for a real user. You request a device through the SDK, drive it with a clean chainable API, and release it when you're done. Axilio handles provisioning, networking, and teardown so you can focus entirely on the automation logic.
+What Axilio is, why it exists, and how the pieces fit together.
+
+Request a device through the SDK, drive it with a chainable vision-native API, then release it — we handle provisioning, networking, and teardown.
+
+Why it matters: emulators quietly diverge from production. Real calls don't connect, push notifications don't land on time, and carrier-gated flows behave differently than they do for a real user. Axilio closes that gap by giving you the real thing.
 
 ## Why Axilio
 
-Most mobile automation runs inside emulators that diverge from production hardware in ways that matter — missing sensors, spoofed network stacks, and artificial latency. Axilio eliminates that class of problem entirely.
-
 <CardGroup cols={2}>
   <Card title="Real hardware" icon="mobile">
-    Every device is a physical Android handset, not a virtual machine. Carrier features, hardware sensors, and OEM-specific behaviour all work as expected.
+    Physical Android handsets, not VMs. Sensors, OEM quirks, and carrier features behave like production.
   </Card>
   <Card title="Live carrier networks" icon="signal">
-    Devices hold genuine SIM cards on real carrier networks. SMS OTPs, voice calls, and carrier-gated app features work without any mocking layer.
+    Genuine SIMs on real networks — SMS OTPs, voice calls, and carrier-gated features, no mocking layer.
   </Card>
   <Card title="Vision-native control" icon="eye">
-    The `MobileDriver` exposes both deterministic OCR selectors and natural-language queries backed by Argus, Axilio's vision inference service. Describe what you see; the driver finds it.
+    Find by text (OCR) or plain-English query (Argus). Describe what you see; the driver finds it.
   </Card>
   <Card title="Parallel execution" icon="bolt">
-    Spin up dozens of independent device sessions concurrently. Each session is isolated, billed per second, and released automatically when your code exits.
+    Thousands of isolated sessions at once — each billed per second, released automatically.
   </Card>
 </CardGroup>
 
 ## Core SDK concepts
 
-The Python SDK ships two primary entry points that work together: a platform client that manages device lifecycle and account resources, and a driver that controls the device you've acquired.
+The SDK has two entry points: a `Client` that manages device lifecycle and account resources, and a `MobileDriver` that controls the device you acquire.
 
 ### `axilio.platform.Client`
 
-`Client` is your connection to the Axilio API. Construct it once per process — it holds the HTTP connection pool and your credentials — and share it across calls. Every resource in the platform is accessible as an attribute:
+Your connection to the API. Construct it once and share it — it holds your credentials and connection pool. Every resource hangs off it as an attribute.
 
 ```python
 from axilio.platform import Client
@@ -39,13 +41,14 @@ from axilio.platform import Client
 client = Client()  # reads AXILIO_API_KEY from the environment
 ```
 
-Through `Client` you can allocate devices (`client.mobile`), manage workflows and runs (`client.workflows`, `client.runs`), inspect usage and billing (`client.usage`, `client.billing`), and administer API keys and organisation members (`client.api_keys`, `client.org`).
+`client.mobile` (devices), `client.workflows` and `client.runs`, `client.usage` and `client.billing`, `client.api_keys` and `client.org`.
 
 ### `axilio.drivers.MobileDriver`
 
-`MobileDriver` wraps a `DeviceHandle` returned by `client.mobile.allocate()` (or `client.mobile.session()`) and exposes a selector-based control surface for the live device. Every selector returns an `Element` whose action methods chain fluently:
+`MobileDriver` wraps the `DeviceHandle` from `allocate()` or `session()` and gives you a chainable selector surface. Every selector returns an `Element` you act on directly:
 
-```python
+<CodeGroup>
+```python Session
 from axilio.drivers import MobileDriver
 
 with client.mobile.session(platform="android") as device:
@@ -57,11 +60,41 @@ with client.mobile.session(platform="android") as device:
     png = driver.screenshot()
 ```
 
-`find_text` uses fast on-device OCR; `find` sends a natural-language query to Argus for anything that text alone can't pin down.
+```python Explicit
+from axilio.drivers import MobileDriver
+
+device = client.mobile.allocate(platform="android")
+try:
+    driver = MobileDriver(device)
+
+    driver.find_text("Sign in").tap()
+    driver.find_text("Email").type_into("you@example.com")
+    driver.find(query="the blue Continue button").tap()
+    png = driver.screenshot()
+finally:
+    client.mobile.deallocate(device)
+```
+</CodeGroup>
+
+`find_text` uses fast on-device OCR; `find` sends a plain-English query to Argus for anything text alone can't pin down.
 
 ## Argus — vision inference
 
-Argus is Axilio's cloud vision inference service. It runs object detection (YOLO), OCR (free and premium engines), and a VLM-backed element locator that accepts plain-English descriptions of UI elements. The `MobileDriver` calls Argus transparently when you use `driver.find(query=...)`, but you can also call it directly through `client.argus` to run inference over arbitrary images — useful for custom screenshot analysis, labelling pipelines, or pre-computing OCR results before driving a session.
+Argus is Axilio's vision service: object detection, OCR (free and premium), and a VLM that locates elements from plain-English descriptions. `driver.find(query=...)` calls it for you, or call `client.argus` directly to run inference on any image — useful for screenshot analysis or pre-computing OCR.
+
+## Under the hood
+
+What happens between `allocate()` and your first `tap()` — it explains the API's shape and where latency comes from.
+
+1. **Allocation.** When you call `client.mobile.allocate()`, the platform finds a free physical phone matching your constraints (platform, location, pre-installed apps), locks it to your account, and returns a [`DeviceHandle`](/concepts/devices) carrying a signaling URL and a short-lived token. Billing starts here.
+2. **Connection.** `MobileDriver` uses the handle to open a peer connection to the device over the signaling service. Input (taps, swipes, text, key presses) travels down this channel; frames travel back up. There's no emulator in the path — these are real touch events on real glass.
+3. **On-device agent.** A small agent running alongside the phone executes your instructions against the hardware and reports structured results (or [errors](/reference/errors)) back over the wire. This is why driver errors carry a `.retryable` flag — the agent knows whether a failure was transient.
+4. **Vision.** When you call `find(query=...)`, the current frame is sent to [Argus](/api-reference/argus/overview), Axilio's inference service, which returns element coordinates. `find_text()` runs OCR on the same frames. Vision is a separate service so it can scale independently of the device fleet.
+5. **Teardown.** `deallocate()` releases the lease, the phone returns to the pool, and billing stops. The `session()` context manager does this for you even when your code raises.
+
+<Info>
+  Because input and frames stream over a live connection, a device stays "warm" for the whole session — there's no per-action cold start. Keep allocations short and do all your work inside one `session()` block.
+</Info>
 
 ## Next steps
 

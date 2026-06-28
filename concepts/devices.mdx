@@ -4,7 +4,9 @@ sidebarTitle: "Devices"
 description: "Learn how Axilio allocates real Android devices, what a DeviceHandle contains, and how to use sessions to manage the full lifecycle safely."
 ---
 
-Every Axilio device is a real Android phone connected to a carrier network — not a simulator or emulator. When your script needs one, you **allocate** it from the Axilio fleet, interact with it through a `DeviceHandle`, and then **deallocate** it when you are done. Billing is per-second, starting the instant allocation succeeds and ending the moment the device returns to the pool, so keeping allocations short and always releasing them — even on error — is critical. The `session()` context manager handles both sides automatically, making it the safest and most idiomatic way to work with devices.
+How devices are allocated, what a `DeviceHandle` carries, and how billing works.
+
+Every Axilio device is a real Android phone on a carrier network — not a simulator. You **allocate** one from the fleet, drive it through a `DeviceHandle`, and **deallocate** it when you're done. Billing runs per-second from the moment allocation succeeds until the device returns to the pool, so the rule is simple: keep allocations short, and always release them — even on error. The `session()` context manager does both sides for you, which is why it's the way you should work with devices.
 
 ## Allocation lifecycle
 
@@ -174,6 +176,19 @@ handle = client.mobile.allocate(
 | `deallocate()` called | Billing stops |
 | `expires_at` reached without deallocate | Billing stops (forced release) |
 | Exception inside `session()` block | `deallocate()` is called automatically by the context manager |
+
+## Under the hood
+
+Knowing what a "device" actually is makes the lifecycle and billing obvious.
+
+- **A `DeviceHandle` is a lease, not a connection.** `allocate()` matchmakes your constraints against the fleet, locks one physical phone to your account, and hands back a handle carrying a `signaling_url` and a short-lived `signaling_token`. The handle is cheap to pass around; the *connection* to the device is opened lazily by `MobileDriver` using those credentials.
+- **`device_id` is the phone; `id` is the lease.** The same physical handset (`device_id`) gets a fresh allocation `id` every time it's leased. Bill records and logs key off the allocation `id`, so that's the one to capture when debugging a specific run.
+- **`expires_at` is a safety net, not a timer you should rely on.** If your code dies without calling `deallocate()`, the platform reclaims the device at `expires_at` and stops billing then — but you've paid for the idle time in between. `session()` exists precisely so you never hit this path.
+- **Billing meters the lease, not your activity.** The clock starts when `allocate()` returns and stops when `deallocate()` is acknowledged, whether the device was busy or idle. Wait time *before* a device is found is free. This is why batching work into one short session beats many small allocations.
+
+<Note>
+  Allocation wait time is not billed, but it does count against your `timeout`. If a constrained allocation (rare app, specific `location`) routinely waits, widen the constraints or raise `timeout` rather than retrying in a loop — each retry restarts the matchmaking.
+</Note>
 
 ## Manual allocate / deallocate pattern
 

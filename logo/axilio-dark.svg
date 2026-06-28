@@ -1,0 +1,9 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Axilio">
+  <g transform="translate(0,1) scale(0.46)">
+    <path d="M12 44L32 56L52 44L52 36L32 48L12 36L12 44Z" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M12 36L32 48L52 36L52 28L32 40L12 28L12 36Z" fill="#10b981" fill-opacity="0.25" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M12 28L32 40L52 28L52 20L32 32L12 20L12 28Z" fill="#10b981" fill-opacity="0.4" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M32 8L52 20L32 32L12 20L32 8Z" fill="#fafafa" fill-opacity="0.92" stroke="#10b981" stroke-width="1.5" stroke-linejoin="round"/>
+  </g>
+  <text x="36" y="22" font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="17" font-weight="600" letter-spacing="2" fill="#FAFAFA">AXILIO</text>
+</svg>
