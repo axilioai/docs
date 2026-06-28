@@ -11,3 +11,7 @@ drafts/
 
 # gstack tooling state
 .gstack/
+
+# Working docs (not published)
+PLAN.md
+DESIGN.md
