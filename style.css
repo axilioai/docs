@@ -4,8 +4,20 @@
    readability + polish layer on top. */
 
 :root {
-  --axl-green: #18e299;
-  --axl-green-deep: #0c8c5e;
+  /* Match the product UI accent (emerald-500), not the logo fill (#18E299).
+     The dashboard + landing use #10b981 for active nav, buttons, badges. */
+  --axl-green: #10b981;
+  --axl-green-light: #34d399;
+  --axl-green-deep: #059669;
+}
+
+/* Signature //section motif — the marketing site + dashboard prefix section
+   eyebrows with a green code-comment `//`. Apply it to prose section headers. */
+#content-area h2:not(.not-prose)::before {
+  content: "// ";
+  color: var(--axl-green);
+  opacity: 0.55;
+  font-weight: 600;
 }
 
 /* Mono body needs more leading + a slightly looser measure than a sans would.

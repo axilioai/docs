@@ -51,28 +51,54 @@ Dark-first. The canvas, surfaces, and borders are a neutral near-black grayscale
 (matching the dashboard's oklch scale exactly); green is the only chroma and is
 used sparingly as signal.
 
+The accent is the **product UI emerald**, taken from the dashboard + landing code
+(`text-[#10b981]`, emerald-500), not the logo fill. The logo mark is `#18E299`;
+the *interface* green everywhere in `axilio/frontend` is `#10B981` with `#34D399`
+hover. The docs match the interface.
+
 ### Dark mode (primary)
-- **Canvas / background:** `#0A0A0A` (oklch 0.145 0 0)
-- **Surface / card / code block:** `#1A1A1A` (oklch 0.205 0 0)
-- **Border / hairline:** `rgba(255,255,255,0.10)`
-- **Text primary:** `#FAFAFA` (oklch 0.985 0 0)
-- **Text muted:** `#A1A1A1` (oklch 0.708 0 0)
-- **Signal green (accent):** `#18E299` — the logo fill. Active nav, links, inline
-  code accent, focus rings, "live" badges, primary buttons. Target ≤ ~2% of
-  surface area; it is signal, not decoration.
-- **Deep green:** `#0C8C5E` — hover/pressed states, success, filled-button base.
+- **Canvas / background:** `#0A0A0A` (oklch 0.145 0 0) — `bg-[#0a0a0a]` in the app
+- **Surface / card / code block:** `#1A1A1A` (oklch 0.205 0 0); hairline borders
+  use `#1A1A1A` or `rgba(255,255,255,0.10)`
+- **Hover surface:** `#0D0D0D`
+- **Text primary:** `#FAFAFA` (oklch 0.985) · **muted:** `#A3A3A3` / `#737373`
+- **Accent (emerald-500):** `#10B981` — active nav, links, inline-code accent,
+  focus rings, "live" badges, primary buttons. ≤ ~2% of surface area; signal,
+  not decoration.
+- **Accent hover/light:** `#34D399` (emerald-400)
+- **Accent deep:** `#059669` (emerald-600) — pressed/filled base, light-mode links
 
 ### Light mode (secondary, supported not primary)
 - Background `#FFFFFF`, surface `#FAFAFA`, border `rgba(0,0,0,0.10)`
 - Text primary `#0A0A0A`, muted `#5C5C5C`
-- **Links/accent on white:** `#0C8C5E` (the electric `#18E299` fails contrast on
-  white — never use it for text/links in light mode; reserve it for badges/fills)
+- **Links/accent on white:** `#059669` (emerald-500 is too light on white for text)
 
-### Semantic
-- success `#18E299` · warning `#F5BE41` · error `#FF6B5F` · info `#5FB7FF`
+### Semantic (from the dashboard status pills)
+- running `#60A5FA` (blue-400) · success `#10B981` · failed `#F87171` (red-400)
+  · queued/warning `#FBBF24` (amber-400) · neutral `#262626`/`#A3A3A3`
 
 ### Retired
-- `#7bcab0` (the old pale mint) — removed. It is not a brand color.
+- `#7bcab0` (old pale mint) and `#18E299` as a UI accent — the logo keeps `#18E299`,
+  but the interface accent is `#10B981`.
+
+## Signature motifs (port from axilio/frontend)
+These are the patterns that make the product look like Axilio. Reproduce in docs
+CSS/MDX:
+- **`//section` eyebrows** — green code-comment prefix on section labels/headers.
+  Marketing: `<span opacity-50>//</span> THE PHONE CLOUD`, uppercase, `tracking-[0.15em]`,
+  emerald. Docs: prose `h2` is prefixed with a muted-green `// ` via CSS.
+- **Hairline everything** — 1px borders in `#1A1A1A` / `neutral-800` / `white/10%`.
+- **`gap-px` card grids** — cards on a `neutral-800` background with `gap-px` so the
+  gaps read as seamless hairline dividers (no heavy card borders).
+- **Status dots** — 2px circles: emerald (online), amber (busy, pulsing), red
+  (offline), blue (running).
+- **Mono uppercase labels** with `tracking-[0.1em–0.15em]` for eyebrows/metadata.
+- **Soft green glow** on accent hover: `0 0 20px rgba(16,185,129,0.2)`.
+- **Terminal chrome** — block header with three 2px dots (one emerald) + an
+  uppercase mono title.
+- **Active border-left** — `border-l-2 border-l-emerald-500` on the selected item.
+- **Device-firmware chrome** — `AXL-…` / `SIM-…` codes, `// STANDBY` status (use on
+  device-state strips / imagery).
 
 ## Spacing
 - **Base unit:** 4px

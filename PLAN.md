@@ -82,9 +82,11 @@ latency (multi-region, speed). Frames perf/cost as a guided topic, not scattered
 - **Argus (vision):** Overview · Infer · Locate · Models
 - **Carrier & identity:** Overview · SIMs & carriers · Networks
 - **Workflows & runs:** Overview · Authoring · Triggering · Variables
-- **Use cases** (outcome-shaped): Build a mobile agent · SMS/OTP automation ·
-  App QA testing · Carrier-gated flows · Parallel fan-out
 - **Optimization:** Parallel execution / concurrency · Cost & usage · Latency
+
+> Note: Browserbase has a strong outcome-shaped "Use cases" section. We are
+> **not** adopting it for now (per direction) — keep the docs concept/reference/
+> guide shaped, not use-case shaped.
 - **Platform:** Billing · Usage · Organizations · API keys
 - **Reference:** Errors · Configuration · Changelog
 
@@ -103,7 +105,7 @@ carry **real device imagery** (screencaps with carrier status bars), not line ic
 1. Landing hub (intro) + kill index/intro dupe.  ← highest impact
 2. Explode `concepts/mobile-driver` monster into the MobileDriver subtree.
 3. Build the Devices & sessions lifecycle subtree (+ Observability: replay/traces — net-new).
-4. Add Use cases (outcome pages) + Optimization.
+4. Add Optimization (concurrency / cost / latency).
 5. OpenAPI-generated REST API reference tab.
 6. Per-page polish pass: definition-first intros, Next steps, decision callouts,
    device imagery in cards. Design QA (cards/callouts/light/mobile) throughout.

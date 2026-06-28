@@ -8,9 +8,9 @@
   },
   "favicon": "https://media.brand.dev/b940ee9b-0609-40a3-a46c-0ab010f866ae.svg",
   "colors": {
-    "primary": "#18E299",
-    "light": "#18E299",
-    "dark": "#0C8C5E"
+    "primary": "#10B981",
+    "light": "#34D399",
+    "dark": "#059669"
   },
   "appearance": {
     "default": "dark"
