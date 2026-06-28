@@ -1,38 +1,56 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "name": "Axilio",
-  "theme": "luma",
+  "theme": "maple",
   "logo": {
-    "light": "https://media.brand.dev/68977f89-295d-4ba9-80af-dda2f855f77d.svg",
-    "dark": "https://media.brand.dev/68977f89-295d-4ba9-80af-dda2f855f77d.svg"
+    "light": "/logo/axilio-light.svg",
+    "dark": "/logo/axilio-dark.svg",
+    "href": "https://axilio.ai"
   },
-  "favicon": "https://media.brand.dev/b940ee9b-0609-40a3-a46c-0ab010f866ae.svg",
+  "favicon": "/favicon.svg",
   "colors": {
     "primary": "#10B981",
     "light": "#34D399",
     "dark": "#059669"
   },
   "appearance": {
-    "default": "dark",
-    "strict": true
+    "default": "dark"
+  },
+  "background": {
+    "color": {
+      "dark": "#0A0A0A",
+      "light": "#FFFFFF"
+    }
   },
   "fonts": {
     "family": "IBM Plex Mono"
   },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity"
+    ]
+  },
   "navbar": {
     "primary": {
-      "type": "github",
-      "href": "https://github.com/axilioai/platform-python"
+      "type": "button",
+      "label": "Sign up",
+      "href": "https://axilio.ai"
     }
   },
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
+        "tab": "Docs",
         "groups": [
           {
             "group": "Get Started",
+            "icon": "rocket",
             "pages": [
+              "index",
               "introduction",
               "quickstart",
               "authentication"
@@ -40,6 +58,7 @@
           },
           {
             "group": "Core Concepts",
+            "icon": "cube",
             "pages": [
               "concepts/devices",
               "concepts/mobile-driver",
@@ -49,6 +68,7 @@
           },
           {
             "group": "Guides",
+            "icon": "book",
             "pages": [
               "guides/allocating-devices",
               "guides/controlling-devices",
@@ -59,6 +79,7 @@
           },
           {
             "group": "Platform",
+            "icon": "building",
             "pages": [
               "platform/billing",
               "platform/usage",
@@ -68,6 +89,7 @@
           },
           {
             "group": "Reference",
+            "icon": "code",
             "pages": [
               "reference/errors",
               "reference/configuration",
@@ -81,6 +103,7 @@
         "groups": [
           {
             "group": "SDK Reference",
+            "icon": "code",
             "pages": [
               "api-reference/client",
               "api-reference/mobile-resource",
@@ -91,6 +114,7 @@
           },
           {
             "group": "Argus Vision API",
+            "icon": "eye",
             "pages": [
               "api-reference/argus/overview",
               "api-reference/argus/infer",
@@ -100,6 +124,7 @@
           },
           {
             "group": "Account & Billing API",
+            "icon": "credit-card",
             "pages": [
               "api-reference/billing-resource",
               "api-reference/usage-resource",
@@ -108,6 +133,18 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Changelog",
+        "href": "/reference/changelog"
+      },
+      {
+        "tab": "GitHub ↗",
+        "href": "https://github.com/axilioai/platform-python"
+      },
+      {
+        "tab": "Dashboard ↗",
+        "href": "https://axilio.ai/dashboard"
       }
     ]
   },

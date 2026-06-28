@@ -1,129 +1,188 @@
-/* Axilio docs — applies DESIGN.md.
-   IBM Plex Mono everywhere, dark-first, emerald #10B981 accent.
-   docs.json carries font / colors / dark-default; this pins the design language
-   to axilio/frontend (dashboard + landing): tight scale, sharp controls,
-   hairline borders, mono-uppercase labels, the //section motif. */
+/* Axilio docs — principled overrides.
+   The brand lives in docs.json (dark canvas, IBM Plex Mono, emerald #10B981).
+   We make a few BOLD global choices and a handful of surgical fixes — we never
+   fight the theme element-by-element with !important soup. Keep this lean.
 
-:root {
-  /* Product UI accent (emerald-500), not the logo fill (#18E299). */
-  --axl-green: #10b981;
-  --axl-green-light: #34d399;
-  --axl-green-deep: #059669;
-  --axl-hairline: rgba(255, 255, 255, 0.08);
+   Bold global move: sharp corners everywhere. Axilio is an instrument panel for
+   real hardware, not a rounded SaaS brochure. Mono + sharp is our signature. */
+
+/* ── Bold move 1: zero radius site-wide ───────────────────────────────────── */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
 }
 
-/* ----------------------------------------------------------------------------
-   Type scale — pinned to the dashboard's denser rhythm (mono, tight).
-   Body ~15px, headings 28/20/16. :not(.not-prose) so Mintlify card/UI titles
-   keep their own size and mono words don't break mid-character.
----------------------------------------------------------------------------- */
-#content-area p,
-#content-area li,
-.prose p,
-.prose li {
-  font-size: 15px;
-  line-height: 1.7;
+/* ── Responsive card grids — let homepage Columns reflow 1→2→3→4 by width
+   instead of locking to a fixed `cols`. Add className="responsive-columns". ─ */
+.responsive-columns {
+  --_cols: var(--cols, 1);
+  --_cols-effective: min(1, var(--_cols));
+  grid-template-columns: repeat(var(--_cols-effective), 1fr) !important;
+}
+@container columns-container (min-width: 36rem) {
+  .responsive-columns {
+    --_cols-effective: min(2, var(--_cols));
+  }
+}
+@container columns-container (min-width: 48rem) {
+  .responsive-columns {
+    --_cols-is-4: calc(1 - sign(abs(var(--_cols) - 4)));
+    --_cols-effective: calc(min(3, var(--_cols)) - var(--_cols-is-4));
+  }
+}
+@container columns-container (min-width: 64rem) {
+  .responsive-columns {
+    --_cols-effective: var(--_cols);
+  }
 }
 
-#content-area h1:not(.not-prose),
-.prose h1:not(.not-prose) {
-  font-size: 1.75rem;
-  font-weight: 700;
+/* ── Navbar logo — default render is a touch small for the wordmark ───────── */
+#navbar img,
+#navbar svg.logo {
+  height: 1.85rem !important;
 }
-#content-area h2:not(.not-prose),
-.prose h2:not(.not-prose) {
-  font-size: 1.25rem;
+
+/* ── Sidebar group headers — make them read as firmware-style section labels.
+   Uppercase + tracked to match Axilio's mono metadata labels. ────────────── */
+#navigation-items .sidebar-group-header #sidebar-title,
+#sidebar-content .sidebar-group-header #sidebar-title {
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+/* ── //section eyebrows — Axilio's signature green code-comment prefix on
+   content headings, matching axilio.ai (`//PRODUCT`, `//WHY AXILIO`). ─────── */
+#content-area h2:not(.not-prose)::before {
+  content: "// ";
+  color: #10b981;
+  opacity: 0.55;
   font-weight: 600;
 }
-#content-area h3:not(.not-prose),
-.prose h3:not(.not-prose) {
-  font-size: 1rem;
-  font-weight: 600;
-}
-#content-area h1:not(.not-prose),
-#content-area h2:not(.not-prose),
-#content-area h3:not(.not-prose),
-.prose h1:not(.not-prose),
-.prose h2:not(.not-prose),
-.prose h3:not(.not-prose) {
-  letter-spacing: 0;
-  line-height: 1.2;
+
+/* ── Top nav tabs — the theme left-aligns them right after the sidebar. Cap the
+   tab row to the content area (it otherwise spills to full viewport width) and
+   center the tabs within it so Docs / API Reference / Changelog / … sit in the
+   middle of the bar. ──────────────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  div:has(> .nav-tabs) {
+    right: 0 !important;
+    width: auto !important;
+    justify-content: center !important;
+  }
 }
 
-/* ----------------------------------------------------------------------------
-   Density — tighten vertical rhythm toward the app. Mintlify defaults run loose.
----------------------------------------------------------------------------- */
-#content-area h2:not(.not-prose) {
+/* ── Left sidebar — give it a clear right edge so the boundary is obvious and
+   it reads as its own panel instead of bleeding into the page. ────────────── */
+#sidebar-content {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+html.light #sidebar-content {
+  border-right-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ── Right-rail "On this page" — never scroll horizontally. Long headings and
+   inline-code tokens (e.g. axilio.drivers.mobile) must wrap, not overflow. ── */
+#table-of-contents {
+  overflow-x: hidden;
+}
+#table-of-contents a,
+#table-of-contents code,
+#table-of-contents span {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ── Surfaces — the maple theme already gives code blocks, callouts, and frames
+   their own bordered container with good contrast against the canvas, so we do
+   NOT add our own border/background to <pre>; doing so produced a nested
+   "box-in-a-box" inside CodeGroups. Let the theme own these surfaces. ──────── */
+
+/* ── Vertical rhythm — kill the cavernous gaps. Headings sit closer to the
+   content they introduce; sections breathe without floating in dead space. ── */
+#content-area h2 {
   margin-top: 2.25rem;
   margin-bottom: 0.6rem;
+  padding-top: 0;
 }
-#content-area h3:not(.not-prose) {
+#content-area h3 {
   margin-top: 1.5rem;
   margin-bottom: 0.4rem;
 }
 #content-area p,
 #content-area ul,
 #content-area ol {
-  margin-top: 0.65rem;
-  margin-bottom: 0.65rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
-/* ----------------------------------------------------------------------------
-   Signature //section motif — green code-comment prefix on prose section headers.
----------------------------------------------------------------------------- */
-#content-area h2:not(.not-prose)::before {
-  content: "// ";
-  color: var(--axl-green);
-  opacity: 0.55;
-  font-weight: 600;
-}
-
-/* ----------------------------------------------------------------------------
-   Controls — NO pills. The dashboard/landing use sharp rounded-md (~6px)
-   everywhere; Mintlify's luma navbar defaults to full pills (9999px).
----------------------------------------------------------------------------- */
-header a.link,
-header button,
-#search-bar-entry,
-#search-bar-entry kbd {
-  border-radius: 6px !important;
-}
-
-/* ----------------------------------------------------------------------------
-   Inline code — a quiet surface chip so SDK symbols read as objects in prose.
----------------------------------------------------------------------------- */
+/* ── Inline code — a quiet surface chip so SDK symbols read as objects ────── */
 :not(pre) > code {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--axl-hairline);
-  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 0.08em 0.34em;
   font-size: 0.9em;
 }
 
-/* ----------------------------------------------------------------------------
-   Tables — hairline borders + a mono-uppercase header row, matching the
-   dashboard's data tables. Tighter cells.
----------------------------------------------------------------------------- */
-#content-area table,
-#content-area th,
-#content-area td {
-  border-color: var(--axl-hairline);
-}
-#content-area th,
-#content-area td {
-  padding: 0.45rem 0.7rem;
-  font-size: 14px;
-}
-#content-area th {
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 12px;
-  color: #a3a3a3;
-  font-weight: 600;
+/* ── Tables — clean, hairline, dark-first.
+   Mintlify renames its table classes occasionally; these target plain tags. ─ */
+#content-area table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+  margin: 1.25rem 0;
+  display: table;
 }
 
-/* Section dividers as hairlines. */
-#content-area hr,
-.prose hr {
-  border-color: var(--axl-hairline);
+#content-area table thead th {
+  padding: 0.6rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  opacity: 0.7;
+}
+
+#content-area table tbody td {
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: top;
+}
+
+#content-area table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+#content-area table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+#content-area table tbody td:first-child {
+  font-weight: 500;
+}
+
+/* Light mode: flip the hairlines to dark-on-light. */
+html.light #content-area table,
+html.light #content-area table thead th {
+  border-color: rgba(0, 0, 0, 0.10);
+}
+html.light #content-area table tbody td {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+html.light #content-area table thead th {
+  background: rgba(0, 0, 0, 0.02);
+}
+html.light :not(pre) > code {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
 }
