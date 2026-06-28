@@ -47,18 +47,28 @@
    so mono titles don't break mid-word. */
 #content-area h1:not(.not-prose),
 .prose h1:not(.not-prose) {
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 600;
 }
 #content-area h2:not(.not-prose),
 .prose h2:not(.not-prose) {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 600;
 }
 #content-area h3:not(.not-prose),
 .prose h3:not(.not-prose) {
-  font-size: 1.2rem;
+  font-size: 1.125rem;
   font-weight: 600;
+}
+
+/* Design-language consistency with axilio/frontend: NO pills. The dashboard +
+   landing use sharp rounded-md (~6px) on every control; Mintlify's luma navbar
+   defaults to full pills (9999px). De-round to match the product. */
+header a.link,
+header button,
+#search-bar-entry,
+#search-bar-entry kbd {
+  border-radius: 6px !important;
 }
 #content-area p,
 #content-area li,
