@@ -13,7 +13,8 @@
     "dark": "#059669"
   },
   "appearance": {
-    "default": "dark"
+    "default": "dark",
+    "strict": true
   },
   "fonts": {
     "family": "IBM Plex Mono"
