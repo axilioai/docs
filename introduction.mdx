@@ -63,29 +63,20 @@ with client.mobile.session(platform="android") as device:
 
 Argus is Axilio's cloud vision inference service. It runs object detection (YOLO), OCR (free and premium engines), and a VLM-backed element locator that accepts plain-English descriptions of UI elements. The `MobileDriver` calls Argus transparently when you use `driver.find(query=...)`, but you can also call it directly through `client.argus` to run inference over arbitrary images — useful for custom screenshot analysis, labelling pipelines, or pre-computing OCR results before driving a session.
 
-## Navigate the docs
+## Next steps
 
-<CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Install the SDK, set your API key, and run your first device session in under five minutes.
-  </Card>
-  <Card title="Authentication" icon="key" href="/authentication">
-    Create API keys, pass credentials securely, and manage key rotation.
-  </Card>
-  <Card title="MobileDriver" icon="mobile" href="/concepts/mobile-driver">
-    Selectors, actions, screen snapshots, and everything the driver can do.
-  </Card>
-  <Card title="Workflows & Runs" icon="diagram-project" href="/concepts/workflows-and-runs">
-    Package automation as reusable workflows and trigger them via the API.
-  </Card>
-  <Card title="Parallel Execution" icon="bolt" href="/guides/parallel-execution">
-    Run many device sessions concurrently and process results in bulk.
-  </Card>
-  <Card title="Argus API Reference" icon="eye" href="/api-reference/argus/overview">
-    Direct access to vision inference — detect, OCR, and locate elements in images.
-  </Card>
-</CardGroup>
+<Steps>
+  <Step title="Run your first session">
+    Install the SDK, set your API key, and drive a device end to end in the [Quickstart](/quickstart).
+  </Step>
+  <Step title="Learn the driver">
+    See every selector, action, and wait in [MobileDriver](/concepts/mobile-driver).
+  </Step>
+  <Step title="Scale out">
+    Run many devices at once with [Parallel execution](/guides/parallel-execution).
+  </Step>
+</Steps>
 
 <Note>
-  Axilio is in **early access**. The SDK surface is still expanding and APIs may change between minor versions before 1.0. Pin a specific version in your dependency file for reproducible builds, and watch the changelog for breaking changes.
+  Axilio is in **early access**. The SDK surface is still expanding and APIs may change between minor versions before 1.0. Pin a specific version in your dependency file for reproducible builds, and watch the [changelog](/reference/changelog) for breaking changes.
 </Note>

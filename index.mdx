@@ -4,76 +4,68 @@ sidebarTitle: "Home"
 description: "Real Android phones on carrier networks, controlled by a vision-native Python SDK. Build reliable mobile agents that run at scale."
 ---
 
-Axilio gives your agents a real place to work. Instead of brittle emulators or scripted browsers, you get genuine Android hardware on live carrier networks — allocated on demand, driven by a semantic SDK, and observable at every step.
+Axilio gives your agents a real place to work: genuine Android phones on live carrier networks, allocated on demand, driven by a vision-native SDK, and observable at every step. No emulators, no scripted browsers, no mocked networks.
 
-<CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Install the SDK, get an API key, and run your first mobile session in minutes.
-  </Card>
-  <Card title="Mobile Driver" icon="mobile" href="/concepts/mobile-driver">
-    Learn how to find elements, tap, type, and control any Android app.
-  </Card>
-  <Card title="Argus Vision API" icon="eye" href="/api-reference/argus/overview">
-    Run OCR, icon detection, and VLM-backed element locating on any image.
-  </Card>
-  <Card title="Workflows & Runs" icon="play" href="/concepts/workflows-and-runs">
-    Script automation workflows and schedule them across the fleet.
-  </Card>
-</CardGroup>
+```python
+from axilio.platform import Client
+from axilio.drivers import MobileDriver
 
-## How Axilio Works
+client = Client()
 
-Axilio is built around three primitives:
+with client.mobile.session(platform="android") as device:
+    driver = MobileDriver(device)
+    driver.find_text("Sign in").tap()
+    driver.find(query="the blue Continue button").tap()
+```
 
-- **Devices** — real Android phones allocated from the fleet, billed per second
-- **MobileDriver** — a vision-native SDK that drives each device using natural language selectors
-- **Workflows** — Python scripts you author in the dashboard and run via the API
-
-<Steps>
-  <Step title="Install the SDK">
-    ```bash
-    pip install axilio
-    ```
-  </Step>
-  <Step title="Set your API key">
-    ```bash
-    export AXILIO_API_KEY=axl_your_key_here
-    ```
-  </Step>
-  <Step title="Allocate a device and drive it">
-    ```python
-    from axilio.platform import Client
-    from axilio.drivers import MobileDriver
-
-    client = Client()
-
-    with client.mobile.session() as device:
-        driver = MobileDriver.connect()
-        driver.find_text("Sign in").tap()
-        driver.find_text("Email").type_into("you@example.com")
-    ```
-  </Step>
-</Steps>
-
-## Explore the Docs
+## Start here
 
 <CardGroup cols={3}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install the SDK, set your key, and drive your first device in minutes.
+  </Card>
   <Card title="Authentication" icon="key" href="/authentication">
-    Create and manage API keys.
+    Create API keys and pass credentials securely.
   </Card>
-  <Card title="Device Allocation" icon="server" href="/guides/allocating-devices">
-    Allocate, pin, and release devices.
-  </Card>
-  <Card title="Controlling Devices" icon="gamepad" href="/guides/controlling-devices">
-    Tap, type, swipe, and screenshot.
-  </Card>
-  <Card title="Parallel Execution" icon="bolt" href="/guides/parallel-execution">
-    Run thousands of sessions concurrently.
-  </Card>
-  <Card title="Billing" icon="credit-card" href="/platform/billing">
-    Understand per-second pricing and invoices.
-  </Card>
-  <Card title="Error Handling" icon="triangle-exclamation" href="/reference/errors">
-    Handle errors and retries gracefully.
+  <Card title="MobileDriver" icon="mobile" href="/concepts/mobile-driver">
+    Find elements, tap, type, and read any Android screen.
   </Card>
 </CardGroup>
+
+## Core concepts
+
+<CardGroup cols={2}>
+  <Card title="Devices & sessions" icon="mobile" href="/concepts/devices">
+    Allocate real phones from the fleet, drive them, release them. Billed per second.
+  </Card>
+  <Card title="MobileDriver" icon="hand-pointer" href="/concepts/mobile-driver">
+    Text and vision selectors that locate elements the way a person would.
+  </Card>
+  <Card title="Workflows & runs" icon="diagram-project" href="/concepts/workflows-and-runs">
+    Package automation as reusable workflows and trigger them via the API.
+  </Card>
+  <Card title="Argus vision" icon="eye" href="/api-reference/argus/overview">
+    OCR, object detection, and VLM element locating on any image.
+  </Card>
+</CardGroup>
+
+## Guides
+
+<CardGroup cols={2}>
+  <Card title="Allocating devices" icon="server" href="/guides/allocating-devices">
+    Allocate, pin, and release devices from the fleet.
+  </Card>
+  <Card title="Controlling devices" icon="gamepad" href="/guides/controlling-devices">
+    Tap, type, swipe, screenshot, and read the screen.
+  </Card>
+  <Card title="Running workflows" icon="play" href="/guides/running-workflows">
+    Trigger workflows via the API and collect their results.
+  </Card>
+  <Card title="Parallel execution" icon="bolt" href="/guides/parallel-execution">
+    Fan out across thousands of device sessions at once.
+  </Card>
+</CardGroup>
+
+<Note>
+  Axilio is in **early access**. The SDK surface is still expanding and APIs may change between minor versions before 1.0. Pin a specific version for reproducible builds, and watch the [changelog](/reference/changelog) for breaking changes.
+</Note>

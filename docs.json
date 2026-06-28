@@ -8,13 +8,16 @@
   },
   "favicon": "https://media.brand.dev/b940ee9b-0609-40a3-a46c-0ab010f866ae.svg",
   "colors": {
-    "primary": "#7bcab0",
-    "light": "#0c7f5c",
-    "dark": "#0c1613"
+    "primary": "#10B981",
+    "light": "#34D399",
+    "dark": "#059669"
   },
-  "font": {
-    "headings": { "family": "IBM Plex Mono" },
-    "body": { "family": "IBM Plex Mono" }
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  },
+  "fonts": {
+    "family": "IBM Plex Mono"
   },
   "navbar": {
     "primary": {
