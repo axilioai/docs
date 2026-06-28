@@ -1,0 +1,129 @@
+/* Axilio docs — applies DESIGN.md.
+   IBM Plex Mono everywhere, dark-first, emerald #10B981 accent.
+   docs.json carries font / colors / dark-default; this pins the design language
+   to axilio/frontend (dashboard + landing): tight scale, sharp controls,
+   hairline borders, mono-uppercase labels, the //section motif. */
+
+:root {
+  /* Product UI accent (emerald-500), not the logo fill (#18E299). */
+  --axl-green: #10b981;
+  --axl-green-light: #34d399;
+  --axl-green-deep: #059669;
+  --axl-hairline: rgba(255, 255, 255, 0.08);
+}
+
+/* ----------------------------------------------------------------------------
+   Type scale — pinned to the dashboard's denser rhythm (mono, tight).
+   Body ~15px, headings 28/20/16. :not(.not-prose) so Mintlify card/UI titles
+   keep their own size and mono words don't break mid-character.
+---------------------------------------------------------------------------- */
+#content-area p,
+#content-area li,
+.prose p,
+.prose li {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+#content-area h1:not(.not-prose),
+.prose h1:not(.not-prose) {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+#content-area h2:not(.not-prose),
+.prose h2:not(.not-prose) {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+#content-area h3:not(.not-prose),
+.prose h3:not(.not-prose) {
+  font-size: 1rem;
+  font-weight: 600;
+}
+#content-area h1:not(.not-prose),
+#content-area h2:not(.not-prose),
+#content-area h3:not(.not-prose),
+.prose h1:not(.not-prose),
+.prose h2:not(.not-prose),
+.prose h3:not(.not-prose) {
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+/* ----------------------------------------------------------------------------
+   Density — tighten vertical rhythm toward the app. Mintlify defaults run loose.
+---------------------------------------------------------------------------- */
+#content-area h2:not(.not-prose) {
+  margin-top: 2.25rem;
+  margin-bottom: 0.6rem;
+}
+#content-area h3:not(.not-prose) {
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+#content-area p,
+#content-area ul,
+#content-area ol {
+  margin-top: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+
+/* ----------------------------------------------------------------------------
+   Signature //section motif — green code-comment prefix on prose section headers.
+---------------------------------------------------------------------------- */
+#content-area h2:not(.not-prose)::before {
+  content: "// ";
+  color: var(--axl-green);
+  opacity: 0.55;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------------------
+   Controls — NO pills. The dashboard/landing use sharp rounded-md (~6px)
+   everywhere; Mintlify's luma navbar defaults to full pills (9999px).
+---------------------------------------------------------------------------- */
+header a.link,
+header button,
+#search-bar-entry,
+#search-bar-entry kbd {
+  border-radius: 6px !important;
+}
+
+/* ----------------------------------------------------------------------------
+   Inline code — a quiet surface chip so SDK symbols read as objects in prose.
+---------------------------------------------------------------------------- */
+:not(pre) > code {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--axl-hairline);
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  font-size: 0.9em;
+}
+
+/* ----------------------------------------------------------------------------
+   Tables — hairline borders + a mono-uppercase header row, matching the
+   dashboard's data tables. Tighter cells.
+---------------------------------------------------------------------------- */
+#content-area table,
+#content-area th,
+#content-area td {
+  border-color: var(--axl-hairline);
+}
+#content-area th,
+#content-area td {
+  padding: 0.45rem 0.7rem;
+  font-size: 14px;
+}
+#content-area th {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+  color: #a3a3a3;
+  font-weight: 600;
+}
+
+/* Section dividers as hairlines. */
+#content-area hr,
+.prose hr {
+  border-color: var(--axl-hairline);
+}
