@@ -30,18 +30,21 @@
 
 /* Type scale (DESIGN.md): give the mono hero real presence — the default 30px/500
    reads weak — and tighten body to 16px for density. */
-#content-area h1,
-.prose h1 {
+/* :not(.not-prose) so this hits real prose headings only — Mintlify marks
+   card titles / UI headings .not-prose, and they keep their own (smaller) size
+   so mono titles don't break mid-word. */
+#content-area h1:not(.not-prose),
+.prose h1:not(.not-prose) {
   font-size: 2.25rem;
   font-weight: 600;
 }
-#content-area h2,
-.prose h2 {
+#content-area h2:not(.not-prose),
+.prose h2:not(.not-prose) {
   font-size: 1.6rem;
   font-weight: 600;
 }
-#content-area h3,
-.prose h3 {
+#content-area h3:not(.not-prose),
+.prose h3:not(.not-prose) {
   font-size: 1.2rem;
   font-weight: 600;
 }
