@@ -1,7 +1,7 @@
 ---
 title: "Tap"
 sidebarTitle: "Tap"
-description: "Tap something on the screen — or tap and hold."
+description: "Tap something on the screen, or tap and hold."
 ---
 
 Tap whatever you [found](/driver/find):
@@ -12,7 +12,7 @@ driver.find_text("Settings").tap()
 
 ## Tap and hold
 
-`long_press` presses and holds — for example, to open a menu:
+`long_press` presses and holds, for example to open a menu:
 
 ```python
 driver.find_text("Photo").long_press()
@@ -21,7 +21,7 @@ driver.find_text("Photo").long_press(duration_ms=1500)   # hold longer
 
 ## Tap an exact spot
 
-If you already know the point — an `x`, `y` on the screen — tap it directly:
+If you already know the point (an `x`, `y` on the screen), tap it directly:
 
 ```python
 driver.tap({"x": 540, "y": 1180})

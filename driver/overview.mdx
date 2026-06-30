@@ -1,14 +1,14 @@
 ---
 title: "How the driver works"
 sidebarTitle: "Overview"
-description: "The Mobile driver is a handful of basics — find, tap, type, swipe — that you chain together to control a phone."
+description: "The Mobile driver is a handful of basics (find, tap, type, swipe) that you chain together to control a phone."
 ---
 
 The **Mobile driver** is how you control a phone that the
 [Platform](/introduction) gives you. A [session](/quickstart) hands you one.
 
-It's a small set of **basics** — find, tap, type, swipe — that you chain together
-to do anything:
+It's a small set of **basics** (find, tap, type, swipe) that you chain together to
+do anything:
 
 ```python
 from axilio.platform import Client
@@ -26,7 +26,7 @@ Every basic is one idea. Learn the handful below and you can drive any app.
 
 <CardGroup cols={2}>
   <Card title="Find" icon="magnifying-glass" href="/driver/find">
-    Locate something — by its text or by describing it.
+    Locate something by its text or by describing it.
   </Card>
   <Card title="Tap" icon="hand-pointer" href="/driver/tap">
     Tap it, or tap and hold.
@@ -62,4 +62,4 @@ driver.wait_for_text("Welcome").tap()        # wait -> tap
 ```
 
 That's the whole model. When you need exact control, every action also takes raw
-coordinates — see [Tap](/driver/tap) and [Swipe](/driver/swipe).
+coordinates. See [Tap](/driver/tap) and [Swipe](/driver/swipe).
