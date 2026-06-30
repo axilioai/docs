@@ -173,6 +173,15 @@ html {
   }
 }
 
+/* Hide the tab for the section you're already in, so the bar only shows where you
+   can jump TO (a Platform page shows Driver / API Reference; a Driver page shows
+   Platform / API Reference). The active section's tab carries
+   aria-current="location"; GitHub / Dashboard are external and never active, so
+   they always stay. */
+.nav-tabs .nav-tabs-item[aria-current="location"] {
+  display: none !important;
+}
+
 /* ── Left sidebar — give it a clear right edge so the boundary is obvious and
    it reads as its own panel instead of bleeding into the page. ────────────── */
 #sidebar-content {
