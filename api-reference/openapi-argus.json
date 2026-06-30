@@ -778,5 +778,10 @@
       "url": "https://argus.axilio.ai",
       "description": "Production"
     }
+  ],
+  "tags": [
+    {
+      "name": "Inference"
+    }
   ]
 }

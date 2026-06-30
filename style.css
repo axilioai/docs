@@ -187,6 +187,32 @@ html {
 #navigation-items a {
   font-size: 1rem !important;
 }
+/* Collapsible subsection headers (API-reference tag groups like "API Keys", and
+   the driver's "Basics" etc.) render as a toggle button that defaulted smaller
+   than the links beneath it, so the parent looked smaller than its children.
+   Make them bold and match the link size so the hierarchy reads correctly. */
+#navigation-items .sidebar-group > li > button {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+}
+
+/* ── API role badges — the backend spec gates some endpoints behind an admin
+   role ("Admin only."). sync-openapi.py lifts that out of the prose and injects
+   a span.api-role via x-mint.content, which renders just below the endpoint
+   title. Style it as a small uppercase pill so the access requirement reads as a
+   tag. Amber to match the API-reference surface accent. ───────────────────── */
+.api-role {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.12em 0.5em;
+  border: 1px solid rgb(var(--primary));
+  color: rgb(var(--primary));
+  background: rgb(var(--primary) / 0.10);
+  vertical-align: middle;
+}
 
 /* ── //section eyebrows — Axilio's signature green code-comment prefix on
    content headings, matching axilio.ai (`//PRODUCT`, `//WHY AXILIO`). ─────── */

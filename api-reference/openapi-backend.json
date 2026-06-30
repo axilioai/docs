@@ -4,15 +4,6 @@
       "ApikeyAPIKeyCreateRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/ApikeyAPIKeyCreateRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "name": {
             "type": "string"
           }
@@ -25,15 +16,6 @@
       "ApikeyAPIKeyCreateResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/ApikeyAPIKeyCreateResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "created_at": {
             "format": "date-time",
             "type": "string"
@@ -94,15 +76,6 @@
       "ApikeyAPIKeyListRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/ApikeyAPIKeyListRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "created_after": {
             "format": "date-time",
             "type": "string"
@@ -150,15 +123,6 @@
       "ApikeyAPIKeyListResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/ApikeyAPIKeyListResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "api_keys": {
             "items": {
               "$ref": "#/components/schemas/ApikeyAPIKeyListItem"
@@ -192,15 +156,6 @@
       "ApikeyAPIKeyRegenerateResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/ApikeyAPIKeyRegenerateResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "created_at": {
             "format": "date-time",
             "type": "string"
@@ -247,15 +202,6 @@
       "BillingSyncHistoryResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/BillingSyncHistoryResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "message": {
             "type": "string"
           },
@@ -342,15 +288,6 @@
       "Billing_historyBillingHistoryResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Billing_historyBillingHistoryResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "has_more": {
             "type": "boolean"
           },
@@ -378,15 +315,6 @@
       "Billing_historyInvoiceDownloadRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Billing_historyInvoiceDownloadRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "invoice_id": {
             "type": "string"
           }
@@ -399,15 +327,6 @@
       "Billing_historyInvoiceDownloadResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Billing_historyInvoiceDownloadResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "download_url": {
             "type": "string"
           },
@@ -425,15 +344,6 @@
       "DeleteAPIKeyOutputBody": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/DeleteAPIKeyOutputBody.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "message": {
             "type": "string"
           }
@@ -446,15 +356,6 @@
       "MessageOutputBody": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/MessageOutputBody.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "message": {
             "type": "string"
           }
@@ -467,15 +368,6 @@
       "OrganizationAddOrgMemberRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationAddOrgMemberRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "role": {
             "type": "string"
           },
@@ -492,15 +384,6 @@
       "OrganizationCreateInvitationRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationCreateInvitationRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "email": {
             "type": "string"
           },
@@ -520,15 +403,6 @@
       "OrganizationInvitationListResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationInvitationListResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "invitations": {
             "items": {
               "$ref": "#/components/schemas/OrganizationInvitationResponse"
@@ -547,15 +421,6 @@
       "OrganizationInvitationResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationInvitationResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "created_at": {
             "format": "date-time",
             "type": "string"
@@ -594,15 +459,6 @@
       "OrganizationOrganizationCreateRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationOrganizationCreateRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "external_org_id": {
             "type": "string"
           },
@@ -626,15 +482,6 @@
       "OrganizationOrganizationListResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationOrganizationListResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "organizations": {
             "items": {
               "$ref": "#/components/schemas/OrganizationOrganizationResponse"
@@ -653,15 +500,6 @@
       "OrganizationOrganizationMemberListResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationOrganizationMemberListResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "members": {
             "items": {
               "$ref": "#/components/schemas/OrganizationOrganizationMemberResponse"
@@ -680,15 +518,6 @@
       "OrganizationOrganizationMemberResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationOrganizationMemberResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "created_at": {
             "format": "date-time",
             "type": "string"
@@ -723,15 +552,6 @@
       "OrganizationOrganizationResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationOrganizationResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "balance_microdollars": {
             "format": "int64",
             "type": "integer"
@@ -772,15 +592,6 @@
       "OrganizationOrganizationUpdateRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationOrganizationUpdateRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "logo_url": {
             "type": "string"
           },
@@ -796,15 +607,6 @@
       "OrganizationUpdateOrgMemberRoleRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/OrganizationUpdateOrgMemberRoleRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "role": {
             "type": "string"
           }
@@ -869,15 +671,6 @@
       "PhoneActiveSessionsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneActiveSessionsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "sessions": {
             "items": {
               "$ref": "#/components/schemas/PhoneActiveSession"
@@ -901,15 +694,6 @@
       "PhoneAllocatePhoneRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneAllocatePhoneRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "phone_id": {
             "type": "string"
           },
@@ -928,15 +712,6 @@
       "PhoneAllocatePhoneResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneAllocatePhoneResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "control_url": {
             "type": "string"
           },
@@ -964,15 +739,6 @@
       "PhoneAllocationStatusResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneAllocationStatusResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "allocated": {
             "type": "boolean"
           },
@@ -1002,15 +768,6 @@
       "PhoneAvailablePhonesByLocationResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneAvailablePhonesByLocationResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "locations": {
             "items": {
               "$ref": "#/components/schemas/PhoneLocationPhoneCount"
@@ -1034,15 +791,6 @@
       "PhoneAvailablePhonesResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneAvailablePhonesResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "android_count": {
             "format": "int64",
             "type": "integer"
@@ -1071,15 +819,6 @@
       "PhoneConnectPhoneRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneConnectPhoneRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "phone_id": {
             "type": "string"
           },
@@ -1096,15 +835,6 @@
       "PhoneDeallocatePhoneResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneDeallocatePhoneResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "deallocated_at": {
             "format": "date-time",
             "type": "string"
@@ -1264,15 +994,6 @@
       "PhonePhoneCountsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhonePhoneCountsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "android": {
             "additionalProperties": {
               "format": "int64",
@@ -1297,15 +1018,6 @@
       "PhonePhoneSummary": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhonePhoneSummary.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "agent_version": {
             "type": [
               "string",
@@ -1467,15 +1179,6 @@
       "PhonePrivatePhonesResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhonePrivatePhonesResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "limit": {
             "format": "int64",
             "type": "integer"
@@ -1509,15 +1212,6 @@
       "PhoneSessionDetailResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneSessionDetailResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "allocated_at": {
             "type": "string"
           },
@@ -1651,15 +1345,6 @@
       "PhoneSessionRecordingResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneSessionRecordingResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "status": {
             "type": "string"
           },
@@ -1675,15 +1360,6 @@
       "PhoneSessionsListResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneSessionsListResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "limit": {
             "format": "int64",
             "type": "integer"
@@ -1717,15 +1393,6 @@
       "PhoneSuccessResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneSuccessResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "message": {
             "type": "string"
           }
@@ -1738,15 +1405,6 @@
       "PhoneSupportedPhoneAppsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneSupportedPhoneAppsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "phone_apps": {
             "items": {
               "$ref": "#/components/schemas/PhonePhoneAppSummary"
@@ -1770,15 +1428,6 @@
       "PhoneUpdateNicknameRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/PhoneUpdateNicknameRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "nickname": {
             "type": "string"
           }
@@ -1791,15 +1440,6 @@
       "Phone_rentalCancelPhoneRentalSubscriptionsRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Phone_rentalCancelPhoneRentalSubscriptionsRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "subscription_ids": {
             "items": {
               "type": "string"
@@ -1818,15 +1458,6 @@
       "Phone_rentalCancelPhoneRentalSubscriptionsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Phone_rentalCancelPhoneRentalSubscriptionsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "canceled_count": {
             "format": "int64",
             "type": "integer"
@@ -1869,15 +1500,6 @@
       "Phone_rentalCreatePhoneRentalCheckoutRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Phone_rentalCreatePhoneRentalCheckoutRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "plan_id": {
             "type": "string"
           }
@@ -1890,15 +1512,6 @@
       "Phone_rentalCreatePhoneRentalCheckoutResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Phone_rentalCreatePhoneRentalCheckoutResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "checkout_url": {
             "type": "string"
           }
@@ -1933,15 +1546,6 @@
       "Phone_rentalPhoneRentalSubscriptionListResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Phone_rentalPhoneRentalSubscriptionListResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "has_more": {
             "type": "boolean"
           },
@@ -2102,15 +1706,6 @@
       "Phone_rentalRenewPhoneRentalSubscriptionsRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Phone_rentalRenewPhoneRentalSubscriptionsRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "subscription_ids": {
             "items": {
               "type": "string"
@@ -2129,15 +1724,6 @@
       "Phone_rentalRenewPhoneRentalSubscriptionsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/Phone_rentalRenewPhoneRentalSubscriptionsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "failed_count": {
             "format": "int64",
             "type": "integer"
@@ -2238,15 +1824,6 @@
       "RunHistoricRunsRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunHistoricRunsRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "end_date": {
             "format": "date-time",
             "type": "string"
@@ -2290,15 +1867,6 @@
       "RunHistoricRunsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunHistoricRunsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "limit": {
             "format": "int64",
             "type": "integer"
@@ -2354,15 +1922,6 @@
       "RunRunCreateRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunRunCreateRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "numberOfRuns": {
             "format": "int64",
             "type": "integer"
@@ -2390,15 +1949,6 @@
       "RunRunCreateResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunRunCreateResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "run_ids": {
             "items": {
               "type": "string"
@@ -2438,15 +1988,6 @@
       "RunRunEventsRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunRunEventsRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "event_types": {
             "items": {
               "type": "string"
@@ -2478,15 +2019,6 @@
       "RunRunEventsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunRunEventsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "events": {
             "items": {
               "$ref": "#/components/schemas/RunRunEventSummary"
@@ -2520,15 +2052,6 @@
       "RunRunListRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunRunListRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "limit": {
             "format": "int64",
             "type": "integer"
@@ -2580,15 +2103,6 @@
       "RunRunListResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunRunListResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "limit": {
             "format": "int64",
             "type": "integer"
@@ -2622,15 +2136,6 @@
       "RunRunResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunRunResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "cancelled_at": {
             "format": "date-time",
             "type": "string"
@@ -2731,15 +2236,6 @@
       "RunRunStatsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunRunStatsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "success_rate": {
             "format": "double",
             "type": "number"
@@ -2782,15 +2278,6 @@
       "RunSuccessResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/RunSuccessResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "message": {
             "type": "string"
           }
@@ -2803,15 +2290,6 @@
       "SendCommandInputBody": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SendCommandInputBody.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "command": {
             "description": "command type, e.g. OPEN_APP, GET_STATUS",
             "type": "string"
@@ -2829,15 +2307,6 @@
       "SendCommandOutputBody": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SendCommandOutputBody.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "command_id": {
             "type": "string"
           },
@@ -2861,15 +2330,6 @@
       "SubscriptionAddFundsRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionAddFundsRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "amount_cents": {
             "format": "int64",
             "type": "integer"
@@ -2883,15 +2343,6 @@
       "SubscriptionAddFundsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionAddFundsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "checkout_url": {
             "type": "string"
           }
@@ -2904,15 +2355,6 @@
       "SubscriptionBalanceResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionBalanceResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "balance_display": {
             "type": "string"
           },
@@ -2930,15 +2372,6 @@
       "SubscriptionCancelDowngradeResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionCancelDowngradeResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "message": {
             "type": "string"
           }
@@ -2951,15 +2384,6 @@
       "SubscriptionCancelSubscriptionResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionCancelSubscriptionResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "cancel_at": {
             "format": "date-time",
             "type": "string"
@@ -2977,15 +2401,6 @@
       "SubscriptionCreateCheckoutSessionRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionCreateCheckoutSessionRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "billing_cycle": {
             "type": "string"
           },
@@ -3002,15 +2417,6 @@
       "SubscriptionCreateCheckoutSessionResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionCreateCheckoutSessionResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "checkout_url": {
             "type": "string"
           }
@@ -3023,15 +2429,6 @@
       "SubscriptionCustomerPortalResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionCustomerPortalResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "portal_url": {
             "type": "string"
           }
@@ -3044,15 +2441,6 @@
       "SubscriptionDowngradeRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionDowngradeRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "plan_id": {
             "type": "string"
           },
@@ -3068,15 +2456,6 @@
       "SubscriptionDowngradeResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionDowngradeResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "effective_date": {
             "format": "date-time",
             "type": "string"
@@ -3099,15 +2478,6 @@
       "SubscriptionDowngradeValidation": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionDowngradeValidation.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "effective_date": {
             "format": "date-time",
             "type": "string"
@@ -3184,15 +2554,6 @@
       "SubscriptionSubscriptionResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/SubscriptionSubscriptionResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "balance_display": {
             "type": "string"
           },
@@ -3436,15 +2797,6 @@
       "UsageInferencesRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/UsageInferencesRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "end_date": {
             "format": "date-time",
             "type": "string"
@@ -3498,15 +2850,6 @@
       "UsageInferencesResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/UsageInferencesResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "inferences": {
             "items": {
               "$ref": "#/components/schemas/UsageInference"
@@ -3654,15 +2997,6 @@
       "UsageSessionsRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/UsageSessionsRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "allocated_by": {
             "items": {
               "type": "string"
@@ -3731,15 +3065,6 @@
       "UsageSessionsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/UsageSessionsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "limit": {
             "format": "int64",
             "type": "integer"
@@ -3773,15 +3098,6 @@
       "UsageUsageMetricsRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/UsageUsageMetricsRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "end_date": {
             "format": "date-time",
             "type": "string"
@@ -3808,15 +3124,6 @@
       "UsageUsageMetricsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/UsageUsageMetricsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "compute_minutes": {
             "$ref": "#/components/schemas/UsageComputeMinutes"
           },
@@ -3963,15 +3270,6 @@
       "UserUserResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/UserUserResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "created_at": {
             "type": "string"
           },
@@ -4035,15 +3333,6 @@
       "User_settingsUserSettingsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/User_settingsUserSettingsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "claude_api_key": {
             "type": "string"
           },
@@ -4056,15 +3345,6 @@
       "User_settingsUserSettingsUpdateRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/User_settingsUserSettingsUpdateRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "claude_api_key": {
             "type": "string"
           },
@@ -4077,15 +3357,6 @@
       "User_settingsUserSettingsUpdateResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/User_settingsUserSettingsUpdateResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "message": {
             "type": "string"
           },
@@ -4119,15 +3390,6 @@
       "V2ErrorModel": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/V2ErrorModel.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "detail": {
             "description": "A human-readable explanation specific to this occurrence of the problem.",
             "examples": [
@@ -4183,15 +3445,6 @@
       "WorkflowGetCodeResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowGetCodeResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "revision": {
             "format": "int64",
             "type": "integer"
@@ -4221,15 +3474,6 @@
       "WorkflowListRevisionsResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowListRevisionsResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "revisions": {
             "items": {
               "$ref": "#/components/schemas/WorkflowRevisionSummary"
@@ -4248,15 +3492,6 @@
       "WorkflowRestoreRevisionRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowRestoreRevisionRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "revision_id": {
             "type": "string"
           }
@@ -4269,15 +3504,6 @@
       "WorkflowRevisionDetail": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowRevisionDetail.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "author_user_id": {
             "type": "string"
           },
@@ -4366,15 +3592,6 @@
       "WorkflowSaveCodeRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowSaveCodeRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "message": {
             "type": "string"
           },
@@ -4390,15 +3607,6 @@
       "WorkflowSaveCodeResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowSaveCodeResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "no_op": {
             "type": "boolean"
           },
@@ -4420,15 +3628,6 @@
       "WorkflowWorkflowCreateRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowCreateRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "goal": {
             "type": "string"
           },
@@ -4450,15 +3649,6 @@
       "WorkflowWorkflowCreateResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowCreateResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "workflow_id": {
             "type": "string"
           }
@@ -4471,15 +3661,6 @@
       "WorkflowWorkflowFromCodeRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowFromCodeRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "code_source": {
             "type": "string"
           },
@@ -4502,15 +3683,6 @@
       "WorkflowWorkflowFromCodeResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowFromCodeResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "revision": {
             "format": "int64",
             "type": "integer"
@@ -4532,15 +3704,6 @@
       "WorkflowWorkflowListRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowListRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "created_after": {
             "type": "string"
           },
@@ -4601,15 +3764,6 @@
       "WorkflowWorkflowListResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowListResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "limit": {
             "format": "int64",
             "type": "integer"
@@ -4643,15 +3797,6 @@
       "WorkflowWorkflowResponse": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowResponse.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "stats": {
             "$ref": "#/components/schemas/WorkflowWorkflowStats"
           },
@@ -4668,15 +3813,6 @@
       "WorkflowWorkflowRunUpdateRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowRunUpdateRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "last_run_at": {
             "format": "date-time",
             "type": "string"
@@ -4782,15 +3918,6 @@
       "WorkflowWorkflowUpdateRequest": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "/api/v1/WorkflowWorkflowUpdateRequest.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
@@ -4830,7 +3957,7 @@
   "paths": {
     "/api-keys": {
       "get": {
-        "description": "Lists API keys for the caller's organization with simple limit/offset paging. Admin only. Use POST /api-keys/list for richer filters (search, created_by, sort).",
+        "description": "Lists API keys for the caller's organization with simple limit/offset paging. Use POST /api-keys/list for richer filters (search, created_by, sort).",
         "operationId": "api_keys_list",
         "parameters": [
           {
@@ -4893,11 +4020,14 @@
         ],
         "summary": "List API keys (simple)",
         "tags": [
-          "api-keys"
-        ]
+          "API Keys"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       },
       "post": {
-        "description": "Mints a fresh API key for the caller's organization. Admin only. The plaintext key value is returned exactly once and never stored or returned again.",
+        "description": "Mints a fresh API key for the caller's organization. The plaintext key value is returned exactly once and never stored or returned again.",
         "operationId": "api_keys_create",
         "requestBody": {
           "content": {
@@ -4941,13 +4071,16 @@
         ],
         "summary": "Create an API key",
         "tags": [
-          "api-keys"
-        ]
+          "API Keys"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/api-keys/list": {
       "post": {
-        "description": "Lists API keys with full filter and sort options in the request body. Admin only.",
+        "description": "Lists API keys with full filter and sort options in the request body.",
         "operationId": "api_keys_list_query",
         "requestBody": {
           "content": {
@@ -4991,13 +4124,16 @@
         ],
         "summary": "List API keys (rich filters)",
         "tags": [
-          "api-keys"
-        ]
+          "API Keys"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/api-keys/{keyID}": {
       "delete": {
-        "description": "Revokes an API key. Subsequent requests using its value are rejected as unauthorized. Admin only.",
+        "description": "Revokes an API key. Subsequent requests using its value are rejected as unauthorized.",
         "operationId": "api_keys_delete",
         "parameters": [
           {
@@ -5043,13 +4179,16 @@
         ],
         "summary": "Delete an API key",
         "tags": [
-          "api-keys"
-        ]
+          "API Keys"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/api-keys/{keyID}/regenerate": {
       "post": {
-        "description": "Rotates the plaintext value for an existing API key, preserving its name and identifier. The previous value is invalidated immediately. Admin only.",
+        "description": "Rotates the plaintext value for an existing API key, preserving its name and identifier. The previous value is invalidated immediately.",
         "operationId": "api_keys_regenerate",
         "parameters": [
           {
@@ -5095,13 +4234,16 @@
         ],
         "summary": "Regenerate an API key",
         "tags": [
-          "api-keys"
-        ]
+          "API Keys"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/add-funds": {
       "post": {
-        "description": "Creates a hosted checkout session for the org to top up its credit balance. Admin only.",
+        "description": "Creates a hosted checkout session for the org to top up its credit balance.",
         "operationId": "billing_add_funds",
         "requestBody": {
           "content": {
@@ -5145,8 +4287,11 @@
         ],
         "summary": "Start a checkout session to add funds",
         "tags": [
-          "billing"
-        ]
+          "Billing"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/balance": {
@@ -5185,13 +4330,13 @@
         ],
         "summary": "Get current account balance",
         "tags": [
-          "billing"
+          "Billing"
         ]
       }
     },
     "/billing/customer-portal": {
       "post": {
-        "description": "Returns a temporary URL into the hosted billing portal for managing payment methods, invoices, etc. Admin only.",
+        "description": "Returns a temporary URL into the hosted billing portal for managing payment methods, invoices, etc.",
         "operationId": "billing_customer_portal",
         "responses": {
           "200": {
@@ -5225,8 +4370,11 @@
         ],
         "summary": "Get a billing portal URL",
         "tags": [
-          "billing"
-        ]
+          "Billing"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/history": {
@@ -5384,8 +4532,8 @@
         ],
         "summary": "List billing history",
         "tags": [
-          "billing",
-          "history"
+          "Billing",
+          "History"
         ]
       }
     },
@@ -5435,14 +4583,14 @@
         ],
         "summary": "Get a download URL for an invoice",
         "tags": [
-          "billing",
-          "history"
+          "Billing",
+          "History"
         ]
       }
     },
     "/billing/history/sync": {
       "post": {
-        "description": "Refreshes this org's invoice history from the payment provider. Admin only.",
+        "description": "Refreshes this org's invoice history from the payment provider.",
         "operationId": "billing_sync_history",
         "responses": {
           "200": {
@@ -5476,14 +4624,17 @@
         ],
         "summary": "Sync billing history",
         "tags": [
-          "billing",
-          "history"
-        ]
+          "Billing",
+          "History"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/phone-rental-subscription/checkout": {
       "post": {
-        "description": "Reserves a shared device and creates a hosted checkout session for the rental subscription. Admin only.",
+        "description": "Reserves a shared device and creates a hosted checkout session for the rental subscription.",
         "operationId": "billing_create_rental_checkout",
         "requestBody": {
           "content": {
@@ -5527,9 +4678,12 @@
         ],
         "summary": "Start a checkout session for a device rental",
         "tags": [
-          "billing",
-          "phone-rental"
-        ]
+          "Billing",
+          "Phone Rental"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/phone-rental-subscriptions": {
@@ -5568,14 +4722,14 @@
         ],
         "summary": "List device rental subscriptions",
         "tags": [
-          "billing",
-          "phone-rental"
+          "Billing",
+          "Phone Rental"
         ]
       }
     },
     "/billing/phone-rental-subscriptions/cancel": {
       "post": {
-        "description": "Marks each listed rental subscription to cancel at period end. Admin only.",
+        "description": "Marks each listed rental subscription to cancel at period end.",
         "operationId": "billing_cancel_rental_subscriptions",
         "requestBody": {
           "content": {
@@ -5619,9 +4773,12 @@
         ],
         "summary": "Cancel device rental subscriptions",
         "tags": [
-          "billing",
-          "phone-rental"
-        ]
+          "Billing",
+          "Phone Rental"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/phone-rental-subscriptions/list": {
@@ -5759,14 +4916,14 @@
         ],
         "summary": "List active device rental subscriptions (paginated)",
         "tags": [
-          "billing",
-          "phone-rental"
+          "Billing",
+          "Phone Rental"
         ]
       }
     },
     "/billing/phone-rental-subscriptions/renew": {
       "post": {
-        "description": "Reverses a pending cancel-at-period-end on each listed rental subscription. Admin only.",
+        "description": "Reverses a pending cancel-at-period-end on each listed rental subscription.",
         "operationId": "billing_renew_rental_subscriptions",
         "requestBody": {
           "content": {
@@ -5810,9 +4967,12 @@
         ],
         "summary": "Renew device rental subscriptions",
         "tags": [
-          "billing",
-          "phone-rental"
-        ]
+          "Billing",
+          "Phone Rental"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/subscription": {
@@ -5851,13 +5011,13 @@
         ],
         "summary": "Get the active subscription",
         "tags": [
-          "billing"
+          "Billing"
         ]
       }
     },
     "/billing/subscription/cancel": {
       "post": {
-        "description": "Marks the active subscription to cancel at the end of the current billing period. Admin only.",
+        "description": "Marks the active subscription to cancel at the end of the current billing period.",
         "operationId": "billing_cancel_subscription",
         "responses": {
           "200": {
@@ -5891,13 +5051,16 @@
         ],
         "summary": "Cancel subscription at period end",
         "tags": [
-          "billing"
-        ]
+          "Billing"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/subscription/checkout": {
       "post": {
-        "description": "Creates a hosted checkout session for upgrading to a paid plan. Admin only.",
+        "description": "Creates a hosted checkout session for upgrading to a paid plan.",
         "operationId": "billing_create_checkout",
         "requestBody": {
           "content": {
@@ -5941,13 +5104,16 @@
         ],
         "summary": "Start a checkout session for a plan",
         "tags": [
-          "billing"
-        ]
+          "Billing"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/subscription/downgrade": {
       "delete": {
-        "description": "Rolls back a pending downgrade so the org stays on the current plan at period end. Admin only.",
+        "description": "Rolls back a pending downgrade so the org stays on the current plan at period end.",
         "operationId": "billing_cancel_downgrade",
         "responses": {
           "200": {
@@ -5981,11 +5147,14 @@
         ],
         "summary": "Cancel a scheduled downgrade",
         "tags": [
-          "billing"
-        ]
+          "Billing"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       },
       "post": {
-        "description": "Schedules a plan downgrade to take effect at period end. Validates the change first. Admin only.",
+        "description": "Schedules a plan downgrade to take effect at period end. Validates the change first.",
         "operationId": "billing_initiate_downgrade",
         "requestBody": {
           "content": {
@@ -6029,13 +5198,16 @@
         ],
         "summary": "Schedule a downgrade",
         "tags": [
-          "billing"
-        ]
+          "Billing"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/billing/subscription/plan-change/validate": {
       "get": {
-        "description": "Computes the impact (limit changes, blockers, warnings, effective date) of switching to plan_id. Admin only.",
+        "description": "Computes the impact (limit changes, blockers, warnings, effective date) of switching to plan_id.",
         "operationId": "billing_validate_plan_change",
         "parameters": [
           {
@@ -6082,8 +5254,11 @@
         ],
         "summary": "Validate a plan change before executing",
         "tags": [
-          "billing"
-        ]
+          "Billing"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Admin</span>"
+        }
       }
     },
     "/organizations": {
@@ -6119,7 +5294,7 @@
         ],
         "summary": "List the caller's organizations",
         "tags": [
-          "organizations"
+          "Organizations"
         ]
       },
       "post": {
@@ -6164,7 +5339,7 @@
         ],
         "summary": "Create an organization",
         "tags": [
-          "organizations"
+          "Organizations"
         ]
       }
     },
@@ -6213,11 +5388,11 @@
         ],
         "summary": "Get an organization",
         "tags": [
-          "organizations"
+          "Organizations"
         ]
       },
       "patch": {
-        "description": "Applies a partial update (name, slug, logo). Also marks onboarding complete the first time name or slug is set. Org admin only.",
+        "description": "Applies a partial update (name, slug, logo). Also marks onboarding complete the first time name or slug is set.",
         "operationId": "organizations_update",
         "parameters": [
           {
@@ -6270,13 +5445,16 @@
         ],
         "summary": "Update an organization",
         "tags": [
-          "organizations"
-        ]
+          "Organizations"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Org admin</span>"
+        }
       }
     },
     "/organizations/{org_id}/invitations": {
       "get": {
-        "description": "Returns every outstanding invitation for the organization. Org admin only.",
+        "description": "Returns every outstanding invitation for the organization.",
         "operationId": "organizations_list_invitations",
         "parameters": [
           {
@@ -6319,12 +5497,15 @@
         ],
         "summary": "List pending invitations",
         "tags": [
-          "organizations",
-          "invitations"
-        ]
+          "Organizations",
+          "Invitations"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Org admin</span>"
+        }
       },
       "post": {
-        "description": "Creates an organization invitation. Idempotent by org_id + email: rejects 409 on duplicate. Org admin only.",
+        "description": "Creates an organization invitation. Idempotent by org_id + email: rejects 409 on duplicate.",
         "operationId": "organizations_create_invitation",
         "parameters": [
           {
@@ -6377,14 +5558,17 @@
         ],
         "summary": "Invite a user to an organization",
         "tags": [
-          "organizations",
-          "invitations"
-        ]
+          "Organizations",
+          "Invitations"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Org admin</span>"
+        }
       }
     },
     "/organizations/{org_id}/invitations/{invitation_id}": {
       "delete": {
-        "description": "Revokes an outstanding invitation and deletes the local record. Org admin only.",
+        "description": "Revokes an outstanding invitation and deletes the local record.",
         "operationId": "organizations_revoke_invitation",
         "parameters": [
           {
@@ -6437,9 +5621,12 @@
         ],
         "summary": "Revoke an invitation",
         "tags": [
-          "organizations",
-          "invitations"
-        ]
+          "Organizations",
+          "Invitations"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Org admin</span>"
+        }
       }
     },
     "/organizations/{org_id}/members": {
@@ -6487,12 +5674,12 @@
         ],
         "summary": "List organization members",
         "tags": [
-          "organizations",
-          "members"
+          "Organizations",
+          "Members"
         ]
       },
       "post": {
-        "description": "Adds a user as a member of the organization with the given role. Idempotent: rejects 409 if the user is already a member. Org admin only.",
+        "description": "Adds a user as a member of the organization with the given role. Idempotent: rejects 409 if the user is already a member.",
         "operationId": "organizations_add_member",
         "parameters": [
           {
@@ -6545,14 +5732,17 @@
         ],
         "summary": "Add an organization member",
         "tags": [
-          "organizations",
-          "members"
-        ]
+          "Organizations",
+          "Members"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Org admin</span>"
+        }
       }
     },
     "/organizations/{org_id}/members/{user_id}": {
       "delete": {
-        "description": "Removes a user from the organization. Rejects removing yourself, and rejects removing the last admin of an organization. Org admin only.",
+        "description": "Removes a user from the organization. Rejects removing yourself, and rejects removing the last admin of an organization.",
         "operationId": "organizations_remove_member",
         "parameters": [
           {
@@ -6605,12 +5795,15 @@
         ],
         "summary": "Remove an organization member",
         "tags": [
-          "organizations",
-          "members"
-        ]
+          "Organizations",
+          "Members"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Org admin</span>"
+        }
       },
       "patch": {
-        "description": "Changes a member's role. Rejects changing your own role, and rejects downgrading the last admin. Org admin only.",
+        "description": "Changes a member's role. Rejects changing your own role, and rejects downgrading the last admin.",
         "operationId": "organizations_update_member_role",
         "parameters": [
           {
@@ -6673,9 +5866,12 @@
         ],
         "summary": "Update a member's role",
         "tags": [
-          "organizations",
-          "members"
-        ]
+          "Organizations",
+          "Members"
+        ],
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\">Org admin</span>"
+        }
       }
     },
     "/phones/allocate": {
@@ -6724,7 +5920,7 @@
         ],
         "summary": "Allocate a phone to a workflow",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -6787,7 +5983,7 @@
         ],
         "summary": "Check if a workflow has an active device",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -6839,7 +6035,7 @@
         ],
         "summary": "List available devices",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -6879,7 +6075,7 @@
         ],
         "summary": "Available device capacity by location",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -6929,7 +6125,7 @@
         ],
         "summary": "Connect a device to a workflow session",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -6982,7 +6178,7 @@
         ],
         "summary": "Count devices by type for a status",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7044,7 +6240,7 @@
         ],
         "summary": "List supported device apps",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7221,7 +6417,7 @@
         ],
         "summary": "List the caller's private + rented devices",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7413,7 +6609,7 @@
         ],
         "summary": "List the org's sessions (unified history)",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7507,7 +6703,7 @@
         ],
         "summary": "List the org's active phone allocations",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7559,7 +6755,7 @@
         ],
         "summary": "Get a session's detail",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7611,7 +6807,7 @@
         ],
         "summary": "Get a session's screen recording URL",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7664,7 +6860,7 @@
         ],
         "summary": "User-initiated deallocation",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7716,7 +6912,7 @@
         ],
         "summary": "List the caller's devices eligible for workflow allocation",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7768,7 +6964,7 @@
         ],
         "summary": "Get a device by ID",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7830,7 +7026,7 @@
         ],
         "summary": "Send a command to a phone and wait for its result",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7882,7 +7078,7 @@
         ],
         "summary": "Record a user interaction timestamp",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7944,7 +7140,7 @@
         ],
         "summary": "Set a private device's nickname",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -7996,7 +7192,7 @@
         ],
         "summary": "Wipe a private device on demand",
         "tags": [
-          "devices"
+          "Devices"
         ]
       }
     },
@@ -8046,7 +7242,7 @@
         ],
         "summary": "List recent runs",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
@@ -8096,7 +7292,7 @@
         ],
         "summary": "List events for a session",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
@@ -8146,7 +7342,7 @@
         ],
         "summary": "List historic runs",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
@@ -8198,7 +7394,7 @@
         ],
         "summary": "Get aggregate stats for a workflow",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
@@ -8250,7 +7446,7 @@
         ],
         "summary": "Get a single run",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
@@ -8302,7 +7498,7 @@
         ],
         "summary": "Cancel a run",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
@@ -8364,7 +7560,7 @@
         ],
         "summary": "Start one or more runs",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
@@ -8411,7 +7607,7 @@
         ],
         "summary": "List inference calls",
         "tags": [
-          "usage"
+          "Usage"
         ]
       }
     },
@@ -8500,7 +7696,7 @@
         ],
         "summary": "Get usage metrics (simple)",
         "tags": [
-          "usage"
+          "Usage"
         ]
       },
       "post": {
@@ -8545,7 +7741,7 @@
         ],
         "summary": "Get usage metrics (rich body)",
         "tags": [
-          "usage"
+          "Usage"
         ]
       }
     },
@@ -8592,7 +7788,7 @@
         ],
         "summary": "List phone sessions",
         "tags": [
-          "usage"
+          "Usage"
         ]
       }
     },
@@ -8629,7 +7825,7 @@
         ],
         "summary": "Get user settings",
         "tags": [
-          "user-settings"
+          "User Settings"
         ]
       },
       "put": {
@@ -8674,7 +7870,7 @@
         ],
         "summary": "Update user settings",
         "tags": [
-          "user-settings"
+          "User Settings"
         ]
       }
     },
@@ -8711,7 +7907,7 @@
         ],
         "summary": "Delete the caller's account",
         "tags": [
-          "user"
+          "User"
         ]
       },
       "get": {
@@ -8746,7 +7942,7 @@
         ],
         "summary": "Get the caller's profile",
         "tags": [
-          "user"
+          "User"
         ]
       }
     },
@@ -8893,7 +8089,7 @@
         ],
         "summary": "List workflows (query params)",
         "tags": [
-          "workflows"
+          "Workflows"
         ]
       },
       "post": {
@@ -8941,7 +8137,7 @@
         ],
         "summary": "Create a workflow",
         "tags": [
-          "workflows"
+          "Workflows"
         ]
       }
     },
@@ -8991,8 +8187,8 @@
         ],
         "summary": "Create a workflow from a code buffer (atomic)",
         "tags": [
-          "workflows",
-          "code"
+          "Workflows",
+          "Code"
         ]
       }
     },
@@ -9042,7 +8238,7 @@
         ],
         "summary": "List workflows (rich body)",
         "tags": [
-          "workflows"
+          "Workflows"
         ]
       }
     },
@@ -9094,7 +8290,7 @@
         ],
         "summary": "Delete a workflow",
         "tags": [
-          "workflows"
+          "Workflows"
         ]
       },
       "get": {
@@ -9144,7 +8340,7 @@
         ],
         "summary": "Get a workflow",
         "tags": [
-          "workflows"
+          "Workflows"
         ]
       },
       "put": {
@@ -9204,7 +8400,7 @@
         ],
         "summary": "Update a workflow",
         "tags": [
-          "workflows"
+          "Workflows"
         ]
       }
     },
@@ -9256,8 +8452,8 @@
         ],
         "summary": "Get current workflow code",
         "tags": [
-          "workflows",
-          "code"
+          "Workflows",
+          "Code"
         ]
       },
       "post": {
@@ -9317,8 +8513,8 @@
         ],
         "summary": "Save workflow code (creates a new revision)",
         "tags": [
-          "workflows",
-          "code"
+          "Workflows",
+          "Code"
         ]
       }
     },
@@ -9380,8 +8576,8 @@
         ],
         "summary": "Restore a workflow revision",
         "tags": [
-          "workflows",
-          "code"
+          "Workflows",
+          "Code"
         ]
       }
     },
@@ -9458,8 +8654,8 @@
         ],
         "summary": "List workflow revisions",
         "tags": [
-          "workflows",
-          "code"
+          "Workflows",
+          "Code"
         ]
       }
     },
@@ -9521,8 +8717,8 @@
         ],
         "summary": "Get a single workflow revision",
         "tags": [
-          "workflows",
-          "code"
+          "Workflows",
+          "Code"
         ]
       }
     },
@@ -9584,7 +8780,7 @@
         ],
         "summary": "Mark workflow last-run timestamp",
         "tags": [
-          "workflows"
+          "Workflows"
         ]
       }
     }
@@ -9593,6 +8789,50 @@
     {
       "url": "https://api.axilio.ai/api/v1",
       "description": "Production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "API Keys"
+    },
+    {
+      "name": "Billing"
+    },
+    {
+      "name": "History"
+    },
+    {
+      "name": "Phone Rental"
+    },
+    {
+      "name": "Organizations"
+    },
+    {
+      "name": "Invitations"
+    },
+    {
+      "name": "Members"
+    },
+    {
+      "name": "Devices"
+    },
+    {
+      "name": "Runs"
+    },
+    {
+      "name": "Usage"
+    },
+    {
+      "name": "User Settings"
+    },
+    {
+      "name": "User"
+    },
+    {
+      "name": "Workflows"
+    },
+    {
+      "name": "Code"
     }
   ]
 }
