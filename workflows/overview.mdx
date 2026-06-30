@@ -1,6 +1,30 @@
 ---
 title: "Workflows and runs"
 sidebarTitle: "Overview"
+description: "A workflow is your automation saved on Axilio. A run is one execution of it."
 ---
 
-{/* TODO: rewrite from scratch */}
+A **workflow** is your automation saved on Axilio: the code that drives a phone,
+the same code you've seen in these docs. A **run** is one execution of a workflow.
+
+Save a workflow once, then run it again and again, on demand or on a schedule.
+
+## The basics
+
+<CardGroup cols={3}>
+  <Card title="Create" icon="square-plus" href="/workflows/create">
+    Write and save your automation.
+  </Card>
+  <Card title="Run" icon="play" href="/workflows/run">
+    Start a run, now or scheduled.
+  </Card>
+  <Card title="Watch a run" icon="list" href="/workflows/monitor">
+    Check its status and replay it.
+  </Card>
+</CardGroup>
+
+## How it relates to sessions
+
+When you write code with `session()`, you're driving a phone live. A workflow is
+that same code, saved so Axilio can run it for you on phones it manages. The script
+you test runs unchanged as a workflow.

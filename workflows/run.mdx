@@ -1,6 +1,54 @@
 ---
-title: "Trigger a run"
+title: "Run a workflow"
 sidebarTitle: "Run"
+description: "Start a run now, or on a schedule, from the dashboard or the SDK."
 ---
 
-{/* TODO: rewrite from scratch */}
+A **run** is one execution of a workflow. Start one from the
+[dashboard](https://axilio.ai/dashboard) with a click, or from the SDK.
+
+## Run it now
+
+```python
+from axilio import RunRunTimeConfig
+
+result = client.runs.create(
+    workflow_id="wf_abc123",
+    number_of_runs=1,
+    run_time=RunRunTimeConfig(
+        is_immediate=True,
+        is_scheduled=False,
+        schedule_timeout_seconds=300,
+    ),
+)
+run_id = result.run_ids[0]
+```
+
+## Run it on a schedule
+
+Schedule it for later instead of running now:
+
+```python
+run_time=RunRunTimeConfig(
+    is_immediate=False,
+    is_scheduled=True,
+    schedule_time="2026-01-01T09:00:00Z",
+    schedule_timeout_seconds=300,
+)
+```
+
+## Run many at once
+
+Set `number_of_runs` higher to run the workflow on several phones in parallel.
+See [Scaling](/scaling/parallel-sessions).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Watch a run" icon="list" href="/workflows/monitor">
+    Check status and replay the run.
+  </Card>
+  <Card title="Scaling" icon="bolt" href="/scaling/parallel-sessions">
+    Run lots of phones at once.
+  </Card>
+</CardGroup>

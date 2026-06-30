@@ -1,6 +1,50 @@
 ---
-title: "Monitor a run"
+title: "Watch a run"
 sidebarTitle: "Monitor"
+description: "Check a run's status, see whether it succeeded, and replay it."
 ---
 
-{/* TODO: rewrite from scratch */}
+Once a run starts, check on it with its run id.
+
+## Status and result
+
+```python
+run = client.runs.get(run_id)
+
+print(run.status)         # e.g. running, completed
+print(run.success)        # True or False once it's done
+print(run.error_message)  # why it failed, if it did
+```
+
+## Replay it
+
+Every run is recorded. When it's done, `video_url` is a replay of everything that
+happened on the phone:
+
+```python
+run = client.runs.get(run_id)
+print(run.video_url)
+```
+
+## Step by step
+
+For a live view of what a run is doing, list its events:
+
+```python
+run = client.runs.get(run_id)
+events = client.runs.list_events(session_id=run.session_id, limit=50, offset=0)
+
+for event in events.events:
+    print(event)
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Run" icon="play" href="/workflows/run">
+    Start another run.
+  </Card>
+  <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
+    Handle failures.
+  </Card>
+</CardGroup>

@@ -1,6 +1,46 @@
 ---
 title: "Create a workflow"
 sidebarTitle: "Create"
+description: "Write your automation in the code editor, then save it as a workflow."
 ---
 
-{/* TODO: rewrite from scratch */}
+A workflow is just the Python you've been writing, saved on Axilio.
+
+## Write it in the editor
+
+The easiest way is the **code editor** in your
+[dashboard](https://axilio.ai/dashboard). Write your automation, run it against a
+live phone as you go, and save it when it works. It's the same code you'd write
+anywhere:
+
+```python
+with client.session("ANDROID") as driver:
+    driver.find(query="the search box").type_into("axilio")
+    driver.find_text("Search").tap()
+```
+
+## Or create it from the SDK
+
+You can also save a workflow straight from code:
+
+```python
+workflow = client.workflows.create_from_code(
+    name="Search Axilio",
+    code_source=open("automation.py").read(),
+)
+print(workflow.workflow_id)
+```
+
+Update its code later with `client.workflows.save_code(workflow.workflow_id,
+source=...)`.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Run" icon="play" href="/workflows/run">
+    Run the workflow you saved.
+  </Card>
+  <Card title="Watch a run" icon="list" href="/workflows/monitor">
+    Check status and replay a run.
+  </Card>
+</CardGroup>

@@ -74,8 +74,7 @@
               "workflows/overview",
               "workflows/create",
               "workflows/run",
-              "workflows/monitor",
-              "workflows/sandbox-mode"
+              "workflows/monitor"
             ]
           },
           {
@@ -222,7 +221,8 @@
     { "source": "/concepts/devices", "destination": "/devices/overview" },
     { "source": "/concepts/mobile-driver", "destination": "/driver/overview" },
     { "source": "/concepts/workflows-and-runs", "destination": "/workflows/overview" },
-    { "source": "/concepts/sandbox-mode", "destination": "/workflows/sandbox-mode" },
+    { "source": "/concepts/sandbox-mode", "destination": "/workflows/overview" },
+    { "source": "/workflows/sandbox-mode", "destination": "/workflows/overview" },
     { "source": "/guides/allocating-devices", "destination": "/devices/allocate" },
     { "source": "/guides/controlling-devices", "destination": "/driver/overview" },
     { "source": "/guides/running-workflows", "destination": "/workflows/create" },
