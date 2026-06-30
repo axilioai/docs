@@ -42,7 +42,6 @@ from axilio.platform import Client
 client = Client()  # reads your API key from the environment
 
 with client.session("ANDROID") as driver:
-    driver.find_text("Settings").tap()
     driver.find(query="the search box").type_into("axilio")
     photo = driver.screenshot()
 ```

@@ -1,12 +1,12 @@
 ---
-title: "Read the whole screen at once"
+title: "Read the screen"
 sidebarTitle: "Read the screen"
-description: "Capture every on-screen text and icon in a single call with observe(), then query the result without re-capturing."
+description: "Get everything on the screen at once — all the text and icons — and look through it in your code."
 ---
 
-Instead of querying one label at a time, `observe()` captures **everything on
-screen at once** — all recognized text and icons — as a single `Screen` you can
-inspect and query locally.
+Instead of looking for one thing at a time, `observe` reads **everything on the
+screen at once** — all the text and icons — so you can look through it in your
+code.
 
 ```python
 from axilio.platform import Client
@@ -15,64 +15,43 @@ client = Client()
 
 with client.session("ANDROID") as driver:
     screen = driver.observe()
-    print(len(screen.texts), "text elements,", len(screen.icons), "icons")
+    print(len(screen.texts), "pieces of text")
 ```
 
-## The Screen object
+## What you get
 
-`observe()` returns a `Screen`:
+`observe` hands back a snapshot of the screen, with:
 
-| Field | Description |
-|---|---|
-| `texts` | A list of [`Element`](/driver/actions)s — every recognized text item. |
-| `icons` | A list of detected icons, each with a `bbox`, `center`, and `confidence`. |
-| `width`, `height` | The screen dimensions, in pixels. |
-| `captured_at` | When the snapshot was taken. |
-| `hash` | A content hash, handy for detecting whether the screen changed. |
+- **`texts`** — every piece of text it found
+- **`icons`** — every icon it found
+- **`width` and `height`** — the screen size, in pixels
 
-## Query without re-capturing
-
-A `Screen` is a snapshot. Querying it with `find_text` / `find_all_text` searches
-the captured data **without going back to the device** — fast, and consistent
-across every query against that snapshot:
+You can search the snapshot without going back to the phone:
 
 ```python
 screen = driver.observe()
 
-sign_in = screen.find_text("Sign in")     # Element | None
-rows = screen.find_all_text(contains="$")  # list[Element]
+sign_in = screen.find_text("Sign in")
+prices = screen.find_all_text(contains="$")
 ```
 
-This is the difference between `screen.find_text(...)` and the driver's own
-[`driver.find_text(...)`](/driver/find-by-text): the driver captures a fresh screen
-on every call, while `screen.find_text(...)` reuses the one snapshot. Use `observe`
-when you want to make several decisions about a single, stable view.
+This is the difference from [`driver.find_text`](/driver/find-by-text): the driver
+looks at the phone fresh every time, while searching a snapshot reuses the one you
+already took. Use `observe` when you want to make several decisions about the same
+screen.
 
-<Tip>
-  Compare `screen.hash` across two `observe()` calls to tell whether the UI changed
-  — a lightweight alternative to diffing screenshots.
-</Tip>
+## A picture instead?
 
-## Observe or screenshot?
-
-- **`observe()`** gives you structured, queryable text and icons — use it to *make
-  decisions* in code.
-- **[`screenshot()`](/driver/screenshots)** gives you raw PNG bytes — use it for
-  logging, audit trails, or handing pixels to your own model.
+`observe` gives you the text and icons. If you want the screen as an **image** — to
+save, log, or look at — use [`screenshot`](/driver/screenshots).
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Find by text" icon="font" href="/driver/find-by-text">
-    Query a single label directly off the live screen.
+    Search the live screen for one thing.
   </Card>
   <Card title="Screenshots" icon="camera" href="/driver/screenshots">
-    Capture the screen as PNG bytes.
-  </Card>
-  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
-    Act on the elements you found in the snapshot.
-  </Card>
-  <Card title="Waiting" icon="hourglass-half" href="/driver/waiting">
-    Wait for the screen to settle before observing.
+    Get the screen as an image.
   </Card>
 </CardGroup>

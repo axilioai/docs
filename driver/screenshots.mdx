@@ -1,12 +1,11 @@
 ---
 title: "Take a screenshot"
 sidebarTitle: "Screenshots"
-description: "Capture the live device screen as PNG bytes — for logging, audit trails, debugging, or handing pixels to your own model."
+description: "Take a picture of the screen — to save, log, or debug a run."
 ---
 
-`screenshot()` captures the live device screen and returns it as **PNG bytes**. Use
-it for logging, audit trails, debugging a failed run, or handing raw pixels to your
-own model.
+`screenshot` takes a picture of the screen and hands it back as image data
+(a PNG) — to save, log, or look at later.
 
 ```python
 from axilio.platform import Client
@@ -14,43 +13,33 @@ from axilio.platform import Client
 client = Client()
 
 with client.session("ANDROID") as driver:
-    png = driver.screenshot()
+    picture = driver.screenshot()
     with open("screen.png", "wb") as f:
-        f.write(png)
+        f.write(picture)
 ```
 
-Because it returns bytes, you can pass it straight to anything that takes image
-data — no temp file required:
+Because it's plain image data, you can hand it straight to anything that takes an
+image — no temporary file needed.
 
-```python
-import base64
+## A picture, or the text?
 
-png = driver.screenshot()
-data_url = "data:image/png;base64," + base64.b64encode(png).decode()
-```
-
-## Screenshot or observe?
-
-Both look at the screen, but they return different things:
-
-- **`screenshot()`** → raw PNG **bytes**. Use it when you want *pixels* — to store,
-  display, or feed to your own vision model.
-- **[`observe()`](/driver/read-the-screen)** → a structured `Screen` of text and
-  icons. Use it when you want to *make decisions* in code without doing your own
-  image parsing.
+- **`screenshot`** gives you a **picture**. Use it to save or show what the screen
+  looked like.
+- **[`observe`](/driver/read-the-screen)** gives you the **text and icons** on the
+  screen. Use it to decide what to do next.
 
 <Tip>
-  Capture a screenshot in your exception handler to make failures debuggable — it's
-  the fastest way to see what the phone actually looked like when a run went wrong.
+  Take a screenshot when something goes wrong — it's the fastest way to see what
+  the phone actually looked like.
 </Tip>
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
-    Get structured, queryable text and icons instead of pixels.
+    Get the text and icons instead of a picture.
   </Card>
   <Card title="Overview" icon="hand-pointer" href="/driver/overview">
-    Back to the full driver surface.
+    Back to everything the driver can do.
   </Card>
 </CardGroup>

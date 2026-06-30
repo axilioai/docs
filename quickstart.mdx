@@ -39,7 +39,7 @@ with client.session("ANDROID") as driver:
         f.write(driver.screenshot())
 
     # Find something on the screen and tap it.
-    driver.find_text("Settings").tap()
+    driver.find(query="the Settings icon").tap()
 ```
 
 Run it:
@@ -50,11 +50,6 @@ python quickstart.py
 
 That's it — you borrowed a real phone, looked at its screen, and tapped something
 on it.
-
-<Tip>
-  `find_text` returns nothing if the text isn't there yet. If a screen is still
-  loading, [wait for it](/driver/waiting) first.
-</Tip>
 
 ## Next steps
 

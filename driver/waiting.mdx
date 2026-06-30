@@ -1,18 +1,16 @@
 ---
-title: "Wait for the screen to settle"
+title: "Wait for the screen"
 sidebarTitle: "Waiting"
-description: "Block until the UI is ready — wait for text to appear or disappear, or for any condition on the screen — instead of guessing with sleep()."
+description: "Apps take a moment to load. Wait for what you expect instead of guessing — the most reliable way to avoid flaky automation."
 ---
 
-Real apps load, animate, and transition. Acting before the UI is ready is the most
-common cause of flaky automation. Instead of guessing with `sleep()`, **wait for a
-condition** — the driver polls the device until it's true.
+Apps take a moment to load and change. Acting too early is the most common reason
+automation breaks. Instead of guessing with a fixed pause, **wait for what you
+expect**.
 
-## Wait for text to appear
+## Wait for something to appear
 
-`wait_for_text` polls until the text shows up, then returns the
-[element](/driver/actions) so you can act on it in one line. It raises
-`TimeoutError` if the text never appears:
+`wait_for_text` waits until the text shows up, then hands it to you:
 
 ```python
 from axilio.platform import Client
@@ -21,45 +19,28 @@ client = Client()
 
 with client.session("ANDROID") as driver:
     driver.find_text("Sign in").tap()
-    driver.wait_for_text("Welcome").tap()   # blocks until "Welcome" appears
+    driver.wait_for_text("Welcome").tap()   # waits, then taps
 ```
 
-## Wait for text to disappear
+## Wait for something to go away
 
-`wait_until_gone` is the inverse — it blocks until the text is no longer on screen.
-Use it to wait out spinners and loading states:
+`wait_until_gone` waits until the text is gone — handy for loading spinners:
 
 ```python
 driver.wait_until_gone("Loading")
 ```
 
-## Wait for any condition
+## How long to wait
 
-`wait_for` polls [`observe()`](/driver/read-the-screen) and returns the `Screen` as
-soon as your predicate is truthy. Use it for conditions that aren't a single piece
-of text:
-
-```python
-# Wait until at least 10 list rows have rendered.
-screen = driver.wait_for(lambda s: len(s.texts) >= 10)
-```
-
-## Tuning the wait
-
-All three accept the same controls:
-
-| Parameter | Default | Description |
-|---|---|---|
-| `timeout` | `10.0` | Seconds to keep polling before raising `TimeoutError`. |
-| `poll_ms` | `300` | How often to re-check, in milliseconds. |
+Both take a `timeout` — how many seconds to wait before giving up (10 by default):
 
 ```python
 driver.wait_for_text("Confirmed", timeout=30).tap()
 ```
 
 <Warning>
-  Every wait raises `TimeoutError` (from `axilio.drivers.mobile`) when the condition
-  isn't met in time. Catch it to handle screens that may not appear:
+  If what you're waiting for never happens, you get a `TimeoutError`. Catch it to
+  handle screens that might not appear:
 
   ```python
   from axilio.drivers.mobile import TimeoutError
@@ -67,28 +48,22 @@ driver.wait_for_text("Confirmed", timeout=30).tap()
   try:
       driver.wait_for_text("Approved", timeout=15).tap()
   except TimeoutError:
-      ...  # take a different path
+      ...   # do something else
   ```
 </Warning>
 
 <Tip>
-  Prefer waits over `time.sleep()`. A wait returns the instant the condition is
-  met — usually faster than a fixed sleep, and far more reliable.
+  Always prefer waiting over a fixed pause like `time.sleep`. A wait continues the
+  moment the screen is ready — usually faster, and far more reliable.
 </Tip>
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Find by text" icon="font" href="/driver/find-by-text">
-    The selector that powers <code>wait_for_text</code>.
+    What <code>wait_for_text</code> looks for.
   </Card>
-  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
-    The snapshot that <code>wait_for</code> polls.
-  </Card>
-  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
-    Act on the element a wait returns.
-  </Card>
-  <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
-    Handle <code>TimeoutError</code> and other driver failures.
+  <Card title="Tap, type, and swipe" icon="hand-pointer" href="/driver/actions">
+    Act on what a wait hands back.
   </Card>
 </CardGroup>

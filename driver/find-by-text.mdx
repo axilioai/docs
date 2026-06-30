@@ -1,12 +1,11 @@
 ---
-title: "Find an element by text"
+title: "Find by text"
 sidebarTitle: "Find by text"
-description: "Locate on-screen elements by their visible label with fast, on-device OCR — find_text for a single match, find_all_text for every match."
+description: "Find something on the screen by its visible text — a button, a menu item, a label."
 ---
 
-`find_text` is the fastest, most deterministic way to locate something on screen.
-It runs on-device OCR and returns the matching [element](/driver/actions) — use it
-whenever the thing you want has a visible label.
+`find_text` finds something on the screen by the text you can see on it — a
+button, a menu item, a label. It's the fastest, most reliable way to find things.
 
 ```python
 from axilio.platform import Client
@@ -17,29 +16,27 @@ with client.session("ANDROID") as driver:
     driver.find_text("Settings").tap()
 ```
 
-## Find a single element
+## Find one thing
 
-`find_text(text)` returns the best matching `Element`, or `None` if nothing
-matches:
+`find_text` hands back what it found, or nothing if the text isn't there:
 
 ```python
-el = driver.find_text("Sign in")
-if el:
-    el.tap()
+result = driver.find_text("Sign in")
+if result:
+    result.tap()
 ```
 
 <Warning>
-  Because a miss returns `None`, calling `.tap()` directly can raise
-  `AttributeError` before the screen has loaded. Guard the result as above, or
-  block until it appears with [`wait_for_text`](/driver/waiting):
+  Because it can come back empty, calling `.tap()` right away can fail if the
+  screen hasn't loaded yet. To be safe, [wait for the text](/driver/waiting)
+  first — this waits until it appears, then taps it:
 
   ```python
   driver.wait_for_text("Sign in").tap()
   ```
 </Warning>
 
-By default matching is case-insensitive and substring-based. Pass `exact=True` to
-require a full, exact match:
+Want an exact match instead of a partial one? Pass `exact=True`:
 
 ```python
 driver.find_text("OK", exact=True).tap()
@@ -47,46 +44,33 @@ driver.find_text("OK", exact=True).tap()
 
 ## Find every match
 
-`find_all_text` returns a list of every matching element — useful for lists, feeds,
-and grids. Filter by substring with `contains` or by regular expression with
-`pattern`:
+`find_all_text` hands back a list of everything that matches — handy for lists and
+feeds. Filter by what the text contains:
 
 ```python
-# Every element whose text contains "Notification"
-for el in driver.find_all_text(contains="Notification"):
-    print(el.text, el.center)
-
-# Every element matching a regex
-prices = driver.find_all_text(pattern=r"\$\d+\.\d{2}")
+for item in driver.find_all_text(contains="Notification"):
+    print(item.text)
 ```
 
-## Text or vision?
+## Text, or plain English?
 
-- **Use text** when the target has a readable label — buttons, menu items, list
-  rows. It's faster, cheaper, and fully deterministic.
-- **Use [vision](/driver/find-with-vision)** when there's no usable text — icons,
-  images, or "the blue button next to the avatar." Vision is more flexible but
-  slower and billed per call.
-
-<Tip>
-  To inspect everything on screen at once instead of querying one label at a time,
-  use [`observe()`](/driver/read-the-screen) — it returns all recognized text and
-  icons in a single call.
-</Tip>
+- **Use text** when the thing has a label you can read. It's faster and exact.
+- **Use [plain English](/driver/find-with-vision)** when it doesn't — an icon, an
+  image, or something easier to describe than to name.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Find with vision" icon="eye" href="/driver/find-with-vision">
-    Locate elements that have no usable text.
+  <Card title="Find by describing it" icon="eye" href="/driver/find-with-vision">
+    For things with no readable text.
   </Card>
-  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
-    Tap, type, long-press, and swipe on the elements you find.
+  <Card title="Tap, type, and swipe" icon="hand-pointer" href="/driver/actions">
+    Act on what you found.
   </Card>
   <Card title="Waiting" icon="hourglass-half" href="/driver/waiting">
-    Wait for text to appear or disappear before acting.
+    Wait for text before you act on it.
   </Card>
   <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
-    Capture all text and icons in one snapshot.
+    Get everything on the screen at once.
   </Card>
 </CardGroup>
