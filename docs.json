@@ -163,6 +163,22 @@
         ]
       },
       {
+        "tab": "Argus",
+        "icon": "eye",
+        "groups": [
+          {
+            "group": "Vision",
+            "icon": "eye",
+            "pages": [
+              "vision/overview",
+              "vision/locate",
+              "vision/detect",
+              "vision/models"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
         "icon": "code",
         "groups": [

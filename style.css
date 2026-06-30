@@ -30,6 +30,11 @@
   --primary-light: 251 191 36 !important;  /* #FBBF24 */
   --primary-dark: 217 119 6 !important;    /* #D97706 */
 }
+:root[data-surface="argus"] {
+  --primary: 6 182 212 !important;         /* #06B6D4 cyan */
+  --primary-light: 34 211 238 !important;  /* #22D3EE */
+  --primary-dark: 8 145 178 !important;    /* #0891B2 */
+}
 
 /* ── Typography scale — match the rest of the brand ────────────────────────────
    axilio.ai and the dashboard run small and dense: UI text is overwhelmingly

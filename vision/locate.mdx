@@ -1,0 +1,46 @@
+---
+title: "Locate"
+sidebarTitle: "Locate"
+description: "Find something in an image by describing it."
+---
+
+`locate` finds something in an image by description, the same way
+[`find(query=...)`](/driver/find) does on a live screen.
+
+```python
+import base64
+from axilio.platform import Client
+
+client = Client()
+
+image = base64.b64encode(open("screen.png", "rb").read()).decode()
+
+result = client.argus.locate(image=image, query="the blue Continue button")
+if result.found:
+    print(result.bbox)               # where it is
+    print(result.confidence)
+    print(result.cost_microdollars)  # what the call cost
+```
+
+## Pick a model
+
+Pass `model=` to use a specific [vision model](/vision/models):
+
+```python
+client.argus.locate(
+    image=image,
+    query="the cart icon",
+    model="anthropic/claude-haiku-4.5",
+)
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Detect" icon="font" href="/vision/detect">
+    Read text and find icons in an image.
+  </Card>
+  <Card title="Models" icon="layer-group" href="/vision/models">
+    Pick a model and see pricing.
+  </Card>
+</CardGroup>
