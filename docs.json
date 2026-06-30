@@ -78,6 +78,17 @@
             ]
           },
           {
+            "group": "Observability",
+            "icon": "video",
+            "pages": [
+              "observability/overview",
+              "observability/live-view",
+              "observability/recordings",
+              "observability/events",
+              "observability/cost"
+            ]
+          },
+          {
             "group": "Scaling",
             "icon": "bolt",
             "pages": [
@@ -96,13 +107,6 @@
                   "billing/overview",
                   "billing/balance-and-invoices",
                   "billing/plans"
-                ]
-              },
-              {
-                "group": "Usage",
-                "pages": [
-                  "usage/metrics",
-                  "usage/sessions"
                 ]
               },
               {
@@ -229,7 +233,9 @@
     { "source": "/guides/parallel-execution", "destination": "/scaling/parallel-sessions" },
     { "source": "/guides/best-practices", "destination": "/driver/overview" },
     { "source": "/platform/billing", "destination": "/billing/overview" },
-    { "source": "/platform/usage", "destination": "/usage/metrics" },
+    { "source": "/platform/usage", "destination": "/observability/cost" },
+    { "source": "/usage/metrics", "destination": "/observability/cost" },
+    { "source": "/usage/sessions", "destination": "/observability/cost" },
     { "source": "/platform/organizations", "destination": "/org/overview" },
     { "source": "/drivers", "destination": "/drivers/overview" },
     { "source": "/driver/find-by-text", "destination": "/driver/find" },
