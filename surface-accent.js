@@ -11,6 +11,7 @@
 (function () {
   function surfaceFor(path) {
     if (path.indexOf("/driver") === 0) return "driver"; // /driver/* and /drivers/*
+    if (path.indexOf("/vision") === 0) return "argus";  // the Argus (vision) tab
     if (path.indexOf("/api-reference") === 0) return "api";
     return "platform";
   }
