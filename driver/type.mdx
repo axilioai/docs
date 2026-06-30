@@ -1,0 +1,36 @@
+---
+title: "Type"
+sidebarTitle: "Type"
+description: "Type text into a field on the screen."
+---
+
+Type into whatever you [found](/driver/find). `type_into` taps the field first,
+then types:
+
+```python
+driver.find_text("Search").type_into("axilio")
+```
+
+## Type into the current field
+
+If a field is already selected, type straight into it:
+
+```python
+driver.type_text("hello")
+```
+
+<Note>
+  This types text. To press device buttons like Home or Back, use
+  [Buttons](/driver/buttons).
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
+    Tap things on the screen.
+  </Card>
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    Find the field to type into.
+  </Card>
+</CardGroup>

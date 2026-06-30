@@ -1,0 +1,90 @@
+---
+title: "Find"
+sidebarTitle: "Find"
+description: "Locate something on the screen — by its text, or by describing it in plain English."
+---
+
+`find` locates something on the screen so you can act on it. There are two ways:
+by its **text**, or by **describing** it.
+
+## By its text
+
+`find_text` finds anything with a visible label — a button, a menu item. Fast and
+exact.
+
+```python
+driver.find_text("Settings").tap()
+```
+
+It hands back what it found, or nothing if it's not there:
+
+```python
+result = driver.find_text("Sign in")
+if result:
+    result.tap()
+```
+
+<Warning>
+  Because it can come back empty, calling `.tap()` right away can fail if the
+  screen hasn't loaded. To be safe, [wait for the text](/driver/wait) — this waits
+  until it appears, then taps it:
+
+  ```python
+  driver.wait_for_text("Sign in").tap()
+  ```
+</Warning>
+
+Get every match with `find_all_text` — handy for lists and feeds:
+
+```python
+for item in driver.find_all_text(contains="Notification"):
+    print(item.text)
+```
+
+## By describing it
+
+When there's no text to match — an icon, an image — describe it in plain English
+with `find`:
+
+```python
+driver.find(query="the heart icon under the photo").tap()
+```
+
+Unlike `find_text`, `find` speaks up when it can't find what you asked for:
+
+```python
+from axilio.drivers.mobile import ElementNotFoundError
+
+try:
+    driver.find(query="the shopping cart").tap()
+except ElementNotFoundError:
+    print("no cart on this screen")
+```
+
+<Note>
+  Describing something is powered by AI, so it costs a little more than finding by
+  text. On steps you run a lot, prefer text.
+</Note>
+
+## Which to use
+
+- **Text** when there's a label you can read — it's faster and exact.
+- **Describing** when there isn't — an icon, or something easier to describe than
+  to name.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
+    Tap what you found.
+  </Card>
+  <Card title="Type" icon="keyboard" href="/driver/type">
+    Type into what you found.
+  </Card>
+  <Card title="Observe" icon="table-list" href="/driver/observe">
+    Read the whole screen at once.
+  </Card>
+  <Card title="Wait" icon="hourglass-half" href="/driver/wait">
+    Wait for something before you act on it.
+  </Card>
+</CardGroup>

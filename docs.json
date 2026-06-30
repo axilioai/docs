@@ -146,30 +146,16 @@
             "pages": [
               "driver/overview",
               {
-                "group": "Finding elements",
+                "group": "Basics",
                 "pages": [
-                  "driver/find-by-text",
-                  "driver/find-with-vision"
-                ]
-              },
-              {
-                "group": "Reading the screen",
-                "pages": [
-                  "driver/read-the-screen",
-                  "driver/screenshots"
-                ]
-              },
-              {
-                "group": "Acting",
-                "pages": [
-                  "driver/actions",
-                  "driver/hardware-keys"
-                ]
-              },
-              {
-                "group": "Synchronizing",
-                "pages": [
-                  "driver/waiting"
+                  "driver/find",
+                  "driver/tap",
+                  "driver/type",
+                  "driver/swipe",
+                  "driver/buttons",
+                  "driver/observe",
+                  "driver/wait",
+                  "driver/screenshot"
                 ]
               },
               {
@@ -248,7 +234,14 @@
     { "source": "/platform/billing", "destination": "/billing/overview" },
     { "source": "/platform/usage", "destination": "/usage/metrics" },
     { "source": "/platform/organizations", "destination": "/org/overview" },
-    { "source": "/drivers", "destination": "/drivers/overview" }
+    { "source": "/drivers", "destination": "/drivers/overview" },
+    { "source": "/driver/find-by-text", "destination": "/driver/find" },
+    { "source": "/driver/find-with-vision", "destination": "/driver/find" },
+    { "source": "/driver/actions", "destination": "/driver/tap" },
+    { "source": "/driver/read-the-screen", "destination": "/driver/observe" },
+    { "source": "/driver/hardware-keys", "destination": "/driver/buttons" },
+    { "source": "/driver/waiting", "destination": "/driver/wait" },
+    { "source": "/driver/screenshots", "destination": "/driver/screenshot" }
   ],
   "footer": {
     "socials": {

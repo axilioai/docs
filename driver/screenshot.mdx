@@ -1,21 +1,16 @@
 ---
-title: "Take a screenshot"
-sidebarTitle: "Screenshots"
+title: "Screenshot"
+sidebarTitle: "Screenshot"
 description: "Take a picture of the screen — to save, log, or debug a run."
 ---
 
-`screenshot` takes a picture of the screen and hands it back as image data
-(a PNG) — to save, log, or look at later.
+`screenshot` takes a picture of the screen and hands it back as image data (a PNG)
+— to save, log, or look at later.
 
 ```python
-from axilio.platform import Client
-
-client = Client()
-
-with client.session("ANDROID") as driver:
-    picture = driver.screenshot()
-    with open("screen.png", "wb") as f:
-        f.write(picture)
+picture = driver.screenshot()
+with open("screen.png", "wb") as f:
+    f.write(picture)
 ```
 
 Because it's plain image data, you can hand it straight to anything that takes an
@@ -25,8 +20,8 @@ image — no temporary file needed.
 
 - **`screenshot`** gives you a **picture**. Use it to save or show what the screen
   looked like.
-- **[`observe`](/driver/read-the-screen)** gives you the **text and icons** on the
-  screen. Use it to decide what to do next.
+- **[Observe](/driver/observe)** gives you the **text and icons** on the screen.
+  Use it to decide what to do next.
 
 <Tip>
   Take a screenshot when something goes wrong — it's the fastest way to see what
@@ -36,7 +31,7 @@ image — no temporary file needed.
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
+  <Card title="Observe" icon="table-list" href="/driver/observe">
     Get the text and icons instead of a picture.
   </Card>
   <Card title="Overview" icon="hand-pointer" href="/driver/overview">

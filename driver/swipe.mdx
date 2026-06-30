@@ -1,0 +1,37 @@
+---
+title: "Swipe"
+sidebarTitle: "Swipe"
+description: "Swipe and scroll the screen."
+---
+
+Swipe between two points on the screen — this is also how you scroll:
+
+```python
+driver.swipe({"x": 540, "y": 1600}, {"x": 540, "y": 400})   # scroll down
+```
+
+<Note>
+  Swiping is how you scroll: swipe **up** (end higher than start) to move *down* a
+  list, and the other way to move up. Pass `duration_ms` for a slower, shorter
+  swipe.
+</Note>
+
+## Swipe one thing onto another
+
+Swipe from something you [found](/driver/find) to another — for example, to drag a
+card onto a target:
+
+```python
+driver.find_text("Card").swipe_to(driver.find_text("Archive"))
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
+    Tap things on the screen.
+  </Card>
+  <Card title="Observe" icon="table-list" href="/driver/observe">
+    Read what's on the screen after a scroll.
+  </Card>
+</CardGroup>

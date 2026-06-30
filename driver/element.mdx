@@ -1,11 +1,11 @@
 ---
 title: "Element"
 sidebarTitle: "Element"
-description: "A located thing on screen — returned by every selector, with actions you call directly and fields you can read."
+description: "A located thing on the screen — what you get back when you find something, with actions you call directly and fields you can read."
 ---
 
-An `Element` is what every selector returns. Act on it directly, or read its
-fields to drive [raw input](/driver/actions).
+An `Element` is what you get back when you [find](/driver/find) something. Act on
+it directly, or read its fields to drive [raw input](/driver/tap).
 
 ```python
 el = driver.find_text("Sign in")
@@ -30,19 +30,19 @@ print(el.center, el.confidence)
 | `bbox` | `{"x", "y", "width", "height"}` | Bounding box, in pixels. |
 | `text` | `str \| None` | Recognized text, if any. |
 | `confidence` | `float` | Match confidence, `0`–`1`. |
-| `source` | `"ocr" \| "vlm"` | Whether a text or vision selector found it. |
+| `source` | `"ocr" \| "vlm"` | Whether it was found by its text or by describing it. |
 
 <Note>
-  [`find_text`](/driver/find-by-text) returns `None` on a miss, so guard the
-  result before acting. [`find`](/driver/find-with-vision) raises
-  `ElementNotFoundError` instead.
+  [`find_text`](/driver/find) returns `None` on a miss, so guard the result before
+  acting. [`find` by description](/driver/find) raises `ElementNotFoundError`
+  instead.
 </Note>
 
 ## See also
 
 <CardGroup cols={2}>
-  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
-    Every way to act on an element.
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
+    Tap, type, and swipe what you found.
   </Card>
   <Card title="Screen" icon="table-list" href="/driver/screen">
     The snapshot that holds many elements.

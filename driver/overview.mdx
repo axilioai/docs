@@ -1,12 +1,14 @@
 ---
 title: "How the driver works"
 sidebarTitle: "Overview"
-description: "The driver is how you control a phone — find something on the screen, then tap, type, or swipe it."
+description: "The Mobile driver is a handful of basics — find, tap, type, swipe — that you chain together to control a phone."
 ---
 
 The **Mobile driver** is how you control a phone that the
-[Platform](/introduction) gives you. A [session](/quickstart) hands you one. From
-there, you find something on the screen and act on it.
+[Platform](/introduction) gives you. A [session](/quickstart) hands you one.
+
+It's a small set of **basics** — find, tap, type, swipe — that you chain together
+to do anything:
 
 ```python
 from axilio.platform import Client
@@ -15,48 +17,49 @@ client = Client()
 
 with client.session("ANDROID") as driver:
     driver.find(query="the Settings icon").tap()
+    driver.find_text("Search").type_into("axilio")
 ```
 
-## Two ways to find something
+Every basic is one idea. Learn the handful below and you can drive any app.
 
-- **By its text** — [`find_text`](/driver/find-by-text) finds anything with a
-  visible label, like a button or a menu item. Fast and exact.
-- **By describing it** — [`find`](/driver/find-with-vision) finds anything you can
-  describe in plain English, like "the search box" or "the heart icon." Use it
-  when there's no text to match.
-
-Both hand back the thing you found, ready to act on.
-
-## Acting on it
-
-```python
-driver.find_text("Settings").tap()
-driver.find(query="the search box").type_into("hello")
-```
-
-`tap`, `type_into`, `long_press`, and `swipe_to` all work on whatever you found.
-You can also [tap an exact spot](/driver/actions) or
-[press device buttons](/driver/hardware-keys) directly.
-
-## Explore
+## The basics
 
 <CardGroup cols={2}>
-  <Card title="Find by text" icon="font" href="/driver/find-by-text">
-    Find things by their visible label.
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    Locate something — by its text or by describing it.
   </Card>
-  <Card title="Find by describing it" icon="eye" href="/driver/find-with-vision">
-    Describe what you want in plain English.
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
+    Tap it, or tap and hold.
   </Card>
-  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
-    Get everything on the screen at once.
+  <Card title="Type" icon="keyboard" href="/driver/type">
+    Type into a field.
   </Card>
-  <Card title="Tap, type, and swipe" icon="hand-pointer" href="/driver/actions">
-    Act on what you find, or on an exact spot.
+  <Card title="Swipe" icon="arrows-up-down-left-right" href="/driver/swipe">
+    Swipe and scroll.
   </Card>
-  <Card title="Device buttons" icon="keyboard" href="/driver/hardware-keys">
-    Press Home, Back, and other buttons.
+  <Card title="Buttons" icon="mobile-button" href="/driver/buttons">
+    Press Home, Back, and other device buttons.
   </Card>
-  <Card title="Waiting" icon="hourglass-half" href="/driver/waiting">
-    Wait for the screen before you act.
+  <Card title="Observe" icon="table-list" href="/driver/observe">
+    Read the whole screen at once.
+  </Card>
+  <Card title="Wait" icon="hourglass-half" href="/driver/wait">
+    Wait for the screen to change before you act.
+  </Card>
+  <Card title="Screenshot" icon="camera" href="/driver/screenshot">
+    Take a picture of the screen.
   </Card>
 </CardGroup>
+
+## Chaining them together
+
+Most steps are a **find** followed by an action:
+
+```python
+driver.find_text("Settings").tap()          # find -> tap
+driver.find(query="the search box").type_into("hello")   # find -> type
+driver.wait_for_text("Welcome").tap()        # wait -> tap
+```
+
+That's the whole model. When you need exact control, every action also takes raw
+coordinates — see [Tap](/driver/tap) and [Swipe](/driver/swipe).

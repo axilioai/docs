@@ -1,25 +1,18 @@
 ---
-title: "Wait for the screen"
-sidebarTitle: "Waiting"
-description: "Apps take a moment to load. Wait for what you expect instead of guessing — the most reliable way to avoid flaky automation."
+title: "Wait"
+sidebarTitle: "Wait"
+description: "Wait for the screen to change before you act — the reliable alternative to a fixed pause."
 ---
 
 Apps take a moment to load and change. Acting too early is the most common reason
-automation breaks. Instead of guessing with a fixed pause, **wait for what you
-expect**.
+automation breaks. Instead of a fixed pause, **wait for what you expect**.
 
 ## Wait for something to appear
 
 `wait_for_text` waits until the text shows up, then hands it to you:
 
 ```python
-from axilio.platform import Client
-
-client = Client()
-
-with client.session("ANDROID") as driver:
-    driver.find_text("Sign in").tap()
-    driver.wait_for_text("Welcome").tap()   # waits, then taps
+driver.wait_for_text("Welcome").tap()   # waits, then taps
 ```
 
 ## Wait for something to go away
@@ -60,10 +53,10 @@ driver.wait_for_text("Confirmed", timeout=30).tap()
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Find by text" icon="font" href="/driver/find-by-text">
-    What <code>wait_for_text</code> looks for.
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    What a wait looks for.
   </Card>
-  <Card title="Tap, type, and swipe" icon="hand-pointer" href="/driver/actions">
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
     Act on what a wait hands back.
   </Card>
 </CardGroup>

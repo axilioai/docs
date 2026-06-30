@@ -4,7 +4,7 @@ sidebarTitle: "Key"
 description: "The hardware-key constants you pass to key_press — navigation, power, volume, and media keys."
 ---
 
-`Key` holds the device-key constants for [`key_press`](/driver/hardware-keys).
+`Key` holds the device-button constants for [`key_press`](/driver/buttons).
 
 ```python
 from axilio.drivers.mobile import Key
@@ -23,17 +23,17 @@ driver.key_press(Key.HOME)
 | System | `SEARCH`, `ASSIST` |
 
 <Note>
-  `key_press` is for device keys. To type characters, use
-  [`type_text`](/driver/actions) or [`type_into`](/driver/element).
+  `key_press` is for device buttons. To type characters, use
+  [`type_text` or `type_into`](/driver/type).
 </Note>
 
 ## See also
 
 <CardGroup cols={2}>
-  <Card title="Hardware keys" icon="keyboard" href="/driver/hardware-keys">
-    Using device keys in a session.
+  <Card title="Buttons" icon="keyboard" href="/driver/buttons">
+    Pressing device buttons in a session.
   </Card>
-  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
     Tap, type, and swipe.
   </Card>
 </CardGroup>
