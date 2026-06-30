@@ -153,10 +153,13 @@ html {
   height: 1rem !important;
 }
 
-/* ── Navbar logo — default render is a touch small for the wordmark ───────── */
+/* ── Logo — bump the wordmark (cube + AXILIO) so the brand reads larger. It's a
+   single .nav-logo image, so scaling its height grows the icon and the name
+   together. ──────────────────────────────────────────────────────────────── */
+.nav-logo,
 #navbar img,
 #navbar svg.logo {
-  height: 1.85rem !important;
+  height: 2.3rem !important;
 }
 
 /* ── Sidebar group headers — make them read as firmware-style section labels.
