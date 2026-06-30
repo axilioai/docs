@@ -185,7 +185,7 @@ html {
   font-size: 1rem !important;
 }
 #navigation-items a {
-  font-size: 1rem !important;
+  font-size: 0.8125rem !important;
 }
 /* Collapsible subsection headers (API-reference tag groups like "API Keys", and
    the driver's "Basics" etc.) render as a toggle button that the theme defaults
@@ -195,7 +195,7 @@ html {
    heavier than the Platform/Driver sidebars; the chevron + indent carry the
    hierarchy. */
 #navigation-items .sidebar-group > li > button {
-  font-size: 1rem !important;
+  font-size: 0.8125rem !important;
 }
 
 /* ── API role badges — the backend spec gates some endpoints behind an admin
