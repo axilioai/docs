@@ -188,12 +188,14 @@ html {
   font-size: 1rem !important;
 }
 /* Collapsible subsection headers (API-reference tag groups like "API Keys", and
-   the driver's "Basics" etc.) render as a toggle button that defaulted smaller
-   than the links beneath it, so the parent looked smaller than its children.
-   Make them bold and match the link size so the hierarchy reads correctly. */
+   the driver's "Basics" etc.) render as a toggle button that the theme defaults
+   a notch smaller than the links beneath it. Match the link size (1rem) so every
+   navigable item in every sidebar reads at the same size — we deliberately keep
+   the regular link weight here too, so the API-reference tag list doesn't look
+   heavier than the Platform/Driver sidebars; the chevron + indent carry the
+   hierarchy. */
 #navigation-items .sidebar-group > li > button {
   font-size: 1rem !important;
-  font-weight: 600 !important;
 }
 
 /* ── API role badges — the backend spec gates some endpoints behind an admin
