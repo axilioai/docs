@@ -45,6 +45,7 @@
     "tabs": [
       {
         "tab": "Platform",
+        "icon": "mobile",
         "groups": [
           {
             "group": "Get Started",
@@ -57,52 +58,70 @@
             ]
           },
           {
-            "group": "Devices & Sessions",
-            "icon": "mobile",
+            "group": "Guides",
+            "icon": "book",
             "pages": [
-              "devices/overview",
-              "devices/allocate",
-              "devices/discover",
-              "devices/timeouts"
-            ]
-          },
-          {
-            "group": "Workflows & Runs",
-            "icon": "diagram-project",
-            "pages": [
-              "workflows/overview",
-              "workflows/create",
-              "workflows/run",
-              "workflows/monitor",
-              "workflows/sandbox-mode"
-            ]
-          },
-          {
-            "group": "Scaling",
-            "icon": "bolt",
-            "pages": [
-              "scaling/parallel-sessions",
-              "scaling/rate-limits",
-              "scaling/workflow-engine"
+              {
+                "group": "Devices & Sessions",
+                "pages": [
+                  "devices/overview",
+                  "devices/allocate",
+                  "devices/discover",
+                  "devices/timeouts"
+                ]
+              },
+              {
+                "group": "Workflows & Runs",
+                "pages": [
+                  "workflows/overview",
+                  "workflows/create",
+                  "workflows/run",
+                  "workflows/monitor",
+                  "workflows/sandbox-mode"
+                ]
+              },
+              {
+                "group": "Scaling",
+                "pages": [
+                  "scaling/parallel-sessions",
+                  "scaling/rate-limits",
+                  "scaling/workflow-engine"
+                ]
+              }
             ]
           },
           {
             "group": "Account & Billing",
             "icon": "credit-card",
             "pages": [
-              "billing/overview",
-              "billing/balance-and-invoices",
-              "billing/plans",
-              "usage/metrics",
-              "usage/sessions",
-              "org/overview",
-              "org/members",
-              "platform/api-keys"
+              {
+                "group": "Billing",
+                "pages": [
+                  "billing/overview",
+                  "billing/balance-and-invoices",
+                  "billing/plans"
+                ]
+              },
+              {
+                "group": "Usage",
+                "pages": [
+                  "usage/metrics",
+                  "usage/sessions"
+                ]
+              },
+              {
+                "group": "Organization",
+                "pages": [
+                  "org/overview",
+                  "org/members",
+                  "platform/api-keys"
+                ]
+              }
             ]
           },
           {
             "group": "Reference",
-            "icon": "book",
+            "icon": "code",
             "pages": [
               "reference/errors",
               "reference/configuration"
@@ -112,43 +131,40 @@
       },
       {
         "tab": "Driver",
+        "icon": "hand-pointer",
         "groups": [
           {
             "group": "MobileDriver",
             "icon": "compass",
             "pages": [
-              "driver/overview"
-            ]
-          },
-          {
-            "group": "Finding elements",
-            "icon": "magnifying-glass",
-            "pages": [
-              "driver/find-by-text",
-              "driver/find-with-vision"
-            ]
-          },
-          {
-            "group": "Reading the screen",
-            "icon": "table-list",
-            "pages": [
-              "driver/read-the-screen",
-              "driver/screenshots"
-            ]
-          },
-          {
-            "group": "Acting",
-            "icon": "hand-pointer",
-            "pages": [
-              "driver/actions",
-              "driver/hardware-keys"
-            ]
-          },
-          {
-            "group": "Synchronizing",
-            "icon": "hourglass-half",
-            "pages": [
-              "driver/waiting"
+              "driver/overview",
+              {
+                "group": "Finding elements",
+                "pages": [
+                  "driver/find-by-text",
+                  "driver/find-with-vision"
+                ]
+              },
+              {
+                "group": "Reading the screen",
+                "pages": [
+                  "driver/read-the-screen",
+                  "driver/screenshots"
+                ]
+              },
+              {
+                "group": "Acting",
+                "pages": [
+                  "driver/actions",
+                  "driver/hardware-keys"
+                ]
+              },
+              {
+                "group": "Synchronizing",
+                "pages": [
+                  "driver/waiting"
+                ]
+              }
             ]
           },
           {
@@ -164,6 +180,7 @@
       },
       {
         "tab": "API Reference",
+        "icon": "code",
         "groups": [
           {
             "group": "SDK Reference",
