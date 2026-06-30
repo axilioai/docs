@@ -1,258 +1,43 @@
 ---
-title: "Configuration Reference: Client Setup and Environment"
+title: "Configuration"
 sidebarTitle: "Configuration"
-description: "All environment variables, Client constructor parameters, mode detection, retry logic, and connection management for the Axilio Python SDK."
+description: "Every Client option and environment variable in one place."
 ---
 
-The Axilio `Client` is the single entry point for every SDK operation. You construct it once per process, configure it through a combination of environment variables and constructor keyword arguments, and then share the same instance across all calls. Constructor arguments always take precedence over environment variables — environment variables act as convenient defaults for the values you don't pass explicitly. This page covers every knob you can turn, from API keys and base URLs to timeout tuning, retry behaviour, and safe shutdown.
-
----
-
-## Environment Variables
-
-Set these in your shell, `.env` file, or CI secrets manager. The client reads them at construction time.
-
-<ParamField query="AXILIO_API_KEY" type="string">
-  Your Axilio API key. Required in **local mode** (running outside a workflow sandbox). Generate and manage keys from the Axilio dashboard. If this variable is absent and you don't pass `api_key=` to the constructor, the client raises `ValueError` at construction time.
-</ParamField>
-
-<ParamField query="AXILIO_BASE_URL" type="string" default="https://api.axilio.ai">
-  Override the backend base URL. Useful when pointing the SDK at a staging environment or a self-hosted proxy. Strip any trailing slash — the client normalises it automatically. Most users should leave this unset.
-</ParamField>
-
-<ParamField query="AXILIO_SANDBOX_TOKEN" type="string">
-  Short-lived token injected automatically into the environment when your workflow script runs inside an Axilio sandbox. The client detects sandbox mode, ignores `AXILIO_API_KEY`, and authenticates with this token instead. **Do not set or hard-code this value yourself** — the platform manages its lifecycle.
-</ParamField>
-
-```bash
-# Local development — add to your shell profile or .env
-export AXILIO_API_KEY="axlio_sk_live_..."
-
-# Point at staging (optional)
-export AXILIO_BASE_URL="https://api.staging.axilio.ai"
-```
-
-<Note>
-  `AXILIO_SANDBOX_TOKEN` is only meaningful inside a running workflow. Outside of a workflow execution, the variable is absent and the client falls back to `AXILIO_API_KEY`.
-</Note>
-
----
-
-## Client Constructor Parameters
-
-Instantiate the client by importing `Client` from the top-level `axilio` package. Every parameter is keyword-only.
+## Client options
 
 ```python
-from axilio import Client
+from axilio.platform import Client
 
 client = Client(
-    api_key="axlio_sk_live_...",   # overrides AXILIO_API_KEY
+    api_key="axl_...",
     base_url="https://api.axilio.ai",
     timeout=30.0,
     max_retries=3,
-    retry_base_delay=0.5,
 )
 ```
 
-<ParamField body="api_key" type="str | None" default="None">
-  API key for authenticating requests. When provided, this value takes precedence over both `AXILIO_API_KEY` and `AXILIO_SANDBOX_TOKEN`. If `None`, the client falls back to environment variables in order: `AXILIO_API_KEY` first, then `AXILIO_SANDBOX_TOKEN` (in sandbox mode only). Raises `ValueError` at construction if no key can be resolved.
-</ParamField>
+| Option | Default | What it does |
+|---|---|---|
+| `api_key` | `AXILIO_API_KEY` env | Your API key (`axl_…`). Required. |
+| `base_url` | `AXILIO_BASE_URL` env, then `https://api.axilio.ai` | The API host. |
+| `timeout` | `30.0` | Seconds to wait per request. |
+| `max_retries` | `3` | Automatic retries on temporary failures. |
 
-<ParamField body="base_url" type="str | None" default="None">
-  Base URL for all API requests. Overrides `AXILIO_BASE_URL` when set. Trailing slashes are stripped automatically. Defaults to `https://api.axilio.ai` when neither this parameter nor the environment variable is present.
-</ParamField>
+## Environment variables
 
-<ParamField body="timeout" type="float" default="30.0">
-  Per-request HTTP timeout in seconds. Applies to each individual HTTP call — not to the total time of a retry sequence. A request that hangs for longer than this value raises `httpx.TimeoutException`, which the SDK wraps as `axilio.ServerError` for retry purposes. Increase this value if you routinely call slow endpoints (e.g. large workflow run results).
-</ParamField>
+| Variable | What it does |
+|---|---|
+| `AXILIO_API_KEY` | The key the client uses to authenticate. |
+| `AXILIO_BASE_URL` | Override the API host. |
 
-<ParamField body="max_retries" type="int" default="3">
-  Maximum number of automatic retry attempts for transient errors (`RateLimitError` and `ServerError`). This is the number of *extra* attempts after the initial one, so `max_retries=3` means up to 4 total attempts (1 initial + 3 retries). Set to `0` to disable all automatic retries and handle them yourself.
-</ParamField>
-
-<ParamField body="retry_base_delay" type="float" default="0.5">
-  Base delay in seconds for the exponential backoff between retry attempts. The delay before attempt *n* is `retry_base_delay × 2^(n-1)`, so with the default of `0.5` the delays are 0.5 s, 1.0 s, 2.0 s, and so on. Increase this value if you're hitting rate limits under sustained load.
-</ParamField>
-
----
-
-## Read-Only Client Properties
-
-After constructing the client, you can inspect the resolved configuration through these read-only properties.
-
-<ResponseField name="client.api_key" type="str">
-  The resolved API key the client is using. Reflects whichever source won — constructor argument, `AXILIO_API_KEY`, or `AXILIO_SANDBOX_TOKEN`.
-</ResponseField>
-
-<ResponseField name="client.base_url" type="str">
-  The resolved base URL, normalised (trailing slash removed). Reflects whichever source won — constructor argument, `AXILIO_BASE_URL`, or the built-in default.
-</ResponseField>
-
-<ResponseField name="client.mode" type="Mode">
-  Auto-detected operating mode at construction time. Either `Mode.LOCAL` (standard API key authentication) or `Mode.SANDBOX` (running inside a workflow execution, authenticated with a sandbox token). Use this to branch behaviour in code that runs in both contexts.
-</ResponseField>
-
-```python
-from axilio import Client
-
-client = Client()
-
-print(client.base_url)   # "https://api.axilio.ai"
-print(client.api_key)    # "axlio_sk_live_..."
-
-if client.mode == "sandbox":
-    print("Running inside a workflow sandbox.")
-else:
-    print("Running in local mode.")
-```
-
----
-
-## Operating Modes
-
-The client automatically detects its execution context and switches authentication strategies accordingly.
+## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Mode.LOCAL" icon="laptop">
-    Standard local or CI execution. The client authenticates with `AXILIO_API_KEY` (or the `api_key=` constructor argument). All SDK operations, including write operations, are permitted.
+  <Card title="Authentication" icon="lock" href="/authentication">
+    Get a key and set it up.
   </Card>
-  <Card title="Mode.SANDBOX" icon="box">
-    Execution inside an Axilio workflow run. The client authenticates with the injected `AXILIO_SANDBOX_TOKEN`. Write operations that are disallowed in sandbox mode (such as revoking API keys) raise `SandboxPermissionError` before making any HTTP call.
+  <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
+    How the SDK signals failures.
   </Card>
 </CardGroup>
-
----
-
-## Retry Logic
-
-The client retries failed requests automatically when the failure is considered transient. Only `RateLimitError` (HTTP 429) and `ServerError` (HTTP 5xx) trigger automatic retries — `UnauthorizedError`, `NotFoundError`, and SDK-only errors like `SandboxPermissionError` are never retried.
-
-The backoff uses **full jitter** to avoid thundering-herd problems. The delay before each retry is sampled uniformly from `[0, ceiling]`, where:
-
-```
-ceiling = min(retry_base_delay × 2^attempt, 30.0)
-```
-
-`attempt` is zero-indexed (0 for the first retry). With the defaults (`retry_base_delay=0.5`, `max_retries=3`), there are up to 4 total attempts (1 initial + 3 retries):
-
-| Attempt | Ceiling before attempt | Actual delay |
-|---------|------------------------|--------------|
-| 1 (initial) | — | — |
-| 2 (retry 1) | 0.5 s | random in [0, 0.5 s] |
-| 3 (retry 2) | 1.0 s | random in [0, 1.0 s] |
-| 4 (retry 3) | 2.0 s | random in [0, 2.0 s] |
-
-After the final attempt the exception is re-raised. The `timeout` applies independently to each attempt in the sequence. A `Retry-After` header on the response overrides the computed backoff (capped at 30 s).
-
-<Tip>
-  If you manage retry logic in your own workflow orchestration layer, construct the client with `Client(max_retries=0)` to prevent double-retrying. The SDK's built-in retry is most useful for fire-and-forget scripts and one-off API calls.
-</Tip>
-
----
-
-## Connection Management
-
-The client holds an internal HTTP connection pool for performance. You must release this pool when you're done to avoid resource leaks, especially in long-lived processes that construct and discard multiple clients.
-
-### Manual close
-
-```python
-from axilio import Client
-
-client = Client()
-
-try:
-    result = client.runs.list()
-finally:
-    client.close()  # always release the connection pool
-```
-
-### Context manager (recommended)
-
-Use the `with` statement to ensure `close()` is called automatically, even if an exception is raised inside the block.
-
-```python
-from axilio import Client
-
-with Client() as client:
-    runs = client.runs.list()
-    for run in runs:
-        print(run.id, run.status)
-# connection pool released here automatically
-```
-
-<Note>
-  For most applications, construct a single `Client` instance at startup and keep it for the lifetime of the process. Creating a new client per request is wasteful — each construction allocates a new connection pool.
-</Note>
-
----
-
-## Environment Variable vs Constructor Precedence
-
-When both a constructor argument and an environment variable are present, the constructor argument always wins. The resolution order for each value is:
-
-<Steps>
-  <Step title="Constructor argument">
-    If you pass `api_key=`, `base_url=`, or any other keyword argument explicitly, that value is used and environment variables are ignored for that parameter.
-  </Step>
-  <Step title="Environment variable">
-    If the constructor argument is `None` (the default), the client reads the corresponding environment variable (`AXILIO_API_KEY`, `AXILIO_BASE_URL`).
-  </Step>
-  <Step title="SDK default">
-    If neither is set, the SDK applies its built-in default — `https://api.axilio.ai` for `base_url`, `30.0` for `timeout`, `3` for `max_retries`, and `0.5` for `retry_base_delay`.
-  </Step>
-</Steps>
-
-```python
-import os
-from axilio import Client
-
-os.environ["AXILIO_BASE_URL"] = "https://api.staging.axilio.ai"
-
-# Constructor argument wins — uses production, not staging
-client = Client(base_url="https://api.axilio.ai")
-print(client.base_url)  # "https://api.axilio.ai"
-
-# No constructor argument — falls back to env var
-client2 = Client()
-print(client2.base_url)  # "https://api.staging.axilio.ai"
-```
-
----
-
-## Common Configuration Patterns
-
-<CodeGroup>
-
-```python Minimal (env var)
-# Set AXILIO_API_KEY in your environment, then:
-from axilio import Client
-
-with Client() as client:
-    print(client.runs.list())
-```
-
-```python Explicit key + longer timeout
-from axilio import Client
-
-with Client(api_key="axlio_sk_live_...", timeout=60.0) as client:
-    result = client.runs.get("run_abc123")
-```
-
-```python Aggressive retry tuning
-from axilio import Client
-
-# 6 total attempts (1 initial + 5 retries); ceilings of 1 s, 2 s, 4 s, 8 s, 16 s
-with Client(max_retries=5, retry_base_delay=1.0) as client:
-    result = client.runs.list()
-```
-
-```python Disable retries for manual control
-from axilio import Client
-
-with Client(max_retries=0) as client:
-    # Your own retry loop goes here
-    result = client.runs.list()
-```
-
-</CodeGroup>

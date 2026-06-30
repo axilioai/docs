@@ -1,0 +1,50 @@
+---
+title: "Element"
+sidebarTitle: "Element"
+description: "A located thing on the screen. What you get back when you find something, with actions you call directly and fields you can read."
+---
+
+An `Element` is what you get back when you [find](/driver/find) something. Act on
+it directly, or read its fields to drive [raw input](/driver/tap).
+
+```python
+el = driver.find_text("Sign in")
+el.tap()
+print(el.center, el.confidence)
+```
+
+## Actions
+
+| Method | Description |
+|---|---|
+| `tap()` | Tap the element's center. |
+| `type_into(text)` | Tap the element, then type `text`. |
+| `long_press(duration_ms=800)` | Press and hold the element. |
+| `swipe_to(other)` | Swipe from this element to another `Element`. |
+
+## Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `center` | `{"x", "y"}` | Tap point at the element's center. |
+| `bbox` | `{"x", "y", "width", "height"}` | Bounding box, in pixels. |
+| `text` | `str \| None` | Recognized text, if any. |
+| `confidence` | `float` | Match confidence, `0`–`1`. |
+| `source` | `"ocr" \| "vlm"` | Whether it was found by its text or by describing it. |
+
+<Note>
+  [`find_text`](/driver/find) returns `None` on a miss, so guard the result before
+  acting. [`find` by description](/driver/find) raises `ElementNotFoundError`
+  instead.
+</Note>
+
+## See also
+
+<CardGroup cols={2}>
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
+    Tap, type, and swipe what you found.
+  </Card>
+  <Card title="Screen" icon="table-list" href="/driver/screen">
+    The snapshot that holds many elements.
+  </Card>
+</CardGroup>

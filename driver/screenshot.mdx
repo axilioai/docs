@@ -1,0 +1,40 @@
+---
+title: "Screenshot"
+sidebarTitle: "Screenshot"
+description: "Take a picture of the screen to save, log, or debug a run."
+---
+
+`screenshot` takes a picture of the screen and hands it back as image data (a PNG)
+to save, log, or look at later.
+
+```python
+picture = driver.screenshot()
+with open("screen.png", "wb") as f:
+    f.write(picture)
+```
+
+Because it's plain image data, you can hand it straight to anything that takes an
+image. No temporary file needed.
+
+## A picture, or the text?
+
+- **`screenshot`** gives you a **picture**. Use it to save or show what the screen
+  looked like.
+- **[Observe](/driver/observe)** gives you the **text and icons** on the screen.
+  Use it to decide what to do next.
+
+<Tip>
+  Take a screenshot when something goes wrong. It's the fastest way to see what
+  the phone actually looked like.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Observe" icon="table-list" href="/driver/observe">
+    Get the text and icons instead of a picture.
+  </Card>
+  <Card title="Overview" icon="hand-pointer" href="/driver/overview">
+    Back to everything the driver can do.
+  </Card>
+</CardGroup>

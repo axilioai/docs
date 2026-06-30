@@ -1,154 +1,69 @@
 ---
-title: "Quickstart: Run and Automate Your First Device Session"
+title: "Quickstart"
 sidebarTitle: "Quickstart"
-description: "Install the Axilio SDK, set your API key, and automate a real Android device in the cloud — from zero to a working session in under five minutes."
+description: "Get a real Android phone and control it — screenshot, find something, tap it — in five minutes."
 ---
 
-From a fresh Python environment to a real phone running your code, in under five minutes.
+In five minutes you'll get a real Android phone, read its screen, and tap
+something on it.
 
-By the end you'll have allocated a real Android phone, run a short automation on it, and released it — in fewer than twenty lines. You'll need Python 3.10+ and an Axilio account ([sign up free](https://axilio.ai)).
+## Before you start
 
-<Steps>
+- **Python 3.10 or newer**
+- **An API key** — create one in the [dashboard](https://axilio.ai/dashboard).
+  See [Authentication](/authentication).
 
-### Install the SDK
-
-Install the `axilio` package from PyPI. Axilio requires **Python 3.10 or later**.
+## 1. Install
 
 ```bash
 pip install axilio
 ```
 
-If you're using a `requirements.txt` or `pyproject.toml`, pin to the current minor version for reproducible builds — the SDK is in early access and the surface may change before 1.0.
-
-```text requirements.txt
-axilio>=0.1,<0.2
-```
-
-### Create an API key
-
-Every request to Axilio authenticates with an API key. Generate one from your dashboard at [axilio.ai](https://axilio.ai) under **Settings → API Keys**, then click **New key**, give it a descriptive name (e.g. `local-dev`), and copy the secret immediately — it is shown only once.
-
-See the [Authentication guide](/authentication) for full details, including how to create keys programmatically and how to rotate them.
-
-### Set the environment variable
-
-Axilio reads your key from the `AXILIO_API_KEY` environment variable by default. Export it in your shell before running any script:
+## 2. Add your API key
 
 ```bash
-export AXILIO_API_KEY="ax_live_••••••••••••••••"
+export AXILIO_API_KEY=axl_your_key_here
 ```
 
-For persistent configuration, add the export to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.) or use a secrets manager. Never hard-code the key in source files or commit it to version control.
+## 3. Control a phone
 
-### Run your first automation
-
-The snippet below allocates an Android device, wraps it with a `MobileDriver`, runs a short sequence of interactions, and releases the device. The **Context manager** tab is the recommended approach; the **Explicit** tab shows the equivalent manual lifecycle when you need to hold a device across function or thread boundaries.
-
-<CodeGroup>
-```python Context manager
+```python
 from axilio.platform import Client
-from axilio.drivers import MobileDriver
-
-# Construct the client once — reads AXILIO_API_KEY from the environment.
-client = Client()
-
-# Allocate a device, drive it, and release it — all in one context manager.
-with client.mobile.session(platform="android") as device:
-    driver = MobileDriver(device)
-
-    # Tap a button identified by its on-screen label (fast OCR path).
-    driver.find_text("Sign in").tap()
-
-    # Type into the focused field.
-    driver.find_text("Email").type_into("you@example.com")
-
-    # Describe an element in plain English — Argus locates it for you.
-    driver.find(query="the blue Continue button").tap()
-
-    # Capture the current screen as PNG bytes.
-    png = driver.screenshot()
-    print(f"Screenshot captured: {len(png)} bytes")
-
-print("Session complete — device released.")
-```
-
-```python Explicit
-from axilio.platform import Client
-from axilio.drivers import MobileDriver
 
 client = Client()
 
-# Allocate manually — you own teardown from here.
-device = client.mobile.allocate(platform="android")
-try:
-    driver = MobileDriver(device)
-    driver.find_text("Sign in").tap()
-    driver.find_text("Email").type_into("you@example.com")
-    driver.find(query="the blue Continue button").tap()
-    png = driver.screenshot()
-    print(f"Screenshot captured: {len(png)} bytes")
-finally:
-    # Always pair allocate() with deallocate() — even on exceptions.
-    client.mobile.deallocate(device)
+# Borrow a phone. It's returned automatically when the block ends.
+with client.session("ANDROID") as driver:
+    # Save a picture of the screen.
+    with open("screen.png", "wb") as f:
+        f.write(driver.screenshot())
 
-print("Session complete — device released.")
+    # Find something on the screen and tap it.
+    driver.find(query="the Settings icon").tap()
 ```
-</CodeGroup>
 
-<Tip>
-  `client.mobile.session()` is the recommended all-in-one approach. It calls `allocate()` on entry and `deallocate()` on exit — even if your code raises an exception — so the device is never left stranded and billing stops immediately. If you need to hold a device across multiple function calls or threads, use `client.mobile.allocate()` and `client.mobile.deallocate()` explicitly, but make sure to pair every allocate with a deallocate in a `finally` block.
-</Tip>
+Run it:
 
-### What to expect
+```bash
+python quickstart.py
+```
 
-When you run the script, Axilio:
-
-1. **Allocates a device** — a real Android handset is reserved for your session. Allocation typically completes within a few seconds depending on fleet availability.
-2. **Runs your automation** — each driver call sends instructions to the device over a low-latency control channel. `find_text` uses on-device OCR; `find(query=...)` sends a vision query to Argus.
-3. **Releases the device** — when the `with` block exits (normally or via exception), `deallocate()` is called automatically and the device returns to the pool.
-4. **Bills per second** — you are charged only for the wall-clock duration between allocation and deallocation. Check your usage at any time with `client.usage.sessions()`.
-
-</Steps>
-
-## Common issues
-
-A few things trip people up on the first run. If your script didn't behave, start here.
-
-<AccordionGroup>
-  <Accordion title="AuthenticationError / 401 on the first call" icon="key">
-    Your key isn't reaching the client. Confirm the variable is exported in the *same* shell that runs the script (`echo $AXILIO_API_KEY`), and that you copied the full secret. Keys are shown once — if you lost it, create a new one. See [Authentication](/authentication).
-  </Accordion>
-  <Accordion title="The script hangs on session()" icon="hourglass">
-    `session()` waits up to `timeout` seconds (default 60) for a device matching your constraints to come free. A narrow `apps`/`location` combination can mean a longer wait. Drop the constraints to grab the nearest free device, or raise `timeout`. See [Devices](/concepts/devices#allocation-timeout).
-  </Accordion>
-  <Accordion title="find_text() returns None and the next line crashes" icon="triangle-exclamation">
-    OCR didn't see that string yet — the screen may still be loading. Never act on an unchecked `find_text()` result; poll with `wait_for_text(...)` instead, or guard with `if el:`. See [Best practices](/guides/best-practices).
-  </Accordion>
-  <Accordion title="The device was billed longer than my script ran" icon="receipt">
-    Something exited without releasing the device. Always use `with client.mobile.session(...)` — it deallocates even on exceptions. A raw `allocate()` with no `finally` leaks the lease until `expires_at`.
-  </Accordion>
-</AccordionGroup>
-
-## Pro tips
-
-- **Keep one `session()` for the whole run.** Allocation has a fixed cost; re-allocating per action wastes time and money. Do all your work inside a single block.
-- **Reach for `find_text()` first.** On-device OCR returns in milliseconds; `find(query=...)` round-trips to Argus and is slower. Use vision only when there's no readable text.
-- **Pin your SDK version.** The surface changes before 1.0 — `axilio>=0.1,<0.2` keeps builds reproducible.
-- **Screenshot on failure.** Wrap your flow in `try/except` and call `driver.screenshot()` in the handler; it's the single most useful debugging artifact.
+That's it — you borrowed a real phone, looked at its screen, and tapped something
+on it.
 
 ## Next steps
 
-<Columns className="responsive-columns" cols={2}>
-  <Card title="Authentication" icon="key" iconType="sharp-solid" href="/authentication">
-    Learn all the ways to pass credentials and how to manage your API keys.
+<CardGroup cols={2}>
+  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
+    Every way to find things and act on them.
   </Card>
-  <Card title="MobileDriver" icon="mobile" iconType="sharp-solid" href="/concepts/mobile-driver">
-    Explore the full selector and action API — OCR, vision queries, swipes, and more.
+  <Card title="Find in plain English" icon="eye" href="/driver/find">
+    Describe what you want and let Axilio find it.
   </Card>
-  <Card title="Workflows & Runs" icon="diagram-project" iconType="sharp-solid" href="/concepts/workflows-and-runs">
-    Package your automation as a reusable workflow and trigger it via the API.
+  <Card title="Devices" icon="mobile" href="/devices/overview">
+    Pick a specific phone and manage the ones you have.
   </Card>
-  <Card title="Parallel Execution" icon="bolt" iconType="sharp-solid" href="/guides/parallel-execution">
-    Scale up by running many device sessions concurrently.
+  <Card title="Workflows & runs" icon="diagram-project" href="/workflows/overview">
+    Save your script and run it on demand.
   </Card>
-</Columns>
+</CardGroup>

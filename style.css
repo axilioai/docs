@@ -13,6 +13,98 @@
   border-radius: 0 !important;
 }
 
+/* ── Per-surface accent — each top-level surface gets its own colour so you
+   always know where you are: Platform = brand green (the default), Drivers =
+   violet, API Reference = amber. surface-accent.js sets data-surface on <html>
+   from the URL; here we just remap Mintlify's --primary triplets, which recolour
+   the active tab, the active sidebar item, the // heading eyebrow, and other
+   accent bits in one move. Values are space-separated RGB (Mintlify reads them as
+   rgb(var(--primary) / alpha)). */
+:root[data-surface="driver"] {
+  --primary: 139 92 246 !important;       /* #8B5CF6 violet */
+  --primary-light: 167 139 250 !important; /* #A78BFA */
+  --primary-dark: 124 58 237 !important;   /* #7C3AED */
+}
+:root[data-surface="api"] {
+  --primary: 245 158 11 !important;        /* #F59E0B amber */
+  --primary-light: 251 191 36 !important;  /* #FBBF24 */
+  --primary-dark: 217 119 6 !important;    /* #D97706 */
+}
+
+/* ── Typography scale — match the rest of the brand ────────────────────────────
+   axilio.ai and the dashboard run small and dense: UI text is overwhelmingly
+   text-xs (12px) / text-sm (14px) IBM Plex Mono, headings text-xl…3xl. The maple
+   defaults render ~16px body + large headings, which read "blown up" against that.
+   We step the whole surface down a touch (root) and set an explicit, smaller
+   content scale so the docs feel like the same product. Keep this the source of
+   truth alongside DESIGN.md's scale. */
+
+/* Gentle global step-down: 16 → 15px root shrinks chrome (nav, sidebar, TOC,
+   components) proportionally so nothing feels zoomed in. */
+html {
+  font-size: 15px;
+}
+
+/* Body / prose — 14px mono, generous line-height for long-form readability. */
+#content-area,
+#content-area p,
+#content-area li {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* Headings — smaller and tighter than maple's defaults; mono wants negative
+   tracking at display sizes. Sizes are in rem so they ride the 15px root. */
+#content-area h1 {
+  font-size: 1.95rem;   /* ~29px */
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+#content-area h2 {
+  font-size: 1.45rem;   /* ~22px */
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+#content-area h3 {
+  font-size: 1.15rem;   /* ~17px */
+  line-height: 1.25;
+  font-weight: 600;
+}
+#content-area h4 {
+  font-size: 1rem;      /* ~15px */
+  font-weight: 600;
+}
+
+/* The title subtitle (frontmatter description, when the theme renders it) and any
+   lead paragraph should not balloon — keep it close to body size, just muted. */
+#content-area h1 + p,
+#content-area .lead {
+  font-size: 0.95rem;   /* ~14.25px */
+  line-height: 1.55;
+}
+
+/* Code blocks — 13px so dense snippets don't dominate the page. */
+#content-area pre,
+#content-area pre code {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ── Content width — the maple theme caps body pages at max-w-xl (36rem / 540px
+   at our 15px root), which on a laptop leaves ~130px of dead margin on each side
+   and squishes tables and multi-column code. Widen the column to 50rem (~750px).
+   Scoped to lg+ (below that the layout is already single-column / full-width).
+   Safe on two fronts: the `mode: "wide"` landing keeps `min-w-full`, which beats
+   max-width, so it stays full-bleed; and on narrower viewports flexbox shrinks
+   this column below the cap before the right-hand TOC can get crowded. ──────── */
+@media (min-width: 1024px) {
+  #content-area {
+    max-width: 50rem !important;
+  }
+}
+
 /* ── Responsive card grids — let homepage Columns reflow 1→2→3→4 by width
    instead of locking to a fixed `cols`. Add className="responsive-columns". ─ */
 .responsive-columns {
@@ -37,10 +129,37 @@
   }
 }
 
-/* ── Navbar logo — default render is a touch small for the wordmark ───────── */
+/* ── Compact cards — the maple Card runs tall (~176px) with an H2-sized title
+   (21.75px), a big icon offset, and roomy px-6/py-5 padding. Against our dense
+   mono surface that reads heavy and "tacky", especially the bottom "Next steps"
+   grids. Tighten to a small, scannable card: trim padding, drop the title to
+   ~14px, shrink the body, and pull the title up under the icon. ───────────── */
+#content-area .card > div {
+  padding: 0.85rem 1rem !important;
+}
+#content-area .card .font-semibold {
+  font-size: 0.9rem !important;     /* ~13.5px, was 21.75px */
+  line-height: 1.3 !important;
+  margin-top: 1.4rem !important;    /* clears the icon; was 2.25rem */
+}
+#content-area .card p {
+  font-size: 0.8rem !important;     /* ~12px, was 15px */
+  line-height: 1.45 !important;
+  margin-top: 0.25rem !important;
+}
+/* Icons sit a touch tighter to the top of the trimmed card. */
+#content-area .card svg {
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+/* ── Logo — bump the wordmark (cube + AXILIO) so the brand reads larger. It's a
+   single .nav-logo image, so scaling its height grows the icon and the name
+   together. ──────────────────────────────────────────────────────────────── */
+.nav-logo,
 #navbar img,
 #navbar svg.logo {
-  height: 1.85rem !important;
+  height: 2.3rem !important;
 }
 
 /* ── Sidebar group headers — make them read as firmware-style section labels.
@@ -48,18 +167,28 @@
 #navigation-items .sidebar-group-header #sidebar-title,
 #sidebar-content .sidebar-group-header #sidebar-title {
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.62;
+}
+
+/* ── Bigger nav — the brand default runs dense (text-sm, ~13px) for both the top
+   tab bar and the sidebar page links. Bump them to ~15px so the navigation reads
+   larger and more legible, without touching the content typography. ─────────── */
+.nav-tabs .nav-tabs-item {
+  font-size: 1rem !important;
+}
+#navigation-items a {
+  font-size: 1rem !important;
 }
 
 /* ── //section eyebrows — Axilio's signature green code-comment prefix on
    content headings, matching axilio.ai (`//PRODUCT`, `//WHY AXILIO`). ─────── */
 #content-area h2:not(.not-prose)::before {
   content: "// ";
-  color: #10b981;
-  opacity: 0.55;
+  color: rgb(var(--primary));
+  opacity: 0.6;
   font-weight: 600;
 }
 
@@ -74,6 +203,7 @@
     justify-content: center !important;
   }
 }
+
 
 /* ── Left sidebar — give it a clear right edge so the boundary is obvious and
    it reads as its own panel instead of bleeding into the page. ────────────── */

@@ -5,7 +5,7 @@
   "logo": {
     "light": "/logo/axilio-light.svg",
     "dark": "/logo/axilio-dark.svg",
-    "href": "https://axilio.ai"
+    "href": "/"
   },
   "favicon": "/favicon.svg",
   "colors": {
@@ -44,7 +44,8 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Docs",
+        "tab": "Platform",
+        "icon": "cloud",
         "groups": [
           {
             "group": "Get Started",
@@ -57,49 +58,113 @@
             ]
           },
           {
-            "group": "Core Concepts",
-            "icon": "cube",
+            "group": "Devices & Sessions",
+            "icon": "mobile",
             "pages": [
-              "concepts/devices",
-              "concepts/mobile-driver",
-              "concepts/workflows-and-runs",
-              "concepts/sandbox-mode"
+              "devices/overview",
+              "devices/allocate",
+              "devices/discover",
+              "devices/dedicated",
+              "devices/timeouts"
             ]
           },
           {
-            "group": "Guides",
-            "icon": "book",
+            "group": "Workflows & Runs",
+            "icon": "diagram-project",
             "pages": [
-              "guides/allocating-devices",
-              "guides/controlling-devices",
-              "guides/running-workflows",
-              "guides/parallel-execution",
-              "guides/best-practices"
+              "workflows/overview",
+              "workflows/create",
+              "workflows/run",
+              "workflows/monitor"
             ]
           },
           {
-            "group": "Platform",
-            "icon": "building",
+            "group": "Observability",
+            "icon": "video",
             "pages": [
-              "platform/billing",
-              "platform/usage",
-              "platform/organizations",
-              "platform/api-keys"
+              "observability/overview",
+              "observability/live-view",
+              "observability/recordings",
+              "observability/events",
+              "observability/cost"
+            ]
+          },
+          {
+            "group": "Account & Billing",
+            "icon": "credit-card",
+            "pages": [
+              {
+                "group": "Billing",
+                "pages": [
+                  "billing/overview",
+                  "billing/balance-and-invoices",
+                  "billing/plans"
+                ]
+              },
+              {
+                "group": "Organization",
+                "pages": [
+                  "org/overview",
+                  "org/members",
+                  "platform/api-keys"
+                ]
+              }
             ]
           },
           {
             "group": "Reference",
-            "icon": "code",
+            "icon": "circle-info",
             "pages": [
               "reference/errors",
-              "reference/configuration",
-              "reference/changelog"
+              "reference/configuration"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Drivers",
+        "icon": "hand-pointer",
+        "groups": [
+          {
+            "group": "Drivers",
+            "icon": "layer-group",
+            "pages": [
+              "drivers/overview"
+            ]
+          },
+          {
+            "group": "Mobile driver",
+            "icon": "mobile",
+            "pages": [
+              "driver/overview",
+              {
+                "group": "Basics",
+                "pages": [
+                  "driver/find",
+                  "driver/tap",
+                  "driver/type",
+                  "driver/swipe",
+                  "driver/buttons",
+                  "driver/observe",
+                  "driver/wait",
+                  "driver/screenshot"
+                ]
+              },
+              {
+                "group": "Reference",
+                "pages": [
+                  "driver/element",
+                  "driver/screen",
+                  "driver/key"
+                ]
+              }
             ]
           }
         ]
       },
       {
         "tab": "API Reference",
+        "icon": "code",
         "groups": [
           {
             "group": "SDK Reference",
@@ -148,6 +213,34 @@
       }
     ]
   },
+  "redirects": [
+    { "source": "/concepts/devices", "destination": "/devices/overview" },
+    { "source": "/concepts/mobile-driver", "destination": "/driver/overview" },
+    { "source": "/concepts/workflows-and-runs", "destination": "/workflows/overview" },
+    { "source": "/concepts/sandbox-mode", "destination": "/workflows/overview" },
+    { "source": "/workflows/sandbox-mode", "destination": "/workflows/overview" },
+    { "source": "/guides/allocating-devices", "destination": "/devices/allocate" },
+    { "source": "/guides/controlling-devices", "destination": "/driver/overview" },
+    { "source": "/guides/running-workflows", "destination": "/workflows/create" },
+    { "source": "/guides/parallel-execution", "destination": "/workflows/run" },
+    { "source": "/scaling/parallel-sessions", "destination": "/workflows/run" },
+    { "source": "/scaling/rate-limits", "destination": "/reference/configuration" },
+    { "source": "/scaling/workflow-engine", "destination": "/workflows/overview" },
+    { "source": "/guides/best-practices", "destination": "/driver/overview" },
+    { "source": "/platform/billing", "destination": "/billing/overview" },
+    { "source": "/platform/usage", "destination": "/observability/cost" },
+    { "source": "/usage/metrics", "destination": "/observability/cost" },
+    { "source": "/usage/sessions", "destination": "/observability/cost" },
+    { "source": "/platform/organizations", "destination": "/org/overview" },
+    { "source": "/drivers", "destination": "/drivers/overview" },
+    { "source": "/driver/find-by-text", "destination": "/driver/find" },
+    { "source": "/driver/find-with-vision", "destination": "/driver/find" },
+    { "source": "/driver/actions", "destination": "/driver/tap" },
+    { "source": "/driver/read-the-screen", "destination": "/driver/observe" },
+    { "source": "/driver/hardware-keys", "destination": "/driver/buttons" },
+    { "source": "/driver/waiting", "destination": "/driver/wait" },
+    { "source": "/driver/screenshots", "destination": "/driver/screenshot" }
+  ],
   "footer": {
     "socials": {
       "website": "https://axilio.ai"

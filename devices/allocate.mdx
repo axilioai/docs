@@ -1,0 +1,63 @@
+---
+title: "Get a device"
+sidebarTitle: "Get a device"
+description: "Borrow a phone with a session, or get and release one yourself."
+---
+
+The easy way to get a phone is a **session**. It borrows one, hands you a
+[driver](/driver/overview), and gives the phone back when you're done:
+
+```python
+from axilio.platform import Client
+
+client = Client()
+
+with client.session("ANDROID") as driver:
+    driver.find(query="the Settings icon").tap()
+```
+
+## Pick a specific phone
+
+By default you get any free phone. To use one specific phone, like a
+[dedicated one you rented](/billing/plans), pass its `phone_id`:
+
+```python
+mine = client.devices.mine()
+phone = mine.phones[0]
+
+with client.session("ANDROID", phone_id=phone.phone_id) as driver:
+    ...
+```
+
+## Get and release it yourself
+
+If you need to hold a phone outside a `with` block, get and release it by hand:
+
+```python
+device = client.devices.allocate(phone_type="ANDROID")
+print(device.phone_id, device.session_id)
+
+# ... use the phone ...
+
+client.devices.deallocate(phone_id=device.phone_id)
+```
+
+<Warning>
+  If you get a phone this way, you have to give it back with `deallocate`. Until
+  you do, the phone stays yours and keeps costing you. A `session()` does this for
+  you, so prefer it unless you have a reason not to.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="See devices" icon="list" href="/devices/discover">
+    Find a phone to use.
+  </Card>
+  <Card title="Sessions" icon="clock" href="/devices/timeouts">
+    How long you can hold a phone.
+  </Card>
+  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
+    Drive the phone you got.
+  </Card>
+</CardGroup>

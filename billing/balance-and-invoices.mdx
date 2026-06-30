@@ -1,0 +1,51 @@
+---
+title: "Balance and invoices"
+sidebarTitle: "Balance & invoices"
+description: "Check your balance, add funds, and get your invoices."
+---
+
+## Check your balance
+
+```python
+balance = client.billing.get_balance()
+
+print(balance.balance_display)        # e.g. $12.34
+print(balance.balance_microdollars)   # the exact amount
+```
+
+## Add funds
+
+```python
+client.billing.add_funds(amount_cents=2000)   # add $20.00
+```
+
+## Invoices
+
+List your billing history:
+
+```python
+history = client.billing.get_history(limit=20, offset=0)
+for item in history.items:
+    print(item)
+```
+
+Get an invoice as a PDF, or open the full billing portal:
+
+```python
+invoice = client.billing.download_invoice(invoice_id="inv_123")
+print(invoice.download_url)
+
+portal = client.billing.customer_portal()
+print(portal.portal_url)
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="How billing works" icon="circle-info" href="/billing/overview">
+    Per-second billing, explained.
+  </Card>
+  <Card title="Cost" icon="coins" href="/observability/cost">
+    See where your money goes.
+  </Card>
+</CardGroup>

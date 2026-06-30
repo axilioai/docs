@@ -1,74 +1,69 @@
 ---
 title: "The Phone Cloud for Agents"
 sidebarTitle: "Home"
-description: "Real Android phones on carrier networks, controlled by a vision-native Python SDK. Build reliable mobile agents that run at scale."
+description: "Real Android phones on carrier networks, driven by a vision-native Python SDK. Allocate a device, drive it with text and vision selectors, and ship mobile agents to production."
 mode: "wide"
 ---
 
-Genuine Android phones on live carrier networks — allocated on demand, driven by a vision-native SDK, observable at every step. No emulators, no scripted browsers, no mocked networks.
+Axilio gives your agents **real Android phones in the cloud** — and a simple Python
+library to control them. Pick up a phone, read its screen, and tap, type, and
+swipe, just like a person would.
 
-```python
-from axilio.platform import Client
-from axilio.drivers import MobileDriver
+Most apps can't be plugged into directly — they have no public API. So an agent
+uses them the same way you do: on a real phone. That's what Axilio is for.
 
-client = Client()
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Allocate a phone and drive your first session in under five minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Get an API key and point the SDK at your account.
+  </Card>
+  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
+    Find on-screen elements by text or vision, then tap, type, and swipe.
+  </Card>
+  <Card title="Devices" icon="mobile" href="/devices/overview">
+    Allocate, discover, and manage phones across your fleet.
+  </Card>
+</CardGroup>
 
-with client.mobile.session(platform="android") as device:
-    driver = MobileDriver(device)
-    driver.find_text("Sign in").tap()
-    driver.find(query="the blue Continue button").tap()
-```
+## What you get
 
-<Columns className="responsive-columns" cols={2}>
-  <Card title="Real hardware" img="/images/real-hardware.svg" href="/concepts/devices">
-    Physical Android handsets, not virtual machines. Real sensors, OEM behavior, and carrier features all work as expected.
+<CardGroup cols={3}>
+  <Card title="Real hardware" icon="microchip">
+    Real consumer Android phones — the same devices people use every day, not
+    emulators or virtual devices.
   </Card>
-  <Card title="Live carrier networks" img="/images/carrier-network.svg" href="/introduction">
-    Genuine SIMs on real networks. SMS OTPs, voice calls, and carrier-gated flows work without any mocking layer.
+  <Card title="Carrier networks" icon="signal">
+    Real SIMs on real carrier networks — genuine mobile connectivity, not a
+    datacenter.
   </Card>
-  <Card title="Vision-native control" img="/images/vision-control.svg" href="/concepts/mobile-driver">
-    Argus locates elements from plain-English queries or fast OCR. Describe what you see; the driver finds it.
+  <Card title="Vision-native" icon="eye">
+    Find any element with natural language, backed by vision models — not brittle
+    coordinate scripts.
   </Card>
-  <Card title="Parallel at scale" img="/images/parallel.svg" href="/guides/parallel-execution">
-    Fan out across thousands of isolated device sessions at once, each billed per second and released automatically.
+  <Card title="Parallel execution" icon="bolt">
+    Run concurrent, isolated sessions with automatic load balancing across the
+    fleet.
   </Card>
-</Columns>
+  <Card title="Predictable pricing" icon="credit-card">
+    Per-second billing of device time. No data fees, no proxy fees, no setup fees.
+  </Card>
+  <Card title="Replay & traces" icon="film">
+    Full session replay and per-step traces to debug agents in production.
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart — zero to a live phone in 5 minutes" icon="rocket" iconType="sharp-solid" href="/quickstart" horizontal>
-  Install the SDK, set your API key, and drive a real Android device end to end. The fastest way to understand what Axilio does.
-</Card>
+## Keep going
 
-## Start here
-
-<Columns className="responsive-columns" cols={3}>
-  <Card title="Quickstart" icon="rocket" iconType="sharp-solid" href="/quickstart">
-    Install the SDK, set your key, and drive your first device in minutes.
+<CardGroup cols={3}>
+  <Card title="Workflows & runs" icon="diagram-project" href="/workflows/overview">
+    Package automation as a reusable workflow and run it on demand.
   </Card>
-  <Card title="Authentication" icon="key" iconType="sharp-solid" href="/authentication">
-    Create API keys and pass credentials securely.
+  <Card title="Observability" icon="video" href="/observability/overview">
+    Recordings, events, and cost for every session.
   </Card>
-  <Card title="MobileDriver" icon="mobile" iconType="sharp-solid" href="/concepts/mobile-driver">
-    Find elements, tap, type, and read any Android screen.
+  <Card title="API & SDK reference" icon="code" href="/api-reference/client">
+    Exact signatures for the client, driver, and REST API.
   </Card>
-</Columns>
-
-## Core concepts
-
-<Columns className="responsive-columns" cols={2}>
-  <Card title="Devices & sessions" icon="mobile" iconType="sharp-solid" href="/concepts/devices">
-    Allocate real phones from the fleet, drive them, release them. Billed per second.
-  </Card>
-  <Card title="Workflows & runs" icon="diagram-project" iconType="sharp-solid" href="/concepts/workflows-and-runs">
-    Package automation as reusable workflows and trigger them via the API.
-  </Card>
-  <Card title="Argus vision" icon="eye" iconType="sharp-solid" href="/api-reference/argus/overview">
-    OCR, object detection, and VLM element locating on any image.
-  </Card>
-  <Card title="Sandbox mode" icon="box" iconType="sharp-solid" href="/concepts/sandbox-mode">
-    Develop against a deterministic device emulator before touching the fleet.
-  </Card>
-</Columns>
-
-<Note>
-  Axilio is in **early access**. The SDK surface is still expanding and APIs may change between minor versions before 1.0. Pin a specific version for reproducible builds, and watch the [changelog](/reference/changelog) for breaking changes.
-</Note>
+</CardGroup>

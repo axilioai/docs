@@ -1,0 +1,48 @@
+---
+title: "Observe"
+sidebarTitle: "Observe"
+description: "Read the whole screen at once (all the text and icons) and pull the data you need from it."
+---
+
+`observe` reads **everything on the screen at once**: all the text and icons. So
+you can look through it, and pull out the data you need, in your code.
+
+```python
+screen = driver.observe()
+print(len(screen.texts), "pieces of text")
+```
+
+## What you get
+
+`observe` hands back a snapshot of the screen, with its `texts`, `icons`, and size.
+See the [Screen reference](/driver/screen) for the full list.
+
+## Pull data off the screen
+
+Search the snapshot without going back to the phone:
+
+```python
+screen = driver.observe()
+
+prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
+total = screen.find_text("Total")
+```
+
+This is how you get data off the screen today: **observe** it, then read the text
+you want. (A one-call `extract` is on the roadmap.)
+
+## A picture instead?
+
+`observe` gives you the text and icons. For the screen as an **image**, use
+[Screenshot](/driver/screenshot).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    Search the live screen for one thing.
+  </Card>
+  <Card title="Screenshot" icon="camera" href="/driver/screenshot">
+    Get the screen as an image.
+  </Card>
+</CardGroup>

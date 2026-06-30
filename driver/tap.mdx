@@ -1,0 +1,43 @@
+---
+title: "Tap"
+sidebarTitle: "Tap"
+description: "Tap something on the screen, or tap and hold."
+---
+
+Tap whatever you [found](/driver/find):
+
+```python
+driver.find_text("Settings").tap()
+```
+
+## Tap and hold
+
+`long_press` presses and holds, for example to open a menu:
+
+```python
+driver.find_text("Photo").long_press()
+driver.find_text("Photo").long_press(duration_ms=1500)   # hold longer
+```
+
+## Tap an exact spot
+
+If you already know the point (an `x`, `y` on the screen), tap it directly:
+
+```python
+driver.tap({"x": 540, "y": 1180})
+driver.long_press({"x": 540, "y": 1180})
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Type" icon="keyboard" href="/driver/type">
+    Type into a field.
+  </Card>
+  <Card title="Swipe" icon="arrows-up-down-left-right" href="/driver/swipe">
+    Swipe and scroll.
+  </Card>
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    Find what to tap.
+  </Card>
+</CardGroup>

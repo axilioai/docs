@@ -1,0 +1,65 @@
+---
+title: "How the driver works"
+sidebarTitle: "Overview"
+description: "The Mobile driver is a handful of basics (find, tap, type, swipe) that you chain together to control a phone."
+---
+
+The **Mobile driver** is how you control a phone that the
+[Platform](/introduction) gives you. A [session](/quickstart) hands you one.
+
+It's a small set of **basics** (find, tap, type, swipe) that you chain together to
+do anything:
+
+```python
+from axilio.platform import Client
+
+client = Client()
+
+with client.session("ANDROID") as driver:
+    driver.find(query="the Settings icon").tap()
+    driver.find_text("Search").type_into("axilio")
+```
+
+Every basic is one idea. Learn the handful below and you can drive any app.
+
+## The basics
+
+<CardGroup cols={2}>
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    Locate something by its text or by describing it.
+  </Card>
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
+    Tap it, or tap and hold.
+  </Card>
+  <Card title="Type" icon="keyboard" href="/driver/type">
+    Type into a field.
+  </Card>
+  <Card title="Swipe" icon="arrows-up-down-left-right" href="/driver/swipe">
+    Swipe and scroll.
+  </Card>
+  <Card title="Buttons" icon="mobile-button" href="/driver/buttons">
+    Press Home, Back, and other device buttons.
+  </Card>
+  <Card title="Observe" icon="table-list" href="/driver/observe">
+    Read the whole screen at once.
+  </Card>
+  <Card title="Wait" icon="hourglass-half" href="/driver/wait">
+    Wait for the screen to change before you act.
+  </Card>
+  <Card title="Screenshot" icon="camera" href="/driver/screenshot">
+    Take a picture of the screen.
+  </Card>
+</CardGroup>
+
+## Chaining them together
+
+Most steps are a **find** followed by an action:
+
+```python
+driver.find_text("Settings").tap()          # find -> tap
+driver.find(query="the search box").type_into("hello")   # find -> type
+driver.wait_for_text("Welcome").tap()        # wait -> tap
+```
+
+That's the whole model. When you need exact control, every action also takes raw
+coordinates. See [Tap](/driver/tap) and [Swipe](/driver/swipe).

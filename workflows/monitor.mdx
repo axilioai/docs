@@ -1,0 +1,29 @@
+---
+title: "Check a run"
+sidebarTitle: "Monitor"
+description: "Check whether a run is still going, and whether it succeeded."
+---
+
+Check on a run with its run id:
+
+```python
+run = client.runs.get(run_id)
+
+print(run.status)         # e.g. running, completed
+print(run.success)        # True or False once it's done
+print(run.error_message)  # why it failed, if it did
+```
+
+To watch a run as it happens, replay it as a video, or see its step-by-step
+events, see [Observability](/observability/overview).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Observability" icon="video" href="/observability/overview">
+    Recordings, events, and cost.
+  </Card>
+  <Card title="Run" icon="play" href="/workflows/run">
+    Start another run.
+  </Card>
+</CardGroup>

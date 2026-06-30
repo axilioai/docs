@@ -1,0 +1,63 @@
+---
+title: "Wait"
+sidebarTitle: "Wait"
+description: "Wait for the screen to change before you act. The reliable alternative to a fixed pause."
+---
+
+Apps take a moment to load and change. Acting too early is the most common reason
+automation breaks. Instead of a fixed pause, **wait for what you expect**.
+
+## Wait for something to appear
+
+`wait_for_text` waits until the text shows up, then hands it to you:
+
+```python
+driver.wait_for_text("Welcome").tap()   # waits, then taps
+```
+
+## Wait for something to go away
+
+`wait_until_gone` waits until the text is gone. Handy for loading spinners:
+
+```python
+driver.wait_until_gone("Loading")
+```
+
+## How long to wait
+
+Both take a `timeout`, the number of seconds to wait before giving up (10 by
+default):
+
+```python
+driver.wait_for_text("Confirmed", timeout=30).tap()
+```
+
+<Warning>
+  If what you're waiting for never happens, you get a `TimeoutError`. Catch it to
+  handle screens that might not appear:
+
+  ```python
+  from axilio.drivers.mobile import TimeoutError
+
+  try:
+      driver.wait_for_text("Approved", timeout=15).tap()
+  except TimeoutError:
+      ...   # do something else
+  ```
+</Warning>
+
+<Tip>
+  Always prefer waiting over a fixed pause like `time.sleep`. A wait continues the
+  moment the screen is ready, usually faster, and far more reliable.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    What a wait looks for.
+  </Card>
+  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
+    Act on what a wait hands back.
+  </Card>
+</CardGroup>

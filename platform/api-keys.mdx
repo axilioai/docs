@@ -1,195 +1,44 @@
 ---
-title: "API Keys: Create, List, and Revoke Access Credentials"
+title: "API keys"
 sidebarTitle: "API Keys"
-description: "Create, inspect, and revoke API keys scoped to your organization. Learn the one-time secret retrieval pattern and key rotation best practices."
+description: "Create, list, and revoke the keys that authenticate the SDK."
 ---
 
-API keys are the credentials your code uses to authenticate against the Axilio platform. Each key is scoped to exactly one organization — it can create workflows, allocate devices, and read billing data only within that org. Keys have no built-in expiry date, so you control their lifecycle entirely: create a key when you onboard a new service, and revoke it the moment it is no longer needed or suspected of compromise. All key management operations are **local-mode only**; workflow scripts running inside a sandbox VM cannot mint or revoke keys on their own behalf.
+API keys authenticate the SDK. Each key belongs to your organization and starts
+with `axl_`.
 
-<Warning>
-  All operations on `client.api_keys` raise `SandboxPermissionError` when called from sandbox-executed workflow code. Run key management from your local machine or a trusted CI pipeline.
-</Warning>
-
-<Info>
-  This page covers managing API keys as credentials. For instructions on how to authenticate your SDK client using a key, see the [Authentication](/authentication) guide.
-</Info>
-
-## Creating a key
-
-Call `client.api_keys.create(name)` to mint a new key. The returned `APIKeyCreated` object contains a `secret` field that holds the full plaintext key value — **this is the only time the secret is visible**. Axilio stores only a hash; `list()` will never return the full value again.
+## Create a key
 
 ```python
-import axilio
-
-client = axilio.Client()
-
-new_key = client.api_keys.create("data-pipeline-prod")
-
-# Store the secret immediately — you cannot retrieve it again
-print(new_key.secret)   # "axk_live_xxxxxxxxxxxxxxxxxxxxxxxxxx"
-print(new_key.id)       # "key_01j9abc123def456"
-print(new_key.prefix)   # "axk_live"
+key = client.api_keys.create(name="ci-bot")
+print(key.key_value)   # the secret
 ```
 
 <Warning>
-  Save `new_key.secret` to your secrets manager, CI environment variable store, or `.env` file **before** discarding the object or ending your session. Once you lose the plaintext value, you must revoke the key and create a new one — there is no recovery path.
+  `key_value` is shown once, right here. Save it somewhere safe; you can't see it
+  again.
 </Warning>
 
-<Steps>
-  <Step title="Call create()">
-    Pass a descriptive `name` that identifies the consuming service — e.g. `"github-actions-deploy"` or `"backend-api-prod"`.
-  </Step>
-  <Step title="Copy the secret immediately">
-    Read `new_key.secret` and store it in your secrets manager (AWS Secrets Manager, HashiCorp Vault, GitHub Actions Secrets, etc.) before moving on.
-  </Step>
-  <Step title="Configure your service">
-    Set the secret as the `AXILIO_API_KEY` environment variable (or equivalent) in the service that will use it.
-  </Step>
-  <Step title="Verify the key works">
-    Make a test call from the new service — e.g. `client.org.current()` — to confirm the key authenticates correctly before deploying to production.
-  </Step>
-</Steps>
-
-### APIKeyCreated fields
-
-<ResponseField name="key.id" type="str">
-  Unique key identifier. Use this with `revoke()` when you need to retire the key.
-</ResponseField>
-<ResponseField name="key.name" type="str">
-  The human-readable name you provided at creation time.
-</ResponseField>
-<ResponseField name="key.secret" type="str">
-  The full plaintext API key value. **Available only on the `APIKeyCreated` object returned by `create()`.** Store this immediately.
-</ResponseField>
-<ResponseField name="key.prefix" type="str">
-  The first several characters of the key (e.g. `"axk_live_a1b2c3d4"`). This prefix appears in `APIKey.prefix` returned by `list()`, letting you match a listed key back to the secret you stored.
-</ResponseField>
-<ResponseField name="key.created_at" type="datetime">
-  UTC timestamp when the key was created.
-</ResponseField>
-
-## Listing existing keys
-
-Call `client.api_keys.list()` to see all active API keys for the current organization. The list shows the key `prefix` (the first few characters) rather than the full secret — use the prefix to identify which stored secret corresponds to which listed key.
+## List keys
 
 ```python
 keys = client.api_keys.list()
-
-for k in keys:
-    last_used = k.last_used_at.date() if k.last_used_at else "never"
-    print(f"{k.id}  {k.name:<30}  {k.prefix}...  last used: {last_used}")
 ```
 
-```
-key_01j9a...  data-pipeline-prod            axk_live_a1b2...  last used: 2025-07-07
-key_01j8x...  github-actions-deploy         axk_live_c3d4...  last used: 2025-07-06
-key_01j7z...  legacy-integration            axk_live_e5f6...  last used: never
-```
-
-### APIKey fields
-
-<ResponseField name="key.id" type="str">
-  Unique key identifier. Pass to `revoke()` to delete the key.
-</ResponseField>
-<ResponseField name="key.name" type="str">
-  The descriptive name set at creation time.
-</ResponseField>
-<ResponseField name="key.prefix" type="str">
-  The first several characters of the key value. Use this to identify which listed key matches a secret you have stored, without needing the full plaintext.
-</ResponseField>
-<ResponseField name="key.created_at" type="datetime">
-  UTC timestamp when the key was created.
-</ResponseField>
-<ResponseField name="key.last_used_at" type="datetime | None">
-  UTC timestamp of the most recent successful authentication using this key. `None` if the key has never been used. A key that shows `None` after a reasonable onboarding period is likely misconfigured — consider revoking it.
-</ResponseField>
-
-## Revoking a key
-
-Call `client.api_keys.revoke(key_id)` to permanently delete an API key. The key stops authenticating **new** requests immediately; any requests already in flight at the moment of revocation complete normally. Revocation cannot be undone — create a new key if you need to restore access.
+## Regenerate or delete
 
 ```python
-# Revoke a specific key by ID
-client.api_keys.revoke("key_01j9abc123def456")
-print("Key revoked. New requests using that key will receive 401 Unauthorized.")
+client.api_keys.regenerate(key_id="key_123")   # new secret, the old one stops working
+client.api_keys.delete(key_id="key_123")
 ```
 
-<Note>
-  In-flight HTTP requests that carry the revoked key will complete before the revocation takes effect at the network edge. Do not rely on revocation as an instant kill-switch for a compromised key; rotate the key in your consuming service first, then revoke the old one.
-</Note>
+## Next steps
 
-### Finding and revoking a key by name
-
-```python
-keys = client.api_keys.list()
-
-target = next((k for k in keys if k.name == "legacy-integration"), None)
-
-if target:
-    client.api_keys.revoke(target.id)
-    print(f"Revoked '{target.name}' ({target.id})")
-else:
-    print("Key not found — may have already been revoked.")
-```
-
-## Key management best practices
-
-<Accordion title="One key per service">
-  Create a dedicated API key for each service or environment that calls Axilio — `backend-api-prod`, `github-actions-staging`, `analytics-pipeline`. This lets you revoke a single service's access without disrupting other services, and gives `last_used_at` meaningful signal about each integration's health.
-</Accordion>
-
-<Accordion title="Rotate on any suspected compromise">
-  If you believe a key was exposed — in a log file, a leaked `.env`, a public commit — rotate it immediately. The rotation sequence is: create a new key → update the consuming service → verify the service works with the new key → revoke the old key. Never leave a suspected-compromised key active while waiting for the service to be updated.
-</Accordion>
-
-<Accordion title="Audit last_used_at regularly">
-  Any key with `last_used_at=None` after its first week of existence, or a key that hasn't been used in 30+ days, is likely dead weight. Revoke unused keys to reduce your attack surface.
-</Accordion>
-
-<Accordion title="Never log or print the secret">
-  Avoid any code path that prints or logs `new_key.secret` to stdout, application logs, or CI output. Even transient log exposure can be enough for a credential to be scraped. Pass the secret directly to your secrets manager and discard the variable.
-</Accordion>
-
-## Full lifecycle example
-
-<CodeGroup>
-```python Create and store a key
-import axilio
-import os
-
-client = axilio.Client()
-
-# Create the key
-new_key = client.api_keys.create("my-service-prod")
-
-# In production: store via your secrets manager SDK
-# Here we simulate writing to an env file (never commit this to git)
-with open(".env.local", "a") as f:
-    f.write(f"\nAXILIO_API_KEY={new_key.secret}\n")
-
-print(f"Created key '{new_key.name}' with id {new_key.id}")
-print(f"Prefix: {new_key.prefix}  (use this to identify the key in list())")
-```
-
-```python Audit and clean up stale keys
-from datetime import datetime, timedelta, timezone
-import axilio
-
-client = axilio.Client()
-
-threshold = datetime.now(tz=timezone.utc) - timedelta(days=60)
-keys = client.api_keys.list()
-
-stale = [
-    k for k in keys
-    if k.last_used_at is None or k.last_used_at < threshold
-]
-
-print(f"Found {len(stale)} stale key(s):")
-for k in stale:
-    last = k.last_used_at.date() if k.last_used_at else "never"
-    print(f"  {k.name:<30}  last used: {last}")
-    client.api_keys.revoke(k.id)
-    print(f"  → Revoked {k.id}")
-```
-</CodeGroup>
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/authentication">
+    How keys authenticate the SDK.
+  </Card>
+  <Card title="Members" icon="users" href="/org/members">
+    Who's in your organization.
+  </Card>
+</CardGroup>

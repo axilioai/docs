@@ -1,1 +1,6 @@
 .gstack/
+
+# Internal working docs — never commit to the public docs repo.
+PLAN.md
+WRITING_GUIDE.md
+DOCS_SOURCE_OF_TRUTH.md

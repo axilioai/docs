@@ -1,0 +1,51 @@
+---
+title: "Sessions and timeouts"
+sidebarTitle: "Sessions"
+description: "How borrowing a phone works, and how long you hold one."
+---
+
+A **session** is one borrowed phone. It starts when you get the phone and ends
+when you give it back.
+
+## Start and end
+
+A `with` block is the simplest session. The phone is yours inside it, and it goes
+back when the block ends, even if your code raises an error:
+
+```python
+with client.session("ANDROID") as driver:
+    ...   # session is open
+# session closed, phone returned
+```
+
+## You pay for the time you hold it
+
+Billing runs from when you get the phone to when you return it. So return phones as
+soon as you're done. [More on billing](/billing/overview).
+
+## Don't leak phones
+
+If you [get a phone yourself](/devices/allocate) with `allocate`, you have to call
+`deallocate`, or the phone stays yours and keeps costing you. A `session()` does
+this for you.
+
+## Connecting
+
+When a session starts, Axilio connects to the phone. `open_timeout` sets how many
+seconds to wait for that connection (10 by default):
+
+```python
+with client.session("ANDROID", open_timeout=20) as driver:
+    ...
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
+    Borrow a phone.
+  </Card>
+  <Card title="Observability" icon="video" href="/observability/overview">
+    Watch and replay your sessions.
+  </Card>
+</CardGroup>

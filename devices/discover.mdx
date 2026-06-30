@@ -1,0 +1,40 @@
+---
+title: "See available devices"
+sidebarTitle: "See devices"
+description: "Check what phones are free, and which ones are yours."
+---
+
+## What's free
+
+`available` shows how many phones are free to borrow right now:
+
+```python
+free = client.devices.available()
+print(free.android_count, "Android phones free")
+```
+
+## Your phones
+
+`mine` lists the phones tied to your account, like
+[dedicated ones you rented](/billing/plans):
+
+```python
+mine = client.devices.mine()
+
+for phone in mine.phones:
+    print(phone.phone_id, phone.nickname, phone.status)
+```
+
+Pass a phone's `phone_id` to [`session`](/devices/allocate) to use that exact
+phone.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
+    Borrow a phone.
+  </Card>
+  <Card title="Sessions" icon="clock" href="/devices/timeouts">
+    How borrowing works.
+  </Card>
+</CardGroup>
