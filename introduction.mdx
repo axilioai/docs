@@ -1,88 +1,77 @@
 ---
 title: "What is Axilio?"
 sidebarTitle: "Introduction"
-description: "Axilio is a cloud of real Android phones on carrier networks, driven by a vision-native Python SDK — the way agents reach the mobile apps that have no API."
+description: "Axilio is a cloud of real Android phones your code can control — see the screen, tap, type, and swipe, just like a person would."
 ---
 
-Axilio is a cloud of **real Android phones** — physical hardware on live carrier
-networks — that your code can allocate and drive programmatically. You write
-Python; Axilio hands you a phone and a driver that sees the screen and acts on it.
+Axilio is a cloud of **real Android phones** that your code can control. You write
+a few lines of Python; Axilio hands you a phone and lets you see its screen and
+tap, type, and swipe — exactly like a person using it.
 
-## Why phones
+## Why a real phone?
 
-Agents are good at the web because the web has APIs and accessible HTML. The mobile
-world is the opposite: the apps people live in — banking, rideshare, marketplaces,
-social, delivery — ship **no public API**. For most of them, the *only* interface
-is the screen of a real phone.
-
-So that's the interface Axilio gives your agent: a real phone, driven the way a
-person drives one — look at the screen, find the thing, tap it.
+Most apps have no way for software to plug into them directly — no public API. The
+only way to use them is through the screen, on a real phone. So that's what Axilio
+gives your agent: a real phone, used the way a person uses one.
 
 <Info>
-  Emulators and rooted devices get flagged. Axilio uses genuine Android hardware
-  on real carrier SIMs, so apps behave the way they do for a real user.
+  Every device is a real, physical Android phone on a real carrier network — the
+  same hardware and connectivity your users have.
 </Info>
 
-## The mental model
+## How it works
 
-Three pieces, in order:
+Three things, in order:
 
 <Steps>
-  <Step title="Client">
-    `Client()` is your authenticated connection to Axilio. It reads your API key
-    and exposes every resource — devices, runs, workflows, billing — as a typed
-    method.
+  <Step title="Client — your connection to Axilio">
+    Reads your API key and lets you reach everything: phones, runs, billing.
   </Step>
-  <Step title="Session">
-    `client.session("ANDROID")` allocates a phone, opens its control channel, and
-    hands you a driver. When your code is done, the session releases the phone
-    automatically.
+  <Step title="Session — borrow a phone">
+    Ask for a phone and Axilio gives you one. It's yours until you're done, then
+    it goes back to the pool. You only pay for the time you hold it.
   </Step>
-  <Step title="Driver">
-    The `MobileDriver` is how you *do* things: find on-screen text or elements,
-    tap, type, swipe, read the screen, and take screenshots.
+  <Step title="Driver — control the phone">
+    Find things on the screen, then tap, type, and swipe.
   </Step>
 </Steps>
 
 ```python
 from axilio.platform import Client
 
-client = Client()  # reads AXILIO_API_KEY from the environment
+client = Client()  # reads your API key from the environment
 
 with client.session("ANDROID") as driver:
     driver.find_text("Settings").tap()
     driver.find(query="the search box").type_into("axilio")
-    png = driver.screenshot()
+    photo = driver.screenshot()
 ```
 
 ## What makes it different
 
-- **Real hardware** — genuine Android phones with authentic sensors, fingerprints,
-  and OS behavior. No emulator tells.
-- **Carrier networks** — real telco SIMs and production connectivity, with
-  carrier-grade IPs on every plan.
-- **Vision-native** — find elements with natural language (`find(query=...)`),
-  backed by vision models, instead of brittle coordinate scripts.
-- **Parallel execution** — concurrent, isolated sessions with automatic load
-  balancing across the fleet.
-- **Predictable pricing** — per-second billing of device time, with no data or
-  proxy fees.
-- **Replay & traces** — full session replay and per-step traces to debug agents in
-  production.
+- **Real hardware** — real consumer Android phones, the same devices people use
+  every day, not emulators or virtual devices.
+- **Carrier networks** — real SIMs on real carrier networks, with genuine mobile
+  connectivity on every plan.
+- **Find things in plain English** — describe what you want (`find(query="the blue
+  Continue button")`) instead of writing brittle coordinates.
+- **Run many at once** — start lots of phones in parallel, each isolated.
+- **Simple pricing** — pay by the second for the time you use a phone.
+- **Replay** — watch a recording of everything your agent did.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Drive your first device session end to end.
+    Control your first phone in five minutes.
   </Card>
   <Card title="Authentication" icon="key" href="/authentication">
-    Create an API key and configure the client.
+    Get an API key and set it up.
   </Card>
   <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
-    Learn how the driver finds and acts on the screen.
+    Find things on the screen and act on them.
   </Card>
   <Card title="Devices" icon="mobile" href="/devices/overview">
-    Understand allocations, discovery, and the device lifecycle.
+    How borrowing and returning phones works.
   </Card>
 </CardGroup>

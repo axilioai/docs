@@ -1,29 +1,25 @@
 ---
-title: "Authenticate the client"
+title: "Authentication"
 sidebarTitle: "Authentication"
-description: "Create an Axilio API key, set it in your environment, and point the SDK — or a raw HTTP client — at your account."
+description: "Get an API key and give it to Axilio — through the environment or directly in code."
 ---
 
-Every request to Axilio is authenticated with an **API key**. This page shows how
-to create one, give it to the SDK, and use it directly over HTTP.
+Every request to Axilio needs an **API key** — a secret that identifies your
+account.
 
-## Create an API key
+## Get a key
 
-Generate a key from the [dashboard](https://axilio.ai/dashboard) under
-**Settings → API keys**. Keys are prefixed `axl_`.
+Create one in the [dashboard](https://axilio.ai/dashboard), under
+**Settings → API keys**. Keys start with `axl_`.
 
 <Warning>
-  An API key is shown **once**, at creation. Store it somewhere safe — a secrets
-  manager or an environment variable — and never commit it to source control.
+  Your key is shown once, when you create it. Save it somewhere safe and never
+  commit it to your code.
 </Warning>
 
-Each key is scoped to a **single organization**. If you belong to more than one,
-create a separate key per organization and use the one for the account you want to
-bill and operate against.
+## Use it
 
-## Configure the SDK
-
-The client reads your key from the `AXILIO_API_KEY` environment variable:
+The easiest way is an environment variable — Axilio reads it automatically:
 
 ```bash
 export AXILIO_API_KEY=axl_your_key_here
@@ -32,58 +28,38 @@ export AXILIO_API_KEY=axl_your_key_here
 ```python
 from axilio.platform import Client
 
-client = Client()  # reads AXILIO_API_KEY
+client = Client()
 ```
 
-Or pass it explicitly:
+Or pass it directly:
 
 ```python
-from axilio.platform import Client
-
 client = Client(api_key="axl_your_key_here")
 ```
 
-## Configuration options
+## Options
 
-`Client()` accepts a few options, each with an environment-variable fallback:
+`Client()` takes a few optional settings:
 
-| Option | Environment variable | Default | Description |
-|---|---|---|---|
-| `api_key` | `AXILIO_API_KEY` | — | Your API key (`axl_…`). Required. |
-| `base_url` | `AXILIO_BASE_URL` | `https://api.axilio.ai` | The API host. |
-| `timeout` | — | `30.0` | Per-request timeout, in seconds. |
-| `max_retries` | — | `3` | Retries on `429`/`5xx`/network errors. |
-
-## Calling the API directly
-
-The SDK is the recommended path, but the REST API is plain HTTP. Send your key in
-the `X-Axilio-Api-Key` header against the base URL `https://api.axilio.ai`, under
-the `/api/v1` path:
-
-```bash
-curl https://api.axilio.ai/api/v1/devices/available \
-  -H "X-Axilio-Api-Key: axl_your_key_here"
-```
+| Setting | Default | What it does |
+|---|---|---|
+| `api_key` | `AXILIO_API_KEY` | Your key. Required. |
+| `base_url` | `https://api.axilio.ai` | Where to send requests. |
+| `timeout` | `30.0` | Seconds to wait per request. |
+| `max_retries` | `3` | Automatic retries on temporary failures. |
 
 <Note>
-  `X-Axilio-Api-Key` is for API keys. The dashboard uses a separate
-  `Authorization: Bearer` session token — it is not interchangeable with an API
-  key.
+  Each key belongs to one organization. If you're in more than one, make a
+  separate key for each.
 </Note>
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Drive your first device session.
+    Control your first phone.
   </Card>
   <Card title="Devices" icon="mobile" href="/devices/overview">
-    Allocate and manage phones.
-  </Card>
-  <Card title="Configuration" icon="gear" href="/reference/configuration">
-    Every client option and environment variable in one place.
-  </Card>
-  <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
-    How the SDK signals auth, rate-limit, and device failures.
+    Get and manage phones.
   </Card>
 </CardGroup>
