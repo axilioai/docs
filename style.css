@@ -164,10 +164,20 @@ html {
 #navigation-items .sidebar-group-header #sidebar-title,
 #sidebar-content .sidebar-group-header #sidebar-title {
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.62;
+}
+
+/* ── Bigger nav — the brand default runs dense (text-sm, ~13px) for both the top
+   tab bar and the sidebar page links. Bump them to ~15px so the navigation reads
+   larger and more legible, without touching the content typography. ─────────── */
+.nav-tabs .nav-tabs-item {
+  font-size: 1rem !important;
+}
+#navigation-items a {
+  font-size: 1rem !important;
 }
 
 /* ── //section eyebrows — Axilio's signature green code-comment prefix on
