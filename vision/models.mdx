@@ -1,0 +1,35 @@
+---
+title: "Models"
+sidebarTitle: "Models"
+description: "The vision models Argus supports, and their pricing."
+---
+
+Argus runs on a range of vision models. List them in code:
+
+```python
+models = client.argus.list_models()
+for m in models.data:
+    print(m.name, m.context_window)
+```
+
+Pass a model's `id` as `model=` to [Locate](/vision/locate) to pick one.
+
+## Pricing
+
+Vision calls are billed per token.
+
+<div id="axilio-models" />
+
+Prices are per million tokens, pulled live. See [Cost](/observability/cost) to
+track what you actually spend.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Locate" icon="crosshairs" href="/vision/locate">
+    Find something with a chosen model.
+  </Card>
+  <Card title="Cost" icon="coins" href="/observability/cost">
+    See what your vision calls cost.
+  </Card>
+</CardGroup>

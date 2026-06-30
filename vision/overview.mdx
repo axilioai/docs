@@ -1,0 +1,30 @@
+---
+title: "Vision"
+sidebarTitle: "Overview"
+description: "Argus is Axilio's vision model. It powers find(query=...), and you can call it directly on your own images."
+---
+
+**Argus** is Axilio's vision model. It looks at an image and finds things by
+description, reads the text, and spots the icons.
+
+You've already used it: [`find(query=...)`](/driver/find) on the driver is Argus
+under the hood. You can also call it directly on any image with `client.argus`.
+
+## What you can do
+
+<CardGroup cols={3}>
+  <Card title="Locate" icon="crosshairs" href="/vision/locate">
+    Find something in an image by describing it.
+  </Card>
+  <Card title="Detect" icon="font" href="/vision/detect">
+    Read the text and find the icons in an image.
+  </Card>
+  <Card title="Models" icon="layer-group" href="/vision/models">
+    The vision models and their pricing.
+  </Card>
+</CardGroup>
+
+## When to call it directly
+
+The [driver](/driver/find) already runs Argus for you on a live screen. Call
+`client.argus` yourself when you have your own image to analyze.

@@ -1,0 +1,36 @@
+---
+title: "Detect"
+sidebarTitle: "Detect"
+description: "Read the text and find the icons in an image."
+---
+
+`infer` reads an image: the text on it, and the icons in it.
+
+```python
+import base64
+from axilio.platform import Client
+
+client = Client()
+
+image = base64.b64encode(open("screen.png", "rb").read()).decode()
+
+result = client.argus.infer(image=image, inference_type="combined")
+print(result.data)
+```
+
+Choose what to detect with `inference_type`:
+
+- `"ocr"`: the text only.
+- `"yolo"`: the icons only.
+- `"combined"`: both.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Locate" icon="crosshairs" href="/vision/locate">
+    Find one thing by describing it.
+  </Card>
+  <Card title="Models" icon="layer-group" href="/vision/models">
+    The models and their pricing.
+  </Card>
+</CardGroup>

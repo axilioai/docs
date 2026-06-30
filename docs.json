@@ -79,6 +79,16 @@
             ]
           },
           {
+            "group": "Vision",
+            "icon": "eye",
+            "pages": [
+              "vision/overview",
+              "vision/locate",
+              "vision/detect",
+              "vision/models"
+            ]
+          },
+          {
             "group": "Observability",
             "icon": "video",
             "pages": [
