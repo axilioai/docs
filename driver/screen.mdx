@@ -1,0 +1,43 @@
+---
+title: "Screen"
+sidebarTitle: "Screen"
+description: "A snapshot of everything on screen — all recognized text and icons — returned by observe() and queryable without re-capturing."
+---
+
+A `Screen` is what [`observe()`](/driver/read-the-screen) returns: a single
+snapshot of all recognized text and icons. Query it locally — no round trip to the
+device.
+
+```python
+screen = driver.observe()
+row = screen.find_text("Sign in")          # Element | None
+prices = screen.find_all_text(contains="$")  # list[Element]
+```
+
+## Methods
+
+| Method | Returns | Description |
+|---|---|---|
+| `find_text(text, exact=False)` | `Element \| None` | Best text match in the snapshot. |
+| `find_all_text(contains=…, pattern=…)` | `list[Element]` | Every text match. |
+
+## Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `texts` | `list[Element]` | Every recognized text element. |
+| `icons` | `list` | Detected icons, each with `bbox`, `center`, `confidence`. |
+| `width`, `height` | `int` | Screen dimensions, in pixels. |
+| `captured_at` | `datetime` | When the snapshot was taken. |
+| `hash` | `str` | Content hash — compare across snapshots to detect change. |
+
+## See also
+
+<CardGroup cols={2}>
+  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
+    How and when to call <code>observe()</code>.
+  </Card>
+  <Card title="Element" icon="crosshairs" href="/driver/element">
+    The items a screen holds.
+  </Card>
+</CardGroup>

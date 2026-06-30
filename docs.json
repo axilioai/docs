@@ -44,7 +44,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Docs",
+        "tab": "Platform",
         "groups": [
           {
             "group": "Get Started",
@@ -57,27 +57,13 @@
             ]
           },
           {
-            "group": "Devices",
+            "group": "Devices & Sessions",
             "icon": "mobile",
             "pages": [
               "devices/overview",
               "devices/allocate",
               "devices/discover",
               "devices/timeouts"
-            ]
-          },
-          {
-            "group": "Controlling the Device",
-            "icon": "hand-pointer",
-            "pages": [
-              "driver/overview",
-              "driver/find-by-text",
-              "driver/find-with-vision",
-              "driver/read-the-screen",
-              "driver/actions",
-              "driver/hardware-keys",
-              "driver/waiting",
-              "driver/screenshots"
             ]
           },
           {
@@ -101,13 +87,6 @@
             ]
           },
           {
-            "group": "Guides",
-            "icon": "book",
-            "pages": [
-              "guides/best-practices"
-            ]
-          },
-          {
             "group": "Account & Billing",
             "icon": "credit-card",
             "pages": [
@@ -123,11 +102,62 @@
           },
           {
             "group": "Reference",
-            "icon": "code",
+            "icon": "book",
             "pages": [
               "reference/errors",
-              "reference/configuration",
-              "reference/changelog"
+              "reference/configuration"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Driver",
+        "groups": [
+          {
+            "group": "MobileDriver",
+            "icon": "compass",
+            "pages": [
+              "driver/overview"
+            ]
+          },
+          {
+            "group": "Finding elements",
+            "icon": "magnifying-glass",
+            "pages": [
+              "driver/find-by-text",
+              "driver/find-with-vision"
+            ]
+          },
+          {
+            "group": "Reading the screen",
+            "icon": "table-list",
+            "pages": [
+              "driver/read-the-screen",
+              "driver/screenshots"
+            ]
+          },
+          {
+            "group": "Acting",
+            "icon": "hand-pointer",
+            "pages": [
+              "driver/actions",
+              "driver/hardware-keys"
+            ]
+          },
+          {
+            "group": "Synchronizing",
+            "icon": "hourglass-half",
+            "pages": [
+              "driver/waiting"
+            ]
+          },
+          {
+            "group": "Reference",
+            "icon": "code",
+            "pages": [
+              "driver/element",
+              "driver/screen",
+              "driver/key"
             ]
           }
         ]
@@ -191,6 +221,7 @@
     { "source": "/guides/controlling-devices", "destination": "/driver/overview" },
     { "source": "/guides/running-workflows", "destination": "/workflows/create" },
     { "source": "/guides/parallel-execution", "destination": "/scaling/parallel-sessions" },
+    { "source": "/guides/best-practices", "destination": "/driver/overview" },
     { "source": "/platform/billing", "destination": "/billing/overview" },
     { "source": "/platform/usage", "destination": "/usage/metrics" },
     { "source": "/platform/organizations", "destination": "/org/overview" }
