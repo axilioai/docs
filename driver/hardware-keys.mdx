@@ -1,6 +1,54 @@
 ---
 title: "Press a hardware key"
 sidebarTitle: "Hardware keys"
+description: "Send physical device keys — Home, Back, Recents, volume, and media — with key_press and the Key constants."
 ---
 
-{/* TODO: rewrite from scratch */}
+Some navigation doesn't happen on the touchscreen. To go Home, hit Back, or open
+Recents, send a **hardware key** with `key_press` and the `Key` constants.
+
+```python
+from axilio.platform import Client
+from axilio.drivers.mobile import Key
+
+client = Client()
+
+with client.session("ANDROID") as driver:
+    driver.find_text("Save").tap()
+    driver.key_press(Key.HOME)   # back to the home screen
+```
+
+## Available keys
+
+`Key` exposes the device keys you'll reach for most:
+
+| Group | Constants |
+|---|---|
+| Navigation | `Key.HOME`, `Key.BACK`, `Key.RECENTS`, `Key.MENU` |
+| Power | `Key.POWER` |
+| Volume | `Key.VOLUME_UP`, `Key.VOLUME_DOWN`, `Key.MUTE` |
+| Media | `Key.PLAY_PAUSE`, `Key.NEXT_TRACK`, `Key.PREV_TRACK`, `Key.STOP` |
+| System | `Key.SEARCH`, `Key.ASSIST` |
+
+```python
+driver.key_press(Key.BACK)        # dismiss a dialog or go back
+driver.key_press(Key.RECENTS)     # open the app switcher
+driver.key_press(Key.VOLUME_DOWN) # turn the volume down a step
+```
+
+<Note>
+  `key_press` sends one key press per call. To type characters into a focused
+  field, use [`type_text`](/driver/actions) or
+  [`type_into`](/driver/actions) instead — those are for text, not device keys.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
+    Tap, type, long-press, and swipe.
+  </Card>
+  <Card title="Waiting" icon="hourglass-half" href="/driver/waiting">
+    Wait for the screen to settle after a key press.
+  </Card>
+</CardGroup>

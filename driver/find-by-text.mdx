@@ -1,6 +1,92 @@
 ---
 title: "Find an element by text"
 sidebarTitle: "Find by text"
+description: "Locate on-screen elements by their visible label with fast, on-device OCR — find_text for a single match, find_all_text for every match."
 ---
 
-{/* TODO: rewrite from scratch */}
+`find_text` is the fastest, most deterministic way to locate something on screen.
+It runs on-device OCR and returns the matching [element](/driver/actions) — use it
+whenever the thing you want has a visible label.
+
+```python
+from axilio.platform import Client
+
+client = Client()
+
+with client.session("ANDROID") as driver:
+    driver.find_text("Settings").tap()
+```
+
+## Find a single element
+
+`find_text(text)` returns the best matching `Element`, or `None` if nothing
+matches:
+
+```python
+el = driver.find_text("Sign in")
+if el:
+    el.tap()
+```
+
+<Warning>
+  Because a miss returns `None`, calling `.tap()` directly can raise
+  `AttributeError` before the screen has loaded. Guard the result as above, or
+  block until it appears with [`wait_for_text`](/driver/waiting):
+
+  ```python
+  driver.wait_for_text("Sign in").tap()
+  ```
+</Warning>
+
+By default matching is case-insensitive and substring-based. Pass `exact=True` to
+require a full, exact match:
+
+```python
+driver.find_text("OK", exact=True).tap()
+```
+
+## Find every match
+
+`find_all_text` returns a list of every matching element — useful for lists, feeds,
+and grids. Filter by substring with `contains` or by regular expression with
+`pattern`:
+
+```python
+# Every element whose text contains "Notification"
+for el in driver.find_all_text(contains="Notification"):
+    print(el.text, el.center)
+
+# Every element matching a regex
+prices = driver.find_all_text(pattern=r"\$\d+\.\d{2}")
+```
+
+## Text or vision?
+
+- **Use text** when the target has a readable label — buttons, menu items, list
+  rows. It's faster, cheaper, and fully deterministic.
+- **Use [vision](/driver/find-with-vision)** when there's no usable text — icons,
+  images, or "the blue button next to the avatar." Vision is more flexible but
+  slower and billed per call.
+
+<Tip>
+  To inspect everything on screen at once instead of querying one label at a time,
+  use [`observe()`](/driver/read-the-screen) — it returns all recognized text and
+  icons in a single call.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Find with vision" icon="eye" href="/driver/find-with-vision">
+    Locate elements that have no usable text.
+  </Card>
+  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
+    Tap, type, long-press, and swipe on the elements you find.
+  </Card>
+  <Card title="Waiting" icon="hourglass-half" href="/driver/waiting">
+    Wait for text to appear or disappear before acting.
+  </Card>
+  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
+    Capture all text and icons in one snapshot.
+  </Card>
+</CardGroup>

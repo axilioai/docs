@@ -1,6 +1,56 @@
 ---
 title: "Take a screenshot"
 sidebarTitle: "Screenshots"
+description: "Capture the live device screen as PNG bytes — for logging, audit trails, debugging, or handing pixels to your own model."
 ---
 
-{/* TODO: rewrite from scratch */}
+`screenshot()` captures the live device screen and returns it as **PNG bytes**. Use
+it for logging, audit trails, debugging a failed run, or handing raw pixels to your
+own model.
+
+```python
+from axilio.platform import Client
+
+client = Client()
+
+with client.session("ANDROID") as driver:
+    png = driver.screenshot()
+    with open("screen.png", "wb") as f:
+        f.write(png)
+```
+
+Because it returns bytes, you can pass it straight to anything that takes image
+data — no temp file required:
+
+```python
+import base64
+
+png = driver.screenshot()
+data_url = "data:image/png;base64," + base64.b64encode(png).decode()
+```
+
+## Screenshot or observe?
+
+Both look at the screen, but they return different things:
+
+- **`screenshot()`** → raw PNG **bytes**. Use it when you want *pixels* — to store,
+  display, or feed to your own vision model.
+- **[`observe()`](/driver/read-the-screen)** → a structured `Screen` of text and
+  icons. Use it when you want to *make decisions* in code without doing your own
+  image parsing.
+
+<Tip>
+  Capture a screenshot in your exception handler to make failures debuggable — it's
+  the fastest way to see what the phone actually looked like when a run went wrong.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
+    Get structured, queryable text and icons instead of pixels.
+  </Card>
+  <Card title="Overview" icon="hand-pointer" href="/driver/overview">
+    Back to the full driver surface.
+  </Card>
+</CardGroup>

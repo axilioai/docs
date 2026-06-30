@@ -1,6 +1,83 @@
 ---
 title: "Find an element with vision"
 sidebarTitle: "Find with vision"
+description: "Describe any on-screen element in natural language and locate it with a vision model — for icons, images, and anything OCR can't name."
 ---
 
-{/* TODO: rewrite from scratch */}
+When the thing you want has no usable text — an icon, an image, "the blue button
+next to the avatar" — describe it in plain language and let a vision model find it.
+That's `find(query=...)`.
+
+```python
+from axilio.platform import Client
+
+client = Client()
+
+with client.session("ANDROID") as driver:
+    driver.find(query="the heart icon under the photo").tap()
+```
+
+## How it differs from text
+
+`find` returns a single [`Element`](/driver/actions), just like
+[`find_text`](/driver/find-by-text) — but with two important differences:
+
+- **It describes intent, not a label.** The query is matched visually, so it works
+  on elements that have no readable text.
+- **It raises on a miss.** Where `find_text` returns `None`, `find` raises
+  `ElementNotFoundError` if it can't locate the target — so a failed selector
+  surfaces loudly instead of silently returning nothing.
+
+```python
+from axilio.drivers.mobile import ElementNotFoundError
+
+try:
+    driver.find(query="the shopping cart icon").tap()
+except ElementNotFoundError:
+    print("cart not visible on this screen")
+```
+
+## Options
+
+```python
+el = driver.find(
+    query="the blue Continue button",
+    timeout=10.0,   # seconds to keep looking before raising
+    model=None,     # pin a specific vision model; defaults to the recommended one
+)
+```
+
+- **`timeout`** — how long to keep looking before raising `ElementNotFoundError`.
+  `find` polls the screen, so this doubles as a wait for the element to appear.
+- **`model`** — pin a specific vision model. Leave it unset to use the recommended
+  default.
+
+## When to use vision
+
+- **Reach for vision** when there's no text to match, when the label is unreliable,
+  or when the target is best described by its appearance or position.
+- **Prefer [text](/driver/find-by-text)** when a stable visible label exists — it's
+  faster, deterministic, and cheaper.
+
+<Note>
+  Vision calls are billed separately from device time. Favor
+  [text selectors](/driver/find-by-text) on hot paths, and use vision where it
+  earns its keep.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Find by text" icon="font" href="/driver/find-by-text">
+    The faster, deterministic selector for labeled elements.
+  </Card>
+  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
+    Act on the element you found.
+  </Card>
+  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
+    Inspect all text and icons before deciding what to do.
+  </Card>
+  <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
+    Handle <code>ElementNotFoundError</code> and other driver failures.
+  </Card>
+</CardGroup>

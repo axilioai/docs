@@ -1,6 +1,99 @@
 ---
 title: "Quickstart: Run and Automate Your First Device Session"
 sidebarTitle: "Quickstart"
+description: "Install the SDK, allocate a real Android phone, and drive it — screenshot, find an element, and tap — in under five minutes."
 ---
 
-{/* TODO: rewrite from scratch */}
+By the end of this page you'll have allocated a real Android phone, read its
+screen, and tapped an element — all from a few lines of Python.
+
+## Prerequisites
+
+- **Python 3.10+**
+- **An Axilio API key** — create one in the [dashboard](https://axilio.ai/dashboard).
+  See [Authentication](/authentication) for details.
+
+## 1. Install the SDK
+
+```bash
+pip install axilio
+```
+
+## 2. Set your API key
+
+The client reads your key from the `AXILIO_API_KEY` environment variable.
+
+```bash
+export AXILIO_API_KEY=axl_your_key_here
+```
+
+## 3. Drive your first session
+
+```python
+from axilio.platform import Client
+
+client = Client()  # reads AXILIO_API_KEY from the environment
+
+# Allocate a phone, drive it, and release it automatically.
+with client.session("ANDROID") as driver:
+    # Take a screenshot (returns PNG bytes).
+    png = driver.screenshot()
+    with open("screen.png", "wb") as f:
+        f.write(png)
+
+    # Open the app drawer's search and type a query.
+    driver.find_text("Search").tap()
+    driver.type_text("axilio")
+
+    # Use a natural-language selector for anything text can't pin down.
+    driver.find(query="the first search result").tap()
+```
+
+Run it:
+
+```bash
+python quickstart.py
+```
+
+## What just happened
+
+<Steps>
+  <Step title="The session allocated a phone">
+    `client.session("ANDROID")` reserved a real Android device from the fleet and
+    opened its control channel. The `with` block releases it when you're done — you
+    only pay for the seconds you hold it.
+  </Step>
+  <Step title="The driver read the screen">
+    `screenshot()` returned the live screen as PNG bytes. The driver can also
+    [read structured text and elements](/driver/read-the-screen) without saving an
+    image.
+  </Step>
+  <Step title="Selectors found and acted on elements">
+    `find_text("Search")` located on-screen text with on-device OCR;
+    `find(query=...)` used a vision model for the result that text alone couldn't
+    pin down. Both return an element you act on directly.
+  </Step>
+</Steps>
+
+<Tip>
+  `find_text` returns `None` when there's no match, so a tap can fail if the screen
+  hasn't loaded yet. Use [waits](/driver/waiting) (`wait_for_text`) to let the UI
+  settle before you act.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
+    The full selector and action API — text, vision, taps, swipes, and keys.
+  </Card>
+  <Card title="Find with vision" icon="eye" href="/driver/find-with-vision">
+    Locate anything on screen with a natural-language query.
+  </Card>
+  <Card title="Devices" icon="mobile" href="/devices/overview">
+    Pin a specific device, discover what's available, and manage allocations.
+  </Card>
+  <Card title="Workflows & runs" icon="diagram-project" href="/workflows/overview">
+    Package this script as a reusable workflow and run it on demand.
+  </Card>
+</CardGroup>

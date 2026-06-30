@@ -1,6 +1,89 @@
 ---
 title: "How the driver sees the screen"
 sidebarTitle: "Overview"
+description: "The MobileDriver is how you control a device — find on-screen elements by text or vision, read the whole screen, and tap, type, and swipe."
 ---
 
-{/* TODO: rewrite from scratch */}
+The `MobileDriver` is the control surface for a device. A
+[session](/quickstart) hands you one; from there you **find** things on screen and
+**act** on them.
+
+```python
+from axilio.platform import Client
+
+client = Client()
+
+with client.session("ANDROID") as driver:
+    driver.find_text("Settings").tap()
+```
+
+## Two ways to find, three ways to act
+
+The driver gives you two kinds of selector and a set of actions:
+
+- **Text selectors** — [`find_text`](/driver/find-by-text) locates on-screen text
+  with fast, on-device OCR. Use it whenever the thing you want has a visible label.
+- **Vision selectors** — [`find(query=...)`](/driver/find-with-vision) describes an
+  element in natural language and locates it with a vision model. Use it for icons,
+  images, and anything OCR can't name.
+- **Actions** — every selector returns an [`Element`](/driver/actions) you act on:
+  `tap()`, `type_into()`, `long_press()`, `swipe_to()`. You can also send
+  [raw input](/driver/actions) and [hardware keys](/driver/hardware-keys) directly.
+
+<CardGroup cols={2}>
+  <Card title="Find by text" icon="font" href="/driver/find-by-text">
+    Locate elements by their visible label with on-device OCR.
+  </Card>
+  <Card title="Find with vision" icon="eye" href="/driver/find-with-vision">
+    Describe an element in natural language and let a vision model find it.
+  </Card>
+  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
+    Capture all text and icons at once with <code>observe()</code>.
+  </Card>
+  <Card title="Actions" icon="hand-pointer" href="/driver/actions">
+    Tap, type, long-press, and swipe — on elements or raw coordinates.
+  </Card>
+  <Card title="Hardware keys" icon="keyboard" href="/driver/hardware-keys">
+    Press Home, Back, Recents, and other device keys.
+  </Card>
+  <Card title="Waiting" icon="hourglass-half" href="/driver/waiting">
+    Let the UI settle before you act, instead of sleeping.
+  </Card>
+</CardGroup>
+
+## The Element you get back
+
+Selectors return an `Element` — a located thing on screen — that you act on
+directly and inspect:
+
+| Field | Description |
+|---|---|
+| `center` | The `{"x", "y"}` tap point at the element's center. |
+| `bbox` | The bounding box: `{"x", "y", "width", "height"}`. |
+| `text` | The recognized text, if any. |
+| `confidence` | How sure the locator is, from `0` to `1`. |
+| `source` | `"ocr"` for a text match, `"vlm"` for a vision match. |
+
+```python
+el = driver.find_text("Sign in")
+print(el.text, el.center, el.confidence)
+el.tap()
+```
+
+<Warning>
+  `find_text` returns `None` when nothing matches, so calling `.tap()` straight
+  away can raise `AttributeError` if the screen hasn't loaded. Guard the result,
+  or use [`wait_for_text`](/driver/waiting) to block until it appears.
+  `find(query=...)` instead raises `ElementNotFoundError` on a miss.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Find by text" icon="font" href="/driver/find-by-text">
+    Start with the fastest, most deterministic selector.
+  </Card>
+  <Card title="Read the screen" icon="table-list" href="/driver/read-the-screen">
+    Snapshot everything on screen in one call.
+  </Card>
+</CardGroup>

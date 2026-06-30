@@ -1,6 +1,88 @@
 ---
 title: "What is Axilio?"
 sidebarTitle: "Introduction"
+description: "Axilio is a cloud of real Android phones on carrier networks, driven by a vision-native Python SDK — the way agents reach the mobile apps that have no API."
 ---
 
-{/* TODO: rewrite from scratch */}
+Axilio is a cloud of **real Android phones** — physical hardware on live carrier
+networks — that your code can allocate and drive programmatically. You write
+Python; Axilio hands you a phone and a driver that sees the screen and acts on it.
+
+## Why phones
+
+Agents are good at the web because the web has APIs and accessible HTML. The mobile
+world is the opposite: the apps people live in — banking, rideshare, marketplaces,
+social, delivery — ship **no public API**. For most of them, the *only* interface
+is the screen of a real phone.
+
+So that's the interface Axilio gives your agent: a real phone, driven the way a
+person drives one — look at the screen, find the thing, tap it.
+
+<Info>
+  Emulators and rooted devices get flagged. Axilio uses genuine Android hardware
+  on real carrier SIMs, so apps behave the way they do for a real user.
+</Info>
+
+## The mental model
+
+Three pieces, in order:
+
+<Steps>
+  <Step title="Client">
+    `Client()` is your authenticated connection to Axilio. It reads your API key
+    and exposes every resource — devices, runs, workflows, billing — as a typed
+    method.
+  </Step>
+  <Step title="Session">
+    `client.session("ANDROID")` allocates a phone, opens its control channel, and
+    hands you a driver. When your code is done, the session releases the phone
+    automatically.
+  </Step>
+  <Step title="Driver">
+    The `MobileDriver` is how you *do* things: find on-screen text or elements,
+    tap, type, swipe, read the screen, and take screenshots.
+  </Step>
+</Steps>
+
+```python
+from axilio.platform import Client
+
+client = Client()  # reads AXILIO_API_KEY from the environment
+
+with client.session("ANDROID") as driver:
+    driver.find_text("Settings").tap()
+    driver.find(query="the search box").type_into("axilio")
+    png = driver.screenshot()
+```
+
+## What makes it different
+
+- **Real hardware** — genuine Android phones with authentic sensors, fingerprints,
+  and OS behavior. No emulator tells.
+- **Carrier networks** — real telco SIMs and production connectivity, with
+  carrier-grade IPs on every plan.
+- **Vision-native** — find elements with natural language (`find(query=...)`),
+  backed by vision models, instead of brittle coordinate scripts.
+- **Parallel execution** — concurrent, isolated sessions with automatic load
+  balancing across the fleet.
+- **Predictable pricing** — per-second billing of device time, with no data or
+  proxy fees.
+- **Replay & traces** — full session replay and per-step traces to debug agents in
+  production.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Drive your first device session end to end.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Create an API key and configure the client.
+  </Card>
+  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
+    Learn how the driver finds and acts on the screen.
+  </Card>
+  <Card title="Devices" icon="mobile" href="/devices/overview">
+    Understand allocations, discovery, and the device lifecycle.
+  </Card>
+</CardGroup>
