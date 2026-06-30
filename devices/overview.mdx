@@ -1,6 +1,40 @@
 ---
-title: "What a device allocation is"
+title: "Devices and sessions"
 sidebarTitle: "Overview"
+description: "A device is a real phone in the cloud. A session is a phone you've borrowed to use."
 ---
 
-{/* TODO: rewrite from scratch */}
+A **device** is a real Android phone in Axilio's cloud. A **session** is a phone
+you've borrowed to use.
+
+You don't keep phones. You borrow one, do your thing, and give it back. You only
+pay for the time you hold it.
+
+```python
+from axilio.platform import Client
+
+client = Client()
+
+with client.session("ANDROID") as driver:
+    ...   # the phone is yours inside this block
+# it's returned automatically here
+```
+
+## The basics
+
+<CardGroup cols={3}>
+  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
+    Borrow a phone.
+  </Card>
+  <Card title="See devices" icon="list" href="/devices/discover">
+    What's free, and which phones are yours.
+  </Card>
+  <Card title="Sessions" icon="clock" href="/devices/timeouts">
+    How borrowing works, and how long you hold a phone.
+  </Card>
+</CardGroup>
+
+## How it fits with the driver
+
+The Platform gives you the phone. The [driver](/driver/overview) controls it.
+`session()` does both: it borrows a phone and hands you a driver to drive it.

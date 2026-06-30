@@ -58,36 +58,33 @@
             ]
           },
           {
-            "group": "Guides",
-            "icon": "book",
+            "group": "Devices & Sessions",
+            "icon": "mobile",
             "pages": [
-              {
-                "group": "Devices & Sessions",
-                "pages": [
-                  "devices/overview",
-                  "devices/allocate",
-                  "devices/discover",
-                  "devices/timeouts"
-                ]
-              },
-              {
-                "group": "Workflows & Runs",
-                "pages": [
-                  "workflows/overview",
-                  "workflows/create",
-                  "workflows/run",
-                  "workflows/monitor",
-                  "workflows/sandbox-mode"
-                ]
-              },
-              {
-                "group": "Scaling",
-                "pages": [
-                  "scaling/parallel-sessions",
-                  "scaling/rate-limits",
-                  "scaling/workflow-engine"
-                ]
-              }
+              "devices/overview",
+              "devices/allocate",
+              "devices/discover",
+              "devices/timeouts"
+            ]
+          },
+          {
+            "group": "Workflows & Runs",
+            "icon": "diagram-project",
+            "pages": [
+              "workflows/overview",
+              "workflows/create",
+              "workflows/run",
+              "workflows/monitor",
+              "workflows/sandbox-mode"
+            ]
+          },
+          {
+            "group": "Scaling",
+            "icon": "bolt",
+            "pages": [
+              "scaling/parallel-sessions",
+              "scaling/rate-limits",
+              "scaling/workflow-engine"
             ]
           },
           {
