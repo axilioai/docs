@@ -64,6 +64,7 @@
               "devices/overview",
               "devices/allocate",
               "devices/discover",
+              "devices/dedicated",
               "devices/timeouts"
             ]
           },

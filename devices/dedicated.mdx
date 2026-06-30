@@ -1,0 +1,60 @@
+---
+title: "Dedicated devices"
+sidebarTitle: "Dedicated devices"
+description: "Rent a specific phone that's yours around the clock, with no per-session cost."
+---
+
+By default you borrow any free phone. A **dedicated device** is a specific phone
+you rent, so it's yours around the clock, with no waiting for one to be free.
+
+- It's the **same phone every time**, so apps stay logged in and set up the way
+  you left them.
+- You pay a **flat rental** (daily, weekly, or monthly) instead of per second.
+  Sessions on a dedicated phone cost **$0**.
+
+## Rent one
+
+Start a checkout for a rental plan, then open the link to finish:
+
+```python
+checkout = client.billing.create_rental_checkout(plan_id="rental_monthly")
+print(checkout.checkout_url)
+```
+
+Find rental plans in your [dashboard](https://axilio.ai/dashboard).
+
+## Use your dedicated phone
+
+Your rented phones show up in `devices.mine()`. Pass a phone's `phone_id` to
+`session()` to use that exact phone:
+
+```python
+mine = client.devices.mine()
+
+for phone in mine.phones:
+    if phone.rental_expires_at:   # your dedicated phones
+        print(phone.nickname, phone.phone_id, phone.rental_expires_at)
+
+with client.session("ANDROID", phone_id="<your phone_id>") as driver:
+    ...
+```
+
+## Manage your rentals
+
+```python
+subs = client.billing.list_rental_subscriptions()
+
+client.billing.renew_rental_subscriptions(subscription_ids=["sub_123"])
+client.billing.cancel_rental_subscriptions(subscription_ids=["sub_123"])
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
+    Borrow a phone from the shared pool.
+  </Card>
+  <Card title="How billing works" icon="credit-card" href="/billing/overview">
+    Per-second time vs flat rentals.
+  </Card>
+</CardGroup>
