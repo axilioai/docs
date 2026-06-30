@@ -1,6 +1,42 @@
 ---
-title: "Change your plan"
-sidebarTitle: "Change plan"
+title: "Your plan"
+sidebarTitle: "Plans"
+description: "See your current plan and change it."
 ---
 
-{/* TODO: rewrite from scratch */}
+A plan sets your monthly included balance, how many runs you can do at once, and
+your rates. See [pricing](https://axilio.ai) for the full list of plans.
+
+## Your current plan
+
+```python
+sub = client.billing.get_subscription()
+
+print(sub.plan_name)
+print(sub.included_balance_display)   # balance included each month
+print(sub.max_concurrent_runs)        # how many runs at once
+print(sub.current_period_end)
+```
+
+## Change your plan
+
+Start a checkout for a new plan, then open the link to finish:
+
+```python
+checkout = client.billing.create_checkout(plan_id="plan_pro", billing_cycle="monthly")
+print(checkout.checkout_url)
+```
+
+Find plan IDs and prices on the [pricing page](https://axilio.ai) or in your
+[dashboard](https://axilio.ai/dashboard).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Balance & invoices" icon="wallet" href="/billing/balance-and-invoices">
+    Check your balance and add funds.
+  </Card>
+  <Card title="How billing works" icon="circle-info" href="/billing/overview">
+    Per-second billing, explained.
+  </Card>
+</CardGroup>

@@ -1,6 +1,49 @@
 ---
-title: "Manage organization members"
+title: "Members"
 sidebarTitle: "Members"
+description: "Invite teammates to your organization and manage their roles."
 ---
 
-{/* TODO: rewrite from scratch */}
+Invite teammates to share an organization. Manage members in your
+[dashboard](https://axilio.ai/dashboard), or from the SDK.
+
+<Note>
+  The SDK calls below take your organization ID, which you can find in your
+  dashboard settings.
+</Note>
+
+## Invite a teammate
+
+```python
+client.org.create_invitation(
+    org_id="org_123",
+    email="teammate@example.com",
+    role="member",
+)
+```
+
+## List members
+
+```python
+members = client.org.list_members(org_id="org_123")
+for member in members.members:
+    print(member)
+```
+
+## Change a role or remove someone
+
+```python
+client.org.update_member_role(org_id="org_123", user_id="user_456", role="admin")
+client.org.remove_member(org_id="org_123", user_id="user_456")
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Organizations" icon="building" href="/org/overview">
+    What an organization is.
+  </Card>
+  <Card title="API keys" icon="key" href="/platform/api-keys">
+    Keys for the organization.
+  </Card>
+</CardGroup>

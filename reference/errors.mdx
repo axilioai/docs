@@ -1,6 +1,57 @@
 ---
-title: "Error Reference: Platform and Driver SDK Exceptions"
+title: "Errors"
 sidebarTitle: "Errors"
+description: "How the SDK signals failures: ApiError for API calls, typed errors for device control."
 ---
 
-{/* TODO: rewrite from scratch */}
+The SDK raises two kinds of error.
+
+## API calls
+
+Anything that talks to the API raises `axilio.platform.ApiError` on a failure.
+Check `status_code` and `body`:
+
+```python
+from axilio.platform import ApiError
+
+try:
+    run = client.runs.get("run_123")
+except ApiError as e:
+    if e.status_code == 404:
+        print("not found")
+    elif e.status_code == 429:
+        ...   # rate limited, back off and retry
+    else:
+        raise
+```
+
+## Device control
+
+Driving a phone raises typed errors from `axilio.drivers.mobile`:
+
+```python
+from axilio.drivers.mobile import ElementNotFoundError, TimeoutError
+
+with client.session("ANDROID") as driver:
+    try:
+        driver.find(query="a button that isn't there", timeout=5).tap()
+    except ElementNotFoundError:
+        ...
+    except TimeoutError:
+        ...
+```
+
+Others include `ConnectionError`, `DeviceOfflineError`, `NotConnectedError`, and
+`UnauthorizedError`. They all subclass `axilio.drivers.mobile.AxilioError`, so you
+can catch broadly when you want to.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/reference/configuration">
+    Client options and environment variables.
+  </Card>
+  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
+    Where device-control errors come from.
+  </Card>
+</CardGroup>

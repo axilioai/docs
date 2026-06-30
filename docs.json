@@ -89,15 +89,6 @@
             ]
           },
           {
-            "group": "Scaling",
-            "icon": "bolt",
-            "pages": [
-              "scaling/parallel-sessions",
-              "scaling/rate-limits",
-              "scaling/workflow-engine"
-            ]
-          },
-          {
             "group": "Account & Billing",
             "icon": "credit-card",
             "pages": [
@@ -230,7 +221,10 @@
     { "source": "/guides/allocating-devices", "destination": "/devices/allocate" },
     { "source": "/guides/controlling-devices", "destination": "/driver/overview" },
     { "source": "/guides/running-workflows", "destination": "/workflows/create" },
-    { "source": "/guides/parallel-execution", "destination": "/scaling/parallel-sessions" },
+    { "source": "/guides/parallel-execution", "destination": "/workflows/run" },
+    { "source": "/scaling/parallel-sessions", "destination": "/workflows/run" },
+    { "source": "/scaling/rate-limits", "destination": "/reference/configuration" },
+    { "source": "/scaling/workflow-engine", "destination": "/workflows/overview" },
     { "source": "/guides/best-practices", "destination": "/driver/overview" },
     { "source": "/platform/billing", "destination": "/billing/overview" },
     { "source": "/platform/usage", "destination": "/observability/cost" },

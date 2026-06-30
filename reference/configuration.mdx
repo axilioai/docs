@@ -1,6 +1,43 @@
 ---
-title: "Configuration Reference: Client Setup and Environment"
+title: "Configuration"
 sidebarTitle: "Configuration"
+description: "Every Client option and environment variable in one place."
 ---
 
-{/* TODO: rewrite from scratch */}
+## Client options
+
+```python
+from axilio.platform import Client
+
+client = Client(
+    api_key="axl_...",
+    base_url="https://api.axilio.ai",
+    timeout=30.0,
+    max_retries=3,
+)
+```
+
+| Option | Default | What it does |
+|---|---|---|
+| `api_key` | `AXILIO_API_KEY` env | Your API key (`axl_…`). Required. |
+| `base_url` | `AXILIO_BASE_URL` env, then `https://api.axilio.ai` | The API host. |
+| `timeout` | `30.0` | Seconds to wait per request. |
+| `max_retries` | `3` | Automatic retries on temporary failures. |
+
+## Environment variables
+
+| Variable | What it does |
+|---|---|
+| `AXILIO_API_KEY` | The key the client uses to authenticate. |
+| `AXILIO_BASE_URL` | Override the API host. |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/authentication">
+    Get a key and set it up.
+  </Card>
+  <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
+    How the SDK signals failures.
+  </Card>
+</CardGroup>

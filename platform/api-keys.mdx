@@ -1,6 +1,44 @@
 ---
-title: "Manage API keys"
+title: "API keys"
 sidebarTitle: "API Keys"
+description: "Create, list, and revoke the keys that authenticate the SDK."
 ---
 
-{/* TODO: rewrite from scratch */}
+API keys authenticate the SDK. Each key belongs to your organization and starts
+with `axl_`.
+
+## Create a key
+
+```python
+key = client.api_keys.create(name="ci-bot")
+print(key.key_value)   # the secret
+```
+
+<Warning>
+  `key_value` is shown once, right here. Save it somewhere safe; you can't see it
+  again.
+</Warning>
+
+## List keys
+
+```python
+keys = client.api_keys.list()
+```
+
+## Regenerate or delete
+
+```python
+client.api_keys.regenerate(key_id="key_123")   # new secret, the old one stops working
+client.api_keys.delete(key_id="key_123")
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/authentication">
+    How keys authenticate the SDK.
+  </Card>
+  <Card title="Members" icon="users" href="/org/members">
+    Who's in your organization.
+  </Card>
+</CardGroup>
