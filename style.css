@@ -13,6 +13,24 @@
   border-radius: 0 !important;
 }
 
+/* ── Per-surface accent — each top-level surface gets its own colour so you
+   always know where you are: Platform = brand green (the default), Drivers =
+   violet, API Reference = amber. surface-accent.js sets data-surface on <html>
+   from the URL; here we just remap Mintlify's --primary triplets, which recolour
+   the active tab, the active sidebar item, the // heading eyebrow, and other
+   accent bits in one move. Values are space-separated RGB (Mintlify reads them as
+   rgb(var(--primary) / alpha)). */
+:root[data-surface="driver"] {
+  --primary: 139 92 246 !important;       /* #8B5CF6 violet */
+  --primary-light: 167 139 250 !important; /* #A78BFA */
+  --primary-dark: 124 58 237 !important;   /* #7C3AED */
+}
+:root[data-surface="api"] {
+  --primary: 245 158 11 !important;        /* #F59E0B amber */
+  --primary-light: 251 191 36 !important;  /* #FBBF24 */
+  --primary-dark: 217 119 6 !important;    /* #D97706 */
+}
+
 /* ── Typography scale — match the rest of the brand ────────────────────────────
    axilio.ai and the dashboard run small and dense: UI text is overwhelmingly
    text-xs (12px) / text-sm (14px) IBM Plex Mono, headings text-xl…3xl. The maple
@@ -156,8 +174,8 @@ html {
    content headings, matching axilio.ai (`//PRODUCT`, `//WHY AXILIO`). ─────── */
 #content-area h2:not(.not-prose)::before {
   content: "// ";
-  color: #10b981;
-  opacity: 0.55;
+  color: rgb(var(--primary));
+  opacity: 0.6;
   font-weight: 600;
 }
 
@@ -173,14 +191,6 @@ html {
   }
 }
 
-/* Hide the tab for the section you're already in, so the bar only shows where you
-   can jump TO (a Platform page shows Driver / API Reference; a Driver page shows
-   Platform / API Reference). The active section's tab carries
-   aria-current="location"; GitHub / Dashboard are external and never active, so
-   they always stay. */
-.nav-tabs .nav-tabs-item[aria-current="location"] {
-  display: none !important;
-}
 
 /* ── Left sidebar — give it a clear right edge so the boundary is obvious and
    it reads as its own panel instead of bleeding into the page. ────────────── */

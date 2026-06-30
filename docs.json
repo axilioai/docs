@@ -5,7 +5,7 @@
   "logo": {
     "light": "/logo/axilio-light.svg",
     "dark": "/logo/axilio-dark.svg",
-    "href": "https://axilio.ai"
+    "href": "/"
   },
   "favicon": "/favicon.svg",
   "colors": {
@@ -45,7 +45,7 @@
     "tabs": [
       {
         "tab": "Platform",
-        "icon": "mobile",
+        "icon": "cloud",
         "groups": [
           {
             "group": "Get Started",
@@ -121,7 +121,7 @@
           },
           {
             "group": "Reference",
-            "icon": "code",
+            "icon": "circle-info",
             "pages": [
               "reference/errors",
               "reference/configuration"
@@ -130,12 +130,19 @@
         ]
       },
       {
-        "tab": "Driver",
+        "tab": "Drivers",
         "icon": "hand-pointer",
         "groups": [
           {
-            "group": "MobileDriver",
-            "icon": "compass",
+            "group": "Drivers",
+            "icon": "layer-group",
+            "pages": [
+              "drivers/overview"
+            ]
+          },
+          {
+            "group": "Mobile driver",
+            "icon": "mobile",
             "pages": [
               "driver/overview",
               {
@@ -164,16 +171,15 @@
                 "pages": [
                   "driver/waiting"
                 ]
+              },
+              {
+                "group": "Reference",
+                "pages": [
+                  "driver/element",
+                  "driver/screen",
+                  "driver/key"
+                ]
               }
-            ]
-          },
-          {
-            "group": "Reference",
-            "icon": "code",
-            "pages": [
-              "driver/element",
-              "driver/screen",
-              "driver/key"
             ]
           }
         ]
@@ -241,7 +247,8 @@
     { "source": "/guides/best-practices", "destination": "/driver/overview" },
     { "source": "/platform/billing", "destination": "/billing/overview" },
     { "source": "/platform/usage", "destination": "/usage/metrics" },
-    { "source": "/platform/organizations", "destination": "/org/overview" }
+    { "source": "/platform/organizations", "destination": "/org/overview" },
+    { "source": "/drivers", "destination": "/drivers/overview" }
   ],
   "footer": {
     "socials": {
