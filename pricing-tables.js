@@ -12,10 +12,13 @@
 // which pick up the docs' existing table styling.
 (function () {
   var API = "https://api.axilio.ai/api/v1";
+  var ARGUS = "https://argus.axilio.ai/api/v1";
 
   function dollars(cents) { return "$" + (cents / 100).toFixed(2); }
   function fromMicro(micro) { return "$" + (micro / 1e6).toFixed(2); }
   function perHour(microPerSec) { return "$" + ((microPerSec * 3600) / 1e6).toFixed(2); }
+  function perMillion(dollarsPerToken) { return "$" + (parseFloat(dollarsPerToken) * 1e6).toFixed(2); }
+  function contextWindow(n) { return n >= 1e6 ? (n / 1e6) + "M" : Math.round(n / 1000) + "K"; }
 
   function buildTable(headers, rows) {
     var head = "<thead><tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr></thead>";
@@ -64,11 +67,32 @@
     }).catch(function () { fallback(el); });
   }
 
+  function renderModels(el) {
+    fetch(ARGUS + "/inference/models").then(function (r) { return r.json(); }).then(function (d) {
+      var models = (d.data || []).filter(function (m) { return m.type === "vlm"; })
+        .sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+      if (!models.length) { return fallback(el); }
+      var rows = models.map(function (m) {
+        var pr = m.pricing || {};
+        return [
+          "<strong>" + m.name + "</strong>",
+          m.owned_by || "",
+          contextWindow(m.context_window || 0),
+          perMillion(pr.input || 0),
+          perMillion(pr.output || 0)
+        ];
+      });
+      el.innerHTML = buildTable(["Model", "Provider", "Context", "Input / 1M", "Output / 1M"], rows);
+    }).catch(function () { fallback(el); });
+  }
+
   function run() {
     var p = document.getElementById("axilio-plans");
     if (p && !p.dataset.loaded) { p.dataset.loaded = "1"; renderPlans(p); }
     var r = document.getElementById("axilio-rental-plans");
     if (r && !r.dataset.loaded) { r.dataset.loaded = "1"; renderRentals(r); }
+    var m = document.getElementById("axilio-models");
+    if (m && !m.dataset.loaded) { m.dataset.loaded = "1"; renderModels(m); }
   }
 
   run();
