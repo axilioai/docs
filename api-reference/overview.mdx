@@ -1,0 +1,42 @@
+---
+title: "API Reference"
+sidebarTitle: "Overview"
+description: "The Axilio REST API: base URLs, authentication, and how to read these pages."
+---
+
+These pages are generated from Axilio's OpenAPI specs, so they stay in sync with
+the live API. Each endpoint shows its parameters, an example request, the
+response, and a **Try it** panel.
+
+Most people use the [Python SDK](/quickstart) instead of calling the API directly.
+Reach for the REST API when you're not working in Python.
+
+## Base URLs
+
+| API | Base URL |
+|---|---|
+| REST API | `https://api.axilio.ai/api/v1` |
+| Vision API ([Argus](/vision/overview)) | `https://argus.axilio.ai` |
+
+## Authentication
+
+Send your API key in the `X-Axilio-Api-Key` header:
+
+```bash
+curl https://api.axilio.ai/api/v1/devices/available \
+  -H "X-Axilio-Api-Key: axl_your_key_here"
+```
+
+Get a key from the [dashboard](https://axilio.ai/dashboard). See
+[Authentication](/authentication) for the SDK equivalent.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Use the Python SDK instead.
+  </Card>
+  <Card title="Vision" icon="eye" href="/vision/overview">
+    The Argus vision API.
+  </Card>
+</CardGroup>
