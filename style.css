@@ -74,6 +74,19 @@ html {
   line-height: 1.55;
 }
 
+/* ── Content width — the maple theme caps body pages at max-w-xl (36rem / 540px
+   at our 15px root), which on a laptop leaves ~130px of dead margin on each side
+   and squishes tables and multi-column code. Widen the column to 50rem (~750px).
+   Scoped to lg+ (below that the layout is already single-column / full-width).
+   Safe on two fronts: the `mode: "wide"` landing keeps `min-w-full`, which beats
+   max-width, so it stays full-bleed; and on narrower viewports flexbox shrinks
+   this column below the cap before the right-hand TOC can get crowded. ──────── */
+@media (min-width: 1024px) {
+  #content-area {
+    max-width: 50rem !important;
+  }
+}
+
 /* ── Responsive card grids — let homepage Columns reflow 1→2→3→4 by width
    instead of locking to a fixed `cols`. Add className="responsive-columns". ─ */
 .responsive-columns {
