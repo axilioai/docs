@@ -1,0 +1,6013 @@
+{
+  "components": {
+    "schemas": {
+      "ApikeyAPIKeyCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "ApikeyAPIKeyCreateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "key_value": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "key_value",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "ApikeyAPIKeyListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_by_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "key_preview": {
+            "type": "string"
+          },
+          "last_used_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "key_preview",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "ApikeyAPIKeyListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "api_keys": {
+            "items": {
+              "$ref": "#/components/schemas/ApikeyAPIKeyListItem"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "api_keys",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "ApikeyAPIKeyRegenerateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "key_value": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "regenerated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "key_value",
+          "created_at",
+          "regenerated_at"
+        ],
+        "type": "object"
+      },
+      "Billing_historyBillingHistoryItem": {
+        "additionalProperties": false,
+        "properties": {
+          "amount_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "amount_dollars": {
+            "format": "double",
+            "type": "number"
+          },
+          "billing_cycle": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "formatted_amount": {
+            "type": "string"
+          },
+          "hosted_invoice_url": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "invoice_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "invoice_number": {
+            "type": "string"
+          },
+          "invoice_pdf_url": {
+            "type": "string"
+          },
+          "paid_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "plan_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "invoice_number",
+          "amount_cents",
+          "currency",
+          "status",
+          "invoice_date",
+          "plan_name",
+          "billing_cycle",
+          "description",
+          "amount_dollars",
+          "formatted_amount"
+        ],
+        "type": "object"
+      },
+      "Billing_historyBillingHistoryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Billing_historyBillingHistoryItem"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total_count": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total_count",
+          "has_more"
+        ],
+        "type": "object"
+      },
+      "DeleteAPIKeyOutputBody": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "MessageOutputBody": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "OrganizationInvitationListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "invitations": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationInvitationResponse"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "invitations"
+        ],
+        "type": "object"
+      },
+      "OrganizationInvitationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "external_invitation_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "invited_by": {
+            "type": "string"
+          },
+          "invited_by_name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "email",
+          "role",
+          "invited_by"
+        ],
+        "type": "object"
+      },
+      "OrganizationOrganizationListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationOrganizationResponse"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "organizations"
+        ],
+        "type": "object"
+      },
+      "OrganizationOrganizationMemberListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationOrganizationMemberResponse"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "members"
+        ],
+        "type": "object"
+      },
+      "OrganizationOrganizationMemberResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "user_id",
+          "role"
+        ],
+        "type": "object"
+      },
+      "OrganizationOrganizationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "balance_microdollars": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "external_org_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "logo_url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "onboarding_completed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "external_org_id",
+          "name",
+          "slug",
+          "balance_microdollars"
+        ],
+        "type": "object"
+      },
+      "PhoneActiveSession": {
+        "additionalProperties": false,
+        "properties": {
+          "allocated_at": {
+            "type": "string"
+          },
+          "allocated_by": {
+            "type": "string"
+          },
+          "is_dedicated_phone": {
+            "type": "boolean"
+          },
+          "location": {
+            "type": "string"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "phone_name": {
+            "type": "string"
+          },
+          "phone_status": {
+            "type": "string"
+          },
+          "phone_type": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          },
+          "workflow_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "phone_id",
+          "phone_status",
+          "allocated_at",
+          "is_dedicated_phone"
+        ],
+        "type": "object"
+      },
+      "PhoneActiveSessionsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/PhoneActiveSession"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessions",
+          "total"
+        ],
+        "type": "object"
+      },
+      "PhoneAllocatePhoneRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "phone_id": {
+            "type": "string"
+          },
+          "phone_type": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone_type"
+        ],
+        "type": "object"
+      },
+      "PhoneAllocatePhoneResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "control_url": {
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "workflow_started_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone_id",
+          "session_id",
+          "workflow_started_at"
+        ],
+        "type": "object"
+      },
+      "PhoneAvailablePhonesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "android_count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "iphone_count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "phones": {
+            "items": {
+              "$ref": "#/components/schemas/PhonePhoneSummary"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "iphone_count",
+          "android_count",
+          "phones"
+        ],
+        "type": "object"
+      },
+      "PhoneDeallocatePhoneResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "deallocated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone_id",
+          "workflow_id",
+          "session_id"
+        ],
+        "type": "object"
+      },
+      "PhonePhoneAppSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "android_package_name": {
+            "type": "string"
+          },
+          "app_metadata": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "category": {
+            "type": "string"
+          },
+          "create_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "icon_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "ios_app_store_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_supported": {
+            "type": "boolean"
+          },
+          "model_datasets": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "model_status": {
+            "type": "string"
+          },
+          "model_trained_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "update_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "android_package_name",
+          "platform",
+          "category",
+          "version",
+          "is_supported",
+          "icon_url",
+          "description",
+          "ios_app_store_id",
+          "model_datasets",
+          "model_trained_at",
+          "model_status",
+          "app_metadata",
+          "create_date",
+          "update_date"
+        ],
+        "type": "object"
+      },
+      "PhonePhoneSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "android_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "create_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "current_session_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "imei1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "imei2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_heartbeat": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_interaction_timestamp": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nickname": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "one_ui_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "owner_organization_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ownership_type": {
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "phone_metadata": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "phone_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone_serial": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rental_expires_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "update_date": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "phone_id",
+          "phone_name",
+          "nickname",
+          "phone_type",
+          "status",
+          "model_id",
+          "model_name",
+          "imei1",
+          "imei2",
+          "one_ui_version",
+          "android_version",
+          "last_heartbeat",
+          "location",
+          "ownership_type",
+          "owner_organization_id",
+          "rental_expires_at",
+          "last_interaction_timestamp",
+          "phone_metadata",
+          "phone_serial",
+          "agent_version",
+          "current_session_id",
+          "create_date",
+          "update_date"
+        ],
+        "type": "object"
+      },
+      "PhonePrivatePhonesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "phones": {
+            "items": {
+              "$ref": "#/components/schemas/PhonePhoneSummary"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "phones",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "PhoneSessionDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "allocated_at": {
+            "type": "string"
+          },
+          "allocated_by": {
+            "type": "string"
+          },
+          "deallocated_at": {
+            "type": "string"
+          },
+          "is_dedicated_phone": {
+            "type": "boolean"
+          },
+          "location": {
+            "type": "string"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "phone_name": {
+            "type": "string"
+          },
+          "phone_status": {
+            "type": "string"
+          },
+          "phone_type": {
+            "type": "string"
+          },
+          "recording_status": {
+            "type": "string"
+          },
+          "recording_url": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          },
+          "workflow_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "status",
+          "source",
+          "phone_id",
+          "phone_status",
+          "allocated_at",
+          "is_dedicated_phone",
+          "recording_status"
+        ],
+        "type": "object"
+      },
+      "PhoneSessionListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "allocated_at": {
+            "type": "string"
+          },
+          "allocated_by": {
+            "type": "string"
+          },
+          "deallocated_at": {
+            "type": "string"
+          },
+          "duration_seconds": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "is_dedicated_phone": {
+            "type": "boolean"
+          },
+          "location": {
+            "type": "string"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "phone_name": {
+            "type": "string"
+          },
+          "phone_type": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          },
+          "workflow_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "status",
+          "source",
+          "phone_id",
+          "allocated_at",
+          "is_dedicated_phone"
+        ],
+        "type": "object"
+      },
+      "PhoneSessionRecordingResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "PhoneSessionsListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/PhoneSessionListItem"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessions",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "PhoneSuccessResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "PhoneSupportedPhoneAppsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "phone_apps": {
+            "items": {
+              "$ref": "#/components/schemas/PhonePhoneAppSummary"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "phone_apps",
+          "total"
+        ],
+        "type": "object"
+      },
+      "PhoneUpdateNicknameRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "nickname": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nickname"
+        ],
+        "type": "object"
+      },
+      "Phone_rentalPhoneRentalIntervalSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "interval": {
+            "type": "string"
+          },
+          "monthly_cents": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "interval",
+          "count",
+          "monthly_cents"
+        ],
+        "type": "object"
+      },
+      "Phone_rentalPhoneRentalSubscriptionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "subscriptions": {
+            "items": {
+              "$ref": "#/components/schemas/Phone_rentalPhoneRentalSubscriptionResponse"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "summary": {
+            "$ref": "#/components/schemas/Phone_rentalPhoneRentalSummary"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "subscriptions",
+          "total",
+          "has_more",
+          "summary"
+        ],
+        "type": "object"
+      },
+      "Phone_rentalPhoneRentalSubscriptionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "cancel_at_period_end": {
+            "type": "boolean"
+          },
+          "canceled_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "current_period_end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "current_period_start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "payment_status": {
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "phone_name": {
+            "type": "string"
+          },
+          "phone_nickname": {
+            "type": "string"
+          },
+          "plan_id": {
+            "type": "string"
+          },
+          "plan_interval": {
+            "type": "string"
+          },
+          "plan_name": {
+            "type": "string"
+          },
+          "plan_price_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "plan_id",
+          "plan_name",
+          "plan_interval",
+          "plan_price_cents",
+          "status",
+          "payment_status",
+          "current_period_start",
+          "current_period_end",
+          "cancel_at_period_end"
+        ],
+        "type": "object"
+      },
+      "Phone_rentalPhoneRentalSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "active_count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "combined_monthly_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "per_interval": {
+            "items": {
+              "$ref": "#/components/schemas/Phone_rentalPhoneRentalIntervalSummary"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "upcoming_charges": {
+            "items": {
+              "$ref": "#/components/schemas/Phone_rentalPhoneRentalUpcomingCharge"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "active_count",
+          "combined_monthly_cents",
+          "per_interval",
+          "upcoming_charges"
+        ],
+        "type": "object"
+      },
+      "Phone_rentalPhoneRentalUpcomingCharge": {
+        "additionalProperties": false,
+        "properties": {
+          "amount_cents": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "date": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "count",
+          "amount_cents"
+        ],
+        "type": "object"
+      },
+      "RunHistoricRun": {
+        "additionalProperties": false,
+        "properties": {
+          "cancelled_at": {
+            "type": "string"
+          },
+          "completed_at": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "error_message": {
+            "type": "string"
+          },
+          "org_id": {
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "run_metadata": {
+            "type": "string"
+          },
+          "started_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "video_url": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workflow_id",
+          "user_id",
+          "status",
+          "trigger"
+        ],
+        "type": "object"
+      },
+      "RunHistoricRunsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "end_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "search": {
+            "type": "string"
+          },
+          "start_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status_filter": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RunHistoricRunsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunHistoricRun"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "runs",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RunRunConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "phoneId": {
+            "type": "string"
+          },
+          "variables": {
+            "items": {
+              "additionalProperties": {},
+              "type": "object"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "variables"
+        ],
+        "type": "object"
+      },
+      "RunRunCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "numberOfRuns": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "runTime": {
+            "$ref": "#/components/schemas/RunRunTimeConfig"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunRunConfig"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "numberOfRuns",
+          "runTime",
+          "runs"
+        ],
+        "type": "object"
+      },
+      "RunRunCreateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "run_ids"
+        ],
+        "type": "object"
+      },
+      "RunRunEventSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {},
+          "session_id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "timestamp",
+          "session_id"
+        ],
+        "type": "object"
+      },
+      "RunRunEventsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "event_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "session_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RunRunEventsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/RunRunEventSummary"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "events",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RunRunListRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "search": {
+            "type": "string"
+          },
+          "sort_by": {
+            "items": {
+              "$ref": "#/components/schemas/RunRunSortSpec"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "status_filter": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "trigger_filter": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RunRunListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunRunResponse"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "runs",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RunRunResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "cancelled_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "create_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "error_message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "logs": {
+            "type": "string"
+          },
+          "phone_id": {
+            "type": "string"
+          },
+          "run_metadata": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "schedule_timeout_seconds": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "trace_expired_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "update_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "variables": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "video_url": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workflow_id",
+          "user_id",
+          "status",
+          "trigger",
+          "create_date",
+          "update_date"
+        ],
+        "type": "object"
+      },
+      "RunRunSortSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "order": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "order"
+        ],
+        "type": "object"
+      },
+      "RunRunStatsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "success_rate": {
+            "format": "double",
+            "type": "number"
+          },
+          "total_runs": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_runs",
+          "success_rate"
+        ],
+        "type": "object"
+      },
+      "RunRunTimeConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "isImmediate": {
+            "type": "boolean"
+          },
+          "isScheduled": {
+            "type": "boolean"
+          },
+          "scheduleTime": {
+            "type": "string"
+          },
+          "scheduleTimeoutSeconds": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "isImmediate",
+          "isScheduled",
+          "scheduleTimeoutSeconds"
+        ],
+        "type": "object"
+      },
+      "RunSuccessResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "SubscriptionBalanceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "balance_display": {
+            "type": "string"
+          },
+          "balance_microdollars": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "balance_microdollars",
+          "balance_display"
+        ],
+        "type": "object"
+      },
+      "SubscriptionSubscriptionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "balance_display": {
+            "type": "string"
+          },
+          "balance_microdollars": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "billing_cycle": {
+            "type": "string"
+          },
+          "cancel_at_period_end": {
+            "type": "boolean"
+          },
+          "canceled_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "current_period_end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "current_period_start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "included_balance_display": {
+            "type": "string"
+          },
+          "included_balance_microdollars": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "max_concurrent_runs": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "monthly_price": {
+            "format": "double",
+            "type": "number"
+          },
+          "pending_downgrade_effective_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "pending_downgrade_plan_id": {
+            "type": "string"
+          },
+          "plan_id": {
+            "type": "string"
+          },
+          "plan_name": {
+            "type": "string"
+          },
+          "plan_tier": {
+            "type": "string"
+          },
+          "price_per_second_microdollars": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "trial_end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "yearly_price": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "plan_id",
+          "plan_name",
+          "plan_tier",
+          "billing_cycle",
+          "status",
+          "current_period_start",
+          "current_period_end",
+          "cancel_at_period_end",
+          "monthly_price",
+          "yearly_price",
+          "max_concurrent_runs",
+          "balance_microdollars",
+          "balance_display",
+          "price_per_second_microdollars",
+          "included_balance_microdollars",
+          "included_balance_display"
+        ],
+        "type": "object"
+      },
+      "UsageChartDataPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "is_current": {
+            "type": "boolean"
+          },
+          "period": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "period",
+          "value",
+          "is_current",
+          "timestamp"
+        ],
+        "type": "object"
+      },
+      "UsageComputeMinutes": {
+        "additionalProperties": false,
+        "properties": {
+          "change": {
+            "format": "double",
+            "type": "number"
+          },
+          "chart_data": {
+            "items": {
+              "$ref": "#/components/schemas/UsageChartDataPoint"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total_minutes": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "total_minutes",
+          "change",
+          "chart_data"
+        ],
+        "type": "object"
+      },
+      "UsageCostByProduct": {
+        "additionalProperties": false,
+        "properties": {
+          "inference": {
+            "format": "double",
+            "type": "number"
+          },
+          "other": {
+            "format": "double",
+            "type": "number"
+          },
+          "sessions": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "sessions",
+          "inference",
+          "other"
+        ],
+        "type": "object"
+      },
+      "UsageInference": {
+        "additionalProperties": false,
+        "properties": {
+          "api_key_id": {
+            "type": "string"
+          },
+          "cost_microdollars": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "inference_id": {
+            "type": "string"
+          },
+          "latency_ms": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "model": {
+            "type": "string"
+          },
+          "ocr_engine": {
+            "type": "string"
+          },
+          "ocr_pages": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "vlm_model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "inference_id",
+          "endpoint",
+          "model",
+          "ocr_pages",
+          "cost_microdollars",
+          "latency_ms",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "UsageInferenceSortSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "order": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "order"
+        ],
+        "type": "object"
+      },
+      "UsageInferencesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "end_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "endpoint_filter": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "model": {
+            "type": "string"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "search": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "sort_by": {
+            "items": {
+              "$ref": "#/components/schemas/UsageInferenceSortSpec"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "start_date": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date"
+        ],
+        "type": "object"
+      },
+      "UsageInferencesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "inferences": {
+            "items": {
+              "$ref": "#/components/schemas/UsageInference"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "inferences",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "UsageInfrastructureCosts": {
+        "additionalProperties": false,
+        "properties": {
+          "change": {
+            "format": "double",
+            "type": "number"
+          },
+          "chart_data": {
+            "items": {
+              "$ref": "#/components/schemas/UsageChartDataPoint"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "this_period": {
+            "format": "double",
+            "type": "number"
+          },
+          "total": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "this_period",
+          "change",
+          "chart_data"
+        ],
+        "type": "object"
+      },
+      "UsageUsageMetricsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "compute_minutes": {
+            "$ref": "#/components/schemas/UsageComputeMinutes"
+          },
+          "cost_by_product": {
+            "$ref": "#/components/schemas/UsageCostByProduct"
+          },
+          "granularity": {
+            "type": "string"
+          },
+          "inference_chart_data": {
+            "items": {
+              "$ref": "#/components/schemas/UsageChartDataPoint"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "infra_costs": {
+            "$ref": "#/components/schemas/UsageInfrastructureCosts"
+          },
+          "period_end": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "session_chart_data": {
+            "items": {
+              "$ref": "#/components/schemas/UsageChartDataPoint"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "infra_costs",
+          "compute_minutes",
+          "cost_by_product",
+          "session_chart_data",
+          "inference_chart_data",
+          "period_start",
+          "period_end",
+          "granularity"
+        ],
+        "type": "object"
+      },
+      "UserAuthResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "org_slug": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "user_id"
+        ],
+        "type": "object"
+      },
+      "UserInviteCodeValidationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "type": "object"
+      },
+      "UserProvisionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "org_slug": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
+        "type": "object"
+      },
+      "UserSignInRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "UserSignUpRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "invite_code": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "first_name",
+          "last_name"
+        ],
+        "type": "object"
+      },
+      "UserUserResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_admin": {
+            "type": "boolean"
+          },
+          "is_verified": {
+            "type": "boolean"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "is_verified",
+          "is_admin",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "UserWaitlistRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "company": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "UserWaitlistResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "type": "object"
+      },
+      "V2ErrorDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "location": {
+            "description": "Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id'",
+            "type": "string"
+          },
+          "message": {
+            "description": "Error message text",
+            "type": "string"
+          },
+          "value": {
+            "description": "The value at the given location"
+          }
+        },
+        "type": "object"
+      },
+      "V2ErrorModel": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "examples": [
+              "Property foo is required but is missing."
+            ],
+            "type": "string"
+          },
+          "errors": {
+            "description": "Optional list of individual error details",
+            "items": {
+              "$ref": "#/components/schemas/V2ErrorDetail"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "instance": {
+            "description": "A URI reference that identifies the specific occurrence of the problem.",
+            "examples": [
+              "https://example.com/error-log/abc123"
+            ],
+            "format": "uri",
+            "type": "string"
+          },
+          "status": {
+            "description": "HTTP status code",
+            "examples": [
+              400
+            ],
+            "format": "int64",
+            "type": "integer"
+          },
+          "title": {
+            "description": "A short, human-readable summary of the problem type. This value should not change between occurrences of the error.",
+            "examples": [
+              "Bad Request"
+            ],
+            "type": "string"
+          },
+          "type": {
+            "default": "about:blank",
+            "description": "A URI reference to human-readable documentation for the error.",
+            "examples": [
+              "https://example.com/errors/example"
+            ],
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WorkflowGetCodeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "revision_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "revision_id",
+          "revision",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "WorkflowListRevisionsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "revisions": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowRevisionSummary"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "revisions"
+        ],
+        "type": "object"
+      },
+      "WorkflowRestoreRevisionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "revision_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision_id"
+        ],
+        "type": "object"
+      },
+      "WorkflowRevisionDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "author_user_id": {
+            "type": "string"
+          },
+          "bytes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "code_source": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "code_source",
+          "author_user_id",
+          "message",
+          "bytes",
+          "sha256",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "WorkflowRevisionSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "author_user_id": {
+            "type": "string"
+          },
+          "bytes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "author_user_id",
+          "message",
+          "bytes",
+          "sha256",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "WorkflowSaveCodeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "type": "object"
+      },
+      "WorkflowSaveCodeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "no_op": {
+            "type": "boolean"
+          },
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "revision_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision_id",
+          "revision",
+          "no_op"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "goal": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ocr_engine": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowCreateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowFromCodeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "code_source": {
+            "type": "string"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "code_source"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowFromCodeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "revision_id": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "revision_id",
+          "revision"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "workflows": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowWorkflowResponse"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "workflows",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "stats": {
+            "$ref": "#/components/schemas/WorkflowWorkflowStats"
+          },
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowWorkflowSummary"
+          }
+        },
+        "required": [
+          "workflow",
+          "stats"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowStats": {
+        "additionalProperties": false,
+        "properties": {
+          "success_rate": {
+            "format": "double",
+            "type": "number"
+          },
+          "total_runs": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "success_rate",
+          "total_runs"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "create_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "last_run_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "ocr_engine": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "platform": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "update_date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "organization_id",
+          "name",
+          "goal",
+          "platform",
+          "status",
+          "ocr_engine",
+          "create_date",
+          "update_date",
+          "last_run_at"
+        ],
+        "type": "object"
+      },
+      "WorkflowWorkflowUpdateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "ocr_engine": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "description": "Customer API key (axl_ prefix).",
+        "in": "header",
+        "name": "X-Axilio-Api-Key",
+        "type": "apiKey"
+      },
+      "bearerAuth": {
+        "bearerFormat": "User JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Axilio backend HTTP API.",
+    "title": "Axilio API",
+    "version": "0.28.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api-keys": {
+      "get": {
+        "description": "Lists the API keys for the caller's organization, with optional paging, search, and sort.",
+        "operationId": "api_keys_list",
+        "parameters": [
+          {
+            "description": "max items per page",
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "description": "max items per page",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "pagination offset",
+            "explode": false,
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "description": "pagination offset",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApikeyAPIKeyListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List API keys",
+        "tags": [
+          "API Keys"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      },
+      "post": {
+        "description": "Mints a fresh API key for the caller's organization. The plaintext key value is returned exactly once and never stored or returned again.",
+        "operationId": "api_keys_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApikeyAPIKeyCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApikeyAPIKeyCreateResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Create an API key",
+        "tags": [
+          "API Keys"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/api-keys/{keyID}": {
+      "delete": {
+        "description": "Revokes an API key. Subsequent requests using its value are rejected as unauthorized.",
+        "operationId": "api_keys_delete",
+        "parameters": [
+          {
+            "description": "API key identifier to delete",
+            "in": "path",
+            "name": "keyID",
+            "required": true,
+            "schema": {
+              "description": "API key identifier to delete",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteAPIKeyOutputBody"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Delete an API key",
+        "tags": [
+          "API Keys"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/api-keys/{keyID}/regenerate": {
+      "post": {
+        "description": "Rotates the plaintext value for an existing API key, preserving its name and identifier. The previous value is invalidated immediately.",
+        "operationId": "api_keys_regenerate",
+        "parameters": [
+          {
+            "description": "API key identifier to regenerate",
+            "in": "path",
+            "name": "keyID",
+            "required": true,
+            "schema": {
+              "description": "API key identifier to regenerate",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApikeyAPIKeyRegenerateResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Regenerate an API key",
+        "tags": [
+          "API Keys"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/billing/balance": {
+      "get": {
+        "description": "Returns the organization's current credit balance in microdollars plus a display string.",
+        "operationId": "billing_get_balance",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionBalanceResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get account balance",
+        "tags": [
+          "Billing"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/billing/history": {
+      "get": {
+        "description": "Paginated invoice history for the caller's organization with optional filters and sort.",
+        "operationId": "billing_get_history",
+        "parameters": [
+          {
+            "description": "max items per page",
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "description": "max items per page",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "pagination offset",
+            "explode": false,
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "description": "pagination offset",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "free-text search across invoice number/description",
+            "explode": false,
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "description": "free-text search across invoice number/description",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by billing cycle",
+            "explode": false,
+            "in": "query",
+            "name": "billing_cycle",
+            "schema": {
+              "description": "filter by billing cycle",
+              "type": "string"
+            }
+          },
+          {
+            "description": "column to sort by",
+            "explode": false,
+            "in": "query",
+            "name": "sort_by",
+            "schema": {
+              "description": "column to sort by",
+              "type": "string"
+            }
+          },
+          {
+            "description": "asc or desc",
+            "explode": false,
+            "in": "query",
+            "name": "sort_order",
+            "schema": {
+              "description": "asc or desc",
+              "type": "string"
+            }
+          },
+          {
+            "description": "invoice status filter (lowercase)",
+            "explode": false,
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "description": "invoice status filter (lowercase)",
+              "type": "string"
+            }
+          },
+          {
+            "description": "RFC3339 lower bound for invoice_date",
+            "explode": false,
+            "in": "query",
+            "name": "date_from",
+            "schema": {
+              "description": "RFC3339 lower bound for invoice_date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "RFC3339 upper bound for invoice_date (with date_from = an exact calendar month)",
+            "explode": false,
+            "in": "query",
+            "name": "date_to",
+            "schema": {
+              "description": "RFC3339 upper bound for invoice_date (with date_from = an exact calendar month)",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by plan name",
+            "explode": false,
+            "in": "query",
+            "name": "plan_name",
+            "schema": {
+              "description": "filter by plan name",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter to invoices for a dedicated phone",
+            "explode": false,
+            "in": "query",
+            "name": "phone_id",
+            "schema": {
+              "description": "filter to invoices for a dedicated phone",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Billing_historyBillingHistoryResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List billing history",
+        "tags": [
+          "Billing"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/billing/phone-rental-subscriptions": {
+      "get": {
+        "description": "Returns every active and pending phone rental subscription owned by the caller's organization.",
+        "operationId": "billing_get_rental_subscriptions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Phone_rentalPhoneRentalSubscriptionListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List phone rentals",
+        "tags": [
+          "Billing"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/billing/subscription": {
+      "get": {
+        "description": "Returns the caller organization's current plan.",
+        "operationId": "billing_get_subscription",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSubscriptionResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get current plan",
+        "tags": [
+          "Billing"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/organizations": {
+      "get": {
+        "description": "Returns every organization the caller is a member of.",
+        "operationId": "organizations_list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationOrganizationListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List organizations",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/organizations/{org_id}": {
+      "get": {
+        "description": "Returns a single organization the caller is a member of.",
+        "operationId": "organizations_get",
+        "parameters": [
+          {
+            "description": "organization identifier",
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "organization identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationOrganizationResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get an organization",
+        "tags": [
+          "Organizations"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/organizations/{org_id}/invitations": {
+      "get": {
+        "description": "Returns every outstanding invitation for the organization.",
+        "operationId": "organizations_list_invitations",
+        "parameters": [
+          {
+            "description": "organization identifier",
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "organization identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationInvitationListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List pending invitations",
+        "tags": [
+          "Organizations"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/organizations/{org_id}/members": {
+      "get": {
+        "description": "Returns every member of the organization with their role and email.",
+        "operationId": "organizations_list_members",
+        "parameters": [
+          {
+            "description": "organization identifier",
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "organization identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationOrganizationMemberListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List members",
+        "tags": [
+          "Organizations"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/allocate": {
+      "post": {
+        "description": "Allocates a phone to a workflow from the editor. If allocation setup fails it is rolled back so the user can't be billed for a session that never starts.",
+        "operationId": "phones_allocate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhoneAllocatePhoneRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneAllocatePhoneResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Allocate a phone",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/phones/available": {
+      "get": {
+        "description": "Returns ACTIVE unallocated phones the caller's org can claim, optionally filtered by phone type (iphone/android). Counts by type are included alongside the list.",
+        "operationId": "phones_available",
+        "parameters": [
+          {
+            "description": "filter by device type (iphone/android)",
+            "explode": false,
+            "in": "query",
+            "name": "device_type",
+            "schema": {
+              "description": "filter by device type (iphone/android)",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneAvailablePhonesResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List available phones",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/device-apps/supported": {
+      "get": {
+        "description": "Returns the apps the platform supports orchestration for, optionally filtered by platform + category. Platform admins see internal/unreleased apps too.",
+        "operationId": "phones_supported_apps",
+        "parameters": [
+          {
+            "description": "filter by platform",
+            "explode": false,
+            "in": "query",
+            "name": "platform",
+            "schema": {
+              "description": "filter by platform",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by app category",
+            "explode": false,
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "description": "filter by app category",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneSupportedPhoneAppsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List supported apps",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/my": {
+      "get": {
+        "description": "Returns private and rented phones owned by the caller's org. include_expired=true keeps rentals past their rental_expires_at in the result so users can see what they used to own.",
+        "operationId": "phones_mine",
+        "parameters": [
+          {
+            "description": "include rented devices whose rental window has expired",
+            "explode": false,
+            "in": "query",
+            "name": "include_expired",
+            "schema": {
+              "description": "include rented devices whose rental window has expired",
+              "type": "boolean"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 100,
+              "format": "int64",
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "free-text search across nickname, name, model, location",
+            "explode": false,
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "description": "free-text search across nickname, name, model, location",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by phone status (ACTIVE/INACTIVE/MAINTENANCE/SUSPENDED)",
+            "explode": false,
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "description": "filter by phone status (ACTIVE/INACTIVE/MAINTENANCE/SUSPENDED)",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "filter by phone type (IPHONE/ANDROID)",
+            "explode": false,
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "description": "filter by phone type (IPHONE/ANDROID)",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "only phones whose rental expires at/after this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "rental_expires_after",
+            "schema": {
+              "description": "only phones whose rental expires at/after this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only phones whose rental expires at/before this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "rental_expires_before",
+            "schema": {
+              "description": "only phones whose rental expires at/before this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only phones last seen at/after this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "last_active_after",
+            "schema": {
+              "description": "only phones last seen at/after this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only phones last seen at/before this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "last_active_before",
+            "schema": {
+              "description": "only phones last seen at/before this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "sort column (created|rental_expires|last_active|status|type|location)",
+            "explode": false,
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "description": "sort column (created|rental_expires|last_active|status|type|location)",
+              "type": "string"
+            }
+          },
+          {
+            "description": "sort direction (asc|desc)",
+            "explode": false,
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "description": "sort direction (asc|desc)",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhonePrivatePhonesResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List your phones",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/sessions": {
+      "get": {
+        "description": "Returns one page of the org's phone sessions for the Session Inspector table: active/unbilled sessions pinned on top, terminal history paginated beneath. Covers workflow runs and workflow-less interactive leases; each row links to a session. Filters: search, workflow_id, status.",
+        "operationId": "phones_list_sessions",
+        "parameters": [
+          {
+            "description": "max rows to return (default 50, max 100)",
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "description": "max rows to return (default 50, max 100)",
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "rows to skip for pagination",
+            "explode": false,
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "description": "rows to skip for pagination",
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "case-insensitive match on phone/session/workflow",
+            "explode": false,
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "description": "case-insensitive match on phone/session/workflow",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only sessions for this workflow",
+            "explode": false,
+            "in": "query",
+            "name": "workflow_id",
+            "schema": {
+              "description": "only sessions for this workflow",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by session status (ACTIVE/COMPLETED/CANCELLED/EXPIRED); repeatable",
+            "explode": false,
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "description": "filter by session status (ACTIVE/COMPLETED/CANCELLED/EXPIRED); repeatable",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "filter by source: workflow and/or interactive; repeatable",
+            "explode": false,
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "description": "filter by source: workflow and/or interactive; repeatable",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "filter by type: shared and/or dedicated; repeatable",
+            "explode": false,
+            "in": "query",
+            "name": "dedicated",
+            "schema": {
+              "description": "filter by type: shared and/or dedicated; repeatable",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "only sessions started at/after this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "started_after",
+            "schema": {
+              "description": "only sessions started at/after this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only sessions started at/before this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "started_before",
+            "schema": {
+              "description": "only sessions started at/before this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only sessions de-allocated at/after this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "ended_after",
+            "schema": {
+              "description": "only sessions de-allocated at/after this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only sessions de-allocated at/before this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "ended_before",
+            "schema": {
+              "description": "only sessions de-allocated at/before this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "sort column: started|ended|status|duration (default started)",
+            "explode": false,
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "description": "sort column: started|ended|status|duration (default started)",
+              "type": "string"
+            }
+          },
+          {
+            "description": "sort direction: asc|desc (default desc)",
+            "explode": false,
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "description": "sort direction: asc|desc (default desc)",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneSessionsListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List sessions",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/sessions/active": {
+      "get": {
+        "description": "Returns one page of the organization's currently-active phone sessions joined with phone + workflow display fields: in-flight runs, workflow-less interactive leases, and dedicated phones in use. Paginated via limit (default 25, max 100) + offset; the response total is the full active count. Powers the dashboard overview.",
+        "operationId": "phones_active_sessions",
+        "parameters": [
+          {
+            "description": "max rows to return (default 25, max 100)",
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "description": "max rows to return (default 25, max 100)",
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "rows to skip for pagination",
+            "explode": false,
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "description": "rows to skip for pagination",
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "case-insensitive match on phone name/nickname/id, session id, or workflow name",
+            "explode": false,
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "description": "case-insensitive match on phone name/nickname/id, session id, or workflow name",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by ownership: 'dedicated' or 'shared'",
+            "explode": false,
+            "in": "query",
+            "name": "dedicated",
+            "schema": {
+              "description": "filter by ownership: 'dedicated' or 'shared'",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by source: 'workflow' or 'interactive'",
+            "explode": false,
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "description": "filter by source: 'workflow' or 'interactive'",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneActiveSessionsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List active sessions",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/sessions/{id}": {
+      "get": {
+        "description": "Returns one session for the Session Inspector: session lifecycle + phone display fields + workflow name (when tied to one) + an inlined presigned recording URL. Works for active and terminal sessions, and for workflow runs and workflow-less interactive leases. Org-scoped: another org's session reads as not found.",
+        "operationId": "phones_get_session",
+        "parameters": [
+          {
+            "description": "phone session id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "phone session id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneSessionDetailResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get a session",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/sessions/{id}/recording": {
+      "get": {
+        "description": "Returns a short-lived URL for the session's screen recording, keyed on session_id \u2014 so it works for workflow runs and workflow-less interactive leases alike. Status is \"pending\" (no URL) when the recording hasn't finished uploading yet. Org-scoped: another org's session reads as not found.",
+        "operationId": "phones_session_recording",
+        "parameters": [
+          {
+            "description": "phone session id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "phone session id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneSessionRecordingResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get a session recording",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/user/deallocate": {
+      "post": {
+        "description": "Deallocates a phone the caller's org currently holds. The session is billed and the phone is torn down asynchronously.",
+        "operationId": "phones_deallocate",
+        "parameters": [
+          {
+            "description": "device identifier to deallocate",
+            "explode": false,
+            "in": "query",
+            "name": "phone_id",
+            "required": true,
+            "schema": {
+              "description": "device identifier to deallocate",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneDeallocatePhoneResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Release a phone",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/phones/{phone_id}": {
+      "get": {
+        "description": "Returns a single phone by its identifier.",
+        "operationId": "phones_get",
+        "parameters": [
+          {
+            "description": "device identifier",
+            "in": "path",
+            "name": "phone_id",
+            "required": true,
+            "schema": {
+              "description": "device identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhonePhoneSummary"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get a phone",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/{phone_id}/nickname": {
+      "patch": {
+        "description": "Sets the human-readable display name on a private phone the caller's org owns. Returns the updated phone summary.",
+        "operationId": "phones_nickname",
+        "parameters": [
+          {
+            "description": "device identifier",
+            "in": "path",
+            "name": "phone_id",
+            "required": true,
+            "schema": {
+              "description": "device identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhoneUpdateNicknameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhonePhoneSummary"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Rename a phone",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/phones/{phone_id}/wipe": {
+      "post": {
+        "description": "Requests an on-demand factory reset of a private phone the caller's org owns. Requires the phone to be ACTIVE and not currently allocated. Sets the phone to MAINTENANCE while the wipe is carried out.",
+        "operationId": "phones_wipe",
+        "parameters": [
+          {
+            "description": "device identifier",
+            "in": "path",
+            "name": "phone_id",
+            "required": true,
+            "schema": {
+              "description": "device identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneSuccessResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Wipe a phone",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/runs": {
+      "post": {
+        "description": "Returns paginated recent runs for the caller's org. Filters: workflow, search text, status, trigger; sort by any of the columns listed in RunSortField.",
+        "operationId": "runs_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRunListRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRunListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List runs",
+        "tags": [
+          "Runs"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/runs/events": {
+      "post": {
+        "description": "Returns paginated run events for a session, filtered by session_id.",
+        "operationId": "runs_list_events",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRunEventsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRunEventsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List run events",
+        "tags": [
+          "Runs"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/runs/history": {
+      "post": {
+        "description": "Returns paginated historic runs for the caller's user. Use POST /runs for recent (non-archived) runs.",
+        "operationId": "runs_list_historic",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunHistoricRunsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunHistoricRunsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List run history",
+        "tags": [
+          "Runs"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/runs/stats/{workflowID}": {
+      "get": {
+        "description": "Returns total run count + success rate for the given workflow, scoped to the caller's user.",
+        "operationId": "runs_stats",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRunStatsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get workflow stats",
+        "tags": [
+          "Runs"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/runs/user/{runID}": {
+      "get": {
+        "description": "Returns one run by ID, scoped to the caller's organization.",
+        "operationId": "runs_get",
+        "parameters": [
+          {
+            "description": "run identifier",
+            "in": "path",
+            "name": "runID",
+            "required": true,
+            "schema": {
+              "description": "run identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRunResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get a run",
+        "tags": [
+          "Runs"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/runs/{runID}": {
+      "patch": {
+        "description": "Transitions a run to CANCELLED, scoped to the caller's org.",
+        "operationId": "runs_cancel",
+        "parameters": [
+          {
+            "description": "run identifier",
+            "in": "path",
+            "name": "runID",
+            "required": true,
+            "schema": {
+              "description": "run identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunSuccessResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Cancel a run",
+        "tags": [
+          "Runs"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/runs/{workflowID}": {
+      "post": {
+        "description": "Creates one or more runs against the given workflow and queues them for execution. Pre-flight checks: balance sufficient, concurrency limit, workflow exists. Runs that fail to queue are marked FAILED immediately so they stop counting toward the concurrency limit.",
+        "operationId": "runs_create",
+        "parameters": [
+          {
+            "description": "workflow to create runs for",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow to create runs for",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRunCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRunCreateResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Start a run",
+        "tags": [
+          "Runs"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/usage/inferences": {
+      "post": {
+        "description": "Paginated, filterable list of inference calls (/infer + /locate) the caller's user was billed for. Filters: date range, endpoint, free-text search. Ordered by call time DESC.",
+        "operationId": "usage_list_inferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsageInferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageInferencesResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List inference calls",
+        "tags": [
+          "Usage"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/usage/metrics": {
+      "get": {
+        "description": "Returns infrastructure cost and compute-minute summaries for the caller's user over a date range, plus per-bucket chart data. Granularity is hourly (\u226424h window) or daily. Use POST /usage/metrics if you need richer body params; this endpoint takes query params only.",
+        "operationId": "usage_get_metrics",
+        "parameters": [
+          {
+            "description": "start of reporting window (RFC3339)",
+            "explode": false,
+            "in": "query",
+            "name": "start_date",
+            "required": true,
+            "schema": {
+              "description": "start of reporting window (RFC3339)",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "end of reporting window (RFC3339)",
+            "explode": false,
+            "in": "query",
+            "name": "end_date",
+            "required": true,
+            "schema": {
+              "description": "end of reporting window (RFC3339)",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "bucket resolution",
+            "explode": false,
+            "in": "query",
+            "name": "granularity",
+            "schema": {
+              "default": "daily",
+              "description": "bucket resolution",
+              "enum": [
+                "hourly",
+                "daily"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "IANA timezone for bucketing periods (e.g., America/Los_Angeles)",
+            "explode": false,
+            "in": "query",
+            "name": "timezone",
+            "schema": {
+              "default": "UTC",
+              "description": "IANA timezone for bucketing periods (e.g., America/Los_Angeles)",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageUsageMetricsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get usage metrics",
+        "tags": [
+          "Usage"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "description": "Returns the authenticated user's profile (id, email, verified/admin flags, timestamps).",
+        "operationId": "user_get_me",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserUserResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get your profile",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/workflows": {
+      "get": {
+        "description": "Paginated list of workflows in the caller's org. Filters via query params: search, status, platform. Use POST /workflows/list for richer body-shaped queries with sort.",
+        "operationId": "workflows_list",
+        "parameters": [
+          {
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 100,
+              "format": "int64",
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "free-text search across workflow name",
+            "explode": false,
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "description": "free-text search across workflow name",
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by workflow status (lowercase)",
+            "explode": false,
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "description": "filter by workflow status (lowercase)",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "filter by device platform (lowercase)",
+            "explode": false,
+            "in": "query",
+            "name": "platform",
+            "schema": {
+              "description": "filter by device platform (lowercase)",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "only workflows created at/after this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "created_after",
+            "schema": {
+              "description": "only workflows created at/after this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only workflows created at/before this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "created_before",
+            "schema": {
+              "description": "only workflows created at/before this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only workflows last run at/after this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "last_run_after",
+            "schema": {
+              "description": "only workflows last run at/after this RFC3339 time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only workflows last run at/before this RFC3339 time",
+            "explode": false,
+            "in": "query",
+            "name": "last_run_before",
+            "schema": {
+              "description": "only workflows last run at/before this RFC3339 time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowWorkflowListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List workflows",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      },
+      "post": {
+        "description": "Creates a new workflow in the caller's org. Name must match ^[A-Za-z0-9_-]+$ and be unique within the org. Returns the workflow_id.",
+        "operationId": "workflows_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowWorkflowCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowWorkflowCreateResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Create a workflow",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/workflows/from-code": {
+      "post": {
+        "description": "Creates a workflow and its first code revision in a single transaction \u2014 the code playground's 'save as workflow'. Name must match ^[A-Za-z0-9_-]+$ and be unique within the org; platform defaults to ANDROID. Returns the workflow_id and revision_id.",
+        "operationId": "workflows_create_from_code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowWorkflowFromCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowWorkflowFromCodeResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Create a workflow from code",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/workflows/{workflowID}": {
+      "delete": {
+        "description": "Deletes a workflow. Org-scoped \u2014 workflows in other orgs return 404.",
+        "operationId": "workflows_delete",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageOutputBody"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Delete a workflow",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      },
+      "get": {
+        "description": "Returns a single workflow, scoped to the caller's org (workflows in other orgs return 404).",
+        "operationId": "workflows_get",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowWorkflowResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get a workflow",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      },
+      "put": {
+        "description": "Applies a partial update (name, platform, status, ocr_engine). Org-scoped \u2014 workflows in other orgs return 404.",
+        "operationId": "workflows_update",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowWorkflowUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowWorkflowResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Update a workflow",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/workflows/{workflowID}/code": {
+      "get": {
+        "description": "Returns the source code of the workflow's current revision, scoped to the caller's org.",
+        "operationId": "workflows_get_code",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowGetCodeResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get current workflow code",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      },
+      "post": {
+        "description": "Persists a new revision of the workflow's code. Hash-deduplicates against the current revision (no-op if unchanged). Source is capped at 256KB.",
+        "operationId": "workflows_save_code",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowSaveCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowSaveCodeResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Save workflow code",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/workflows/{workflowID}/code/restore": {
+      "post": {
+        "description": "Creates a new revision with the source of the named revision. Does NOT dedup against the current revision so the action is auditable in the revision history.",
+        "operationId": "workflows_restore_revision",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowRestoreRevisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowSaveCodeResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Restore a workflow revision",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/workflows/{workflowID}/revisions": {
+      "get": {
+        "description": "Returns revision metadata (id, number, author, message, bytes, sha256, created_at) for the workflow, in reverse-chronological order. Use the `before` cursor to paginate older revisions.",
+        "operationId": "workflows_list_revisions",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "format": "int64",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "cursor: return revisions older than this revision number",
+            "explode": false,
+            "in": "query",
+            "name": "before",
+            "schema": {
+              "default": 0,
+              "description": "cursor: return revisions older than this revision number",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowListRevisionsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List workflow revisions",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/workflows/{workflowID}/revisions/{revisionID}": {
+      "get": {
+        "description": "Returns a single revision including its full source. Defense-in-depth: the revision must belong to the named workflow or it's treated as missing.",
+        "operationId": "workflows_get_revision",
+        "parameters": [
+          {
+            "description": "workflow identifier",
+            "in": "path",
+            "name": "workflowID",
+            "required": true,
+            "schema": {
+              "description": "workflow identifier",
+              "type": "string"
+            }
+          },
+          {
+            "description": "revision identifier",
+            "in": "path",
+            "name": "revisionID",
+            "required": true,
+            "schema": {
+              "description": "revision identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowRevisionDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get a workflow revision",
+        "tags": [
+          "Workflows"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.axilio.ai/api/v1",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "API Keys"
+    },
+    {
+      "name": "Billing"
+    },
+    {
+      "name": "Organizations"
+    },
+    {
+      "name": "Phones"
+    },
+    {
+      "name": "Runs"
+    },
+    {
+      "name": "Usage"
+    },
+    {
+      "name": "User"
+    },
+    {
+      "name": "Workflows"
+    }
+  ]
+}

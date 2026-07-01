@@ -21,7 +21,7 @@ print(run.video_url)
 For any session, ask for its recording by session id:
 
 ```python
-recording = client.devices.session_recording(session_id)
+recording = client.phones.session_recording(session_id)
 
 print(recording.status)   # ready, processing, ...
 print(recording.url)      # a downloadable MP4
@@ -34,7 +34,7 @@ The `url` is a plain link to an MP4. Save it like any file:
 ```python
 import httpx
 
-recording = client.devices.session_recording(session_id)
+recording = client.phones.session_recording(session_id)
 data = httpx.get(recording.url).content
 
 with open("session.mp4", "wb") as f:

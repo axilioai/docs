@@ -183,35 +183,27 @@
         "icon": "code",
         "groups": [
           {
-            "group": "SDK Reference",
-            "icon": "code",
+            "group": "Overview",
+            "icon": "circle-info",
             "pages": [
-              "api-reference/client",
-              "api-reference/mobile-resource",
-              "api-reference/mobile-driver",
-              "api-reference/workflows-resource",
-              "api-reference/runs-resource"
+              "api-reference/overview"
             ]
           },
           {
-            "group": "Argus Vision API",
+            "group": "REST API",
+            "icon": "server",
+            "openapi": {
+              "source": "/api-reference/openapi-backend.json",
+              "directory": "api-reference/rest"
+            }
+          },
+          {
+            "group": "Vision API",
             "icon": "eye",
-            "pages": [
-              "api-reference/argus/overview",
-              "api-reference/argus/infer",
-              "api-reference/argus/locate",
-              "api-reference/argus/models"
-            ]
-          },
-          {
-            "group": "Account & Billing API",
-            "icon": "credit-card",
-            "pages": [
-              "api-reference/billing-resource",
-              "api-reference/usage-resource",
-              "api-reference/api-keys-resource",
-              "api-reference/org-resource"
-            ]
+            "openapi": {
+              "source": "/api-reference/openapi-argus.json",
+              "directory": "api-reference/vision"
+            }
           }
         ]
       },

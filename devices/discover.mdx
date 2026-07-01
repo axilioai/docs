@@ -9,7 +9,7 @@ description: "Check what phones are free, and which ones are yours."
 `available` shows how many phones are free to borrow right now:
 
 ```python
-free = client.devices.available()
+free = client.phones.available()
 print(free.android_count, "Android phones free")
 ```
 
@@ -19,7 +19,7 @@ print(free.android_count, "Android phones free")
 [dedicated ones you rented](/billing/plans):
 
 ```python
-mine = client.devices.mine()
+mine = client.phones.mine()
 
 for phone in mine.phones:
     print(phone.phone_id, phone.nickname, phone.status)

@@ -1,0 +1,787 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Argus",
+    "version": "1.1.1"
+  },
+  "paths": {
+    "/api/v1/inference/models": {
+      "get": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "List Models",
+        "description": "List the VLM models Argus supports for /locate.\n\nPublic: no API key required (it's a catalog of model names, nothing\nsensitive), so a client can discover supported models before it holds\ncredentials. The SDK fetches this once, caches it, and validates\nfind(model=...) locally so a typo fails fast with a clean error instead\nof a 400 from /locate.",
+        "operationId": "list_models",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportedModelsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inference/infer": {
+      "post": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Run Inference",
+        "operationId": "infer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AxilioApiKey": []
+          }
+        ]
+      }
+    },
+    "/api/v1/inference/locate": {
+      "post": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Run Locate",
+        "operationId": "locate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AxilioApiKey": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BoundingBox": {
+        "properties": {
+          "x1": {
+            "type": "number",
+            "title": "X1",
+            "description": "Top-left x coordinate"
+          },
+          "y1": {
+            "type": "number",
+            "title": "Y1",
+            "description": "Top-left y coordinate"
+          },
+          "x2": {
+            "type": "number",
+            "title": "X2",
+            "description": "Bottom-right x coordinate"
+          },
+          "y2": {
+            "type": "number",
+            "title": "Y2",
+            "description": "Bottom-right y coordinate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "x1",
+          "y1",
+          "x2",
+          "y2"
+        ],
+        "title": "BoundingBox"
+      },
+      "ContentBounds": {
+        "properties": {
+          "top_y": {
+            "type": "integer",
+            "title": "Top Y",
+            "description": "Top Y coordinate of content area (below notification bar)"
+          },
+          "bottom_y": {
+            "type": "integer",
+            "title": "Bottom Y",
+            "description": "Bottom Y coordinate of content area (above nav bar)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "top_y",
+          "bottom_y"
+        ],
+        "title": "ContentBounds"
+      },
+      "Detection": {
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/BoundingBox",
+            "description": "Bounding box coordinates"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "Detection confidence score"
+          },
+          "class_id": {
+            "type": "integer",
+            "title": "Class Id",
+            "description": "Class ID of detected object"
+          },
+          "class_name": {
+            "type": "string",
+            "title": "Class Name",
+            "description": "Class name of detected object"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bbox",
+          "confidence",
+          "class_id",
+          "class_name"
+        ],
+        "title": "Detection"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HashResult": {
+        "properties": {
+          "phash": {
+            "type": "string",
+            "title": "Phash",
+            "description": "Perceptual hash of the content area"
+          },
+          "ahash": {
+            "type": "string",
+            "title": "Ahash",
+            "description": "Average hash of the content area"
+          },
+          "dhash": {
+            "type": "string",
+            "title": "Dhash",
+            "description": "Difference hash of the content area"
+          },
+          "histogram": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Histogram",
+            "description": "RGB histogram (3 channels, 32 bins each)"
+          },
+          "content_bounds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContentBounds"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Content area bounds used for hashing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phash",
+          "ahash",
+          "dhash"
+        ],
+        "title": "HashResult"
+      },
+      "InferenceData": {
+        "properties": {
+          "ocr_results": {
+            "items": {
+              "$ref": "#/components/schemas/OCRResult"
+            },
+            "type": "array",
+            "title": "Ocr Results",
+            "description": "OCR text detections"
+          },
+          "icon_detections": {
+            "items": {
+              "$ref": "#/components/schemas/Detection"
+            },
+            "type": "array",
+            "title": "Icon Detections",
+            "description": "Icon detections (YOLO)"
+          },
+          "hash_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HashResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Image hash of content area"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/InferenceMetadata",
+            "description": "Inference metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metadata"
+        ],
+        "title": "InferenceData"
+      },
+      "InferenceMetadata": {
+        "properties": {
+          "inference_time_ms": {
+            "type": "number",
+            "title": "Inference Time Ms",
+            "description": "Total inference time in milliseconds"
+          },
+          "image_width": {
+            "type": "integer",
+            "title": "Image Width",
+            "description": "Input image width"
+          },
+          "image_height": {
+            "type": "integer",
+            "title": "Image Height",
+            "description": "Input image height"
+          },
+          "icon_detections_before_nms": {
+            "type": "integer",
+            "title": "Icon Detections Before Nms",
+            "description": "Number of icon detections before NMS filtering"
+          },
+          "icon_detections_after_nms": {
+            "type": "integer",
+            "title": "Icon Detections After Nms",
+            "description": "Number of icon detections after NMS filtering"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inference_time_ms",
+          "image_width",
+          "image_height",
+          "icon_detections_before_nms",
+          "icon_detections_after_nms"
+        ],
+        "title": "InferenceMetadata"
+      },
+      "InferenceRequest": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "title": "Image",
+            "description": "Base64 encoded image data"
+          },
+          "inference_type": {
+            "$ref": "#/components/schemas/InferenceType",
+            "description": "Type of inference to perform",
+            "default": "combined"
+          },
+          "confidence_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence Threshold",
+            "description": "Minimum confidence threshold for detections and OCR results",
+            "default": 0.25
+          },
+          "nms_iou_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Nms Iou Threshold",
+            "description": "IoU threshold for Non-Maximum Suppression (NMS)",
+            "default": 0.45
+          },
+          "ocr_engine": {
+            "type": "string",
+            "title": "Ocr Engine",
+            "description": "OCR engine to use: 'free' or 'premium'",
+            "default": "free"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "InferenceRequest"
+      },
+      "InferenceResponse": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Response type",
+            "default": "analyzer_result"
+          },
+          "analyzer_type": {
+            "type": "string",
+            "title": "Analyzer Type",
+            "description": "Analyzer type used",
+            "default": "all"
+          },
+          "data": {
+            "$ref": "#/components/schemas/InferenceData",
+            "description": "Inference results data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "InferenceResponse"
+      },
+      "InferenceType": {
+        "type": "string",
+        "enum": [
+          "yolo",
+          "ocr",
+          "combined"
+        ],
+        "title": "InferenceType"
+      },
+      "LocateBBox": {
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "X",
+            "description": "Top-left x in image pixels"
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Y",
+            "description": "Top-left y in image pixels"
+          },
+          "width": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Width",
+            "description": "Width in pixels"
+          },
+          "height": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Height",
+            "description": "Height in pixels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "title": "LocateBBox",
+        "description": "Pixel-space bbox returned by the VLM for the located element."
+      },
+      "LocateRequest": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "title": "Image",
+            "description": "Base64 encoded image (PNG or JPEG)"
+          },
+          "texts": {
+            "items": {
+              "$ref": "#/components/schemas/TextElementInput"
+            },
+            "type": "array",
+            "title": "Texts",
+            "description": "Pre-computed OCR text elements. Empty list means Argus skips OCR grounding and asks the VLM to locate from the image alone."
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Query",
+            "description": "Natural-language target description"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "VLM model to use; must be one of the models from GET /inference/models. Omit to use the server's configured default. The system prompt is fixed to the element-locator task."
+          }
+        },
+        "type": "object",
+        "required": [
+          "image",
+          "query"
+        ],
+        "title": "LocateRequest",
+        "description": "Argus /inference/locate request.\n\nThe caller pre-computes OCR via /inference/infer (or reuses cached\nresults keyed by frame hash) and passes the text list here. Argus does\nNOT re-run OCR; the VLM call uses the provided `texts` as grounding\ncontext."
+      },
+      "LocateResponse": {
+        "properties": {
+          "found": {
+            "type": "boolean",
+            "title": "Found",
+            "description": "Whether the VLM located the target"
+          },
+          "bbox": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocateBBox"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pixel-space bbox. None when matched_text_index is set or found=False."
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "Model self-reported confidence"
+          },
+          "matched_text_index": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Text Index",
+            "description": "Index into the request `texts` list when the answer is OCR-grounded."
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Model identifier returned by the provider"
+          },
+          "cost_microdollars": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Cost Microdollars",
+            "description": "Provider-reported cost in microdollars"
+          },
+          "prompt_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Prompt Tokens",
+            "description": "Prompt (input) tokens the model billed for this call",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completion Tokens",
+            "description": "Completion (output) tokens the model billed for this call",
+            "default": 0
+          },
+          "latency_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "description": "End-to-end VLM call latency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "found",
+          "confidence",
+          "model",
+          "cost_microdollars",
+          "latency_ms"
+        ],
+        "title": "LocateResponse",
+        "description": "Argus /inference/locate response.\n\nExactly one of `matched_text_index` or `bbox` is populated when\n`found` is True. `matched_text_index` indicates the VLM grounded its\nanswer to a specific OCR text element (pixel-accurate bbox available\nvia the original `texts` list). `bbox` is a free-form VLM bbox."
+      },
+      "ModelInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Model identifier, e.g. 'anthropic/claude-sonnet-4.5'. Pass this as `model` to /inference/locate."
+          },
+          "object": {
+            "type": "string",
+            "const": "model",
+            "title": "Object",
+            "default": "model"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Human-readable model name."
+          },
+          "owned_by": {
+            "type": "string",
+            "title": "Owned By",
+            "description": "Model provider, e.g. 'anthropic'."
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Model type. 'vlm' for the vision-language models served by /locate."
+          },
+          "context_window": {
+            "type": "integer",
+            "title": "Context Window",
+            "description": "Maximum context window, in tokens."
+          },
+          "pricing": {
+            "$ref": "#/components/schemas/ModelPricing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "owned_by",
+          "type",
+          "context_window",
+          "pricing"
+        ],
+        "title": "ModelInfo",
+        "description": "One supported model and its pricing, as a standard /v1/models catalog row."
+      },
+      "ModelPricing": {
+        "properties": {
+          "input": {
+            "type": "string",
+            "title": "Input",
+            "description": "USD per input token."
+          },
+          "output": {
+            "type": "string",
+            "title": "Output",
+            "description": "USD per output token."
+          }
+        },
+        "type": "object",
+        "required": [
+          "input",
+          "output"
+        ],
+        "title": "ModelPricing",
+        "description": "Per-token price in USD \u2014 the customer's billed rate for a /locate call."
+      },
+      "OCRResult": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Detected text content"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "OCR confidence score"
+          },
+          "bbox": {
+            "$ref": "#/components/schemas/BoundingBox",
+            "description": "Bounding box around text region"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "confidence",
+          "bbox"
+        ],
+        "title": "OCRResult"
+      },
+      "SupportedModelsResponse": {
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "list",
+            "title": "Object",
+            "default": "list"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ModelInfo"
+            },
+            "type": "array",
+            "title": "Data",
+            "description": "Supported models, sorted by id."
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SupportedModelsResponse",
+        "description": "Response for GET /inference/models.\n\nLists the VLM models supported for the element-locator task, each with\nits context window and final per-token pricing, so a client can compare\ncost and validate `find(model=...)` up front instead of round-tripping\nto /locate and getting a 400.\n\nThe set is curated: these are the vision-capable models supported for UI\ngrounding. `/locate` enforces it \u2014 an unsupported model is rejected, so\nthis is the authoritative allowlist, not just advisory.\n\nShaped like a standard /v1/models response ({object: \"list\", data: [...]})."
+      },
+      "TextElementInput": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "OCR'd text content"
+          },
+          "bbox": {
+            "$ref": "#/components/schemas/BoundingBox",
+            "description": "Normalized [0, 1] bbox in the source image"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "bbox"
+        ],
+        "title": "TextElementInput",
+        "description": "OCR-detected text element to seed the VLM's grounding context."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "AxilioApiKey": {
+        "type": "apiKey",
+        "description": "Axilio API key (axl_*).",
+        "in": "header",
+        "name": "X-Axilio-Api-Key"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://argus.axilio.ai",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Inference"
+    }
+  ]
+}

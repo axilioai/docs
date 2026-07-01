@@ -50,35 +50,39 @@ html {
   font-size: 15px;
 }
 
-/* Body / prose — 14px mono, generous line-height for long-form readability. */
+/* Body / prose — 13px mono, generous line-height for long-form readability.
+   Stepped down with the rest of the page so it sits in scale with the compact
+   sidebar (sidebar links are 0.8125rem ≈ 12px). */
 #content-area,
 #content-area p,
 #content-area li {
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
-/* Headings — smaller and tighter than maple's defaults; mono wants negative
-   tracking at display sizes. Sizes are in rem so they ride the 15px root. */
+/* Headings — the maple defaults render display-huge, which read "blown up"
+   against the small sidebar/body. Step the whole heading scale down so the page
+   feels like the same dense instrument the nav does. Sizes are in rem so they
+   ride the 15px root; mono wants negative tracking at display sizes. */
 #content-area h1 {
-  font-size: 1.95rem;   /* ~29px */
-  line-height: 1.15;
+  font-size: 1.55rem;   /* ~23px */
+  line-height: 1.18;
   letter-spacing: -0.01em;
   font-weight: 700;
 }
 #content-area h2 {
-  font-size: 1.45rem;   /* ~22px */
-  line-height: 1.2;
+  font-size: 1.2rem;    /* ~18px */
+  line-height: 1.25;
   letter-spacing: -0.01em;
   font-weight: 600;
 }
 #content-area h3 {
-  font-size: 1.15rem;   /* ~17px */
-  line-height: 1.25;
+  font-size: 1.02rem;   /* ~15px */
+  line-height: 1.3;
   font-weight: 600;
 }
 #content-area h4 {
-  font-size: 1rem;      /* ~15px */
+  font-size: 0.9rem;    /* ~13.5px */
   font-weight: 600;
 }
 
@@ -86,14 +90,14 @@ html {
    lead paragraph should not balloon — keep it close to body size, just muted. */
 #content-area h1 + p,
 #content-area .lead {
-  font-size: 0.95rem;   /* ~14.25px */
+  font-size: 0.875rem;  /* ~13px */
   line-height: 1.55;
 }
 
-/* Code blocks — 13px so dense snippets don't dominate the page. */
+/* Code blocks — 12.5px so dense snippets don't dominate the page. */
 #content-area pre,
 #content-area pre code {
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.55;
 }
 
@@ -182,10 +186,51 @@ html {
    tab bar and the sidebar page links. Bump them to ~15px so the navigation reads
    larger and more legible, without touching the content typography. ─────────── */
 .nav-tabs .nav-tabs-item {
-  font-size: 1rem !important;
+  font-size: 0.875rem !important;
 }
 #navigation-items a {
-  font-size: 1rem !important;
+  font-size: 0.8125rem !important;
+}
+/* Collapsible subsection headers (API-reference tag groups like "API Keys", and
+   the driver's "Basics" etc.) render as a toggle button that the theme defaults
+   a notch smaller than the links beneath it. Match the link size (1rem) so every
+   navigable item in every sidebar reads at the same size — we deliberately keep
+   the regular link weight here too, so the API-reference tag list doesn't look
+   heavier than the Platform/Driver sidebars; the chevron + indent carry the
+   hierarchy. */
+#navigation-items .sidebar-group > li > button {
+  font-size: 0.8125rem !important;
+}
+
+/* ── API role badges — the backend emits x-required-role (viewer/member/admin)
+   per endpoint (AXI-1123); sync-openapi.py lifts it into a span.api-role via
+   x-mint.content, rendered just below the endpoint title. A small uppercase pill
+   so the minimum role reads as a tag. Colour-coded by privilege so the elevated
+   gates stand out: viewer = muted (least privilege), member = cyan, admin =
+   amber (elevated). ──────────────────────────────────────────────────────── */
+.api-role {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.14em 0.55em;
+  border: 1px solid;
+  vertical-align: middle;
+}
+.api-role-viewer {
+  border-color: rgba(148, 163, 184, 0.5);   /* slate */
+  color: rgb(148 163 184);
+  background: rgba(148, 163, 184, 0.10);
+}
+.api-role-member {
+  border-color: rgb(6 182 212);              /* cyan */
+  color: rgb(34 211 238);
+  background: rgb(6 182 212 / 0.10);
+}
+.api-role-admin {
+  border-color: rgb(245 158 11);             /* amber */
+  color: rgb(245 158 11);
+  background: rgb(245 158 11 / 0.10);
 }
 
 /* ── //section eyebrows — Axilio's signature green code-comment prefix on

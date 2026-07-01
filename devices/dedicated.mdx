@@ -33,7 +33,7 @@ Your rented phones show up in `devices.mine()`. Pass a phone's `phone_id` to
 `session()` to use that exact phone:
 
 ```python
-mine = client.devices.mine()
+mine = client.phones.mine()
 
 for phone in mine.phones:
     if phone.rental_expires_at:   # your dedicated phones
