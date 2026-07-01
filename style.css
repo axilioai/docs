@@ -202,22 +202,35 @@ html {
   font-size: 0.8125rem !important;
 }
 
-/* ── API role badges — the backend spec gates some endpoints behind an admin
-   role ("Admin only."). sync-openapi.py lifts that out of the prose and injects
-   a span.api-role via x-mint.content, which renders just below the endpoint
-   title. Style it as a small uppercase pill so the access requirement reads as a
-   tag. Amber to match the API-reference surface accent. ───────────────────── */
+/* ── API role badges — the backend emits x-required-role (viewer/member/admin)
+   per endpoint (AXI-1123); sync-openapi.py lifts it into a span.api-role via
+   x-mint.content, rendered just below the endpoint title. A small uppercase pill
+   so the minimum role reads as a tag. Colour-coded by privilege so the elevated
+   gates stand out: viewer = muted (least privilege), member = cyan, admin =
+   amber (elevated). ──────────────────────────────────────────────────────── */
 .api-role {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.12em 0.5em;
-  border: 1px solid rgb(var(--primary));
-  color: rgb(var(--primary));
-  background: rgb(var(--primary) / 0.10);
+  letter-spacing: 0.01em;
+  padding: 0.14em 0.55em;
+  border: 1px solid;
   vertical-align: middle;
+}
+.api-role-viewer {
+  border-color: rgba(148, 163, 184, 0.5);   /* slate */
+  color: rgb(148 163 184);
+  background: rgba(148, 163, 184, 0.10);
+}
+.api-role-member {
+  border-color: rgb(6 182 212);              /* cyan */
+  color: rgb(34 211 238);
+  background: rgb(6 182 212 / 0.10);
+}
+.api-role-admin {
+  border-color: rgb(245 158 11);             /* amber */
+  color: rgb(245 158 11);
+  background: rgb(245 158 11 / 0.10);
 }
 
 /* ── //section eyebrows — Axilio's signature green code-comment prefix on

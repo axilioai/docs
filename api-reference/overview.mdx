@@ -23,12 +23,32 @@ Reach for the REST API when you're not working in Python.
 Send your API key in the `X-Axilio-Api-Key` header:
 
 ```bash
-curl https://api.axilio.ai/api/v1/devices/available \
+curl https://api.axilio.ai/api/v1/phones/available \
   -H "X-Axilio-Api-Key: axl_your_key_here"
 ```
 
 Get a key from the [dashboard](https://axilio.ai/dashboard). See
 [Authentication](/authentication) for the SDK equivalent.
+
+## Roles & permissions
+
+Everyone in an organization has one of three roles, and they build on each other —
+each role can do everything the ones below it can:
+
+| Role | Can do |
+|---|---|
+| **Viewer** | Read-only: list and view phones, sessions, runs, workflows, usage, billing. |
+| **Member** | Everything a viewer can, **plus** act: allocate phones, run workflows, edit workflows. |
+| **Admin** | Everything a member can, **plus** manage the org: API keys, members, and billing. |
+
+Each endpoint shows a **minimum role required** badge — the lowest role that can
+call it, not an exclusive one. *Minimum role required: Viewer* means any role can
+call it (viewer, member, or admin); *Minimum role required: Member* means member
+or admin; *Minimum role required: Admin* means admin only. So a member can call
+every Viewer and Member endpoint.
+
+Not sure what you are? Check your role in the [dashboard](https://axilio.ai/dashboard)
+under **Organization → Members**.
 
 ## Next steps
 
