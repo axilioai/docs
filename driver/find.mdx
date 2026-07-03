@@ -73,6 +73,31 @@ except ElementNotFoundError:
 - **Describing** when there isn't: an icon, or something easier to describe than
   to name.
 
+## Picking the engine and model
+
+Both ways take options. Text reading has a free engine and a premium one that
+handles harder screens; describing can run on [any supported model](/vision/models):
+
+```python
+driver.find_text("Sign in", ocr_engine="premium")
+driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
+```
+
+Repeating those on every call gets old, so you can set them once for the whole
+session — any call that doesn't pass its own value uses the default:
+
+```python
+with client.session(
+    "android",
+    default_ocr_engine="premium",
+    default_model="anthropic/claude-haiku-4.5",
+) as driver:
+    driver.find_text("Sign in")           # premium engine
+    driver.find(query="the buy button")   # haiku
+```
+
+See [Models](/vision/models) for every id, what it does, and what it costs.
+
 ## Next steps
 
 <CardGroup cols={2}>

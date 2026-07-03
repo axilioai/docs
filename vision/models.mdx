@@ -1,27 +1,74 @@
 ---
 title: "Models"
 sidebarTitle: "Models"
-description: "The vision models Argus supports, and their pricing."
+description: "Every model Argus supports — the Axilio model line and the vision-language models — with slugs, pricing, and how to select each one."
 ---
 
-Argus runs on a range of vision models. List them in code:
+Argus runs two families of models. The **Axilio models** read the screen —
+text, icons, layout — and power `find_text`, `observe`, and [Detect](/vision/detect).
+The **vision-language models** understand a description and power
+`find(query=...)` and [Locate](/vision/locate). Both are listed, with live
+pricing, by one call:
 
 ```python
 models = client.argus.list_models()
 for m in models.data:
-    print(m.name, m.context_window)
+    print(m.id, m.pricing)
 ```
 
-Pass a model's `id` as `model=` to [Locate](/vision/locate) to pick one.
+## Axilio models
 
-## Pricing
+The Axilio line comes in two tiers: **Lite** is free, **Pro** reads harder
+screens (small fonts, dense layouts) for a small per-call price. You don't pass
+these ids anywhere — you pick the tier with `ocr_engine=`:
 
-Vision calls are billed per token.
+```python
+driver.find_text("Sign in", ocr_engine="premium")   # Pro
+driver.find_text("Sign in")                         # Lite (the default)
+```
+
+To use a tier for a whole session instead of every call, set it once:
+
+```python
+with client.session("android", default_ocr_engine="premium") as driver:
+    driver.find_text("Sign in")   # Pro, no kwarg needed
+```
+
+The ids below are what you'll see on your [usage rows](/observability/cost)
+and in the pricing list:
+
+| Model id | What it is | How you get it |
+| --- | --- | --- |
+| `axilio/argus-detect-1` | Icon and element detection | Included in every screen read |
+| `axilio/argus-ocr-lite-1` | Text reading, free tier | `ocr_engine="free"` on a text-only Detect call |
+| `axilio/argus-ocr-pro-1` | Text reading, premium | `ocr_engine="premium"` on a text-only Detect call |
+| `axilio/argus-vision-lite-1` | Text + icons, free tier | The default for `find_text` / `observe` |
+| `axilio/argus-vision-pro-1` | Text + icons, premium | `ocr_engine="premium"` |
+
+<div id="axilio-argus-models" />
+
+## Vision-language models
+
+Describing something in plain English — `find(query="the heart icon")` or
+[Locate](/vision/locate) — runs a vision-language model. Pass a model's `id`
+as `model=` to pick one, or set a session default:
+
+```python
+driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
+
+with client.session("android", default_model="anthropic/claude-haiku-4.5") as driver:
+    driver.find(query="the buy button")   # haiku, no kwarg needed
+```
+
+Leave `model=` off and Argus picks a sensible default. An id that isn't in the
+list below is rejected before anything is billed.
+
+Vision-language calls are billed per token:
 
 <div id="axilio-models" />
 
-Prices are per million tokens, pulled live. See [Cost](/observability/cost) to
-track what you actually spend.
+Prices are pulled live, so they're never stale. See [Cost](/observability/cost)
+to track what you actually spend.
 
 ## Next steps
 
