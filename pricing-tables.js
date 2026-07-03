@@ -6,6 +6,8 @@
 // A page opts in by including an empty element:
 //   <div id="axilio-plans" />          -> the subscription plans table
 //   <div id="axilio-rental-plans" />   -> the dedicated-device rental table
+//   <div id="axilio-models" />         -> the vision-language models table
+//   <div id="axilio-argus-models" />   -> the Axilio (argus) model line table
 //
 // Mintlify auto-includes any .js file in the content directory on every page
 // (https://mintlify.com/docs/settings/custom-scripts). We render plain <table>s,
@@ -67,8 +69,20 @@
     }).catch(function () { fallback(el); });
   }
 
+  function fetchModels() {
+    // argus 1.2.0 renamed /inference/models to /vision/models; try the new
+    // path first and fall back to the old one so the tables keep rendering
+    // across the deploy boundary.
+    return fetch(ARGUS + "/vision/models").then(function (r) {
+      if (!r.ok) { throw new Error("vision path not deployed"); }
+      return r.json();
+    }).catch(function () {
+      return fetch(ARGUS + "/inference/models").then(function (r) { return r.json(); });
+    });
+  }
+
   function renderModels(el) {
-    fetch(ARGUS + "/inference/models").then(function (r) { return r.json(); }).then(function (d) {
+    fetchModels().then(function (d) {
       var models = (d.data || []).filter(function (m) { return m.type === "vlm"; })
         .sort(function (a, b) { return a.name < b.name ? -1 : 1; });
       if (!models.length) { return fallback(el); }
@@ -86,6 +100,35 @@
     }).catch(function () { fallback(el); });
   }
 
+  // How each Axilio model is selected from the SDK — the catalog carries the
+  // ids and prices; this column answers "what do I type to get it".
+  var AXILIO_USAGE = {
+    "axilio/argus-detect-1": "Included in every screen read",
+    "axilio/argus-ocr-lite-1": "<code>ocr_engine=\"free\"</code> (text-only)",
+    "axilio/argus-ocr-pro-1": "<code>ocr_engine=\"premium\"</code> (text-only)",
+    "axilio/argus-vision-lite-1": "The default",
+    "axilio/argus-vision-pro-1": "<code>ocr_engine=\"premium\"</code>"
+  };
+
+  function renderAxilioModels(el) {
+    fetchModels().then(function (d) {
+      var models = (d.data || []).filter(function (m) { return (m.id || "").indexOf("axilio/") === 0; })
+        .sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+      if (!models.length) { return fallback(el); }
+      var rows = models.map(function (m) {
+        var pr = m.pricing || {};
+        var price = pr.per_page ? "$" + pr.per_page + " per call" : "Free";
+        return [
+          "<strong>" + m.name + "</strong>",
+          "<code>" + m.id + "</code>",
+          AXILIO_USAGE[m.id] || "",
+          price
+        ];
+      });
+      el.innerHTML = buildTable(["Model", "Id", "How you get it", "Price"], rows);
+    }).catch(function () { fallback(el); });
+  }
+
   function run() {
     var p = document.getElementById("axilio-plans");
     if (p && !p.dataset.loaded) { p.dataset.loaded = "1"; renderPlans(p); }
@@ -93,6 +136,8 @@
     if (r && !r.dataset.loaded) { r.dataset.loaded = "1"; renderRentals(r); }
     var m = document.getElementById("axilio-models");
     if (m && !m.dataset.loaded) { m.dataset.loaded = "1"; renderModels(m); }
+    var am = document.getElementById("axilio-argus-models");
+    if (am && !am.dataset.loaded) { am.dataset.loaded = "1"; renderAxilioModels(am); }
   }
 
   run();
