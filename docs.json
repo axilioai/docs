@@ -84,6 +84,8 @@
             "pages": [
               "observability/overview",
               "observability/live-view",
+              "observability/embed-live-view",
+              "observability/telemetry",
               "observability/recordings",
               "observability/events",
               "observability/cost"
