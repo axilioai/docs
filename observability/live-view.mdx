@@ -5,12 +5,16 @@ description: "Watch a phone in real time while your agent drives it."
 ---
 
 Live view streams a phone's screen to your
-[dashboard](https://axilio.ai/dashboard) in real time, so you can watch your agent
-work as it happens.
+[dashboard](https://app.axilio.ai/dashboard) in real time, so you can watch your
+agent work as it happens.
 
 Open any active session in the dashboard to see its live view. It's the fastest
 way to see what your agent is doing right now, and to catch a problem while it's
 still happening.
+
+The live view also exists outside the dashboard: every allocation returns a
+`live_view_url` you can open directly or
+[embed in your own app](/observability/embed-live-view) as an iframe.
 
 To review a session after it ends, use a [recording](/observability/recordings)
 instead.
@@ -18,6 +22,9 @@ instead.
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Embed live view" icon="window" href="/observability/embed-live-view">
+    The same live screen, in your own app.
+  </Card>
   <Card title="Recordings" icon="video" href="/observability/recordings">
     Replay a session after it ends.
   </Card>

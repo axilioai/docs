@@ -48,6 +48,18 @@ client.phones.deallocate(phone_id=device.phone_id)
   you, so prefer it unless you have a reason not to.
 </Warning>
 
+## What you get back
+
+Besides `phone_id` and `session_id`, an allocation returns three ready-to-use
+connection URLs. Each is scoped to this one session and stops working when the
+session ends:
+
+| Field | What it's for |
+| --- | --- |
+| `control_url` | Drive the phone programmatically. The SDK uses this for you. |
+| `telemetry_url` | A WebSocket streaming the session's [events live](/observability/telemetry). |
+| `live_view_url` | A hosted page with the phone's live, interactive screen — [embeddable in your app](/observability/embed-live-view). Treat it as a secret. |
+
 ## Next steps
 
 <CardGroup cols={2}>
@@ -59,5 +71,8 @@ client.phones.deallocate(phone_id=device.phone_id)
   </Card>
   <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
     Drive the phone you got.
+  </Card>
+  <Card title="Embed live view" icon="window" href="/observability/embed-live-view">
+    Put the phone's screen in your own app.
   </Card>
 </CardGroup>
