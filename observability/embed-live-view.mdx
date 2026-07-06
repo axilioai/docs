@@ -47,6 +47,33 @@ iframe.addEventListener("click", () => iframe.focus())
 
 Pointer input (tap, swipe) works without this.
 
+## Appearance
+
+By default the page renders just the phone screen on a transparent background,
+so it fills your iframe and blends into your page. Size the iframe to a portrait
+aspect ratio (the phone is taller than it is wide) and it looks at home in your
+UI. Two query params tune the look:
+
+| Param | Values | Default |
+| --- | --- | --- |
+| `bg` | `transparent`, `dark`, `light`, or a hex color (e.g. `1e293b` or `#1e293b`) | `transparent` |
+| `frame` | `device` to wrap the screen in a phone mockup | screen only |
+
+```html
+<!-- blends into your page (default) -->
+<iframe src="{live_view_url}" style="width: 100%; height: 100%; border: 0;"></iframe>
+
+<!-- dark surround behind the screen -->
+<iframe src="{live_view_url}?bg=dark"></iframe>
+
+<!-- phone mockup on a custom background -->
+<iframe src="{live_view_url}?frame=device&bg=1e293b"></iframe>
+```
+
+`bg` sets the color shown around the screen (the letterbox when the video's
+aspect ratio doesn't match your iframe) and behind the connecting/ended states.
+The page never shows Axilio branding, so it fits a white-labeled product.
+
 ## Treat the URL as a secret
 
 `live_view_url` carries a signed token scoped to this one session. Anyone who
