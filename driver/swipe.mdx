@@ -4,10 +4,14 @@ sidebarTitle: "Swipe"
 description: "Swipe and scroll the screen."
 ---
 
-Swipe between two points on the screen. This is also how you scroll:
+[`swipe`](/driver/reference#driver-swipe) moves between two points on the screen. This is also how you scroll:
 
 ```python
-driver.swipe({"x": 540, "y": 1600}, {"x": 540, "y": 400})   # scroll down
+# scroll down
+driver.swipe(
+    {"x": 540, "y": 1600},
+    {"x": 540, "y": 400},
+)
 ```
 
 <Note>

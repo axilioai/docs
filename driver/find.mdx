@@ -9,7 +9,7 @@ by its **text**, or by **describing** it.
 
 ## By its text
 
-`find_text` finds anything with a visible label, like a button or a menu item.
+[`find_text`](/driver/reference#driver-find_text) finds anything with a visible label, like a button or a menu item.
 Fast and exact.
 
 ```python
@@ -34,7 +34,7 @@ if result:
   ```
 </Warning>
 
-Get every match with `find_all_text`. Handy for lists and feeds:
+Get every match with [`find_all_text`](/driver/reference#driver-find_all_text). Handy for lists and feeds:
 
 ```python
 for item in driver.find_all_text(contains="Notification"):
@@ -62,7 +62,7 @@ except ElementNotFoundError:
 ```
 
 <Note>
-  Describing something uses [Argus](/vision/overview), Axilio's vision model, so it
+  Describing something uses [Argus](/drivers/models), Axilio's vision model, so it
   costs a little more than finding by text. On steps you run a lot, prefer text.
   You can [see the per-call cost](/observability/cost) of every vision call.
 </Note>
@@ -76,7 +76,7 @@ except ElementNotFoundError:
 ## Picking the engine and model
 
 Both ways take options. Text reading has a free engine and a premium one that
-handles harder screens; describing can run on [any supported model](/vision/models):
+handles harder screens; describing can run on [any supported model](/drivers/models):
 
 ```python
 driver.find_text("Sign in", ocr_engine="premium")
@@ -96,7 +96,7 @@ with client.session(
     driver.find(query="the buy button")   # haiku
 ```
 
-See [Models](/vision/models) for every id, what it does, and what it costs.
+See [Models](/drivers/models) for every id, what it does, and what it costs.
 
 ## Next steps
 

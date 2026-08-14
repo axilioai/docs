@@ -32,7 +32,7 @@ Driving a phone raises typed errors from `axilio.drivers.mobile`:
 ```python
 from axilio.drivers.mobile import ElementNotFoundError, TimeoutError
 
-with client.session("ANDROID") as driver:
+with client.session("android") as driver:
     try:
         driver.find(query="a button that isn't there", timeout=5).tap()
     except ElementNotFoundError:

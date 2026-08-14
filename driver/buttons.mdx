@@ -1,40 +1,32 @@
 ---
-title: "Press a device button"
-sidebarTitle: "Buttons"
-description: "Press the buttons that aren't on the screen, like Home, Back, and volume."
+title: "Press a key"
+sidebarTitle: "Keys"
+description: "Press a named key like Enter to submit a form or fire the keyboard's Go / Search."
 ---
 
-Some buttons aren't on the screen, like Home, Back, and volume. Press them with
-`key_press` and the `Key` names:
+Some steps need a key press, not a tap — submitting a form, or firing the on-screen
+keyboard's **Go** / **Search**. Use [`key_press`](/driver/reference#driver-key_press)
+with a [`Key`](/driver/key) constant:
 
 ```python
 from axilio.drivers.mobile import Key
 
-driver.key_press(Key.HOME)   # go to the home screen
+driver.find_text("Search").type_into("axilio")
+driver.key_press(Key.ENTER)   # submit
 ```
 
-## The buttons
-
-| Group | Names |
-|---|---|
-| Navigation | `Key.HOME`, `Key.BACK`, `Key.RECENTS`, `Key.MENU` |
-| Power | `Key.POWER` |
-| Volume | `Key.VOLUME_UP`, `Key.VOLUME_DOWN`, `Key.MUTE` |
-| Media | `Key.PLAY_PAUSE`, `Key.NEXT_TRACK`, `Key.PREV_TRACK`, `Key.STOP` |
-| System | `Key.SEARCH`, `Key.ASSIST` |
-
 <Note>
-  `key_press` is for device buttons. To [type text](/driver/type), use `type_text`
-  or `type_into` instead.
+  `Key.ENTER` is the only named key today; the set grows as real needs appear. To
+  type characters into a field, use [Type](/driver/type) — not `key_press`.
 </Note>
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
-    Tap things on the screen.
+  <Card title="Type" icon="keyboard" href="/driver/type">
+    Type text into a field.
   </Card>
   <Card title="Key reference" icon="code" href="/driver/key">
-    Every button name in one place.
+    Every named-key constant.
   </Card>
 </CardGroup>

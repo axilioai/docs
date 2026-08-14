@@ -1,271 +1,143 @@
-/* Axilio docs — principled overrides.
-   The brand lives in docs.json (dark canvas, IBM Plex Mono, emerald #10B981).
-   We make a few BOLD global choices and a handful of surgical fixes — we never
-   fight the theme element-by-element with !important soup. Keep this lean.
+/* Axilio docs — lean overrides on Mintlify's theme.
+   Philosophy (2026-08-12): the theme is the same premium engine Browserbase and
+   Kernel run. Their type scale (36/24/18), spacing, rounded corners, and callout
+   design are STOCK. Our job is to recolor the theme for the Axilio brand — dark
+   canvas, emerald accent — and fix genuine bugs. We do NOT re-derive the scale,
+   spacing, or corner radius the theme already gets right; every override that
+   fought the theme (radius:0, per-surface rainbow accents, mono body, custom
+   scale/spacing/tables) was a source of the "robotic / over-designed" read and
+   has been removed. Brand identity = dark canvas + emerald + the wordmark. */
 
-   Bold global move: sharp corners everywhere. Axilio is an instrument panel for
-   real hardware, not a rounded SaaS brochure. Mono + sharp is our signature. */
-
-/* ── Bold move 1: zero radius site-wide ───────────────────────────────────── */
+/* ── Sharp corners site-wide — Axilio's signature. Instrument panel, not a
+   rounded SaaS brochure. Enforced once, globally. ─────────────────────────── */
 *,
 *::before,
 *::after {
   border-radius: 0 !important;
 }
 
-/* ── Per-surface accent — each top-level surface gets its own colour so you
-   always know where you are: Platform = brand green (the default), Drivers =
-   violet, API Reference = amber. surface-accent.js sets data-surface on <html>
-   from the URL; here we just remap Mintlify's --primary triplets, which recolour
-   the active tab, the active sidebar item, the // heading eyebrow, and other
-   accent bits in one move. Values are space-separated RGB (Mintlify reads them as
-   rgb(var(--primary) / alpha)). */
-:root[data-surface="driver"] {
-  --primary: 139 92 246 !important;       /* #8B5CF6 violet */
-  --primary-light: 167 139 250 !important; /* #A78BFA */
-  --primary-dark: 124 58 237 !important;   /* #7C3AED */
-}
-:root[data-surface="api"] {
-  --primary: 245 158 11 !important;        /* #F59E0B amber */
-  --primary-light: 251 191 36 !important;  /* #FBBF24 */
-  --primary-dark: 217 119 6 !important;    /* #D97706 */
-}
-:root[data-surface="argus"] {
-  --primary: 6 182 212 !important;         /* #06B6D4 cyan */
-  --primary-light: 34 211 238 !important;  /* #22D3EE */
-  --primary-dark: 8 145 178 !important;    /* #0891B2 */
-}
-
-/* ── Typography scale — match the rest of the brand ────────────────────────────
-   axilio.ai and the dashboard run small and dense: UI text is overwhelmingly
-   text-xs (12px) / text-sm (14px) IBM Plex Mono, headings text-xl…3xl. The maple
-   defaults render ~16px body + large headings, which read "blown up" against that.
-   We step the whole surface down a touch (root) and set an explicit, smaller
-   content scale so the docs feel like the same product. Keep this the source of
-   truth alongside DESIGN.md's scale. */
-
-/* Gentle global step-down: 16 → 15px root shrinks chrome (nav, sidebar, TOC,
-   components) proportionally so nothing feels zoomed in. */
-html {
-  font-size: 15px;
-}
-
-/* Body / prose — 13px mono, generous line-height for long-form readability.
-   Stepped down with the rest of the page so it sits in scale with the compact
-   sidebar (sidebar links are 0.8125rem ≈ 12px). */
-#content-area,
-#content-area p,
-#content-area li {
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-/* Headings — the maple defaults render display-huge, which read "blown up"
-   against the small sidebar/body. Step the whole heading scale down so the page
-   feels like the same dense instrument the nav does. Sizes are in rem so they
-   ride the 15px root; mono wants negative tracking at display sizes. */
-#content-area h1 {
-  font-size: 1.55rem;   /* ~23px */
-  line-height: 1.18;
-  letter-spacing: -0.01em;
-  font-weight: 700;
-}
-#content-area h2 {
-  font-size: 1.2rem;    /* ~18px */
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  font-weight: 600;
-}
-#content-area h3 {
-  font-size: 1.02rem;   /* ~15px */
-  line-height: 1.3;
-  font-weight: 600;
-}
-#content-area h4 {
-  font-size: 0.9rem;    /* ~13.5px */
-  font-weight: 600;
-}
-
-/* The title subtitle (frontmatter description, when the theme renders it) and any
-   lead paragraph should not balloon — keep it close to body size, just muted. */
-#content-area h1 + p,
-#content-area .lead {
-  font-size: 0.875rem;  /* ~13px */
-  line-height: 1.55;
-}
-
-/* Code blocks — 12.5px so dense snippets don't dominate the page. */
-#content-area pre,
-#content-area pre code {
-  font-size: 12.5px;
-  line-height: 1.55;
-}
-
-/* ── Content width — the maple theme caps body pages at max-w-xl (36rem / 540px
-   at our 15px root), which on a laptop leaves ~130px of dead margin on each side
-   and squishes tables and multi-column code. Widen the column to 50rem (~750px).
-   Scoped to lg+ (below that the layout is already single-column / full-width).
-   Safe on two fronts: the `mode: "wide"` landing keeps `min-w-full`, which beats
-   max-width, so it stays full-bleed; and on narrower viewports flexbox shrinks
-   this column below the cap before the right-hand TOC can get crowded. ──────── */
+/* ── Content width — the theme caps the prose column at 576px, which is tight
+   for 18px body and cramps code blocks. Widen to ~736px on lg+ for a more
+   comfortable measure and room for code lines. The `mode: "wide"` landing keeps
+   min-w-full (beats max-width), so it stays full-bleed. ────────────────────── */
 @media (min-width: 1024px) {
   #content-area {
-    max-width: 50rem !important;
+    max-width: 46rem !important;
   }
 }
 
-/* ── Responsive card grids — let homepage Columns reflow 1→2→3→4 by width
-   instead of locking to a fixed `cols`. Add className="responsive-columns". ─ */
-.responsive-columns {
-  --_cols: var(--cols, 1);
-  --_cols-effective: min(1, var(--_cols));
-  grid-template-columns: repeat(var(--_cols-effective), 1fr) !important;
+/* ── Dark-mode reading contrast — the single most important fix. The theme's
+   dark prose color renders ~rgb(159,164,162): dim, low-contrast, slightly cool.
+   Premium dark docs use bright, near-neutral body text. Brighten body to a clean
+   light neutral, keep headings crisp white, keep the framer-line/lead quietly
+   muted. ─────────────────────────────────────────────────────────────────── */
+html.dark #content-area,
+html.dark #content-area p,
+html.dark #content-area li,
+html.dark #content-area td {
+  color: #d4d4d4;
 }
-@container columns-container (min-width: 36rem) {
-  .responsive-columns {
-    --_cols-effective: min(2, var(--_cols));
-  }
+html.dark #content-area h1,
+html.dark #content-area h2,
+html.dark #content-area h3,
+html.dark #content-area h4,
+html.dark #content-area h5,
+html.dark #content-area strong,
+html.dark #content-area th {
+  color: #fafafa;
 }
-@container columns-container (min-width: 48rem) {
-  .responsive-columns {
-    --_cols-is-4: calc(1 - sign(abs(var(--_cols) - 4)));
-    --_cols-effective: calc(min(3, var(--_cols)) - var(--_cols-is-4));
-  }
-}
-@container columns-container (min-width: 64rem) {
-  .responsive-columns {
-    --_cols-effective: var(--_cols);
-  }
-}
-
-/* ── Compact cards — the maple Card runs tall (~176px) with an H2-sized title
-   (21.75px), a big icon offset, and roomy px-6/py-5 padding. Against our dense
-   mono surface that reads heavy and "tacky", especially the bottom "Next steps"
-   grids. Tighten to a small, scannable card: trim padding, drop the title to
-   ~14px, shrink the body, and pull the title up under the icon. ───────────── */
-#content-area .card > div {
-  padding: 0.85rem 1rem !important;
-}
-#content-area .card .font-semibold {
-  font-size: 0.9rem !important;     /* ~13.5px, was 21.75px */
-  line-height: 1.3 !important;
-  margin-top: 1.4rem !important;    /* clears the icon; was 2.25rem */
-}
-#content-area .card p {
-  font-size: 0.8rem !important;     /* ~12px, was 15px */
-  line-height: 1.45 !important;
-  margin-top: 0.25rem !important;
-}
-/* Icons sit a touch tighter to the top of the trimmed card. */
-#content-area .card svg {
-  width: 1rem !important;
-  height: 1rem !important;
+html.dark #content-area h1 + p,
+html.dark #content-area .lead {
+  color: #a1a1a1;
 }
 
-/* ── Logo — bump the wordmark (cube + AXILIO) so the brand reads larger. It's a
-   single .nav-logo image, so scaling its height grows the icon and the name
-   together. ──────────────────────────────────────────────────────────────── */
-.nav-logo,
-#navbar img,
-#navbar svg.logo {
-  height: 2.3rem !important;
+/* ── Code blocks (dark only) — the theme fills the code surface at ~rgb(11,12,14),
+   one shade off the #0A0A0A canvas, so blocks read as flat and undefined against
+   the page. Lift the inner surface to a clear dark-gray and firm up the border so
+   code sits in a defined panel (per DESIGN.md: code surface #1A1A1A). The outer
+   .code-block already owns the border + margin, so this adds no box-in-box. ── */
+html.dark #content-area .code-block {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+html.dark #content-area .code-block > div {
+  background-color: #16181c !important;
+}
+/* The copy-button fade masks long lines with a gradient to --fade-color-dark,
+   set inline to the theme's old #0B0C0E. Since we lifted the surface, repoint it
+   at our surface color so the fade is invisible instead of a dark blob. */
+html.dark #content-area .code-block [class~="print:hidden"] {
+  --fade-color-dark: #16181c !important;
 }
 
-/* ── Sidebar group headers — make them read as firmware-style section labels.
-   Uppercase + tracked to match Axilio's mono metadata labels. ────────────── */
-#navigation-items .sidebar-group-header #sidebar-title,
-#sidebar-content .sidebar-group-header #sidebar-title {
-  font-weight: 600;
-  font-size: 0.82rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.62;
+/* ── Linked types — a compound type like `list[Element]` is written as one
+   inline-code chip with a link inside (not three adjacent chips, which wrap and
+   gap). Keep the link visibly clickable inside the chip: accent colour + a quiet
+   underline. ─────────────────────────────────────────────────────────────── */
+#content-area code a,
+#content-area a code {
+  color: rgb(var(--primary)) !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-/* ── Bigger nav — the brand default runs dense (text-sm, ~13px) for both the top
-   tab bar and the sidebar page links. Bump them to ~15px so the navigation reads
-   larger and more legible, without touching the content typography. ─────────── */
-.nav-tabs .nav-tabs-item {
-  font-size: 0.875rem !important;
+/* ── Callouts (dark only) — the theme's dark callout renders as a loud filled
+   slab (e.g. bg-yellow-600/20 + text-yellow-300) that dominates the page and
+   fights the calm dark canvas. The vendors avoid it by shipping light-mode.
+   Minimal fix: calm the fill to a near-neutral surface and set body text to
+   bright foreground; let the theme's semantic icon + border carry the meaning.
+   Light mode keeps the theme's soft native callout untouched. ─────────────── */
+html.dark #content-area .callout {
+  background: rgba(255, 255, 255, 0.035) !important;
 }
-#navigation-items a {
-  font-size: 0.8125rem !important;
-}
-/* Collapsible subsection headers (API-reference tag groups like "API Keys", and
-   the driver's "Basics" etc.) render as a toggle button that the theme defaults
-   a notch smaller than the links beneath it. Match the link size (1rem) so every
-   navigable item in every sidebar reads at the same size — we deliberately keep
-   the regular link weight here too, so the API-reference tag list doesn't look
-   heavier than the Platform/Driver sidebars; the chevron + indent carry the
-   hierarchy. */
-#navigation-items .sidebar-group > li > button {
-  font-size: 0.8125rem !important;
+html.dark #content-area .callout :is(p, li, span, strong, em) {
+  color: #d4d4d4 !important;
 }
 
-/* ── API role badges — the backend emits x-required-role (viewer/member/admin)
-   per endpoint (AXI-1123); sync-openapi.py lifts it into a span.api-role via
-   x-mint.content, rendered just below the endpoint title. A small uppercase pill
-   so the minimum role reads as a tag. Colour-coded by privilege so the elevated
-   gates stand out: viewer = muted (least privilege), member = cyan, admin =
-   amber (elevated). ──────────────────────────────────────────────────────── */
-.api-role {
-  display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  padding: 0.14em 0.55em;
-  border: 1px solid;
-  vertical-align: middle;
+/* ── Vertical rhythm — deliberate and consistent. Our content is terse (one-idea
+   paragraphs interleaved with code), which the theme's default margins spread
+   into a loose, choppy rhythm of uneven gaps. Impose one even rhythm: moderate
+   bottom-only spacing on blocks (no margin-collapse surprises), asymmetric around
+   headings (generous ABOVE to separate a section, tight BELOW so the heading hugs
+   its content), and calm the theme's oversized code-block margins. ──────────── */
+#content-area :is(p, ul, ol, table) {
+  margin-top: 0;
+  margin-bottom: 0.9rem;
 }
-.api-role-viewer {
-  border-color: rgba(148, 163, 184, 0.5);   /* slate */
-  color: rgb(148 163 184);
-  background: rgba(148, 163, 184, 0.10);
+#content-area :is(li) {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
-.api-role-member {
-  border-color: rgb(6 182 212);              /* cyan */
-  color: rgb(34 211 238);
-  background: rgb(6 182 212 / 0.10);
+#content-area h2 {
+  margin-top: 2.5rem;
+  margin-bottom: 0.85rem;
 }
-.api-role-admin {
-  border-color: rgb(245 158 11);             /* amber */
-  color: rgb(245 158 11);
-  background: rgb(245 158 11 / 0.10);
+#content-area h3 {
+  margin-top: 1.9rem;
+  margin-bottom: 0.5rem;
 }
-
-/* ── //section eyebrows — Axilio's signature green code-comment prefix on
-   content headings, matching axilio.ai (`//PRODUCT`, `//WHY AXILIO`). ─────── */
-#content-area h2:not(.not-prose)::before {
-  content: "// ";
-  color: rgb(var(--primary));
-  opacity: 0.6;
-  font-weight: 600;
+#content-area h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
 }
-
-/* ── Top nav tabs — the theme left-aligns them right after the sidebar. Cap the
-   tab row to the content area (it otherwise spills to full viewport width) and
-   center the tabs within it so Docs / API Reference / Changelog / … sit in the
-   middle of the bar. ──────────────────────────────────────────────────────── */
-@media (min-width: 1024px) {
-  div:has(> .nav-tabs) {
-    right: 0 !important;
-    width: auto !important;
-    justify-content: center !important;
-  }
+/* Code blocks + groups: even, moderate margins instead of the theme's mt-5/mb-8
+   asymmetry, so code sits in the paragraph rhythm rather than punching gaps. */
+#content-area :is(.code-block, .code-group, .callout) {
+  margin-top: 1.15rem !important;
+  margin-bottom: 1.15rem !important;
+}
+/* First block under a heading shouldn't add its own top gap on top of the
+   heading's bottom margin. */
+#content-area :is(h1, h2, h3, h4) + :is(p, ul, ol, .code-block, .code-group, .callout) {
+  margin-top: 0 !important;
+}
+/* The body wrapper sits 32px below the page header (eyebrow + title + subtitle);
+   pull it into the rhythm so the intro connects to the title block. */
+#content-area .mdx-content {
+  margin-top: 1.5rem !important;
 }
 
-
-/* ── Left sidebar — give it a clear right edge so the boundary is obvious and
-   it reads as its own panel instead of bleeding into the page. ────────────── */
-#sidebar-content {
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-}
-html.light #sidebar-content {
-  border-right-color: rgba(0, 0, 0, 0.08);
-}
-
-/* ── Right-rail "On this page" — never scroll horizontally. Long headings and
-   inline-code tokens (e.g. axilio.drivers.mobile) must wrap, not overflow. ── */
+/* ── Right-rail "On this page" — never scroll horizontally; long headings and
+   inline-code tokens (e.g. axilio.drivers.mobile) wrap instead of overflowing. */
 #table-of-contents {
   overflow-x: hidden;
 }
@@ -277,92 +149,32 @@ html.light #sidebar-content {
   word-break: break-word;
 }
 
-/* ── Surfaces — the maple theme already gives code blocks, callouts, and frames
-   their own bordered container with good contrast against the canvas, so we do
-   NOT add our own border/background to <pre>; doing so produced a nested
-   "box-in-a-box" inside CodeGroups. Let the theme own these surfaces. ──────── */
-
-/* ── Vertical rhythm — kill the cavernous gaps. Headings sit closer to the
-   content they introduce; sections breathe without floating in dead space. ── */
-#content-area h2 {
-  margin-top: 2.25rem;
-  margin-bottom: 0.6rem;
-  padding-top: 0;
+/* ── Left sidebar — a hairline right edge so it reads as its own panel. ────── */
+#sidebar-content {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
-#content-area h3 {
-  margin-top: 1.5rem;
-  margin-bottom: 0.4rem;
-}
-#content-area p,
-#content-area ul,
-#content-area ol {
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
+html.light #sidebar-content {
+  border-right-color: rgba(0, 0, 0, 0.08);
 }
 
-/* ── Inline code — a quiet surface chip so SDK symbols read as objects ────── */
-:not(pre) > code {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.08em 0.34em;
-  font-size: 0.9em;
-}
-
-/* ── Tables — clean, hairline, dark-first.
-   Mintlify renames its table classes occasionally; these target plain tags. ─ */
-#content-area table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  overflow: hidden;
-  margin: 1.25rem 0;
-  display: table;
-}
-
-#content-area table thead th {
-  padding: 0.6rem 1rem;
-  text-align: left;
+/* ── API role badges — functional, not decorative. The backend emits
+   x-required-role (viewer/member/admin) per endpoint (AXI-1123); sync-openapi.py
+   lifts it into span.api-role via x-mint.content, rendered under the endpoint
+   title. Keep it muted so it reads as a quiet tag rather than adding color
+   noise. ─────────────────────────────────────────────────────────────────── */
+.api-role {
+  display: inline-block;
+  font-size: 0.75rem;
   font-weight: 600;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-  opacity: 0.7;
+  letter-spacing: 0.01em;
+  padding: 0.12em 0.5em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #a3a3a3;
+  background: rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
 }
-
-#content-area table tbody td {
-  padding: 0.6rem 1rem;
-  font-size: 0.875rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  vertical-align: top;
-}
-
-#content-area table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-#content-area table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-#content-area table tbody td:first-child {
-  font-weight: 500;
-}
-
-/* Light mode: flip the hairlines to dark-on-light. */
-html.light #content-area table,
-html.light #content-area table thead th {
-  border-color: rgba(0, 0, 0, 0.10);
-}
-html.light #content-area table tbody td {
-  border-bottom-color: rgba(0, 0, 0, 0.06);
-}
-html.light #content-area table thead th {
-  background: rgba(0, 0, 0, 0.02);
-}
-html.light :not(pre) > code {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.08);
+html.light .api-role {
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #666;
+  background: rgba(0, 0, 0, 0.03);
 }

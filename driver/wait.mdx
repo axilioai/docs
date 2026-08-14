@@ -9,7 +9,7 @@ automation breaks. Instead of a fixed pause, **wait for what you expect**.
 
 ## Wait for something to appear
 
-`wait_for_text` waits until the text shows up, then hands it to you:
+[`wait_for_text`](/driver/reference#driver-wait_for_text) waits until the text shows up, then hands it to you:
 
 ```python
 driver.wait_for_text("Welcome").tap()   # waits, then taps
@@ -17,7 +17,7 @@ driver.wait_for_text("Welcome").tap()   # waits, then taps
 
 ## Wait for something to go away
 
-`wait_until_gone` waits until the text is gone. Handy for loading spinners:
+[`wait_until_gone`](/driver/reference#driver-wait_until_gone) waits until the text is gone. Handy for loading spinners:
 
 ```python
 driver.wait_until_gone("Loading")

@@ -12,7 +12,7 @@ from axilio.platform import Client
 
 client = Client()
 
-with client.session("ANDROID") as driver:
+with client.session("android") as driver:
     driver.find(query="the Settings icon").tap()
 ```
 

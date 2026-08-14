@@ -28,28 +28,27 @@ decision. Read it before changing anything visual; flag any code that deviates.
 - **Reference:** https://axilio.ai (match it)
 
 ## Typography
-IBM Plex Mono everywhere — it is the Axilio typeface (both sibling surfaces use
-it for their entire body). Monospaced body is the deliberate, on-brand choice for
-this terminal-comfortable audience; tune it for readability rather than replacing
-it.
+**Mintlify's native type system — Inter for everything, mono for code only —
+at the metrics the best docs sites ship.** Measured from Browserbase's and
+Kernel's live pages: both run Inter at 18px/28px body, 36px h1 (600), 24px h2
+with 48px above. Premium dev-docs typography *is* this system executed cleanly;
+a custom reading font is a cost, not a differentiator. Axilio's identity lives
+in the canvas (dark, sharp corners, hairlines), the emerald accent system, and
+the wordmark — not in the paragraph font. IBM Plex Mono remains the brand
+typeface on the marketing site and dashboard; in the docs it appears where mono
+belongs: code blocks and inline-code chips.
 
-- **Display / headings:** IBM Plex Mono, 600 (700 for the hero `h1`).
-- **Body / UI / labels:** IBM Plex Mono, 400.
-- **Code:** IBM Plex Mono, 400. Distinguished from prose by the code block
-  surface + syntax color, not by a different family.
-- **Loading:** IBM Plex Mono is a Google Font — load via Mintlify's font config
-  (`docs.json` → `fonts`). The previous `font` block was silently ignored; verify
-  the computed font is actually IBM Plex Mono, not Inter.
-- **Readability tuning (required, since body is mono):**
-  - Root stepped down to **15px** (from the maple 16px default) so the whole
-    surface matches the dense sizing on axilio.ai + the dashboard, which run
-    mostly `text-xs` (12px) / `text-sm` (14px) mono. The maple defaults read
-    "blown up" against the rest of the brand.
-  - Body size **14px**, line-height 1.65
-  - Measure capped ~72ch
-  - Headings tighter: line-height ~1.15, letter-spacing -0.01em
-- **Scale:** h1 ~29px (1.95rem) / h2 ~22px (1.45rem) / h3 ~17px (1.15rem) /
-  body 14px / code 13px. Implemented in `style.css`, not just specified here.
+- **No `fonts` key in `docs.json`** — the theme's Inter stack loads by default.
+- **Display / headings:** Inter 600, letter-spacing -0.015 to -0.02em.
+- **Code:** the theme's mono stack, code blocks and inline chips only. No mono
+  in labels, table headers, or navigation.
+- **Scale (implemented in `style.css`, vendor-measured):** h1 36px (2.25rem) ·
+  subtitle/framer line 18px muted · h2 24px (1.5rem) · h3 20px · body 18px
+  (1.125rem), line-height 1.6 · code 14px · card title 16px / card body 15px.
+- **Measure:** content column capped at 46rem on lg+.
+- **Rhythm:** h2 opens a section with 3rem (48px) above / 1rem below; h3
+  2rem/0.6rem; paragraphs 1rem. Premium is mostly air — when in doubt, add
+  space above headings, not below.
 
 ## Color
 Dark-first. The canvas, surfaces, and borders are a neutral near-black grayscale
@@ -139,7 +138,13 @@ CSS/MDX:
 - No centered-everything marketing hero that buries the docs
 - No pale mint as body text; green is accent only
 - No abstract phone illustrations — real device screencaps only
-- No Inter/Roboto/system fonts — IBM Plex Mono is the typeface
+- No custom reading font in the docs — the theme's Inter stack at
+  vendor-standard metrics; identity comes from canvas, accent, and wordmark
+- No filled color-slab callouts — callouts are neutral panels with a 2px left
+  accent and a tinted icon; body text stays normal foreground
+- No terminal costume on the reading surface — no mono labels, no uppercase
+  tracked table headers, no `//` heading prefixes in content (the wordmark and
+  code keep the terminal voice)
 
 ## Information architecture — one page, one job
 The single most important rule, and the one the docs most often broke: **every
@@ -158,8 +163,26 @@ There are exactly three page types. Never mix them on one page.
   done. One job per page — if it needs a second `##` for a genuinely different
   task, that's a second page.
 - **Reference page** — pure lookup, for the experienced user who forgot a param.
-  Signatures and tables, near-zero prose. Most reference lives in the **API
-  Reference tab**; Docs-tab pages link into it rather than repeating it.
+  Signatures and tables, near-zero prose. The REST/OpenAPI reference lives in the
+  **API Reference tab**; the **Python SDK reference is class-based** (Playwright
+  model) and lives in the Drivers tab's Reference group — one page per object
+  (`Client`, `Driver`, `Element`, `Screen`, `Key`).
+  - **Class-based, always qualified.** The page *is* the class, and every member
+    is written qualified — `element.center`, `driver.find_text()`, never bare
+    `center`/`find_text`. This is the rule: a reader landing on any fragment
+    (search, deep link, the TOC) must know what object it belongs to. Bare member
+    names ("## Fields" with a `center` row) are the anti-pattern — they read as
+    "fields of *what*?".
+  - **Entry anatomy** (per method, Playwright-style): a qualified `###` heading
+    with empty parens (`### \`driver.find_text()\`` — empty parens keep the auto
+    anchor clean, e.g. `#driver-find_text`); a one-line imperative description;
+    a signature code block; an Arguments table (`Parameter | Type | Default |
+    Description`) when there's more than one arg; and a bold **Returns** line that
+    links the return type to its class page. Note exceptions inline (**Raises**).
+  - **Guides teach, reference lists.** Task pages (Basics) never document full
+    signatures — they show the one call they're about and link the method mention
+    into its reference entry (`[\`find_text\`](/driver/reference#driver-find_text)`).
+    The reference never teaches the model; it points back to the guides for that.
 
 **Hard rules that keep pages honest:**
 - **Lead with the answer.** First screen = what the page does + the canonical
@@ -216,4 +239,8 @@ direct, and confident, written by someone who has actually run this in productio
 | 2026-06-27 | Principled CSS over !important soup | Identity comes from config + a few global rules (no-radius) + minimal targeted fixes. Reset our aggressive overrides to match this discipline |
 | 2026-06-27 | Operator's-manual voice + content patterns | Studied a set of production engineering runbooks: direct voice, framer lines, explain-the-why, "Under the hood", "Common issues", pro tips. Codified as the writing standard; keep Mintlify themed callouts over raw GitHub blockquotes |
 | 2026-06-27 | Shrink the type scale to match the front-end | The maple defaults (~16px body, large headings) rendered "blown up" next to axilio.ai + the dashboard, whose UI text is mostly 12–14px mono. The prescribed scale was never actually implemented in CSS. Stepped root to 15px + explicit 14px body / smaller headings in `style.css`; updated the scale here to match what ships |
+| 2026-08-12 | Prose to IBM Plex Sans; mono confined to code/labels; restore display scale; quiet callouts | Side-by-side against Browserbase and Kernel, mono body + compressed scale + filled callout slabs read "terminal readme," not premium docs. Supersedes both the mono-everywhere rule and the 2026-06-27 scale shrink: the sans/mono alternation (not mono itself) is what makes dev docs scannable, and hierarchy drama (34px h1, 17px deck, 3rem section air) is what makes a page feel authored. Mono stays the signature in chrome: code, inline chips, sidebar group labels, table headers, `//` eyebrows, badges. Callouts became neutral panels with a 2px left accent. Same pass fixed pricing-tables.js id collisions with Mintlify heading anchors (`div#…` selectors) |
+| 2026-08-12 | Go the rest of the way: Inter at vendor-measured metrics; mono = code only; retire the content-area terminal costume | Plex Sans at 15px with mono chrome accents still read "different" next to the vendors. Measured their live pages: both Browserbase and Kernel run Inter 18px/28px body, 36px h1 (600), 24px h2 with 48px above — Mintlify's native system. Removed the `fonts` key, matched those numbers exactly, and dropped the mono sidebar labels, mono/uppercase table headers, and `//` heading eyebrows from content. Docs identity now = dark canvas + sharp corners + hairlines + per-surface accents + wordmark; the reading surface is standard premium docs typography. Supersedes the same-day Plex Sans decision and the "No Inter" anti-slop rule |
+| 2026-08-12 | Retire per-surface rainbow accents → single emerald; lift dark code surface; brighten dark body text | Side-by-side audit against the vendors found three concrete dark-mode defects: body text rendered at the maple default `rgb(159,164,162)` (dim, low-contrast, faintly green), code surfaces sat one shade off the canvas (invisible), and the violet/amber/cyan per-surface accents read as AI-slop (no premium docs site colors sections differently). Fixed: body `#d4d4d4`, code surface lifted to `#16181c` with a firmer border (repointing the copy-button fade var to match), single emerald accent everywhere. Also imposed a deliberate, consistent vertical rhythm (even block spacing, asymmetric heading margins) since the theme defaults read as choppy against our terse content |
+| 2026-08-12 | Adopt Playwright's two-layer doc model for the SDK; add a class-based reference | Studied Playwright vs Browserbase. Browserbase's thin-SDK-page-plus-pointer model fits only because their SDK is a thin session client (real driving is Playwright's API). Ours, like Playwright, *is* the driving API, so it needs Playwright's model: task guides (Basics) that teach + a complete class-based reference (`Client`, `Driver`, `Element`, `Screen`, `Key`) that lists. Root-caused the "Fields for what?" confusion to bare, unqualified members on the old element/screen/key pages; the fix is class-qualified members everywhere. See the Reference-page rules in the IA section |
 | 2026-06-27 | One page, one job — split dense pages into many focused ones | Pages averaged 1,000–1,900 words and mixed concept + tutorial + full API reference + essay, forcing a full read to find one thing. `concepts/*` and `guides/*` were ~90% duplicates of each other and of the API Reference tab. New model: three page types (concept / task / reference), never mixed; lead with the answer; ~150–400 words; link instead of repeat. The "Under the hood" and exhaustive-example patterns were a primary cause of bloat and are now restricted to concept pages / one recipes location |
