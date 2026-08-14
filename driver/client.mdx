@@ -1,0 +1,105 @@
+---
+title: "Client"
+sidebarTitle: "Client"
+description: "The SDK entrypoint — open a session to get a driver, and call Argus vision directly. Full signatures."
+---
+
+`Client` is the entrypoint to the SDK. Create one, then open a
+[session](#client-session) to get a [`driver`](/driver/reference), or call
+[Argus](#client-argus) directly on your own images.
+
+```python
+from axilio.platform import Client
+
+client = Client()
+```
+
+The constructor reads your API key from the `AXILIO_API_KEY` environment variable.
+See [Authentication](/authentication) to set it.
+
+## `client.session()`
+Open a session on a phone and return a [`driver`](/driver/reference) to control it.
+Use it as a context manager so the phone is always released when you're done.
+
+```python
+with client.session("android") as driver:
+    driver.find_text("Settings").tap()
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `phone_type` | `"android"` | `"android"` | The device kind. Only Android is supported today. |
+| `phone_id` | `str` | `None` | Pin the session to a specific phone instead of any available one. |
+| `workflow_id` | `str` | `None` | Attach the session to a workflow run. |
+| `default_ocr_engine` | `"free" \| "premium"` | `"free"` | Text engine for every [`find_text`](/driver/reference#driver-find_text) in the session. |
+| `default_model` | `str` | auto | [Vision model](/drivers/models) for every [`find`](/driver/reference#driver-find) in the session. |
+
+**Returns** a [`driver`](/driver/reference) (as a context manager). Any per-call
+`ocr_engine` or `model` overrides these session defaults.
+
+## `client.argus`
+
+`client.argus` is the vision namespace. The [driver](/driver/reference) already
+runs Argus for you on the live screen; call it directly when you have your own
+image. See [Models](/drivers/models) for ids and pricing.
+
+### `client.argus.locate()`
+Find something in an image by describing it — the same engine as
+[`driver.find()`](/driver/reference#driver-find).
+
+```python
+result = client.argus.locate(
+    image=image_b64,
+    query="the blue Continue button",
+)
+if result.found:
+    print(result.bbox, result.confidence, result.cost_microdollars)
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `image` | `str` | required | Base64-encoded image data. |
+| `query` | `str` | required | Plain-English description of what to find. |
+| `model` | `str` | auto | A [vision model](/drivers/models) id. |
+
+**Returns** a result with `found` (`bool`), `bbox`, `confidence` (`float`), and
+`cost_microdollars` (`int`).
+
+### `client.argus.detect()`
+Read an image — its text, its icons, or both.
+
+```python
+result = client.argus.detect(image=image_b64, inference_type="combined")
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `image` | `str` | required | Base64-encoded image data. |
+| `inference_type` | `"ocr" \| "yolo" \| "combined"` | server default | `ocr` = text, `yolo` = icons, `combined` = both. |
+| `ocr_engine` | `"free" \| "premium"` | `"free"` | Text engine for the OCR pass. |
+| `confidence_threshold` | `float` | server default | Minimum confidence for detections and OCR results. |
+
+**Returns** the detected text and icons.
+
+### `client.argus.list_models()`
+List every model Argus supports, with live pricing.
+
+```python
+models = client.argus.list_models()
+for m in models.data:
+    print(m.id, m.pricing)
+```
+
+**Returns** a list on `.data`, each entry carrying `id` and `pricing`. See
+[Models](/drivers/models).
+
+## See also
+
+<CardGroup cols={2}>
+  <Card title="Driver" icon="mobile" href="/driver/reference">
+    Every action `session()` lets you call.
+  </Card>
+  <Card title="Models" icon="layer-group" href="/drivers/models">
+    The models behind Argus, and their pricing.
+  </Card>
+</CardGroup>

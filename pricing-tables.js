@@ -130,13 +130,16 @@
   }
 
   function run() {
-    var p = document.getElementById("axilio-plans");
+    // div#… (not getElementById): Mintlify slugifies headings into element ids,
+    // so a heading like "## Axilio models" also carries id="axilio-models" and
+    // getElementById would hand us the heading instead of our anchor div.
+    var p = document.querySelector("div#axilio-plans");
     if (p && !p.dataset.loaded) { p.dataset.loaded = "1"; renderPlans(p); }
-    var r = document.getElementById("axilio-rental-plans");
+    var r = document.querySelector("div#axilio-rental-plans");
     if (r && !r.dataset.loaded) { r.dataset.loaded = "1"; renderRentals(r); }
-    var m = document.getElementById("axilio-models");
+    var m = document.querySelector("div#axilio-models");
     if (m && !m.dataset.loaded) { m.dataset.loaded = "1"; renderModels(m); }
-    var am = document.getElementById("axilio-argus-models");
+    var am = document.querySelector("div#axilio-argus-models");
     if (am && !am.dataset.loaded) { am.dataset.loaded = "1"; renderAxilioModels(am); }
   }
 

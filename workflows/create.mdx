@@ -14,7 +14,7 @@ live phone as you go, and save it when it works. It's the same code you'd write
 anywhere:
 
 ```python
-with client.session("ANDROID") as driver:
+with client.session("android") as driver:
     driver.find(query="the search box").type_into("axilio")
     driver.find_text("Search").tap()
 ```

@@ -33,7 +33,7 @@ from axilio.platform import Client
 client = Client()
 
 # Borrow a phone. It's returned automatically when the block ends.
-with client.session("ANDROID") as driver:
+with client.session("android") as driver:
     # Save a picture of the screen.
     with open("screen.png", "wb") as f:
         f.write(driver.screenshot())

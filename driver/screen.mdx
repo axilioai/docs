@@ -1,40 +1,64 @@
 ---
 title: "Screen"
 sidebarTitle: "Screen"
-description: "A snapshot of everything on screen (all recognized text and icons) returned by observe() and queryable without re-capturing."
+description: "What observe() returns — a snapshot of all on-screen text and icons, queryable without re-capturing."
 ---
 
-A `Screen` is what [`observe()`](/driver/observe) returns: a single snapshot of all
-recognized text and icons. Query it locally, with no round trip to the device.
+A `Screen` is what [`driver.observe()`](/driver/reference#driver-observe) returns:
+a single snapshot of all recognized text and icons. Query it locally, with no round
+trip to the device.
 
 ```python
 screen = driver.observe()
-row = screen.find_text("Sign in")          # Element | None
+row = screen.find_text("Sign in")            # Element | None
 prices = screen.find_all_text(contains="$")  # list[Element]
 ```
 
 ## Methods
 
-| Method | Returns | Description |
-|---|---|---|
-| `find_text(text, exact=False)` | `Element \| None` | Best text match in the snapshot. |
-| `find_all_text(contains=…, pattern=…)` | `list[Element]` | Every text match. |
+### `screen.find_text()`
+Best text match in the snapshot.
+
+```python
+screen.find_text("Total", exact=False)
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | `str` | required | The text to match. |
+| `exact` | `bool` | `False` | Require the whole label to match, not a substring. |
+
+**Returns** <code><a href="/driver/element">Element</a> | None</code>.
+
+### `screen.find_all_text()`
+Every text match in the snapshot.
+
+```python
+screen.find_all_text(pattern=r"\$\d+\.\d{2}")
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `contains` | `str` | `None` | Keep matches containing this substring. |
+| `pattern` | `str` | `None` | Keep matches against this regular expression. |
+
+**Returns** <code>list[<a href="/driver/element">Element</a>]</code>.
 
 ## Fields
 
 | Field | Type | Description |
 |---|---|---|
-| `texts` | `list[Element]` | Every recognized text element. |
-| `icons` | `list` | Detected icons, each with `bbox`, `center`, `confidence`. |
-| `width`, `height` | `int` | Screen dimensions, in pixels. |
-| `captured_at` | `datetime` | When the snapshot was taken. |
-| `hash` | `str` | Content hash. Compare across snapshots to detect change. |
+| `screen.texts` | <code>list[<a href="/driver/element">Element</a>]</code> | Every recognized text element. |
+| `screen.icons` | `list` | Detected icons, each with `bbox`, `center`, `confidence`. |
+| `screen.width`, `screen.height` | `int` | Screen dimensions, in pixels. |
+| `screen.captured_at` | `datetime` | When the snapshot was taken. |
+| `screen.hash` | `str` | Content hash. Compare across snapshots to detect change. |
 
 ## See also
 
 <CardGroup cols={2}>
-  <Card title="Observe" icon="table-list" href="/driver/observe">
-    How and when to call <code>observe()</code>.
+  <Card title="Driver" icon="mobile" href="/driver/reference">
+    `observe()` and every other action.
   </Card>
   <Card title="Element" icon="crosshairs" href="/driver/element">
     The items a screen holds.

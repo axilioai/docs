@@ -15,7 +15,7 @@ from axilio.platform import Client
 
 client = Client()
 
-with client.session("ANDROID") as driver:
+with client.session("android") as driver:
     driver.find(query="the Settings icon").tap()
     driver.find_text("Search").type_into("axilio")
 ```
@@ -37,8 +37,8 @@ Every basic is one idea. Learn the handful below and you can drive any app.
   <Card title="Swipe" icon="arrows-up-down-left-right" href="/driver/swipe">
     Swipe and scroll.
   </Card>
-  <Card title="Buttons" icon="mobile-button" href="/driver/buttons">
-    Press Home, Back, and other device buttons.
+  <Card title="Keys" icon="keyboard" href="/driver/buttons">
+    Press Enter to submit a form or search.
   </Card>
   <Card title="Observe" icon="table-list" href="/driver/observe">
     Read the whole screen at once.
@@ -63,3 +63,6 @@ driver.wait_for_text("Welcome").tap()        # wait -> tap
 
 That's the whole model. When you need exact control, every action also takes raw
 coordinates. See [Tap](/driver/tap) and [Swipe](/driver/swipe).
+
+For every method with its full signature, arguments, and return type, see the
+[Driver reference](/driver/reference).

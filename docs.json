@@ -22,9 +22,6 @@
       "light": "#FFFFFF"
     }
   },
-  "fonts": {
-    "family": "IBM Plex Mono"
-  },
   "contextual": {
     "options": [
       "copy",
@@ -155,27 +152,19 @@
               {
                 "group": "Reference",
                 "pages": [
+                  "driver/client",
+                  "driver/reference",
                   "driver/element",
                   "driver/screen",
                   "driver/key"
                 ]
               }
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Argus",
-        "icon": "eye",
-        "groups": [
+          },
           {
-            "group": "Vision",
-            "icon": "eye",
+            "group": "Models",
             "pages": [
-              "vision/overview",
-              "vision/locate",
-              "vision/detect",
-              "vision/models"
+              "drivers/models"
             ]
           }
         ]
@@ -224,32 +213,130 @@
     ]
   },
   "redirects": [
-    { "source": "/concepts/devices", "destination": "/devices/overview" },
-    { "source": "/concepts/mobile-driver", "destination": "/driver/overview" },
-    { "source": "/concepts/workflows-and-runs", "destination": "/workflows/overview" },
-    { "source": "/concepts/sandbox-mode", "destination": "/workflows/overview" },
-    { "source": "/workflows/sandbox-mode", "destination": "/workflows/overview" },
-    { "source": "/guides/allocating-devices", "destination": "/devices/allocate" },
-    { "source": "/guides/controlling-devices", "destination": "/driver/overview" },
-    { "source": "/guides/running-workflows", "destination": "/workflows/create" },
-    { "source": "/guides/parallel-execution", "destination": "/workflows/run" },
-    { "source": "/scaling/parallel-sessions", "destination": "/workflows/run" },
-    { "source": "/scaling/rate-limits", "destination": "/reference/configuration" },
-    { "source": "/scaling/workflow-engine", "destination": "/workflows/overview" },
-    { "source": "/guides/best-practices", "destination": "/driver/overview" },
-    { "source": "/platform/billing", "destination": "/billing/overview" },
-    { "source": "/platform/usage", "destination": "/observability/cost" },
-    { "source": "/usage/metrics", "destination": "/observability/cost" },
-    { "source": "/usage/sessions", "destination": "/observability/cost" },
-    { "source": "/platform/organizations", "destination": "/org/overview" },
-    { "source": "/drivers", "destination": "/drivers/overview" },
-    { "source": "/driver/find-by-text", "destination": "/driver/find" },
-    { "source": "/driver/find-with-vision", "destination": "/driver/find" },
-    { "source": "/driver/actions", "destination": "/driver/tap" },
-    { "source": "/driver/read-the-screen", "destination": "/driver/observe" },
-    { "source": "/driver/hardware-keys", "destination": "/driver/buttons" },
-    { "source": "/driver/waiting", "destination": "/driver/wait" },
-    { "source": "/driver/screenshots", "destination": "/driver/screenshot" }
+    {
+      "source": "/concepts/devices",
+      "destination": "/devices/overview"
+    },
+    {
+      "source": "/concepts/mobile-driver",
+      "destination": "/driver/overview"
+    },
+    {
+      "source": "/concepts/workflows-and-runs",
+      "destination": "/workflows/overview"
+    },
+    {
+      "source": "/concepts/sandbox-mode",
+      "destination": "/workflows/overview"
+    },
+    {
+      "source": "/workflows/sandbox-mode",
+      "destination": "/workflows/overview"
+    },
+    {
+      "source": "/guides/allocating-devices",
+      "destination": "/devices/allocate"
+    },
+    {
+      "source": "/guides/controlling-devices",
+      "destination": "/driver/overview"
+    },
+    {
+      "source": "/guides/running-workflows",
+      "destination": "/workflows/create"
+    },
+    {
+      "source": "/guides/parallel-execution",
+      "destination": "/workflows/run"
+    },
+    {
+      "source": "/scaling/parallel-sessions",
+      "destination": "/workflows/run"
+    },
+    {
+      "source": "/scaling/rate-limits",
+      "destination": "/reference/configuration"
+    },
+    {
+      "source": "/scaling/workflow-engine",
+      "destination": "/workflows/overview"
+    },
+    {
+      "source": "/guides/best-practices",
+      "destination": "/driver/overview"
+    },
+    {
+      "source": "/platform/billing",
+      "destination": "/billing/overview"
+    },
+    {
+      "source": "/platform/usage",
+      "destination": "/observability/cost"
+    },
+    {
+      "source": "/usage/metrics",
+      "destination": "/observability/cost"
+    },
+    {
+      "source": "/usage/sessions",
+      "destination": "/observability/cost"
+    },
+    {
+      "source": "/platform/organizations",
+      "destination": "/org/overview"
+    },
+    {
+      "source": "/drivers",
+      "destination": "/drivers/overview"
+    },
+    {
+      "source": "/driver/find-by-text",
+      "destination": "/driver/find"
+    },
+    {
+      "source": "/driver/find-with-vision",
+      "destination": "/driver/find"
+    },
+    {
+      "source": "/driver/actions",
+      "destination": "/driver/tap"
+    },
+    {
+      "source": "/driver/read-the-screen",
+      "destination": "/driver/observe"
+    },
+    {
+      "source": "/driver/hardware-keys",
+      "destination": "/driver/buttons"
+    },
+    {
+      "source": "/driver/waiting",
+      "destination": "/driver/wait"
+    },
+    {
+      "source": "/driver/screenshots",
+      "destination": "/driver/screenshot"
+    },
+    {
+      "source": "/vision/models",
+      "destination": "/drivers/models"
+    },
+    {
+      "source": "/vision/overview",
+      "destination": "/drivers/models"
+    },
+    {
+      "source": "/vision/locate",
+      "destination": "/api-reference/vision/inference/run-locate"
+    },
+    {
+      "source": "/vision/detect",
+      "destination": "/api-reference/vision/inference/run-inference"
+    },
+    {
+      "source": "/driver/models",
+      "destination": "/drivers/models"
+    }
   ],
   "footer": {
     "socials": {
