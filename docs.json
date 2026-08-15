@@ -7,7 +7,7 @@
     "dark": "/logo/axilio-dark.svg",
     "href": "/"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.png",
   "colors": {
     "primary": "#10B981",
     "light": "#34D399",
@@ -199,12 +199,8 @@
         ]
       },
       {
-        "tab": "Changelog",
-        "href": "/reference/changelog"
-      },
-      {
         "tab": "GitHub ↗",
-        "href": "https://github.com/axilioai/platform-python"
+        "href": "https://github.com/orgs/axilioai/repositories"
       },
       {
         "tab": "Dashboard ↗",
