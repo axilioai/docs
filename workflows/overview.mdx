@@ -1,7 +1,7 @@
 ---
 title: "Workflows and runs"
 sidebarTitle: "Overview"
-description: "A workflow is your automation saved on Axilio. A run is one execution of it."
+description: "Create, run, and monitor an Axilio workflow."
 ---
 
 A **workflow** is your automation saved on Axilio: the code that drives a phone,
@@ -12,13 +12,13 @@ Save a workflow once, then run it again and again, on demand or on a schedule.
 ## The basics
 
 <CardGroup cols={3}>
-  <Card title="Create" icon="square-plus" href="/workflows/create">
+  <Card title="Create" icon="square-plus" href="#create">
     Write and save your automation.
   </Card>
-  <Card title="Run" icon="play" href="/workflows/run">
+  <Card title="Run" icon="play" href="#run">
     Start a run, now or scheduled.
   </Card>
-  <Card title="Watch a run" icon="list" href="/workflows/monitor">
+  <Card title="Watch a run" icon="list" href="#watch-a-run">
     Check its status and replay it.
   </Card>
 </CardGroup>
@@ -28,3 +28,231 @@ Save a workflow once, then run it again and again, on demand or on a schedule.
 When you write code with `session()`, you're driving a phone live. A workflow is
 that same code, saved so Axilio can run it for you on phones it manages. The script
 you test runs unchanged as a workflow.
+
+## Create
+
+Prototype your phone task in the session dashboard or an SDK before you save it
+as a workflow. These examples open X, search for `agentic infrastructure`, and
+scroll through three screens of top posts.
+
+<Tabs>
+  <Tab title="Session dashboard">
+    The session dashboard pre-connects `driver` and provides `Key`. Put the phone
+    on its launcher, paste the script into the code editor, and run the whole file.
+
+    ```python
+    # `driver` and `Key` are pre-bound to this session's phone.
+    screen = driver.observe()
+    center_x = screen.width // 2
+
+    # Open the app drawer, then open X.
+    driver.swipe(
+        {"x": center_x, "y": int(screen.height * 0.88)},
+        {"x": center_x, "y": int(screen.height * 0.28)},
+    )
+    driver.find(query="the X app").tap()
+
+    # Search for the query and wait for the Top results tab.
+    driver.wait_for_text("Search")
+    driver.find(query="the Search field").type_into("agentic infrastructure")
+    driver.key_press(Key.ENTER)
+    driver.wait_for_text("Top", exact=True)
+
+    # Scroll through three result screens and verify each one.
+    for index in range(1, 4):
+        screen = driver.observe()
+        driver.swipe(
+            {"x": screen.width // 2, "y": int(screen.height * 0.83)},
+            {"x": screen.width // 2, "y": int(screen.height * 0.24)},
+        )
+        screen = driver.observe()
+        print(
+            f"result screen {index}: "
+            f"{len(screen.texts)} texts, {len(screen.icons)} icons"
+        )
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    Set `AXILIO_API_KEY`, then run the script with the Axilio Python SDK. The
+    session context releases the phone when the script exits.
+
+    ```python
+    from axilio.drivers.mobile import Key
+    from axilio.platform import Client
+
+    client = Client()
+
+    with client.session("android") as driver:
+        screen = driver.observe()
+        center_x = screen.width // 2
+
+        driver.swipe(
+            {"x": center_x, "y": int(screen.height * 0.88)},
+            {"x": center_x, "y": int(screen.height * 0.28)},
+        )
+        driver.find(query="the X app").tap()
+
+        driver.wait_for_text("Search")
+        driver.find(query="the Search field").type_into("agentic infrastructure")
+        driver.key_press(Key.ENTER)
+        driver.wait_for_text("Top", exact=True)
+
+        for index in range(1, 4):
+            screen = driver.observe()
+            driver.swipe(
+                {"x": screen.width // 2, "y": int(screen.height * 0.83)},
+                {"x": screen.width // 2, "y": int(screen.height * 0.24)},
+            )
+            screen = driver.observe()
+            print(
+                f"result screen {index}: "
+                f"{len(screen.texts)} texts, {len(screen.icons)} icons"
+            )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    Set `AXILIO_API_KEY`, then run the script with the Axilio Go SDK. The
+    deferred cleanup closes the driver and releases the phone.
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "errors"
+        "fmt"
+        "log"
+        "os"
+        "time"
+
+        platformgo "github.com/axilioai/platform-go"
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/drivers/mobile"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        if err := run(context.Background()); err != nil {
+            log.Fatal(err)
+        }
+    }
+
+    func run(ctx context.Context) error {
+        apiKey := os.Getenv("AXILIO_API_KEY")
+        if apiKey == "" {
+            return errors.New("set AXILIO_API_KEY")
+        }
+
+        api := client.NewClient(
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+            option.WithAPIKey(apiKey),
+        )
+        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        })
+        if err != nil {
+            return err
+        }
+        defer func() {
+            if _, err := api.Phones.Deallocate(
+                ctx,
+                &platformgo.PhonesDeallocateRequest{PhoneID: allocation.PhoneID},
+            ); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
+
+        if allocation.ControlURL == nil {
+            return errors.New("allocation returned no control URL")
+        }
+        driver := mobile.ConnectRemote(*allocation.ControlURL)
+        defer driver.Close()
+
+        screen, err := driver.Observe()
+        if err != nil {
+            return err
+        }
+        centerX := screen.Width / 2
+        if err := driver.Swipe(
+            mobile.Coords{X: centerX, Y: int(float64(screen.Height) * 0.88)},
+            mobile.Coords{X: centerX, Y: int(float64(screen.Height) * 0.28)},
+            300,
+        ); err != nil {
+            return err
+        }
+
+        xApp, err := driver.Find("the X app")
+        if err != nil {
+            return err
+        }
+        if err := xApp.Tap(); err != nil {
+            return err
+        }
+
+        if _, err := driver.WaitForText("Search", 10*time.Second, false); err != nil {
+            return err
+        }
+        search, err := driver.Find("the Search field")
+        if err != nil {
+            return err
+        }
+        if err := search.TypeInto("agentic infrastructure"); err != nil {
+            return err
+        }
+        if err := driver.KeyPress(mobile.KeyEnter); err != nil {
+            return err
+        }
+        if _, err := driver.WaitForText("Top", 10*time.Second, true); err != nil {
+            return err
+        }
+
+        for index := 1; index <= 3; index++ {
+            screen, err = driver.Observe()
+            if err != nil {
+                return err
+            }
+            if err := driver.Swipe(
+                mobile.Coords{
+                    X: screen.Width / 2,
+                    Y: int(float64(screen.Height) * 0.83),
+                },
+                mobile.Coords{
+                    X: screen.Width / 2,
+                    Y: int(float64(screen.Height) * 0.24),
+                },
+                300,
+            ); err != nil {
+                return err
+            }
+            screen, err = driver.Observe()
+            if err != nil {
+                return err
+            }
+            fmt.Printf(
+                "result screen %d: %d texts, %d icons\n",
+                index,
+                len(screen.Texts),
+                len(screen.Icons),
+            )
+        }
+
+        return nil
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The relative swipe coordinates preserve the gestures when a session uses a
+different frame size. When the task works, [save it as a workflow](/workflows/create).
+
+## Run
+
+Start one execution from the dashboard, or use the SDK to run a saved workflow
+immediately or on a schedule. [Learn how to run a workflow](/workflows/run).
+
+## Watch a run
+
+Use the run ID to check its status, replay its recording, and inspect its events.
+[Learn how to monitor a run](/workflows/monitor).

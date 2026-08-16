@@ -50,8 +50,19 @@
             "pages": [
               "index",
               "introduction",
+              "authentication",
               "quickstart",
-              "authentication"
+              "guides/search-x-with-the-interactive-cli"
+            ]
+          },
+          {
+            "group": "Workflows & Runs",
+            "icon": "diagram-project",
+            "pages": [
+              "workflows/overview",
+              "workflows/create",
+              "workflows/run",
+              "workflows/monitor"
             ]
           },
           {
@@ -63,16 +74,6 @@
               "devices/discover",
               "devices/dedicated",
               "devices/timeouts"
-            ]
-          },
-          {
-            "group": "Workflows & Runs",
-            "icon": "diagram-project",
-            "pages": [
-              "workflows/overview",
-              "workflows/create",
-              "workflows/run",
-              "workflows/monitor"
             ]
           },
           {

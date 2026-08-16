@@ -1,0 +1,74 @@
+---
+title: "Search X with the interactive CLI"
+sidebarTitle: "Explore with the CLI"
+description: "Use the Axilio CLI to explore a mobile task before turning it into a workflow."
+---
+
+Use the interactive CLI to work out a mobile task one action at a time. This
+example opens X, searches for `agentic infrastructure`, and scrolls through the
+first few top posts.
+
+## Before you start
+
+- Install the `axilio` CLI and run `axilio login`.
+- Use a phone that has X installed and signed in.
+
+## Start a session
+
+Start a session and select it for the current shell:
+
+```bash
+eval "$(axilio sessions start --export)"
+```
+
+Every following `axilio phone` command uses `AXILIO_SESSION` automatically.
+
+## Open X
+
+Observe the launcher, open the app drawer, and tap X:
+
+```bash
+axilio phone observe
+axilio phone swipe 244 950 244 300
+axilio phone tap --query "the X app"
+axilio phone observe
+```
+
+The swipe coordinates use the 488×1080 frame returned by `observe`. Adjust them
+if your phone returns a different frame size.
+
+## Search
+
+Focus the search field, enter the query, and submit it:
+
+```bash
+axilio phone tap --query "the Search field"
+axilio phone type "agentic infrastructure"
+axilio phone key enter
+axilio phone observe
+```
+
+The final `observe` verifies that X opened the **Top** results tab for the right
+query.
+
+## Scroll through the top posts
+
+Run these commands three times. Observe after each swipe so you can verify the
+screen before continuing:
+
+```bash
+axilio phone swipe 244 900 244 260
+axilio phone observe
+```
+
+## Stop and download the recording
+
+Stop the session as soon as you finish:
+
+```bash
+axilio sessions stop "$AXILIO_SESSION" --yes
+```
+
+Axilio records the session by default. In the
+[dashboard](https://app.axilio.ai/dashboard), open **Sessions**, select the
+completed session, open the video player's menu, and click **Download**.
