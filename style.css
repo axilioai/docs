@@ -157,6 +157,49 @@ html.light #sidebar-content {
   border-right-color: rgba(0, 0, 0, 0.08);
 }
 
+/* ── Homepage agent prompt — one focused CTA, with the full prompt kept out of
+   the reading flow. The label changes to “Copied” after a successful click. ── */
+.axilio-copy-prompt-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.72rem 1rem;
+  border: 1px solid rgb(var(--primary));
+  background: rgb(var(--primary));
+  color: #07120d;
+  font: inherit;
+  font-weight: 650;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.16);
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+}
+.axilio-copy-prompt-button:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.22);
+}
+.axilio-copy-prompt-button:focus-visible {
+  outline: 2px solid rgb(var(--primary));
+  outline-offset: 3px;
+}
+.axilio-copy-prompt-button:disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+.axilio-copy-prompt-button[data-state="copied"] {
+  filter: brightness(1.08);
+}
+.axilio-copy-prompt-button svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* ── API role badges — functional, not decorative. The backend emits
    x-required-role (viewer/member/admin) per endpoint (AXI-1123); sync-openapi.py
    lifts it into span.api-role via x-mint.content, rendered under the endpoint
