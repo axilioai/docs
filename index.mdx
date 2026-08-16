@@ -29,23 +29,32 @@ uses them the same way you do: on a real phone. That's what Axilio is for.
 
 ## Give your AI a phone
 
-Copy this prompt into your coding agent. The prompt gives it a safe setup path,
-a first phone test, and the references it needs to build your automation.
+Copy and paste this into your AI coding agent (Cursor, Claude, Codex, Windsurf,
+or similar). It installs the Axilio CLI, loads Axilio's agent instructions,
+guides you through secure authentication, and verifies the setup with a live
+phone session before your agent builds a reusable workflow.
+
+<Accordion title="Copy prompt" icon="copy">
 
 ```text
-Help me set up Axilio, prove that you can drive a real phone, and then use it to
-implement my mobile automation requests. Take ownership of the setup, but pause
-for my permission whenever you need to create credentials or change my account.
+Set up Axilio in this project: install the CLI, load its agent instructions,
+authenticate me securely, and prove the setup by controlling a live phone
+session. Then use Axilio to implement my mobile automation requests. Take
+ownership of setup, but pause for my permission whenever you need to create
+credentials or change my account.
 
 1. Install the current Axilio CLI from an official source:
    - macOS with Homebrew: brew install axilioai/tap/axilio
    - macOS or Linux: curl -fsSL https://axilio.ai/install.sh | sh
-   Verify the install with `axilio --version`, then run `axilio doctor`.
+   Verify the install with `axilio --version`.
 
-2. Configure yourself to use Axilio. Run `axilio init` in my project, read the
-   instruction file it creates, and follow it. Before guessing at a command,
-   consult `axilio --help`, `axilio <command> --help`, and `man axilio`. You can
-   also run `axilio help --html` for the installed browser reference.
+2. Load Axilio's agent instructions. Run `axilio init` in my project, read the
+   instruction file it creates, and follow it. If the command cannot configure
+   this coding agent, read the canonical instructions at
+   https://api.axilio.ai/api/v1/skill and follow them for this task. Before
+   guessing at a command, consult `axilio --help`, `axilio <command> --help`,
+   and `man axilio`. You can also run `axilio help --html` for the installed
+   browser reference.
 
 3. Help me authenticate with an API key. Ask me whether I want to create one
    myself at https://app.axilio.ai/api-keys?create=1 or authorize you to use an
@@ -82,6 +91,8 @@ after each action, and always release the phone. Then give me a durable Python
 or Go SDK workflow that reproduces the successful interaction without requiring
 you to remain in the loop.
 ```
+
+</Accordion>
 
 ## What you get
 
