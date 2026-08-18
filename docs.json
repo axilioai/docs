@@ -181,6 +181,15 @@
             ]
           },
           {
+            "group": "Device Control Protocol",
+            "icon": "plug",
+            "pages": [
+              "api-reference/dcp/overview",
+              "api-reference/dcp/raw-usage",
+              "api-reference/dcp/reference"
+            ]
+          },
+          {
             "group": "REST API",
             "icon": "server",
             "openapi": {

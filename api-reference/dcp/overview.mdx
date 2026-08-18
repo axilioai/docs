@@ -1,0 +1,74 @@
+---
+title: "Device Control Protocol"
+sidebarTitle: "Overview"
+description: "The raw wire that drives a phone — CDP-shaped JSON-RPC over one WebSocket per session."
+---
+
+Every phone you allocate exposes a `control_url`: a single WebSocket that
+drives the phone. The Device Control Protocol (DCP) is what rides on that
+socket. The [Python SDK](/quickstart) speaks it for you, but the socket is
+yours — you can open it directly and drive a phone from any language with a
+WebSocket client.
+
+DCP is to phones what the Chrome DevTools Protocol is to browsers: a small,
+literal message protocol you can drive raw. Commands go down, results and
+events come back, one phone per connection.
+
+## Two layers, one protocol
+
+- **The SDK is the friendly path.** [`MobileDriver`](/driver/reference) adds
+  plain-English selectors, waiting, and retries on top of DCP. Reach for it
+  first — most code should.
+- **The raw protocol is the power path.** Open `control_url` yourself when you
+  work outside Python, embed control in your own runtime, or want the exact
+  frames on the wire with nothing in between.
+
+Both drive the same phone through the same socket. Anything the SDK does, it
+does by sending DCP frames.
+
+## How the wire looks
+
+DCP is JSON-RPC framed like the Chrome DevTools Protocol — the frame *is* the
+whole payload, at the top level, with no envelope:
+
+```json
+// command  (you → phone)
+{ "id": 1, "method": "Touch.tap", "params": { "x": 540, "y": 1180 } }
+
+// response (phone → you)
+{ "id": 1, "result": {} }
+```
+
+Each command carries an `id`; its response echoes that `id`. A method name is
+`Domain.method` — `Touch.tap`, `Screen.observe`, `Device.info`. A phone
+advertises the domains it supports in the [handshake](/api-reference/dcp/reference#protocol-handshake),
+so you discover its capabilities instead of assuming them.
+
+## What DCP drives
+
+DCP is a phone protocol. A phone advertises these capability domains:
+
+| Domain | What it does |
+| --- | --- |
+| `Protocol` | Handshake — negotiate the protocol version and discover capabilities. |
+| `Device` | Read the static device descriptor (screen size, platform, input modalities). |
+| `Screen` | Screenshot, observe (OCR + icons), and find an element by description. |
+| `Touch` | Tap, long-press, and swipe at pixel coordinates. |
+| `Keyboard` | Type text and press named keys. |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Drive a phone with raw DCP" icon="bolt" href="/api-reference/dcp/raw-usage">
+    Open the socket, handshake, and send your first command.
+  </Card>
+  <Card title="Message reference" icon="list" href="/api-reference/dcp/reference">
+    Every method, its params, and its result.
+  </Card>
+  <Card title="Get a phone" icon="mobile" href="/devices/allocate">
+    Allocate a phone and read its `control_url`.
+  </Card>
+  <Card title="Use the SDK instead" icon="hand-pointer" href="/driver/overview">
+    The ergonomic layer over DCP.
+  </Card>
+</CardGroup>
