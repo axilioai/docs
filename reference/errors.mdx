@@ -136,19 +136,19 @@ Device commands use one shared error taxonomy. Python represents each category
 as an exception class. Go returns `*mobile.Error` with a machine-readable
 `Code`. The CLI maps the categories to the exit statuses above.
 
-| Code | Python exception | Meaning | Retryable by default |
-| --- | --- | --- | --- |
-| `unknown_op` | `UnknownOpError` | The executor does not recognize the operation, usually because the SDK, CLI, or phone-side software is out of date. | No |
-| `invalid_args` | `InvalidArgsError` | A device command received invalid parameters. | No |
-| `no_allocation` | `NoAllocationError` | There is no active phone allocation for the command. | No |
-| `not_connected` | `NotConnectedError` | The executor cannot reach the agent running on the phone. | No |
-| `device_offline` | `DeviceOfflineError` | The phone is temporarily unavailable. | Yes |
-| `unauthorized` | `UnauthorizedError` | The session token was rejected. | No |
-| `internal` | `InternalError` | The executor encountered an unclassified failure. | No |
-| `canceled` | `CanceledError` | The operation's context or deadline canceled it. | No |
-| `connection` | `ConnectionError` | The SDK could not open the control WebSocket or local sandbox socket. | No |
-| `element_not_found` | `ElementNotFoundError` | A visual or text selector did not match anything on the current screen. | No |
-| `timeout` | `TimeoutError` | A command or wait loop exceeded its deadline. | Yes |
+| Code | Python exception | CLI exit | Meaning | Retryable by default |
+| --- | --- | --- | --- | --- |
+| `unknown_op` | `UnknownOpError` | `1` (`error`) | The executor does not recognize the operation, usually because the SDK, CLI, or phone-side software is out of date. | No |
+| `invalid_args` | `InvalidArgsError` | `2` (`usage`) | A device command received invalid parameters. | No |
+| `no_allocation` | `NoAllocationError` | `4` (`not-found`) | There is no active phone allocation for the command. | No |
+| `not_connected` | `NotConnectedError` | `6` (`unavailable`) | The executor cannot reach the agent running on the phone. | No |
+| `device_offline` | `DeviceOfflineError` | `6` (`unavailable`) | The phone is temporarily unavailable. | Yes |
+| `unauthorized` | `UnauthorizedError` | `3` (`auth`) | The session token was rejected. | No |
+| `internal` | `InternalError` | `1` (`error`) | The executor encountered an unclassified failure. | No |
+| `canceled` | `CanceledError` | `7` (`canceled`) | The operation's context or deadline canceled it. | No |
+| `connection` | `ConnectionError` | `6` (`unavailable`) | The SDK could not open the control WebSocket or local sandbox socket. | No |
+| `element_not_found` | `ElementNotFoundError` | `4` (`not-found`) | A visual or text selector did not match anything on the current screen. | No |
+| `timeout` | `TimeoutError` | `5` (`timeout`) | A command or wait loop exceeded its deadline. | Yes |
 
 The server can set the retryable flag on an individual error. Prefer the
 reported flag over assumptions based only on the code.
