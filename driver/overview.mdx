@@ -15,7 +15,7 @@ from axilio.platform import Client
 
 client = Client()
 
-with client.session("android") as driver:
+with client.session("android", phone_id="ph_123") as driver:
     driver.find(query="the Settings icon").tap()
     driver.find_text("Search").type_into("axilio")
 ```

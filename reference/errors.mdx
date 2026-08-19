@@ -1,57 +1,363 @@
 ---
-title: "Errors"
+title: "Errors and recovery"
 sidebarTitle: "Errors"
-description: "How the SDK signals failures: ApiError for API calls, typed errors for device control."
+description: "Understand API, device-control, workflow, and dashboard errors—and decide when to retry."
 ---
 
-The SDK raises two kinds of error.
+Axilio reports failures at four different layers:
 
-## API calls
+1. **API errors** reject a request before or while Axilio processes it.
+2. **Device-control errors** occur while the CLI or an SDK drives a phone.
+3. **Run failures** occur after a workflow run was accepted.
+4. **Dashboard live-video errors** affect the browser's view of a phone.
 
-Anything that talks to the API raises `axilio.platform.ApiError` on a failure.
-Check `status_code` and `body`:
+Identifying the layer matters. For example, a dashboard video connection can
+fail while the phone session and SDK control connection continue working.
 
-```python
-from axilio.platform import ApiError
+<Note>
+  This page lists Axilio-defined public error categories. Your operating
+  system, network stack, HTTP client, and application code can also report
+  their own errors.
+</Note>
 
-try:
-    run = client.runs.get("run_123")
-except ApiError as e:
-    if e.status_code == 404:
-        print("not found")
-    elif e.status_code == 429:
-        ...   # rate limited, back off and retry
-    else:
-        raise
-```
+## API errors
 
-## Device control
+API failures use an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457.html)
+Problem Details response. The response includes the HTTP `status` and a
+human-readable `detail`. Validation responses can also include an `errors`
+array that identifies invalid request fields.
 
-Driving a phone raises typed errors from `axilio.drivers.mobile`:
+| Status | Meaning | What to do |
+| --- | --- | --- |
+| `400 Bad Request` | The request failed a business or input rule. | Read `detail`, correct the request, and do not retry it unchanged. |
+| `401 Unauthorized` | The API key or access token is missing, invalid, or expired. | Supply a valid credential. For the CLI, run `axilio login` or configure an API key. |
+| `402 Payment Required` | A plan, balance, or quota requirement blocked the operation. | Read `detail`, then add funds or change the applicable plan or quota. |
+| `403 Forbidden` | The authenticated caller lacks the required organization permission. | Use the correct organization or ask an administrator for access. |
+| `404 Not Found` | The resource does not exist or is not visible to your organization. | Verify the ID and organization. Do not retry an unchanged ID. |
+| `408 Request Timeout` | The HTTP request exceeded a server or gateway deadline. | Retry with backoff if the operation is safe to repeat. |
+| `409 Conflict` | The request conflicts with current state. Examples include a busy phone, no idle dedicated phone, a duplicate name, or an already-finished run. | Refresh the resource, resolve the state conflict, and try again. |
+| `422 Unprocessable Entity` | The request did not match the endpoint's schema. | Use the field locations in `errors` to correct the request. |
+| `429 Too Many Requests` | You exceeded a rate limit. | Back off before retrying. |
+| `500 Internal Server Error` | Axilio encountered an unexpected internal failure. The public message is intentionally masked. | Retry once with backoff. If it persists, contact support with the request time and resource IDs. |
+| `502 Bad Gateway` | A phone or edge service explicitly rejected an operation. | Read `detail`; it contains the upstream rejection that explains what to change. |
+| `503 Service Unavailable` | An Axilio service is temporarily unavailable. | Retry with backoff. |
+| `504 Gateway Timeout` | A phone or edge service did not answer within its deadline. | Retry later. If it persists, start a new session or contact support. |
 
-```python
-from axilio.drivers.mobile import ElementNotFoundError, TimeoutError
+<Tabs sync={false}>
+  <Tab title="CLI">
+    The CLI writes errors to stderr and returns a stable exit status:
 
-with client.session("android") as driver:
+    ```bash
+    axilio runs get run_123
+
+    case $? in
+      0) echo "success" ;;
+      2) echo "invalid command or request" ;;
+      3) echo "authentication or permission failure" ;;
+      4) echo "not found" ;;
+      5) echo "timed out" ;;
+      6) echo "service or phone unavailable" ;;
+      7) echo "canceled" ;;
+      *) echo "unclassified failure" ;;
+    esac
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    Every non-successful API response raises `axilio.platform.ApiError` or a
+    status-specific subclass. Inspect `status_code` and `body`:
+
+    ```python
+    from axilio.platform import ApiError
+
     try:
-        driver.find(query="a button that isn't there", timeout=5).tap()
-    except ElementNotFoundError:
-        ...
-    except TimeoutError:
-        ...
-```
+        run = client.runs.get("run_123")
+    except ApiError as error:
+        print(error.status_code)
+        print(error.body)
 
-Others include `ConnectionError`, `DeviceOfflineError`, `NotConnectedError`, and
-`UnauthorizedError`. They all subclass `axilio.drivers.mobile.AxilioError`, so you
-can catch broadly when you want to.
+        if error.status_code == 404:
+            print("Check the run id and organization.")
+        elif error.status_code == 429 or error.status_code >= 500:
+            print("Retry with backoff.")
+        else:
+            raise
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    API failures unwrap to `*core.APIError`, which preserves the HTTP status:
+
+    ```go
+    run, err := api.Runs.Get(ctx, &platformgo.RunsGetRequest{
+        RunID: "run_123",
+    })
+    if err != nil {
+        var apiErr *core.APIError
+        if errors.As(err, &apiErr) {
+            switch apiErr.StatusCode {
+            case 404:
+                log.Print("check the run id and organization")
+            case 429, 500, 502, 503, 504:
+                log.Print("retry with backoff")
+            default:
+                log.Fatal(err)
+            }
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The generated SDKs also expose status-specific types for `402`, `404`, `422`,
+and `500`. Catching `ApiError` in Python or inspecting `*core.APIError` in Go
+also handles other statuses and is the most stable default.
+
+### CLI exit statuses
+
+Branch on the exit status instead of parsing human-readable error text:
+
+| Status | Name | Meaning |
+| --- | --- | --- |
+| `0` | Success | The command completed. |
+| `1` | Error | The failure does not fit a more specific category. This currently includes API statuses such as `402` and `409`. |
+| `2` | Usage | Invalid syntax, arguments, values, or an HTTP `400`/`422` response. |
+| `3` | Authentication | Missing or rejected credentials, or HTTP `401`/`403`. |
+| `4` | Not found | A resource, active allocation, or on-screen element was not found, or HTTP `404`. |
+| `5` | Timeout | An operation exceeded its timeout or deadline, or HTTP `408`. |
+| `6` | Unavailable | The service or phone was unavailable, the phone was offline, the request was rate-limited, or the API returned `429`/`5xx`. |
+| `7` | Canceled | The user, shell, or system canceled the operation. |
+
+Run `man axilio` to see this contract in the installed CLI manual.
+
+## Device-control errors
+
+Device commands use one shared error taxonomy. Python represents each category
+as an exception class. Go returns `*mobile.Error` with a machine-readable
+`Code`. The CLI maps the categories to the exit statuses above.
+
+| Code | Python exception | Meaning | Retryable by default |
+| --- | --- | --- | --- |
+| `unknown_op` | `UnknownOpError` | The executor does not recognize the operation, usually because the SDK, CLI, or phone-side software is out of date. | No |
+| `invalid_args` | `InvalidArgsError` | A device command received invalid parameters. | No |
+| `no_allocation` | `NoAllocationError` | There is no active phone allocation for the command. | No |
+| `not_connected` | `NotConnectedError` | The executor cannot reach the agent running on the phone. | No |
+| `device_offline` | `DeviceOfflineError` | The phone is temporarily unavailable. | Yes |
+| `unauthorized` | `UnauthorizedError` | The session token was rejected. | No |
+| `internal` | `InternalError` | The executor encountered an unclassified failure. | No |
+| `canceled` | `CanceledError` | The operation's context or deadline canceled it. | No |
+| `connection` | `ConnectionError` | The SDK could not open the control WebSocket or local sandbox socket. | No |
+| `element_not_found` | `ElementNotFoundError` | A visual or text selector did not match anything on the current screen. | No |
+| `timeout` | `TimeoutError` | A command or wait loop exceeded its deadline. | Yes |
+
+The server can set the retryable flag on an individual error. Prefer the
+reported flag over assumptions based only on the code.
+
+<Note>
+  Catch Python's `ConnectionError` class directly. In the current Python SDK,
+  that class inherits `code="internal"`; Go reports the equivalent failure as
+  `CodeConnection`.
+</Note>
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    `phone find` returns exit status `4` when no element matches, `5` for a
+    timeout, and `6` when the phone or control connection is unavailable:
+
+    ```bash
+    axilio phone find "the Continue button" --timeout 5s
+    status=$?
+
+    case "$status" in
+      0) echo "found" ;;
+      4) echo "observe again or refine the description" ;;
+      5|6) echo "retry if the session is still active" ;;
+      *) echo "inspect stderr" ;;
+    esac
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    Catch a specific exception when you have a specific recovery, or inspect
+    the base error's `code` and `retryable` fields:
+
+    ```python
+    from axilio.drivers.mobile import AxilioError, ElementNotFoundError
+
+    try:
+        driver.find(query="the Continue button", timeout=5).tap()
+    except ElementNotFoundError:
+        print("Observe again or refine the description.")
+    except AxilioError as error:
+        print(error.code, error.retryable, error.message)
+        if not error.retryable:
+            raise
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    Go returns `*mobile.Error`. Inspect its stable `Code` and `Retryable`
+    fields, or use helpers such as `mobile.IsElementNotFound`:
+
+    ```go
+    element, err := driver.Find("the Continue button")
+    if err != nil {
+        if mobile.IsElementNotFound(err) {
+            log.Print("observe again or refine the description")
+            return
+        }
+
+        var driverErr *mobile.Error
+        if errors.As(err, &driverErr) {
+            log.Printf("code=%s retryable=%t", driverErr.Code, driverErr.Retryable)
+        }
+        return
+    }
+    if err := element.Tap(); err != nil {
+        log.Print(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+For `element_not_found`, observe the current screen and make the query more
+specific. For `connection`, `not_connected`, or `device_offline`, first retry
+the current session. Start a new session if control does not recover. For
+`unknown_op`, update the SDK or CLI before retrying.
+
+## Run failures
+
+A run can be accepted successfully and fail later while it waits for a phone or
+executes your workflow. In that case, the request that created the run succeeds;
+the run later reaches `failed` and exposes an `error_message`.
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio runs get run_123 -o json
+    ```
+
+    A successfully fetched failed run still returns CLI exit status `0`. Branch
+    on the JSON `status` field, not the command's exit status.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    run = client.runs.get("run_123")
+
+    if run.status == "failed":
+        print(run.error_message)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    run, err := api.Runs.Get(ctx, &platformgo.RunsGetRequest{
+        RunID: "run_123",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    if run.GetStatus() == platformgo.RunResponseStatusFailed {
+        if message := run.GetErrorMessage(); message != nil {
+            log.Print(*message)
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Workflow code can raise any language or library exception, so runtime exception
+names are not a closed Axilio error list. Use the run's `error_message` and its
+[`OUTPUT_ERROR` and `WORKFLOW_RUN_FAILED` events](/observability/events) to find
+the original failure.
+
+## Dashboard live-video connection issues
+
+The dashboard can report that it could not reach the live phone, lost the live
+connection, or reached the session's live-viewer limit. These messages describe
+the browser's **WebRTC video and input connection**. They do not necessarily
+mean that the phone, session, workflow, or SDK control connection failed.
+
+For a connection that drops after it was established, the dashboard retries the
+video connection up to three times before showing the recovery message. You can
+then click **Reconnect** or start a new session. A viewer-limit message means
+another dashboard or embedded live view already occupies every available viewer
+slot; disconnect one before reconnecting.
+
+<Warning>
+  This live-video state is not currently exposed through the CLI, Python SDK,
+  or Go SDK. Those clients use a separate control WebSocket. They report their
+  own `connection`, `not_connected`, `device_offline`, or `timeout` error only
+  if phone control is also affected.
+</Warning>
+
+If you also control the affected session through the CLI or an SDK, keep it open
+and test that client's control path:
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio sessions current
+    axilio phone observe
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    screen = driver.observe()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    screen, err := driver.Observe()
+    ```
+  </Tab>
+</Tabs>
+
+If the control command succeeds, the phone remains controllable and only the
+dashboard video path needs to reconnect. If it fails, use the CLI exit status
+or SDK driver error above to choose the recovery. A session created only in the
+dashboard cannot automatically be attached to a separate CLI process for this
+test.
+
+## Other client-side errors
+
+Some helpers reject invalid local input before making an API request:
+
+- Python raises `ValueError` when required client configuration is missing or
+  when you request an unsupported phone type.
+- Python raises `FileTooLargeForDeliveryError` when `send_file()` receives a
+  file larger than the 100 MiB phone-delivery limit.
+- Go returns `files.ErrTooLargeForDelivery` for the same delivery limit.
+- The CLI treats invalid flags, arguments, and locally validated values as exit
+  status `2`.
+
+## Report a persistent problem
+
+Include the following when you contact support:
+
+- The command or SDK method and its error status or code.
+- The session, phone, workflow, or run ID.
+- The approximate time and your organization.
+- Whether the dashboard video, SDK/CLI control, or both were affected.
+
+Do not share API keys, session tokens, signed control URLs, or live-view URLs.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Configuration" icon="gear" href="/reference/configuration">
-    Client options and environment variables.
+    Configure API request retries and timeouts.
   </Card>
-  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
-    Where device-control errors come from.
+  <Card title="Sessions and timeouts" icon="clock" href="/devices/timeouts">
+    Understand connection and session deadlines.
+  </Card>
+  <Card title="Events" icon="list-check" href="/observability/events">
+    Inspect the events from a failed run.
+  </Card>
+  <Card title="Live view" icon="tower-broadcast" href="/observability/live-view">
+    Watch and control an active session.
   </Card>
 </CardGroup>

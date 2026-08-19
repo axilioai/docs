@@ -30,7 +30,11 @@ driver.find_text("Sign in")                         # Lite (the default)
 To use a tier for a whole session instead of every call, set it once:
 
 ```python
-with client.session("android", default_ocr_engine="premium") as driver:
+with client.session(
+    "android",
+    phone_id="ph_123",
+    default_ocr_engine="premium",
+) as driver:
     driver.find_text("Sign in")   # Pro, no kwarg needed
 ```
 
@@ -58,6 +62,7 @@ driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
 
 with client.session(
     "android",
+    phone_id="ph_123",
     default_model="anthropic/claude-haiku-4.5",
 ) as driver:
     driver.find(query="the buy button")   # haiku, no kwarg needed

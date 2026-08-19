@@ -20,10 +20,12 @@ first few top posts.
 
 ## Start a session
 
-Start a session and select it for the current shell:
+List your dedicated phones, then start a session on one and select it for the
+current shell:
 
 ```bash
-eval "$(axilio sessions start --export)"
+axilio phones mine
+eval "$(axilio sessions start --phone-id ph_123 --export)"
 ```
 
 Every following `axilio phone` command uses `AXILIO_SESSION` automatically.

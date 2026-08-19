@@ -1,40 +1,64 @@
 ---
 title: "See available devices"
 sidebarTitle: "See devices"
-description: "Check what phones are free, and which ones are yours."
+description: "List your organization's dedicated phones and inspect their status."
 ---
 
-## What's free
+## Your dedicated phones
 
-`available` shows how many phones are free to borrow right now:
+List every [dedicated phone](/devices/dedicated) your organization rents,
+including phones that are busy or offline:
 
-```python
-free = client.phones.available()
-print(free.android_count, "Android phones free")
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Phones**](https://app.axilio.ai/dashboard).
+    2. Search by phone name or use the **Status**, **Type**, and rental-expiration filters.
+    3. Open a phone to inspect its status, model, location, and subscription.
+  </Tab>
 
-## Your phones
+  <Tab title="CLI">
+    ```bash
+    axilio phones mine
+    ```
 
-`mine` lists the phones tied to your account, like
-[dedicated ones you rented](/billing/plans):
+    Add `-o json` for structured output.
+  </Tab>
 
-```python
-mine = client.phones.mine()
+  <Tab title="Python SDK">
+    ```python
+    dedicated = client.phones.list(ownership="dedicated")
 
-for phone in mine.phones:
-    print(phone.phone_id, phone.nickname, phone.status)
-```
+    for phone in dedicated.phones:
+        print(phone.phone_id, phone.nickname, phone.status)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    dedicated, err := api.Phones.List(ctx, &platformgo.PhonesListRequest{
+        Ownership: platformgo.PhonesListRequestOwnershipDedicated,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for _, phone := range dedicated.Phones {
+        fmt.Println(phone.PhoneID, phone.Nickname, phone.Status)
+    }
+    ```
+  </Tab>
+</Tabs>
 
 Pass a phone's `phone_id` to [`session`](/devices/allocate) to use that exact
-phone.
+phone. A phone with an active status and no current session is available to use.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone.
+    Start a session on a dedicated phone.
   </Card>
   <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How borrowing works.
+    How sessions start and end.
   </Card>
 </CardGroup>

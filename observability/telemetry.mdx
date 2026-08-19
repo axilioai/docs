@@ -17,7 +17,7 @@ import json
 
 import websockets
 
-device = client.phones.allocate(phone_type="ANDROID")
+device = client.phones.allocate(phone_type="android", pool="dedicated")
 
 async def watch():
     async with websockets.connect(device.telemetry_url) as ws:

@@ -4,38 +4,80 @@ sidebarTitle: "Members"
 description: "Invite teammates to your organization and manage their roles."
 ---
 
-Invite teammates to share an organization. Manage members in your
-[dashboard](https://axilio.ai/dashboard), or from the SDK.
-
-<Note>
-  The SDK calls below take your organization ID, which you can find in your
-  dashboard settings.
-</Note>
+Invite teammates and manage their access from the dashboard.
 
 ## Invite a teammate
 
-```python
-client.org.create_invitation(
-    org_id="org_123",
-    email="teammate@example.com",
-    role="member",
-)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Settings → Members**](https://app.axilio.ai/dashboard).
+    2. Click **Invite member**.
+    3. Enter the email address and choose **Admin**, **Member**, or **Viewer**.
+    4. Click **Send invitation**.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently manage organization members. Use the dashboard.
+  </Tab>
+
+  <Tab title="Python SDK">
+    The current Python SDK does not expose organization invitations. Use the
+    dashboard.
+  </Tab>
+
+  <Tab title="Go SDK">
+    The current Go SDK does not expose organization invitations. Use the dashboard.
+  </Tab>
+</Tabs>
 
 ## List members
 
-```python
-members = client.org.list_members(org_id="org_123")
-for member in members.members:
-    print(member)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open **Settings → Members**.
+    2. Search by name, email, or role.
+    3. Sort the table by **Name**, **Email**, **Role**, **Status**, or join date.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently list organization members. Use the dashboard.
+  </Tab>
+
+  <Tab title="Python SDK">
+    The current Python SDK does not expose organization-member listing. Use the
+    dashboard.
+  </Tab>
+
+  <Tab title="Go SDK">
+    The current Go SDK does not expose organization-member listing. Use the dashboard.
+  </Tab>
+</Tabs>
 
 ## Change a role or remove someone
 
-```python
-client.org.update_member_role(org_id="org_123", user_id="user_456", role="admin")
-client.org.remove_member(org_id="org_123", user_id="user_456")
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open **Settings → Members**.
+    2. Select the checkbox beside one or more members.
+    3. Choose a new value from **Set role…** to change their roles, or click
+       **Remove** to remove them.
+    4. Confirm the removal when prompted.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently change roles or remove members. Use the dashboard.
+  </Tab>
+
+  <Tab title="Python SDK">
+    The current Python SDK does not expose role changes or member removal. Use the
+    dashboard.
+  </Tab>
+
+  <Tab title="Go SDK">
+    The current Go SDK does not expose role changes or member removal. Use the
+    dashboard.
+  </Tab>
+</Tabs>
 
 ## Next steps
 

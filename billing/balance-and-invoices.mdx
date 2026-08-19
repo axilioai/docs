@@ -6,44 +6,116 @@ description: "Check your balance, add funds, and get your invoices."
 
 ## Check your balance
 
-```python
-balance = client.billing.get_balance()
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Settings → Billing**](https://app.axilio.ai/dashboard).
+    2. Read the **Balance** card at the top of the page.
+  </Tab>
 
-print(balance.balance_display)        # e.g. $12.34
-print(balance.balance_microdollars)   # the exact amount
-```
+  <Tab title="CLI">
+    The CLI does not currently expose billing commands. Check the balance in the
+    dashboard or use an SDK.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    balance = client.billing.get_balance()
+
+    print(balance.balance_display)        # e.g. $12.34
+    print(balance.balance_microdollars)   # the exact amount
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    balance, err := api.Billing.GetBalance(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(balance.BalanceDisplay)
+    fmt.Println(balance.BalanceMicrodollars)
+    ```
+  </Tab>
+</Tabs>
 
 ## Add funds
 
-```python
-client.billing.add_funds(amount_cents=2000)   # add $20.00
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open **Settings → Billing**.
+    2. Click **Add Funds**.
+    3. Choose **\$5**, **\$10**, **\$25**, **\$50**, **\$100**, or **Custom**.
+    4. Click **Add Funds** and complete checkout.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently add funds. Use **Settings → Billing → Add Funds**
+    in the dashboard.
+  </Tab>
+
+  <Tab title="Python SDK">
+    The current Python SDK does not start an add-funds checkout. Use the dashboard.
+  </Tab>
+
+  <Tab title="Go SDK">
+    The current Go SDK does not start an add-funds checkout. Use the dashboard.
+  </Tab>
+</Tabs>
 
 ## Invoices
 
-List your billing history:
+List invoice history and open an invoice PDF:
 
-```python
-history = client.billing.get_history(limit=20, offset=0)
-for item in history.items:
-    print(item)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open **Settings → Billing**.
+    2. Select **Invoices**.
+    3. Search or filter the invoice list.
+    4. Click **PDF** on an invoice to open its PDF.
+  </Tab>
 
-Get an invoice as a PDF, or open the full billing portal:
+  <Tab title="CLI">
+    The CLI does not currently list or download invoices. Use the dashboard or an
+    SDK.
+  </Tab>
 
-```python
-invoice = client.billing.download_invoice(invoice_id="inv_123")
-print(invoice.download_url)
+  <Tab title="Python SDK">
+    ```python
+    history = client.billing.get_history(limit=20, offset=0)
 
-portal = client.billing.customer_portal()
-print(portal.portal_url)
-```
+    for invoice in history.items or []:
+        print(invoice.invoice_number, invoice.status, invoice.formatted_amount)
+        if invoice.invoice_pdf_url:
+            print(invoice.invoice_pdf_url)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    history, err := api.Billing.GetHistory(ctx, &platformgo.BillingGetHistoryRequest{
+        Limit:  platformgo.Int64(20),
+        Offset: platformgo.Int64(0),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for _, invoice := range history.Items {
+        fmt.Println(invoice.InvoiceNumber, invoice.Status, invoice.FormattedAmount)
+        if invoice.InvoicePdfURL != nil {
+            fmt.Println(*invoice.InvoicePdfURL)
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="How billing works" icon="circle-info" href="/billing/overview">
-    Per-second billing, explained.
+    Flat rentals and separate vision usage, explained.
   </Card>
   <Card title="Cost" icon="coins" href="/observability/cost">
     See where your money goes.

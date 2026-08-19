@@ -37,16 +37,11 @@ Or pass it directly:
 client = Client(api_key="axl_your_key_here")
 ```
 
-## Options
+## Client configuration
 
-`Client()` takes a few optional settings:
-
-| Setting | Default | What it does |
-|---|---|---|
-| `api_key` | `AXILIO_API_KEY` | Your key. Required. |
-| `base_url` | `https://api.axilio.ai` | Where to send requests. |
-| `timeout` | `30.0` | Seconds to wait per request. |
-| `max_retries` | `3` | Automatic retries on temporary failures. |
+`Client()` also accepts API and Argus hosts, request timeouts, and retry
+settings. See [Configuration](/reference/configuration#sdk-client-options) for
+every Python and Go client option.
 
 <Note>
   Each key belongs to one organization. If you're in more than one, make a

@@ -22,15 +22,16 @@ Open a session on a phone and return a [`driver`](/driver/reference) to control 
 Use it as a context manager so the phone is always released when you're done.
 
 ```python
-with client.session("android") as driver:
+with client.session("android", phone_id="ph_123") as driver:
     driver.find_text("Settings").tap()
 ```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `phone_type` | `"android"` | `"android"` | The device kind. Only Android is supported today. |
-| `phone_id` | `str` | `None` | Pin the session to a specific phone instead of any available one. |
+| `phone_id` | `str` | `None` | Select the dedicated phone to use. Find IDs with `client.phones.list(ownership="dedicated")`. |
 | `workflow_id` | `str` | `None` | Attach the session to a workflow run. |
+| `open_timeout` | `float` | `10.0` | Seconds to wait while opening the phone's control connection. |
 | `default_ocr_engine` | `"free" \| "premium"` | `"free"` | Text engine for every [`find_text`](/driver/reference#driver-find_text) in the session. |
 | `default_model` | `str` | auto | [Vision model](/drivers/models) for every [`find`](/driver/reference#driver-find) in the session. |
 

@@ -12,6 +12,7 @@ something on it.
 - **Python 3.10 or newer**
 - **An API key** — create one in the [dashboard](https://axilio.ai/dashboard).
   See [Authentication](/authentication).
+- **A dedicated phone** — rent one from **Phones** in the dashboard.
 
 ## 1. Install
 
@@ -32,8 +33,12 @@ from axilio.platform import Client
 
 client = Client()
 
-# Borrow a phone. It's returned automatically when the block ends.
-with client.session("android") as driver:
+# Select one of your dedicated phones.
+phones = client.phones.list(ownership="dedicated")
+phone = phones.phones[0]
+
+# The session is released automatically when the block ends.
+with client.session("android", phone_id=phone.phone_id) as driver:
     # Save a picture of the screen.
     with open("screen.png", "wb") as f:
         f.write(driver.screenshot())
@@ -48,8 +53,8 @@ Run it:
 python quickstart.py
 ```
 
-That's it — you borrowed a real phone, looked at its screen, and tapped something
-on it.
+That's it — you opened a session on a real phone, looked at its screen, and
+tapped something on it.
 
 ## Next steps
 

@@ -10,7 +10,7 @@ and typing reach the phone — and it works opened in a browser tab or embedded
 in your own app as an iframe.
 
 ```python
-device = client.phones.allocate(phone_type="ANDROID")
+device = client.phones.allocate(phone_type="android", pool="dedicated")
 print(device.live_view_url)
 ```
 
@@ -92,7 +92,8 @@ Set live view behavior per session when you allocate:
 
 ```python
 device = client.phones.allocate(
-    phone_type="ANDROID",
+    phone_type="android",
+    pool="dedicated",
     live_view={"view_only": True},
 )
 ```

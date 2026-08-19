@@ -1,37 +1,91 @@
 ---
 title: "Devices and sessions"
 sidebarTitle: "Overview"
-description: "A device is a real phone in the cloud. A session is a phone you've borrowed to use."
+description: "A device is a dedicated real phone. A session gives you temporary control of it."
 ---
 
 A device is a carrier-connected Android phone that agents can operate
 programmatically. A session is temporary access to one of these devices (phones).
 
-```python
-from axilio.platform import Client
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Click **Allocate A Phone**.
+    3. Choose **Use A Dedicated Phone** and select one of your phones.
+    4. Optionally enter a name or idle timeout, then click **Allocate**. The
+       session opens with a live, interactive view of the phone.
+    5. Click **Deallocate** when you finish to release the phone.
+  </Tab>
 
-client = Client()
+  <Tab title="CLI">
+    Start a session, inspect its phone, then release it:
 
-with client.session("android") as driver:
-    ...   # the phone is yours inside this block
-# it's returned automatically here
-```
+    ```bash
+    axilio phones mine
+    eval "$(axilio sessions start --phone-id ph_123 --export)"
+    axilio phone observe
+    axilio sessions stop "$AXILIO_SESSION" --yes
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    The context manager releases the phone when the block exits:
+
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+
+    phones = client.phones.list(ownership="dedicated")
+    phone = phones.phones[0]
+
+    with client.session("android", phone_id=phone.phone_id) as driver:
+        driver.observe()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    Allocate a phone and always release it when the function returns:
+
+    ```go
+    ctx := context.Background()
+    api := client.NewClient(
+        option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+    )
+
+    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+        PhoneID: allocation.PhoneID,
+    })
+
+    fmt.Println(allocation.PhoneID, allocation.SessionID)
+    ```
+  </Tab>
+</Tabs>
 
 ## The basics
 
 <CardGroup cols={3}>
   <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone.
+    Start a session on a dedicated phone.
   </Card>
   <Card title="See devices" icon="list" href="/devices/discover">
-    What's free, and which phones are yours.
+    Inspect your dedicated-phone inventory.
   </Card>
   <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How borrowing works, and how long you hold a phone.
+    How sessions start, end, and release a phone.
   </Card>
 </CardGroup>
 
 ## How it fits with the driver
 
-The Platform gives you the phone. The [driver](/driver/overview) controls it.
-`session()` does both: it borrows a phone and hands you a driver to drive it.
+The Platform gives you access to the phone. The [driver](/driver/overview)
+controls it. `session()` opens your selected dedicated phone and hands you a
+driver to operate it.
