@@ -89,6 +89,9 @@ driver and releases the phone when you're done:
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
+    API reference: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone),
+    [Release a phone](/api-reference/rest/phones/release-a-phone)
+
     The allocation response's `control_url` uses the device-control WebSocket
     protocol. Tapping the phone is not a REST operation.
   </Tab>
@@ -148,6 +151,9 @@ You can allocate any available dedicated phone or select an exact phone by
         "phone_id": "ph_123"
       }'
     ```
+
+    API reference: [List phones](/api-reference/rest/phones/list-the-orgs-phones),
+    [Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
   </Tab>
 </Tabs>
 
@@ -219,6 +225,9 @@ explicitly:
       --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    API reference: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone),
+    [Release a phone](/api-reference/rest/phones/release-a-phone)
   </Tab>
 </Tabs>
 

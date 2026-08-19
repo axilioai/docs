@@ -9,9 +9,9 @@ When an allocation response includes `telemetry_url`, connect to it with a
 WebSocket client to receive recent and newly published event frames for that
 session.
 
-The stream uses an Axilio-specific JSON protocol. It is not OpenTelemetry or
-OTLP, and it is not the same response format as the archived session events
-API.
+The stream uses an [Axilio-specific JSON protocol](/observability/live-session-events-protocol).
+It is not OpenTelemetry or OTLP, and it is not the same response format as the
+archived session events API.
 
 <Warning>
   This preview is intended for live diagnostic interfaces. The protocol is not
@@ -142,6 +142,9 @@ the phone when the stream closes:
 
     websocat "$TELEMETRY_URL"
     ```
+
+    API reference: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone),
+    [Release a phone](/api-reference/rest/phones/release-a-phone)
   </Tab>
 </Tabs>
 
@@ -219,5 +222,8 @@ an operation completes.
   </Card>
   <Card title="Understand data lifecycle" icon="shield-halved" href="/observability/data-lifecycle">
     Compare live access, archived data, recordings, and usage records.
+  </Card>
+  <Card title="Read the protocol reference" icon="code" href="/observability/live-session-events-protocol">
+    Parse span lifecycle, log, and compatibility frames safely.
   </Card>
 </CardGroup>

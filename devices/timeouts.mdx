@@ -107,6 +107,9 @@ lifecycle. When you use it with `with`, it:
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
+    API reference: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone),
+    [Release a phone](/api-reference/rest/phones/release-a-phone)
+
     REST does not provide a context-manager equivalent. Your application owns
     cleanup after allocation.
   </Tab>
@@ -180,6 +183,8 @@ should end automatically:
         "ttl": {"idle_timeout_seconds": 300}
       }'
     ```
+
+    [API reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
   </Tab>
 </Tabs>
 

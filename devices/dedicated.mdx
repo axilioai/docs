@@ -84,6 +84,9 @@ Select a dedicated phone by its `phone_id` when you start a session:
       }'
     ```
 
+    API reference: [List phones](/api-reference/rest/phones/list-the-orgs-phones),
+    [Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
+
     The response's `control_url` uses the device-control WebSocket protocol;
     phone actions themselves are not REST operations.
   </Tab>
@@ -145,6 +148,8 @@ Select a dedicated phone by its `phone_id` when you start a session:
       --url https://api.axilio.ai/api/v1/billing/phone-rental-subscriptions \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    [API reference: List phone rentals](/api-reference/rest/billing/list-phone-rentals)
   </Tab>
 </Tabs>
 

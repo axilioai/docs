@@ -78,55 +78,35 @@
           {
             "group": "Observability",
             "icon": "video",
-            "root": "observability/index",
             "pages": [
+              "observability/index",
               "observability/sessions",
-              {
-                "group": "Monitor live sessions",
-                "expanded": true,
-                "pages": [
-                  "observability/live-view",
-                  "observability/embed-live-view",
-                  "observability/live-session-events"
-                ]
-              },
-              {
-                "group": "Review session history",
-                "expanded": true,
-                "pages": [
-                  "observability/session-events",
-                  "observability/recordings"
-                ]
-              },
-              {
-                "group": "Reference",
-                "pages": [
-                  "observability/data-lifecycle"
-                ]
-              }
+              "observability/live-view",
+              "observability/embed-live-view",
+              "observability/live-session-events",
+              "observability/live-session-events-protocol",
+              "observability/session-events",
+              "observability/recordings",
+              "observability/data-lifecycle"
             ]
           },
           {
-            "group": "Account & Billing",
+            "group": "Billing",
             "icon": "credit-card",
             "pages": [
-              {
-                "group": "Billing",
-                "pages": [
-                  "billing/overview",
-                  "billing/usage-and-cost",
-                  "billing/balance-and-invoices",
-                  "billing/plans"
-                ]
-              },
-              {
-                "group": "Organization",
-                "pages": [
-                  "org/overview",
-                  "org/members",
-                  "platform/api-keys"
-                ]
-              }
+              "billing/overview",
+              "billing/usage-and-cost",
+              "billing/balance-and-invoices",
+              "billing/plans"
+            ]
+          },
+          {
+            "group": "Organization",
+            "icon": "users",
+            "pages": [
+              "org/overview",
+              "org/members",
+              "platform/api-keys"
             ]
           },
           {

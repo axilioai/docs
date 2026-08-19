@@ -60,6 +60,8 @@ WebSocket protocol and is not an OTLP response.
       --url "https://api.axilio.ai/api/v1/phones/sessions/$SESSION_ID/events?limit=100&offset=0" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    [API reference: List a session's events](/api-reference/rest/runs/list-a-sessions-events)
   </Tab>
 </Tabs>
 
@@ -108,6 +110,8 @@ Use `event_types` when you only need selected categories:
       --data-urlencode "event_types=OUTPUT_LOG,SDK_CALL_COMPLETED" \
       --data-urlencode "limit=100"
     ```
+
+    [API reference: List a session's events](/api-reference/rest/runs/list-a-sessions-events)
   </Tab>
 </Tabs>
 

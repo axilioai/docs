@@ -117,6 +117,8 @@ array that identifies invalid request fields.
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
+    [API reference: Get a run](/api-reference/rest/runs/get-a-run)
+
     Branch on the HTTP status. Read `detail` and, for validation failures, the
     `errors` array before deciding whether to retry.
   </Tab>
@@ -286,6 +288,8 @@ the run later reaches `failed` and exposes an `error_message`.
       --url https://api.axilio.ai/api/v1/runs/run_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    [API reference: Get a run](/api-reference/rest/runs/get-a-run)
 
     A successful `200` response can still describe a failed run. Branch on the
     response's `status` field and read `error_message`.

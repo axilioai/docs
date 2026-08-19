@@ -63,6 +63,8 @@ A recording is separate from the live view and session events.
       --url "https://api.axilio.ai/api/v1/phones/sessions/$SESSION_ID/recording" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    [API reference: Get a session recording](/api-reference/rest/phones/get-a-session-recording)
   </Tab>
 </Tabs>
 
@@ -130,6 +132,8 @@ session should not produce a recording or rolling thumbnail:
         "recording": false
       }'
     ```
+
+    [API reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
   </Tab>
 </Tabs>
 
@@ -201,6 +205,8 @@ as the phone is deallocated:
 
     printf '%s' "$recording" | jq .
     ```
+
+    [API reference: Get a session recording](/api-reference/rest/phones/get-a-session-recording)
   </Tab>
 </Tabs>
 
@@ -283,6 +289,8 @@ a fresh URL.
 
     curl --fail --show-error --output session.mp4 "$recording_url"
     ```
+
+    [API reference: Get a session recording](/api-reference/rest/phones/get-a-session-recording)
 
     Do not send your Axilio API-key header to the time-limited recording URL.
   </Tab>
