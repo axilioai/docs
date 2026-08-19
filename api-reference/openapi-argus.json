@@ -2,16 +2,16 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Argus",
-    "version": "1.1.1"
+    "version": "1.3.0"
   },
   "paths": {
-    "/api/v1/inference/models": {
+    "/api/v1/vision/models": {
       "get": {
         "tags": [
-          "Inference"
+          "Vision"
         ],
         "summary": "List Models",
-        "description": "List the VLM models Argus supports for /locate.\n\nPublic: no API key required (it's a catalog of model names, nothing\nsensitive), so a client can discover supported models before it holds\ncredentials. The SDK fetches this once, caches it, and validates\nfind(model=...) locally so a typo fails fast with a clean error instead\nof a 400 from /locate.",
+        "description": "List every model Argus supports, with pricing.\n\nTwo families: the curated VLMs served by /vision/locate (per-token\npricing; pass their id as `model`) and the Axilio model line behind\n/vision/detect (per-page pricing; selected via `ocr_engine` /\n`inference_type` \u2014 lite is the free engine, pro is premium).\n\nPublic: no API key required (it's a catalog of model names and public\nprices, nothing sensitive), so a client can discover supported models\nbefore it holds credentials. The SDK fetches this once, caches it, and\nvalidates find(model=...) locally so a typo fails fast with a clean\nerror instead of a 400 from /locate.",
         "operationId": "list_models",
         "responses": {
           "200": {
@@ -27,13 +27,13 @@
         }
       }
     },
-    "/api/v1/inference/infer": {
+    "/api/v1/vision/detect": {
       "post": {
         "tags": [
-          "Inference"
+          "Vision"
         ],
         "summary": "Run Inference",
-        "operationId": "infer",
+        "operationId": "detect",
         "requestBody": {
           "content": {
             "application/json": {
@@ -73,10 +73,10 @@
         ]
       }
     },
-    "/api/v1/inference/locate": {
+    "/api/v1/vision/locate": {
       "post": {
         "tags": [
-          "Inference"
+          "Vision"
         ],
         "summary": "Run Locate",
         "operationId": "locate",
@@ -341,6 +341,42 @@
             "type": "integer",
             "title": "Icon Detections After Nms",
             "description": "Number of icon detections after NMS filtering"
+          },
+          "queue_wait_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queue Wait Ns",
+            "description": "Nanoseconds the job waited in the inference queue"
+          },
+          "yolo_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yolo Ns",
+            "description": "Nanoseconds spent in YOLO detection"
+          },
+          "ocr_ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocr Ns",
+            "description": "Nanoseconds spent in OCR"
           }
         },
         "type": "object",
@@ -497,7 +533,7 @@
               }
             ],
             "title": "Model",
-            "description": "VLM model to use; must be one of the models from GET /inference/models. Omit to use the server's configured default. The system prompt is fixed to the element-locator task."
+            "description": "VLM model to use; must be one of the models from GET /vision/models. Omit to use the server's configured default. The system prompt is fixed to the element-locator task."
           }
         },
         "type": "object",
@@ -506,7 +542,7 @@
           "query"
         ],
         "title": "LocateRequest",
-        "description": "Argus /inference/locate request.\n\nThe caller pre-computes OCR via /inference/infer (or reuses cached\nresults keyed by frame hash) and passes the text list here. Argus does\nNOT re-run OCR; the VLM call uses the provided `texts` as grounding\ncontext."
+        "description": "Argus /vision/locate request.\n\nThe caller pre-computes OCR via /vision/detect (or reuses cached\nresults keyed by frame hash) and passes the text list here. Argus does\nNOT re-run OCR; the VLM call uses the provided `texts` as grounding\ncontext."
       },
       "LocateResponse": {
         "properties": {
@@ -587,14 +623,14 @@
           "latency_ms"
         ],
         "title": "LocateResponse",
-        "description": "Argus /inference/locate response.\n\nExactly one of `matched_text_index` or `bbox` is populated when\n`found` is True. `matched_text_index` indicates the VLM grounded its\nanswer to a specific OCR text element (pixel-accurate bbox available\nvia the original `texts` list). `bbox` is a free-form VLM bbox."
+        "description": "Argus /vision/locate response.\n\nExactly one of `matched_text_index` or `bbox` is populated when\n`found` is True. `matched_text_index` indicates the VLM grounded its\nanswer to a specific OCR text element (pixel-accurate bbox available\nvia the original `texts` list). `bbox` is a free-form VLM bbox."
       },
       "ModelInfo": {
         "properties": {
           "id": {
             "type": "string",
             "title": "Id",
-            "description": "Model identifier, e.g. 'anthropic/claude-sonnet-4.5'. Pass this as `model` to /inference/locate."
+            "description": "Model identifier, e.g. 'anthropic/claude-sonnet-4.5' or 'axilio/argus-ocr-pro-1'. VLM ids are passed as `model` to /vision/locate; Axilio ids identify the engine behind /vision/detect calls (selected via `ocr_engine` / `inference_type`) and are what usage rows are labeled with."
           },
           "object": {
             "type": "string",
@@ -610,12 +646,12 @@
           "owned_by": {
             "type": "string",
             "title": "Owned By",
-            "description": "Model provider, e.g. 'anthropic'."
+            "description": "Model provider, e.g. 'anthropic' or 'axilio'."
           },
           "type": {
             "type": "string",
             "title": "Type",
-            "description": "Model type. 'vlm' for the vision-language models served by /locate."
+            "description": "Model type: 'vlm' for the vision-language models served by /vision/locate; 'detect', 'ocr', and 'vision' for the Axilio model line behind /vision/detect."
           },
           "context_window": {
             "type": "integer",
@@ -649,6 +685,18 @@
             "type": "string",
             "title": "Output",
             "description": "USD per output token."
+          },
+          "per_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Page",
+            "description": "USD per page (one screenshot = one page) for the per-page-billed Axilio models. Absent for per-token models."
           }
         },
         "type": "object",
@@ -657,7 +705,7 @@
           "output"
         ],
         "title": "ModelPricing",
-        "description": "Per-token price in USD \u2014 the customer's billed rate for a /locate call."
+        "description": "The customer's billed rates in USD.\n\nVLMs price per token (input/output); the Axilio model line prices per\npage, where one screenshot is one page \u2014 so per_page reads as the price\nof one call. A rate is \"0\" when that unit is free for the model."
       },
       "OCRResult": {
         "properties": {
@@ -708,7 +756,7 @@
           "data"
         ],
         "title": "SupportedModelsResponse",
-        "description": "Response for GET /inference/models.\n\nLists the VLM models supported for the element-locator task, each with\nits context window and final per-token pricing, so a client can compare\ncost and validate `find(model=...)` up front instead of round-tripping\nto /locate and getting a 400.\n\nThe set is curated: these are the vision-capable models supported for UI\ngrounding. `/locate` enforces it \u2014 an unsupported model is rejected, so\nthis is the authoritative allowlist, not just advisory.\n\nShaped like a standard /v1/models response ({object: \"list\", data: [...]})."
+        "description": "Response for GET /vision/models.\n\nLists every model Argus supports, each with its final post-markup\npricing: the curated VLMs for the element-locator task (per-token\npricing; pass their id as `model` to /vision/locate) and the Axilio\nmodel line behind /vision/detect (per-page pricing; selected via the\n`ocr_engine` and `inference_type` request fields \u2014 lite = the free\nengine, pro = premium). Lets a client compare cost and validate\n`find(model=...)` up front instead of round-tripping to /locate and\ngetting a 400.\n\nThe VLM set is curated: `/locate` enforces it \u2014 an unsupported model is\nrejected, so this is the authoritative allowlist, not just advisory.\nThe Axilio ids are not /locate targets.\n\nShaped like a standard /v1/models response ({object: \"list\", data: [...]})."
       },
       "TextElementInput": {
         "properties": {
@@ -781,7 +829,7 @@
   ],
   "tags": [
     {
-      "name": "Inference"
+      "name": "Vision"
     }
   ]
 }

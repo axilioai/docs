@@ -10,66 +10,121 @@ by its **text**, or by **describing** it.
 ## By its text
 
 [`find_text`](/driver/reference#driver-find_text) finds anything with a visible label, like a button or a menu item.
-Fast and exact.
+It uses a fast text lookup. Matching is a case-insensitive substring by default;
+pass the exact option when you need the whole label to match.
 
-```python
-driver.find_text("Settings").tap()
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find-text "Settings" -o json
+    ```
+  </Tab>
 
-It hands back what it found, or nothing if it's not there:
+  <Tab title="Python SDK">
+    ```python
+    result = driver.find_text("Settings")
+    if result:
+        print(result.center)
+    ```
+  </Tab>
 
-```python
-result = driver.find_text("Sign in")
-if result:
-    result.tap()
-```
+  <Tab title="Go SDK">
+    ```go
+    result, err := driver.FindText("Settings", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if result != nil {
+        fmt.Println(result.Center)
+    }
+    ```
+  </Tab>
+</Tabs>
 
 <Warning>
-  Because it can come back empty, calling `.tap()` right away can fail if the
-  screen hasn't loaded. To be safe, [wait for the text](/driver/wait). That waits
-  until it appears, then taps it:
-
-  ```python
-  driver.wait_for_text("Sign in").tap()
-  ```
+  A text lookup can come back empty if the screen has not loaded. To be safe,
+  [wait for the text](/driver/wait), then act on the result.
 </Warning>
 
 Get every match with [`find_all_text`](/driver/reference#driver-find_all_text). Handy for lists and feeds:
 
-```python
-for item in driver.find_all_text(contains="Notification"):
-    print(item.text)
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    The CLI does not have a `find-all-text` command. Observe the screen as JSON
+    and filter the text elements:
+
+    ```bash
+    axilio phone observe -o json |
+      jq '.texts[] | select(.text | ascii_downcase | contains("notification"))'
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    for item in driver.find_all_text(contains="Notification"):
+        print(item.text)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    items, err := driver.FindAllText("Notification", "")
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, item := range items {
+        fmt.Println(item.Text)
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ## By describing it
 
 When there's no text to match, like an icon or an image, describe it in plain
 English with `find`:
 
-```python
-driver.find(query="the heart icon under the photo").tap()
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone tap --query "the heart icon under the photo"
+    ```
+  </Tab>
 
-Unlike `find_text`, `find` speaks up when it can't find what you asked for:
+  <Tab title="Python SDK">
+    ```python
+    from axilio.drivers.mobile import ElementNotFoundError
 
-```python
-from axilio.drivers.mobile import ElementNotFoundError
+    try:
+        driver.find(query="the heart icon under the photo").tap()
+    except ElementNotFoundError:
+        print("heart icon not found")
+    ```
+  </Tab>
 
-try:
-    driver.find(query="the shopping cart").tap()
-except ElementNotFoundError:
-    print("no cart on this screen")
-```
+  <Tab title="Go SDK">
+    ```go
+    heart, err := driver.Find("the heart icon under the photo")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := heart.Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
 <Note>
   Describing something uses [Argus](/drivers/models), Axilio's vision model, so it
   costs a little more than finding by text. On steps you run a lot, prefer text.
-  You can [see the per-call cost](/observability/cost) of every vision call.
+  You can [review billed inference calls](/billing/usage-and-cost) through the Usage API.
 </Note>
 
 ## Which to use
 
-- **Text** when there's a label you can read. It's faster and exact.
+- **Text** when there's a label you can read. It is faster and uses text
+  matching; enable the exact option when you need a whole-label match.
 - **Describing** when there isn't: an icon, or something easier to describe than
   to name.
 
@@ -78,24 +133,84 @@ except ElementNotFoundError:
 Both ways take options. Text reading has a free engine and a premium one that
 handles harder screens; describing can run on [any supported model](/drivers/models):
 
-```python
-driver.find_text("Sign in", ocr_engine="premium")
-driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find "the buy button" \
+      --model anthropic/claude-haiku-4.5
+    ```
+
+    The CLI supports a model override for semantic `find`, but it does not
+    currently expose an OCR-engine override for `find-text`.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.find_text("Sign in", ocr_engine="premium")
+    driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    _, err := driver.FindText(
+        "Sign in",
+        false,
+        mobile.WithOCREngine("premium"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    _, err = driver.Find(
+        "the buy button",
+        mobile.WithModel("anthropic/claude-haiku-4.5"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
 Repeating those on every call gets old, so you can set them once for the whole
 session — any call that doesn't pass its own value uses the default:
 
-```python
-with client.session(
-    "android",
-    phone_id="ph_123",
-    default_ocr_engine="premium",
-    default_model="anthropic/claude-haiku-4.5",
-) as driver:
-    driver.find_text("Sign in")           # premium engine
-    driver.find(query="the buy button")   # haiku
-```
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    with client.session(
+        "android",
+        phone_id="ph_123",
+        default_ocr_engine="premium",
+        default_model="anthropic/claude-haiku-4.5",
+    ) as driver:
+        driver.find_text("Sign in")           # premium engine
+        driver.find(query="the buy button")   # haiku
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    driver := mobile.ConnectRemote(
+        controlURL,
+        mobile.WithDefaultOCREngine("premium"),
+        mobile.WithDefaultModel("anthropic/claude-haiku-4.5"),
+    )
+    defer driver.Close()
+
+    if _, err := driver.FindText("Sign in", false); err != nil {
+        log.Fatal(err)
+    }
+    if _, err := driver.Find("the buy button"); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The CLI does not save these defaults for a phone session. Live driver lookups
+use the device-control WebSocket and are not REST operations.
 
 See [Models](/drivers/models) for every id, what it does, and what it costs.
 

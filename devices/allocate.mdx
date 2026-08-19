@@ -18,12 +18,8 @@ driver and releases the phone when you're done:
   </Tab>
 
   <Tab title="CLI">
-    ```bash
-    axilio phones mine
-    eval "$(axilio sessions start --phone-id ph_123 --export)"
-    axilio phone tap --query "the Settings icon"
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    ```
+    The current CLI release cannot start or stop sessions against API `0.72`.
+    Use the dashboard, an SDK, or REST until the CLI is updated.
   </Tab>
 
   <Tab title="Python SDK">
@@ -32,41 +28,69 @@ driver and releases the phone when you're done:
 
     client = Client()
 
-    phones = client.phones.list(ownership="dedicated")
-    phone = phones.phones[0]
-
-    with client.session("android", phone_id=phone.phone_id) as driver:
+    with client.session("android", phone_id="ph_123") as driver:
         driver.find(query="the Settings icon").tap()
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
-        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
-        PhoneID: allocation.PhoneID,
-    })
+    err := func() error {
+        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+            Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
+        })
+        if err != nil {
+            return err
+        }
+        defer func() {
+            if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+                PhoneID: allocation.PhoneID,
+            }); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
 
-    if allocation.ControlURL == nil {
-        log.Fatal("allocation returned no control URL")
-    }
-    driver := mobile.ConnectRemote(*allocation.ControlURL)
-    defer driver.Close()
+        if allocation.ControlURL == nil {
+            return errors.New("allocation returned no control URL")
+        }
+        driver := mobile.ConnectRemote(*allocation.ControlURL)
+        defer driver.Close()
 
-    settings, err := driver.Find("the Settings icon")
+        settings, err := driver.Find("the Settings icon")
+        if err != nil {
+            return err
+        }
+        return settings.Tap()
+    }()
     if err != nil {
-        log.Fatal(err)
-    }
-    if err := settings.Tap(); err != nil {
         log.Fatal(err)
     }
     ```
+  </Tab>
+
+  <Tab title="REST API">
+    Allocate and release the session through REST:
+
+    ```bash
+    ALLOCATION=$(curl --silent --show-error --fail-with-body --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "pool": "dedicated"
+      }')
+    PHONE_ID=$(printf '%s' "$ALLOCATION" | jq -r '.phone_id')
+    printf '%s\n' "$ALLOCATION" | jq
+
+    curl --request POST \
+      --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    The allocation response's `control_url` uses the device-control WebSocket
+    protocol. Tapping the phone is not a REST operation.
   </Tab>
 </Tabs>
 
@@ -83,39 +107,22 @@ You can allocate any available dedicated phone or select an exact phone by
   </Tab>
 
   <Tab title="CLI">
-    ```bash
-    axilio phones mine
-    eval "$(axilio sessions start --phone-id ph_123 --export)"
-    axilio phone observe
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    ```
+    The current CLI release cannot start or stop sessions against API `0.72`.
+    Use the dashboard, an SDK, or REST until the CLI is updated.
   </Tab>
 
   <Tab title="Python SDK">
     ```python
-    dedicated = client.phones.list(ownership="dedicated")
-    phone = dedicated.phones[0]
-
-    with client.session("android", phone_id=phone.phone_id) as driver:
+    with client.session("android", phone_id="ph_123") as driver:
         driver.observe()
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    dedicated, err := api.Phones.List(ctx, &platformgo.PhonesListRequest{
-        Ownership: platformgo.PhonesListRequestOwnershipDedicated,
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    if len(dedicated.Phones) == 0 {
-        log.Fatal("no dedicated phones found")
-    }
-
     allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
         PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        PhoneID:   platformgo.String(dedicated.Phones[0].PhoneID),
+        PhoneID:   platformgo.String("ph_123"),
     })
     if err != nil {
         log.Fatal(err)
@@ -123,6 +130,23 @@ You can allocate any available dedicated phone or select an exact phone by
     defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
         PhoneID: allocation.PhoneID,
     })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123"
+      }'
     ```
   </Tab>
 </Tabs>
@@ -141,12 +165,8 @@ explicitly:
   </Tab>
 
   <Tab title="CLI">
-    ```bash
-    axilio phones mine
-    eval "$(axilio sessions start --phone-id ph_123 --export)"
-    axilio sessions current
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    ```
+    The current CLI release cannot start or stop sessions against API `0.72`.
+    Use an SDK or REST until the CLI is updated.
   </Tab>
 
   <Tab title="Python SDK">
@@ -181,6 +201,25 @@ explicitly:
     }
     ```
   </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    ALLOCATION=$(curl --silent --show-error --fail-with-body --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "pool": "dedicated"
+      }')
+    PHONE_ID=$(printf '%s' "$ALLOCATION" | jq -r '.phone_id')
+    printf '%s\n' "$ALLOCATION" | jq
+
+    curl --request POST \
+      --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
 </Tabs>
 
 <Warning>
@@ -193,14 +232,15 @@ explicitly:
 
 ## What you get back
 
-Besides `phone_id` and `session_id`, an allocation returns three ready-to-use
-connection URLs. Each is scoped to this one session and stops working when the
-session ends:
+Besides `phone_id` and `session_id`, an allocation can return three ready-to-use
+connection URLs. Each is scoped to one session and should be handled as a
+credential. Deallocation prevents new connections; close clients your
+application already opened when it ends the session.
 
 | Field | What it's for |
 | --- | --- |
 | `control_url` | Drive the phone programmatically. The SDK uses this for you. |
-| `telemetry_url` | A WebSocket streaming the session's [events live](/observability/telemetry). |
+| `telemetry_url` | A WebSocket for [live session event frames](/observability/live-session-events). Treat it as a credential. |
 | `live_view_url` | A hosted page with the phone's live, interactive screen — [embeddable in your app](/observability/embed-live-view). Treat it as a secret. |
 
 ## Next steps

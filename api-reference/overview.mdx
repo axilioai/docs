@@ -8,8 +8,9 @@ These pages are generated from Axilio's OpenAPI specs, so they stay in sync with
 the live API. Each endpoint shows its parameters, an example request, the
 response, and a **Try it** panel.
 
-Most people use the [Python SDK](/quickstart) instead of calling the API directly.
-Reach for the REST API when you're not working in Python.
+Use the REST API when an Axilio SDK or CLI command does not fit your application.
+Phone-control actions such as tap, swipe, type, and observe use the device-control
+WebSocket through the CLI or an SDK; they are not REST endpoints.
 
 ## Base URLs
 
@@ -23,11 +24,11 @@ Reach for the REST API when you're not working in Python.
 Send your API key in the `X-Axilio-Api-Key` header:
 
 ```bash
-curl https://api.axilio.ai/api/v1/phones/available \
+curl "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
   -H "X-Axilio-Api-Key: axl_your_key_here"
 ```
 
-Get a key from the [dashboard](https://axilio.ai/dashboard). See
+Get a key from the [dashboard](https://app.axilio.ai/dashboard). See
 [Authentication](/authentication) for the SDK equivalent.
 
 ## Roles & permissions
@@ -47,14 +48,14 @@ call it (viewer, member, or admin); *Minimum role required: Member* means member
 or admin; *Minimum role required: Admin* means admin only. So a member can call
 every Viewer and Member endpoint.
 
-Not sure what you are? Check your role in the [dashboard](https://axilio.ai/dashboard)
+Not sure what you are? Check your role in the [dashboard](https://app.axilio.ai/dashboard)
 under **Organization → Members**.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Use the Python SDK instead.
+    Control your first phone with the CLI, Python SDK, or Go SDK.
   </Card>
   <Card title="Models" icon="layer-group" href="/drivers/models">
     The models behind Argus, and their pricing.

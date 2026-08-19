@@ -20,29 +20,13 @@ Dedicated phones are billed as a flat rental:
 
 Rentals start in the dashboard:
 
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open [**Phones**](https://app.axilio.ai/dashboard).
-    2. Click **Rent A Phone**.
-    3. Choose **Daily**, **Weekly**, or **Monthly**.
-    4. Complete checkout. The phone appears on **Phones** after the rental is ready.
-  </Tab>
+1. Open [**Phones**](https://app.axilio.ai/dashboard).
+2. Click **Rent A Phone**.
+3. Choose **Daily**, **Weekly**, or **Monthly**.
+4. Complete checkout. The phone appears on **Phones** after the rental is ready.
 
-  <Tab title="CLI">
-    The CLI does not currently create phone rentals. Use **Phones → Rent A Phone**
-    in the dashboard.
-  </Tab>
-
-  <Tab title="Python SDK">
-    The current Python SDK can inspect rental subscriptions but does not start a
-    rental checkout. Use the dashboard to rent a phone.
-  </Tab>
-
-  <Tab title="Go SDK">
-    The current Go SDK can inspect rental subscriptions but does not start a
-    rental checkout. Use the dashboard to rent a phone.
-  </Tab>
-</Tabs>
+The CLI, SDKs, and public REST API can inspect rental subscriptions but do not
+currently start a rental checkout.
 
 ## Use your dedicated phone
 
@@ -56,39 +40,22 @@ Select a dedicated phone by its `phone_id` when you start a session:
   </Tab>
 
   <Tab title="CLI">
-    ```bash
-    axilio phones mine
-    eval "$(axilio sessions start --phone-id ph_123 --export)"
-    axilio phone observe
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    ```
+    The current CLI release cannot start or stop sessions against API `0.72`.
+    Use the dashboard, an SDK, or REST until the CLI is updated.
   </Tab>
 
   <Tab title="Python SDK">
     ```python
-    dedicated = client.phones.list(ownership="dedicated")
-    phone = dedicated.phones[0]
-
-    with client.session("android", phone_id=phone.phone_id) as driver:
+    with client.session("android", phone_id="ph_123") as driver:
         driver.observe()
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    dedicated, err := api.Phones.List(ctx, &platformgo.PhonesListRequest{
-        Ownership: platformgo.PhonesListRequestOwnershipDedicated,
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    if len(dedicated.Phones) == 0 {
-        log.Fatal("no dedicated phones found")
-    }
-
     allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
         PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        PhoneID:   platformgo.String(dedicated.Phones[0].PhoneID),
+        PhoneID:   platformgo.String("ph_123"),
     })
     if err != nil {
         log.Fatal(err)
@@ -97,6 +64,28 @@ Select a dedicated phone by its `phone_id` when you start a session:
         PhoneID: allocation.PhoneID,
     })
     ```
+  </Tab>
+
+  <Tab title="REST API">
+    Find a dedicated phone, then allocate it by `phone_id`:
+
+    ```bash
+    curl --request GET \
+      --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123"
+      }'
+    ```
+
+    The response's `control_url` uses the device-control WebSocket protocol;
+    phone actions themselves are not REST operations.
   </Tab>
 </Tabs>
 
@@ -138,8 +127,23 @@ Select a dedicated phone by its `phone_id` when you start a session:
     }
 
     for _, rental := range rentals.Subscriptions {
-        fmt.Println(rental.PhoneID, rental.Status, rental.CurrentPeriodEnd)
+        phoneID := ""
+        if rental.PhoneID != nil {
+            phoneID = *rental.PhoneID
+        }
+        fmt.Println(phoneID, rental.Status, rental.CurrentPeriodEnd)
     }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    The API can list rentals. Cancellation and checkout remain dashboard
+    actions.
+
+    ```bash
+    curl --request GET \
+      --url https://api.axilio.ai/api/v1/billing/phone-rental-subscriptions \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
   </Tab>
 </Tabs>

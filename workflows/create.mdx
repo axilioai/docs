@@ -56,10 +56,7 @@ scroll through three screens of top posts.
 
     client = Client()
 
-    phones = client.phones.list(ownership="dedicated")
-    phone = phones.phones[0]
-
-    with client.session("android", phone_id=phone.phone_id) as driver:
+    with client.session("android") as driver:
         screen = driver.observe()
         center_x = screen.width // 2
 
@@ -127,7 +124,6 @@ scroll through three screens of top posts.
         )
         allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
             PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-            Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
         })
         if err != nil {
             return err
@@ -226,19 +222,112 @@ different frame size.
 
 ## Save it as a workflow
 
-Use the [workflow editor](https://app.axilio.ai/dashboard) to save the tested
-automation, or create a workflow with the Python SDK:
+Save the tested automation as a workflow:
 
-```python
-workflow = client.workflows.create_from_code(
-    name="Search Axilio",
-    code_source=open("automation.py").read(),
-)
-print(workflow.workflow_id)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard).
+    2. Click **Create Workflow**.
+    3. Name the workflow and paste the tested source into the editor.
+    4. Save the workflow.
+  </Tab>
 
-Update its code later with
-`client.workflows.save_code(workflow.workflow_id, source=...)`.
+  <Tab title="CLI">
+    The CLI can list workflows but does not currently create one or save its
+    source code. Use the dashboard, an SDK, or the REST API.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from pathlib import Path
+
+    workflow = client.workflows.create(
+        name="Search_Axilio",
+        code=Path("automation.py").read_text(),
+    )
+    print(workflow.workflow_id)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    source, err := os.ReadFile("automation.py")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    workflow, err := api.Workflows.Create(ctx, &platformgo.WorkflowCreateRequest{
+        Name: "Search_Axilio",
+        Code: platformgo.String(string(source)),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(workflow.WorkflowID)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    jq -n --rawfile code automation.py \
+      '{name: "Search_Axilio", code: $code}' |
+      curl --request POST \
+        --url https://api.axilio.ai/api/v1/workflows \
+        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+        --header "Content-Type: application/json" \
+        --data-binary @-
+    ```
+  </Tab>
+</Tabs>
+
+### Update saved code
+
+Saving code creates a new workflow revision:
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard).
+    2. Select the workflow to open its editor.
+    3. Change the source and click **Save**.
+
+    Each saved change creates a workflow revision. Use **Revision history** to
+    inspect or restore an earlier version.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    client.workflows.save_code(
+        workflow.workflow_id,
+        source=Path("automation.py").read_text(),
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    _, err = api.Workflows.SaveCode(ctx, &platformgo.WorkflowSaveCodeRequest{
+        WorkflowID: workflowID,
+        Source:     string(source),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    jq -n --rawfile source automation.py '{source: $source}' |
+      curl --request POST \
+        --url "https://api.axilio.ai/api/v1/workflows/$WORKFLOW_ID/code" \
+        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+        --header "Content-Type: application/json" \
+        --data-binary @-
+    ```
+  </Tab>
+</Tabs>
+
+The CLI does not currently save workflow code.
 
 ## Next steps
 

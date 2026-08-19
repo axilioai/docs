@@ -98,6 +98,11 @@ do not change configuration.
 
 ## SDK client options
 
+These options configure SDK clients. The CLI has its own
+[configuration](#cli-configuration). The hosted session dashboard supplies its
+own authentication and connected driver, so you do not construct or configure
+an SDK client there.
+
 <Tabs sync={false}>
   <Tab title="Python SDK">
     ```python
@@ -171,6 +176,10 @@ do not change configuration.
 
 ## Per-request overrides
 
+For a single CLI invocation, use the [global flags](#global-flags) to override
+the API key, API host, or organization. The CLI does not expose equivalent
+per-request HTTP retry or request-timeout options.
+
 <Tabs sync={false}>
   <Tab title="Python SDK">
     Generated resource methods accept a final `request_options` dictionary:
@@ -229,7 +238,8 @@ Unless you set `XDG_CONFIG_HOME`, CLI state lives under `~/.config/axilio`.
 | `update-check.json` | Cache for the daily CLI release check. |
 
 Deleting a local session record does not stop the corresponding Axilio session.
-Use `axilio sessions stop <session-id>` to end it.
+The current CLI release cannot stop API `0.72` sessions; use an SDK or REST to
+deallocate the phone until the CLI is updated.
 
 ## Next steps
 

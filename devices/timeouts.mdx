@@ -21,18 +21,19 @@ lifecycle. When you use it with `with`, it:
    code raises an error.
 
 <Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Click **Allocate A Phone** and choose a phone.
+    3. Open the active session to control it.
+    4. Return to **Sessions** and click **Release** when you finish.
+
+    The dashboard manages the same allocation lifecycle, but leaving or
+    closing the page does not release the session automatically.
+  </Tab>
+
   <Tab title="CLI">
-    Start the session, control its phone, then stop it explicitly:
-
-    ```bash
-    eval "$(axilio sessions start --phone-id ph_123 --export)"
-
-    # The session is active and phone commands control it.
-    axilio phone tap --query "the Settings icon"
-
-    # Stop the session when you finish.
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    ```
+    The current CLI release cannot start or stop sessions against API `0.72`.
+    Use an SDK or REST until the CLI is updated.
   </Tab>
 
   <Tab title="Python SDK">
@@ -52,31 +53,62 @@ lifecycle. When you use it with `with`, it:
     Allocate the phone and defer both driver and session cleanup:
 
     ```go
-    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
-        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        PhoneID:   platformgo.String("ph_123"),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
-        PhoneID: allocation.PhoneID,
-    })
+    err := func() error {
+        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+            PhoneID:   platformgo.String("ph_123"),
+        })
+        if err != nil {
+            return err
+        }
+        defer func() {
+            if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+                PhoneID: allocation.PhoneID,
+            }); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
 
-    if allocation.ControlURL == nil {
-        log.Fatal("allocation returned no control URL")
-    }
-    driver := mobile.ConnectRemote(*allocation.ControlURL)
-    defer driver.Close()
+        if allocation.ControlURL == nil {
+            return errors.New("allocation returned no control URL")
+        }
+        driver := mobile.ConnectRemote(*allocation.ControlURL)
+        defer driver.Close()
 
-    settings, err := driver.Find("the Settings icon")
+        settings, err := driver.Find("the Settings icon")
+        if err != nil {
+            return err
+        }
+        return settings.Tap()
+    }()
     if err != nil {
-        log.Fatal(err)
-    }
-    if err := settings.Tap(); err != nil {
         log.Fatal(err)
     }
     ```
+  </Tab>
+
+  <Tab title="REST API">
+    Allocate and release the session explicitly:
+
+    ```bash
+    ALLOCATION=$(curl --silent --show-error --fail-with-body --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123"
+      }')
+    PHONE_ID=$(printf '%s' "$ALLOCATION" | jq -r '.phone_id')
+    printf '%s\n' "$ALLOCATION" | jq
+
+    curl --request POST \
+      --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    REST does not provide a context-manager equivalent. Your application owns
+    cleanup after allocation.
   </Tab>
 </Tabs>
 
@@ -91,6 +123,69 @@ as `observe()`, `find()`, or `tap()`.
   manager.
 </Note>
 
+## Set an idle timeout
+
+Set `ttl.idle_timeout_seconds` during allocation when an inactive session
+should end automatically:
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Click **Allocate A Phone**.
+    3. Enter the duration under **idle timeout (seconds)**.
+    4. Choose a phone and allocate it.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently expose the allocation's idle-timeout setting.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    device = client.phones.allocate(
+        phone_type="android",
+        pool="dedicated",
+        ttl={"idle_timeout_seconds": 300},
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    device, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
+        TTL: &platformgo.PhoneSessionTTLOptions{
+            IdleTimeoutSeconds: platformgo.Int64(300),
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+        PhoneID: device.PhoneID,
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "pool": "dedicated",
+        "ttl": {"idle_timeout_seconds": 300}
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+`client.session()` does not currently accept `ttl`; use direct allocation when
+you need this setting.
+
 ## Connection timeout is not session duration
 
 `open_timeout` limits how long the SDK can spend opening the control WebSocket.
@@ -104,14 +199,9 @@ idle connection, or set the session duration. The default is 10 seconds:
 
 <Tabs sync={false}>
   <Tab title="CLI">
-    The CLI does not currently expose a separate control-connection timeout.
-    Start the session, then let the first phone command establish the connection:
-
-    ```bash
-    eval "$(axilio sessions start --phone-id ph_123 --export)"
-    axilio phone observe
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    ```
+    The CLI does not expose a separate control-connection timeout, and the
+    current release cannot start sessions against API `0.72`. Use an SDK until
+    the CLI is updated.
   </Tab>
 
   <Tab title="Python SDK">
@@ -130,16 +220,43 @@ idle connection, or set the session duration. The default is 10 seconds:
     socket:
 
     ```go
-    driver := mobile.ConnectRemote(
-        *allocation.ControlURL,
-        mobile.WithOpenTimeout(20*time.Second),
-    )
-    defer driver.Close()
+    err := func() error {
+        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+            PhoneID:   platformgo.String("ph_123"),
+        })
+        if err != nil {
+            return err
+        }
+        defer func() {
+            if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+                PhoneID: allocation.PhoneID,
+            }); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
 
-    if _, err := driver.Observe(); err != nil {
+        if allocation.ControlURL == nil {
+            return errors.New("allocation returned no control URL")
+        }
+        driver := mobile.ConnectRemote(
+            *allocation.ControlURL,
+            mobile.WithOpenTimeout(20*time.Second),
+        )
+        defer driver.Close()
+
+        _, err = driver.Observe()
+        return err
+    }()
+    if err != nil {
         log.Fatal(err)
     }
     ```
+  </Tab>
+
+  <Tab title="REST API">
+    `open_timeout` configures a device-control WebSocket client, not an HTTP
+    request. The REST API does not expose an equivalent setting.
   </Tab>
 </Tabs>
 
@@ -175,7 +292,7 @@ separate usage charges. [More on billing](/billing/overview).
   <Card title="Get a device" icon="square-plus" href="/devices/allocate">
     Start a session on a dedicated phone.
   </Card>
-  <Card title="Observability" icon="video" href="/observability/overview">
-    Watch and replay your sessions.
+  <Card title="Observability" icon="video" href="/observability">
+    Watch sessions and review available events and recordings.
   </Card>
 </CardGroup>

@@ -1,0 +1,169 @@
+---
+title: "Find and inspect sessions"
+sidebarTitle: "Sessions"
+description: "Find active and historical phone sessions, inspect their status, and open the right observability surface."
+---
+
+Axilio lists workflow-backed and interactive phone sessions in one place. Start
+here when you have a `session_id`, a phone, or a workflow and need to understand
+what is happening now or what happened earlier.
+
+## Find a session
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Search by session, phone, or workflow.
+    3. Filter by status, source, ownership, or time range.
+    4. Open a row to inspect that session.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio sessions list --remote
+    ```
+
+    The CLI lists active sessions only. Use the dashboard, an SDK, or the REST
+    API to search historical sessions.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    sessions = client.phones.list_sessions(limit=50)
+
+    for session in sessions.sessions or []:
+        print(
+            session.session_id,
+            session.status,
+            session.source,
+            session.phone_id,
+        )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    sessions, err := api.Phones.ListSessions(ctx, &platformgo.PhonesListSessionsRequest{
+        Limit: platformgo.Int64(50),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for _, session := range sessions.Sessions {
+        fmt.Println(session.SessionID, session.Status, session.Source)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url "https://api.axilio.ai/api/v1/phones/sessions?limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+The session list supports pagination plus filters for search text, workflow,
+status, source, dedicated/shared ownership, start and end times, and sort order.
+Use `active_sessions` when you only need sessions that are currently using a
+phone.
+
+## Inspect one session
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Search for the `session_id`.
+    3. Open the matching row to review its lifecycle, phone, workflow, tags,
+       timestamps, and recording state.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently inspect an arbitrary session. It can discover
+    active session IDs with `axilio sessions list --remote`.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    session = client.phones.get_session(session_id)
+
+    print(session.status)
+    print(session.source)
+    print(session.phone_id)
+    print(session.workflow_id)
+    print(session.recording_status)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    session, err := api.Phones.GetSession(ctx, &platformgo.PhonesGetSessionRequest{
+        SessionID: sessionID,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(session.Status)
+    fmt.Println(session.Source)
+    fmt.Println(session.PhoneID)
+    if session.WorkflowID != nil {
+        fmt.Println(*session.WorkflowID)
+    }
+    fmt.Println(session.RecordingStatus)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url "https://api.axilio.ai/api/v1/phones/sessions/$SESSION_ID" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+A session detail can include the phone and workflow display fields, allocation
+and deallocation times, tags, recording state, and whether the session came from
+a workflow or an interactive allocation.
+
+## Understand session status
+
+| Status | Meaning |
+| --- | --- |
+| `active` | The phone is currently allocated to the session. |
+| `completed` | The session ended normally. |
+| `cancelled` | The session was cancelled before normal completion. |
+| `expired` | The session reached its configured or platform lifetime. |
+
+The session's lifecycle status is separate from recording availability. A
+completed session can still have a `pending` recording while video processing
+finishes.
+
+## Sessions and runs
+
+A **session** is one allocation of a phone. A **run** is one workflow execution
+that may take place inside a session. Interactive sessions have no workflow run.
+
+The session, archived-event, and recording APIs use `session_id`. Run status
+APIs use `run_id`. When you start with a run, get the run first and read its
+`session_id` when one is available.
+
+## Continue the investigation
+
+<CardGroup cols={2}>
+  <Card title="Watch an active session" icon="tower-broadcast" href="/observability/live-view">
+    Open the phone's screen while the session is running.
+  </Card>
+  <Card title="Review session events" icon="list-check" href="/observability/session-events">
+    Query the archived events currently available for the session.
+  </Card>
+  <Card title="Retrieve a recording" icon="video" href="/observability/recordings">
+    Check processing status and obtain a playback URL.
+  </Card>
+  <Card title="Review usage and cost" icon="coins" href="/billing/usage-and-cost">
+    Filter billed inference calls by session and inspect aggregate usage.
+  </Card>
+</CardGroup>

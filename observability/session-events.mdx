@@ -1,0 +1,184 @@
+---
+title: "Review session events"
+sidebarTitle: "Session events"
+description: "Retrieve the available archived events for a phone session."
+---
+
+Session events provide a paginated, session-scoped record of eligible activity
+that has reached Axilio's archive. Use them to investigate a completed session
+or inspect the records already available for an active one.
+
+The response uses an Axilio event format. It is separate from the live
+WebSocket protocol and is not an OTLP response.
+
+## List a session's events
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Select an active or completed session.
+    3. Use the trace timeline and console to review its available activity.
+
+    The dashboard renders an investigation view. Use an SDK or the REST API
+    when you need the raw paginated event objects.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    events = client.runs.sessions_list_events(
+        session_id,
+        limit=100,
+        offset=0,
+    )
+
+    for event in events.events or []:
+        print(event.timestamp, event.type, event.body)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    events, err := api.Runs.SessionsListEvents(ctx, &platformgo.SessionsListEventsRequest{
+        SessionID: sessionID,
+        Limit:     platformgo.Int64(100),
+        Offset:    platformgo.Int64(0),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(events.Total)
+
+    for _, event := range events.Events {
+        fmt.Println(event.Timestamp, event.Type, event.Body)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url "https://api.axilio.ai/api/v1/phones/sessions/$SESSION_ID/events?limit=100&offset=0" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+The endpoint works for both workflow-backed and interactive sessions. Requests
+are scoped to your organization and require Viewer access or higher.
+
+<Note>
+  `sessions_list_events` requires version 0.16.0 or later of the Axilio Python
+  SDK. The CLI does not currently expose archived session events.
+</Note>
+
+## Filter event types
+
+Use `event_types` when you only need selected categories:
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    events = client.runs.sessions_list_events(
+        session_id,
+        event_types=["OUTPUT_LOG", "SDK_CALL_COMPLETED"],
+        limit=100,
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    events, err := api.Runs.SessionsListEvents(ctx, &platformgo.SessionsListEventsRequest{
+        SessionID:  sessionID,
+        EventTypes: []string{"OUTPUT_LOG", "SDK_CALL_COMPLETED"},
+        Limit:      platformgo.Int64(100),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(events.Total)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --get \
+      --url "https://api.axilio.ai/api/v1/phones/sessions/$SESSION_ID/events" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --data-urlencode "event_types=OUTPUT_LOG,SDK_CALL_COMPLETED" \
+      --data-urlencode "limit=100"
+    ```
+  </Tab>
+</Tabs>
+
+Event type codes include values such as `WORKFLOW_RUN_STARTED`, `OUTPUT_LOG`,
+and `SDK_CALL_COMPLETED`. The fields inside `body` depend on the event's `type`,
+so branch on `type` before reading type-specific fields.
+
+Each event always includes `type`, `timestamp`, and `session_id`. `body` is
+optional:
+
+| Field | Meaning |
+| --- | --- |
+| `type` | Event type code. |
+| `timestamp` | When the event occurred. |
+| `session_id` | Session that owns the event. |
+| `body` | Optional type-specific payload. |
+
+## Paginate the archive
+
+The default page size is 100 events and the maximum is 1,000. The response
+includes:
+
+- `events`: the current page.
+- `total`: the number of matching events currently available.
+- `limit` and `offset`: the paging values used for the response.
+- `retention_expired`: whether the retention gate is withholding the archive.
+
+Advance `offset` by the number of events returned until you have read the
+records you need. Results can still change while a session is active or while
+completed operations are arriving in the archive.
+
+## Correlate billed activity
+
+The response can also include two correlation maps:
+
+- `sdk_call_costs` maps SDK-call span IDs to billed microdollars.
+- `inference_costs` maps inference IDs to billed microdollars.
+
+These maps help annotate the session timeline. Use the
+[Usage API](/billing/usage-and-cost) as the billing authority.
+
+## Understand availability
+
+Live and archived events use separate delivery paths. A completed operation can
+take time to appear in the archive, so retry when reading an active session or
+immediately after it ends.
+
+If `retention_expired` is `true`, archived events are outside the available
+retention window and are withheld. If it is `false`, an empty `events` array
+means only that no matching archived events are currently available. It does
+not distinguish among a new session, a filter with no matches, disabled
+persistence, processing delay, or a session with no eligible records.
+
+<Note>
+  Do not treat this API as a byte-for-byte copy of the live event stream. The
+  schemas, timing, and coverage differ.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Find sessions" icon="magnifying-glass" href="/observability/sessions">
+    Search active and historical sessions before querying one.
+  </Card>
+  <Card title="Retrieve the recording" icon="video" href="/observability/recordings">
+    Correlate the event timeline with what appeared on screen.
+  </Card>
+  <Card title="Stream live events" icon="wave-pulse" href="/observability/live-session-events">
+    Follow best-effort frames while a session is active.
+  </Card>
+  <Card title="Usage and cost" icon="coins" href="/billing/usage-and-cost">
+    Review billed inference calls and aggregate usage.
+  </Card>
+</CardGroup>

@@ -37,31 +37,24 @@ description: "Check your balance, add funds, and get your invoices."
     fmt.Println(balance.BalanceMicrodollars)
     ```
   </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url https://api.axilio.ai/api/v1/billing/balance \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
 </Tabs>
 
 ## Add funds
 
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open **Settings → Billing**.
-    2. Click **Add Funds**.
-    3. Choose **\$5**, **\$10**, **\$25**, **\$50**, **\$100**, or **Custom**.
-    4. Click **Add Funds** and complete checkout.
-  </Tab>
+1. Open **Settings → Billing** in the dashboard.
+2. Click **Add Funds**.
+3. Choose **\$5**, **\$10**, **\$25**, **\$50**, **\$100**, or **Custom**.
+4. Click **Add Funds** and complete checkout.
 
-  <Tab title="CLI">
-    The CLI does not currently add funds. Use **Settings → Billing → Add Funds**
-    in the dashboard.
-  </Tab>
-
-  <Tab title="Python SDK">
-    The current Python SDK does not start an add-funds checkout. Use the dashboard.
-  </Tab>
-
-  <Tab title="Go SDK">
-    The current Go SDK does not start an add-funds checkout. Use the dashboard.
-  </Tab>
-</Tabs>
+The CLI, SDKs, and public REST API do not currently start an add-funds checkout.
 
 ## Invoices
 
@@ -109,6 +102,14 @@ List invoice history and open an invoice PDF:
     }
     ```
   </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url "https://api.axilio.ai/api/v1/billing/history?limit=20&offset=0" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
 </Tabs>
 
 ## Next steps
@@ -117,7 +118,7 @@ List invoice history and open an invoice PDF:
   <Card title="How billing works" icon="circle-info" href="/billing/overview">
     Flat rentals and separate vision usage, explained.
   </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
+  <Card title="Usage and cost" icon="coins" href="/billing/usage-and-cost">
     See where your money goes.
   </Card>
 </CardGroup>

@@ -6,6 +6,9 @@
 drafts/
 *.draft.mdx
 
+# Internal planning and research artifacts
+.docs/
+
 # Tooling — not docs pages
 .spec/
 

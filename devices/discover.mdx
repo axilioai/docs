@@ -28,7 +28,7 @@ including phones that are busy or offline:
     ```python
     dedicated = client.phones.list(ownership="dedicated")
 
-    for phone in dedicated.phones:
+    for phone in dedicated.phones or []:
         print(phone.phone_id, phone.nickname, phone.status)
     ```
   </Tab>
@@ -43,8 +43,20 @@ including phones that are busy or offline:
     }
 
     for _, phone := range dedicated.Phones {
-        fmt.Println(phone.PhoneID, phone.Nickname, phone.Status)
+        nickname := ""
+        if phone.Nickname != nil {
+            nickname = *phone.Nickname
+        }
+        fmt.Println(phone.PhoneID, nickname, phone.Status)
     }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
   </Tab>
 </Tabs>

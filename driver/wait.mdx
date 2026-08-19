@@ -11,26 +11,93 @@ automation breaks. Instead of a fixed pause, **wait for what you expect**.
 
 [`wait_for_text`](/driver/reference#driver-wait_for_text) waits until the text shows up, then hands it to you:
 
-```python
-driver.wait_for_text("Welcome").tap()   # waits, then taps
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone wait-for "Welcome" -o json |
+      jq -r '.center | "\(.x) \(.y)"' |
+      xargs -n 2 axilio phone tap
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.wait_for_text("Welcome").tap()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    welcome, err := driver.WaitForText("Welcome", 10*time.Second, false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := welcome.Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ## Wait for something to go away
 
 [`wait_until_gone`](/driver/reference#driver-wait_until_gone) waits until the text is gone. Handy for loading spinners:
 
-```python
-driver.wait_until_gone("Loading")
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone wait-for "Loading" --gone
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.wait_until_gone("Loading")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    if err := driver.WaitUntilGone("Loading", 10*time.Second, false); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ## How long to wait
 
 Both take a `timeout`, the number of seconds to wait before giving up (10 by
 default):
 
-```python
-driver.wait_for_text("Confirmed", timeout=30).tap()
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone wait-for "Confirmed" --timeout 30s
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.wait_for_text("Confirmed", timeout=30).tap()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    confirmed, err := driver.WaitForText("Confirmed", 30*time.Second, false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := confirmed.Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Waiting reads the live phone over the device-control WebSocket. It is not a
+REST operation.
 
 <Warning>
   If what you're waiting for never happens, you get a `TimeoutError`. Catch it to

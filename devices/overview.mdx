@@ -7,7 +7,7 @@ description: "A device is a dedicated real phone. A session gives you temporary 
 A device is a carrier-connected Android phone that agents can operate
 programmatically. A session is temporary access to one of these devices (phones).
 
-<Tabs>
+<Tabs sync={false}>
   <Tab title="Dashboard">
     1. Open [**Sessions**](https://app.axilio.ai/dashboard).
     2. Click **Allocate A Phone**.
@@ -18,14 +18,9 @@ programmatically. A session is temporary access to one of these devices (phones)
   </Tab>
 
   <Tab title="CLI">
-    Start a session, inspect its phone, then release it:
-
-    ```bash
-    axilio phones mine
-    eval "$(axilio sessions start --phone-id ph_123 --export)"
-    axilio phone observe
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    ```
+    The current CLI release still targets the pre-`0.72` session endpoints. Use
+    the dashboard, an SDK, or REST to allocate and release a phone until the CLI
+    is updated.
   </Tab>
 
   <Tab title="Python SDK">
@@ -36,10 +31,7 @@ programmatically. A session is temporary access to one of these devices (phones)
 
     client = Client()
 
-    phones = client.phones.list(ownership="dedicated")
-    phone = phones.phones[0]
-
-    with client.session("android", phone_id=phone.phone_id) as driver:
+    with client.session("android", phone_id="ph_123") as driver:
         driver.observe()
     ```
   </Tab>
@@ -67,6 +59,28 @@ programmatically. A session is temporary access to one of these devices (phones)
 
     fmt.Println(allocation.PhoneID, allocation.SessionID)
     ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    ALLOCATION=$(curl --silent --show-error --fail-with-body --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "pool": "dedicated"
+      }')
+    PHONE_ID=$(printf '%s' "$ALLOCATION" | jq -r '.phone_id')
+    printf '%s\n' "$ALLOCATION" | jq
+
+    curl --request POST \
+      --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    REST manages the session lifecycle. Phone commands use the
+    `control_url` WebSocket returned by allocation.
   </Tab>
 </Tabs>
 

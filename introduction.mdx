@@ -4,9 +4,9 @@ sidebarTitle: "Introduction"
 description: "Axilio is a cloud of real Android phones your code can control — see the screen, tap, type, and swipe, just like a person would."
 ---
 
-Axilio is a cloud of **real Android phones** that your code can control. You write
-a few lines of Python; Axilio hands you a phone and lets you see its screen and
-tap, type, and swipe — exactly like a person using it.
+Axilio is a cloud of **real Android phones** that your code can control. Use the
+CLI, Python SDK, or Go SDK to get a phone, see its screen, and tap, type, and
+swipe—exactly like a person using it.
 
 ## Why a real phone?
 
@@ -36,18 +36,20 @@ Three things, in order:
   </Step>
 </Steps>
 
+The Python SDK version looks like this. See the [Quickstart](/quickstart) for
+equivalent CLI and Go SDK examples.
+
 ```python
 from axilio.platform import Client
 
 client = Client()  # reads your API key from the environment
 
-phones = client.phones.list(ownership="dedicated")
-phone = phones.phones[0]
-
-with client.session("android", phone_id=phone.phone_id) as driver:
+with client.session("android", phone_id="ph_123") as driver:
     driver.find(query="the search box").type_into("axilio")
     photo = driver.screenshot()
 ```
+
+Replace `ph_123` with the ID of your dedicated phone.
 
 ## What makes it different
 
@@ -59,7 +61,7 @@ with client.session("android", phone_id=phone.phone_id) as driver:
   Continue button")`) instead of writing brittle coordinates.
 - **Run many at once** — start lots of phones in parallel, each isolated.
 - **Simple pricing** — rent a dedicated phone at a flat daily, weekly, or monthly rate.
-- **Replay** — watch a recording of everything your agent did.
+- **Recordings** — when recording is enabled, review what appeared on screen.
 
 ## Next steps
 

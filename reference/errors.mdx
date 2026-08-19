@@ -107,6 +107,19 @@ array that identifies invalid request fields.
     }
     ```
   </Tab>
+
+  <Tab title="REST API">
+    Inspect the HTTP status and the Problem Details JSON body:
+
+    ```bash
+    curl --include --request GET \
+      --url https://api.axilio.ai/api/v1/runs/run_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    Branch on the HTTP status. Read `detail` and, for validation failures, the
+    `errors` array before deciding whether to retry.
+  </Tab>
 </Tabs>
 
 The generated SDKs also expose status-specific types for `402`, `404`, `422`,
@@ -218,6 +231,7 @@ reported flag over assumptions based only on the code.
     }
     ```
   </Tab>
+
 </Tabs>
 
 For `element_not_found`, observe the current screen and make the query more
@@ -265,11 +279,22 @@ the run later reaches `failed` and exposes an `error_message`.
     }
     ```
   </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url https://api.axilio.ai/api/v1/runs/run_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    A successful `200` response can still describe a failed run. Branch on the
+    response's `status` field and read `error_message`.
+  </Tab>
 </Tabs>
 
 Workflow code can raise any language or library exception, so runtime exception
 names are not a closed Axilio error list. Use the run's `error_message` and its
-[`OUTPUT_ERROR` and `WORKFLOW_RUN_FAILED` events](/observability/events) to find
+[`OUTPUT_ERROR` and `WORKFLOW_RUN_FAILED` events](/observability/session-events) to find
 the original failure.
 
 ## Dashboard live-video connection issues
@@ -354,7 +379,7 @@ Do not share API keys, session tokens, signed control URLs, or live-view URLs.
   <Card title="Sessions and timeouts" icon="clock" href="/devices/timeouts">
     Understand connection and session deadlines.
   </Card>
-  <Card title="Events" icon="list-check" href="/observability/events">
+  <Card title="Session events" icon="list-check" href="/observability/session-events">
     Inspect the events from a failed run.
   </Card>
   <Card title="Live view" icon="tower-broadcast" href="/observability/live-view">
