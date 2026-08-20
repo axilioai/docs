@@ -1,0 +1,87 @@
+name: DCP Contract Update
+
+# Opens a "review the DCP contract + WS reference" PR when the backend publishes
+# a changed Device Control Protocol contract to production. The DCP twin of the
+# Fern SDK-regen flow: automatic PR, human review, merge = publish.
+#
+# How it fires: the backend's production deploy (the reusable
+# publish_dcp_contract.yml called by deploy_orchestrator.yml) sanitizes the
+# drift-gated asyncapi.yaml into a public-safe copy and fires a
+# dcp-contract-updated repository_dispatch here, carrying that contract
+# (base64) and the protocol + contract version. It carries NO monorepo
+# PR/commit list — this repo is public (AXI-1810) — and the monorepo's leak
+# guard already stripped internal detail from the contract itself.
+#
+# What this does: decode the contract, write it to api-reference/asyncapi-dcp
+# .yaml, and open a normal pull request. The PR uses this workflow's own
+# GITHUB_TOKEN, so it satisfies branch protection (1 approving review) instead
+# of bypassing it — nothing reaches the docs site until a human merges. The
+# machine-readable contract lands in the same PR as the review checklist for the
+# hand-written api-reference/dcp/ reference pages (which can't auto-update:
+# Mintlify has no AsyncAPI renderer). When the typed WS client is generated
+# (AXI-1784) it will land in this same PR too, completing the SDK parallel.
+
+on:
+  repository_dispatch:
+    types: [dcp-contract-updated]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-contract-pr:
+    name: Open DCP contract review PR
+    # Production only — staging carries unreleased wire surface that must never
+    # reach the public docs.
+    if: github.event.client_payload.environment == 'production'
+    runs-on: ubuntu-latest
+    env:
+      PROTOCOL_VERSION: ${{ github.event.client_payload.protocol_version }}
+      CONTRACT_VERSION: ${{ github.event.client_payload.contract_version }}
+      AXILIO_SHA: ${{ github.event.client_payload.axilio_sha }}
+      CONTRACT_B64: ${{ github.event.client_payload.contract_b64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write the published contract + assemble PR body
+        run: |
+          SHA8="${AXILIO_SHA:0:8}"
+          echo "sha8=${SHA8}" >> "$GITHUB_ENV"
+
+          # The contract file is the diff that opens the PR. If it is byte-
+          # identical to what's already on main, create-pull-request finds no
+          # change and opens nothing — so an unchanged contract is a natural
+          # no-op, no marker file needed.
+          mkdir -p api-reference
+          printf '%s' "${CONTRACT_B64}" | base64 -d > api-reference/asyncapi-dcp.yaml
+
+          {
+            echo "The backend published a **DCP contract** change in production (protocol \`${PROTOCOL_VERSION}\`, contract \`${CONTRACT_VERSION}\`, from \`axilio@${SHA8}\`)."
+            echo
+            echo "This PR updates the machine-readable contract at \`api-reference/asyncapi-dcp.yaml\`. Review the diff, update the hand-written reference if the wire changed, and merge — **merging is what publishes it to the docs site.**"
+            echo
+            echo "> [!IMPORTANT]"
+            echo "> Nothing is public until this PR is merged."
+            echo
+            echo "## Review checklist"
+            echo
+            echo "- [ ] The contract diff in this PR is expected."
+            echo "- [ ] [Message reference](/api-reference/dcp/reference) — methods, params, results, and error kinds still match."
+            echo "- [ ] [Raw usage](/api-reference/dcp/raw-usage) — the worked example still runs against the current wire."
+            echo "- [ ] [Overview](/api-reference/dcp/overview) — the advertised domains list is still accurate."
+          } > /tmp/pr-body.md
+
+      - name: Open DCP contract review PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          # One branch per source commit — a new contract change opens a new PR
+          # rather than updating a prior, possibly-unmerged one. A re-deploy of
+          # the same commit updates the existing PR in place. An unchanged
+          # contract produces no diff, so no PR opens.
+          branch: dcp-contract/${{ env.sha8 }}
+          base: main
+          labels: docs-drift
+          title: "docs: DCP contract update (axilio@${{ env.sha8 }})"
+          commit-message: "chore(dcp): update published DCP contract (axilio@${{ env.sha8 }})"
+          body-path: /tmp/pr-body.md

@@ -1,0 +1,240 @@
+---
+title: "DCP message reference"
+sidebarTitle: "Message reference"
+description: "Every DCP method, its params, and its result — plus the error shape."
+---
+
+Every [DCP](/api-reference/dcp/overview) method, grouped by capability domain. A
+command is `{ "id", "method", "params" }`; the response echoes the `id` and
+carries `result` on success or `error` on failure. Coordinates are pixels in the
+phone's native resolution (read it from [`Device.info`](#device-info)).
+
+A phone advertises the methods it supports in the
+[handshake](#protocol-handshake) — check `capabilities` before you depend on a
+method rather than assuming the whole surface.
+
+## Protocol
+
+### `Protocol.handshake`
+Negotiate the protocol and discover what the phone supports. Send it once, right
+after you open the socket.
+
+```json
+{ "id": 1, "method": "Protocol.handshake", "params": {} }
+```
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `client_version` | string | No | Your client's version, for the phone's logs. |
+| `min_protocol` | integer | No | Informational; the phone reports its own version in the result. |
+
+**Result**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `protocol_version` | integer | The protocol version the phone speaks. |
+| `device` | object | The [device descriptor](#device-info), same shape as `Device.info`. |
+| `domains` | string[] | The capability domains this phone advertises, e.g. `["Device", "Keyboard", "Protocol", "Screen", "Touch"]`. |
+| `capabilities` | string[] | The exact method names this phone answers, e.g. `["Touch.tap", "Screen.observe", ...]`. |
+
+## Device
+
+### `Device.info`
+The static device descriptor — read it to size taps and swipes without a
+screenshot round trip.
+
+```json
+{ "id": 2, "method": "Device.info", "params": {} }
+```
+
+**Result**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `device_id` | string | Stable id for this phone. |
+| `platform` | string | OS family — `"android"`. |
+| `form_factor` | string | Physical class — `"phone"`. |
+| `input_modalities` | string[] | Interaction classes the phone accepts — `["touch", "keyboard"]`. |
+| `screen_width` | integer | Native width in pixels. |
+| `screen_height` | integer | Native height in pixels. |
+| `model` | string | Best-effort model name; may be empty. |
+| `os_version` | string | Best-effort OS version; may be empty. |
+
+## Touch
+
+### `Touch.tap`
+Tap a pixel.
+
+```json
+{ "id": 3, "method": "Touch.tap", "params": { "x": 540, "y": 1180 } }
+```
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `x` | integer | Yes | X coordinate in pixels. |
+| `y` | integer | Yes | Y coordinate in pixels. |
+
+**Result** — an empty object `{}`.
+
+### `Touch.longPress`
+Press and hold a pixel.
+
+```json
+{ "id": 4, "method": "Touch.longPress", "params": { "x": 540, "y": 1180, "duration_ms": 800 } }
+```
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `x` | integer | Yes | X coordinate in pixels. |
+| `y` | integer | Yes | Y coordinate in pixels. |
+| `duration_ms` | integer | No | Hold duration in milliseconds. |
+
+**Result** — an empty object `{}`.
+
+### `Touch.swipe`
+Swipe from one pixel to another.
+
+```json
+{ "id": 5, "method": "Touch.swipe", "params": { "x1": 540, "y1": 1600, "x2": 540, "y2": 400, "duration_ms": 300 } }
+```
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `x1`, `y1` | integer | Yes | Start pixel. |
+| `x2`, `y2` | integer | Yes | End pixel. |
+| `duration_ms` | integer | No | Swipe duration in milliseconds. |
+
+**Result** — an empty object `{}`.
+
+## Keyboard
+
+### `Keyboard.typeText`
+Type a string into the focused field.
+
+```json
+{ "id": 6, "method": "Keyboard.typeText", "params": { "text": "hello" } }
+```
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `text` | string | Yes | The text to type. |
+
+**Result** — an empty object `{}`.
+
+### `Keyboard.keyPress`
+Press a named key or a single printable character.
+
+```json
+{ "id": 7, "method": "Keyboard.keyPress", "params": { "key": "enter" } }
+```
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `key` | string | Yes | A named key (`"enter"`, `"tab"`, `"backspace"`, ...) or a single character. |
+
+**Result** — an empty object `{}`.
+
+## Screen
+
+### `Screen.screenshot`
+Capture the current frame as a PNG.
+
+```json
+{ "id": 8, "method": "Screen.screenshot", "params": {} }
+```
+
+**Result**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `png_base64` | string | The frame as a base64-encoded PNG. |
+
+### `Screen.observe`
+Read the screen — its text and icons, with bounding boxes.
+
+```json
+{ "id": 9, "method": "Screen.observe", "params": { "ocr_engine": "free" } }
+```
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `ocr_engine` | string | No | `"free"` or `"premium"`. Defaults to `free`. |
+
+**Result**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `texts` | object[] | Detected text: `text`, `bbox` (`x`, `y`, `width`, `height`), `confidence`. |
+| `icons` | object[] | Detected icons: `bbox`, `confidence`. |
+| `hash` | string | Content hash of the frame; unchanged means the screen didn't change. |
+| `width`, `height` | integer | Frame dimensions in pixels. |
+| `captured_at` | integer | Frame timestamp, epoch milliseconds. |
+
+### `Screen.find`
+Find one element by describing it in plain English.
+
+```json
+{ "id": 10, "method": "Screen.find", "params": { "query": "the Settings icon" } }
+```
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `query` | string | Yes | Plain-English description of what to find. |
+| `model` | string | No | A vision model id; defaults to an automatic choice. |
+| `ocr_engine` | string | No | `"free"` or `"premium"`. |
+
+**Result**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `found` | object \| null | The match (`bbox`, `confidence`, `text`), or `null` on a miss. A miss is a result, not an error. |
+| `model_name` | string | The vision model that answered. |
+| `model_cost_microdollars` | integer | The cost of this call, in millionths of a dollar. |
+
+## Errors
+
+A failed command answers with `error` instead of `result`:
+
+```json
+{
+  "id": 3,
+  "error": {
+    "code": -32602,
+    "message": "x is required",
+    "data": { "kind": "InvalidArgs", "retryable": false }
+  }
+}
+```
+
+`data.kind` is the machine-readable classification and `data.retryable` says
+whether retrying the same command could succeed:
+
+| Kind | Code | Retryable | Meaning |
+| --- | --- | --- | --- |
+| `UnknownOp` | -32601 | No | The phone doesn't recognize the method. |
+| `InvalidArgs` | -32602 | No | The params failed validation. |
+| `Internal` | -32603 | No | An unclassified server-side failure. |
+| `NoAllocation` | -32001 | No | The session has no active phone allocation. |
+| `NotConnected` | -32002 | No | The server couldn't reach the phone. |
+| `DeviceOffline` | -32004 | Yes | The phone is transiently unavailable. |
+| `ElementNotFound` | -32005 | No | A selector matched nothing. |
+| `Timeout` | -32006 | Yes | The command exceeded its deadline. |
+| `Unauthorized` | -32007 | No | The session credential was rejected. |
+| `Canceled` | -32008 | No | The command was canceled. |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Drive a phone with raw DCP" icon="bolt" href="/api-reference/dcp/raw-usage">
+    A worked example, socket to first command.
+  </Card>
+  <Card title="Protocol overview" icon="plug" href="/api-reference/dcp/overview">
+    How the wire is framed and why.
+  </Card>
+  <Card title="Use the SDK instead" icon="hand-pointer" href="/driver/reference">
+    The ergonomic driver over these methods.
+  </Card>
+  <Card title="Vision models" icon="eye" href="/drivers/models">
+    Model ids and pricing for `Screen.find`.
+  </Card>
+</CardGroup>
