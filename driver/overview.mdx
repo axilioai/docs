@@ -7,18 +7,64 @@ description: "The Mobile driver is a handful of basics (find, tap, type, swipe) 
 The **Mobile driver** is how you control a phone that the
 [Platform](/introduction) gives you. A [session](/quickstart) hands you one.
 
+<Warning>
+  The CLI phone-action examples below show the command syntax, but CLI `0.7.1`
+  cannot start or stop sessions against API `0.72`. Use an SDK for a complete
+  session until a compatible CLI is released.
+</Warning>
+
 It's a small set of **basics** (find, tap, type, swipe) that you chain together to
 do anything:
 
-```python
-from axilio.platform import Client
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone tap --query "the Settings icon"
+    axilio phone tap --query "the Search field"
+    axilio phone type "axilio"
+    ```
+  </Tab>
 
-client = Client()
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
 
-with client.session("android") as driver:
-    driver.find(query="the Settings icon").tap()
-    driver.find_text("Search").type_into("axilio")
-```
+    client = Client()
+
+    with client.session("android", phone_id="ph_123") as driver:
+        driver.find(query="the Settings icon").tap()
+        driver.find_text("Search").type_into("axilio")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    settings, err := driver.Find("the Settings icon")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := settings.Tap(); err != nil {
+        log.Fatal(err)
+    }
+
+    search, err := driver.FindText("Search", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if search == nil {
+        log.Fatal("Search not found")
+    }
+    if err := search.TypeInto("axilio"); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  Phone-control actions use the device-control WebSocket. They are available
+  through the CLI and SDK drivers, not as REST endpoints.
+</Note>
 
 Every basic is one idea. Learn the handful below and you can drive any app.
 
@@ -55,11 +101,57 @@ Every basic is one idea. Learn the handful below and you can drive any app.
 
 Most steps are a **find** followed by an action:
 
-```python
-driver.find_text("Settings").tap()          # find -> tap
-driver.find(query="the search box").type_into("hello")   # find -> type
-driver.wait_for_text("Welcome").tap()        # wait -> tap
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone tap --query "Settings"
+    axilio phone tap --query "the search box"
+    axilio phone type "hello"
+    axilio phone wait-for "Welcome" -o json |
+      jq -r '.center | "\(.x) \(.y)"' |
+      xargs -n 2 axilio phone tap
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.find_text("Settings").tap()
+    driver.find(query="the search box").type_into("hello")
+    driver.wait_for_text("Welcome").tap()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    settings, err := driver.FindText("Settings", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if settings == nil {
+        log.Fatal("Settings not found")
+    }
+    if err := settings.Tap(); err != nil {
+        log.Fatal(err)
+    }
+
+    search, err := driver.Find("the search box")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := search.TypeInto("hello"); err != nil {
+        log.Fatal(err)
+    }
+
+    welcome, err := driver.WaitForText("Welcome", 10*time.Second, false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := welcome.Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
 That's the whole model. When you need exact control, every action also takes raw
 coordinates. See [Tap](/driver/tap) and [Swipe](/driver/swipe).

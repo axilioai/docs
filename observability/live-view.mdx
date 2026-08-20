@@ -1,34 +1,211 @@
 ---
-title: "Live view"
+title: "Watch a live session"
 sidebarTitle: "Live view"
-description: "Watch a phone in real time while your agent drives it."
+description: "Watch or interact with a phone's screen while its session is active."
 ---
 
-Live view streams a phone's screen to your
-[dashboard](https://app.axilio.ai/dashboard) in real time, so you can watch your
-agent work as it happens.
+Live view shows the phone's screen while a session is active. Use it to follow
+an agent in real time, inspect unexpected behavior, or take control when a
+person needs to intervene.
 
-Open any active session in the dashboard to see its live view. It's the fastest
-way to see what your agent is doing right now, and to catch a problem while it's
-still happening.
+To open it in Axilio, go to [**Sessions**](https://app.axilio.ai/dashboard),
+select an active session, and use the screen on that session's page.
 
-The live view also exists outside the dashboard: every allocation returns a
-`live_view_url` you can open directly or
-[embed in your own app](/observability/embed-live-view) as an iframe.
+## Direct URL
 
-To review a session after it ends, use a [recording](/observability/recordings)
-instead.
+When an allocation includes `live_view_url`, open that URL in a browser.
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    The current CLI release cannot start sessions against API `0.72`. Use the
+    dashboard, an SDK, or REST to obtain a live-view URL until it is updated.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    device = client.phones.allocate(phone_type="android", pool="dedicated")
+
+    if not device.live_view_url:
+        raise RuntimeError("allocation returned no live view URL")
+
+    print(device.live_view_url)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    if allocation.LiveViewURL == nil {
+        if _, cleanupErr := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+            PhoneID: allocation.PhoneID,
+        }); cleanupErr != nil {
+            log.Printf("release phone: %v", cleanupErr)
+        }
+        log.Fatal("allocation returned no live view URL")
+    }
+
+    fmt.Println(*allocation.LiveViewURL)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "pool": "dedicated"
+      }'
+    ```
+
+    [API reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
+
+    Open the `live_view_url` returned in the response.
+  </Tab>
+</Tabs>
+
+Keep the allocation active while the viewer is open. These URL-acquisition
+snippets intentionally leave it active; deallocate the returned `phone_id` when
+the viewer closes.
+
+The URL is omitted when live view is disabled for the allocation.
+
+## Configure access
+
+Set `live_view` when you allocate the phone. The object controls how viewers
+authenticate, whether they can interact, and whether Axilio creates a live view
+for the session.
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    device = client.phones.allocate(
+        phone_type="android",
+        pool="dedicated",
+        live_view={
+            "auth": "token",       # or "org"
+            "view_only": False,    # True makes the view watch-only
+            "disabled": False,
+        },
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    viewOnly := false
+    disabled := false
+
+    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
+        LiveView: &platformgo.PhoneLiveViewOptions{
+            Auth:     platformgo.PhoneLiveViewOptionsAuthToken.Ptr(),
+            ViewOnly: &viewOnly,
+            Disabled: &disabled,
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(allocation.SessionID)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "pool": "dedicated",
+        "live_view": {
+          "auth": "token",
+          "view_only": false,
+          "disabled": false
+        }
+      }'
+    ```
+
+    [API reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
+  </Tab>
+</Tabs>
+
+Configuration is fixed when you allocate the phone. Keep that allocation active
+while the view is in use, then deallocate its `phone_id`.
+
+| Setting | Values | Default | Effect |
+| --- | --- | --- | --- |
+| `auth` | `"token"`, `"org"` | `"token"` | `"token"` puts a session-scoped credential in the URL. `"org"` requires an Axilio sign-in and membership in your organization. |
+| `view_only` | `false`, `true` | `false` | `false` allows pointer and keyboard input. `true` makes the view watch-only. Axilio enforces this on the server. |
+| `disabled` | `false`, `true` | `false` | `true` prevents Axilio from creating a live view and omits `live_view_url`. |
+
+You can omit `live_view` to use all three defaults: token authentication, an
+interactive view, and live view enabled. If `disabled` is `true`, the other
+settings have no effect because no live view is created.
+
+<Note>
+  The CLI does not currently expose `auth`, `view_only`, or `disabled` options.
+  The dashboard allocation flow also uses the defaults and does not expose
+  these settings.
+  Its current release also cannot start sessions against API `0.72`. Use the
+  Python SDK, Go SDK, or REST API for live-view allocation and configuration
+  until the CLI is updated.
+</Note>
+
+For iframe integration and appearance settings, see
+[Embed the live view](/observability/embed-live-view).
+
+## Understand its lifecycle
+
+Live view is an active-session surface. It is separate from both the archived
+event timeline and the recording:
+
+- Use [live session events](/observability/live-session-events) when your code
+  needs structured event frames instead of pixels.
+- Use [session events](/observability/session-events) to query archived activity.
+- Use [recordings](/observability/recordings) to replay the screen after the
+  session ends and processing completes.
+
+Ending the session prevents new live-view connections. Your application should
+also close any viewer it already opened when it deallocates the phone.
+
+## Treat the URL as a credential
+
+<Warning>
+  In the default `auth: "token"` mode, `live_view_url` contains a signed
+  credential for this session. Anyone with the complete URL can open the
+  session's live screen without signing in. If `view_only` is `false`, they can
+  also tap, swipe, and type on the phone; if it is `true`, they can only watch.
+  The URL does not grant access to another session, the telemetry stream,
+  recordings, or Axilio APIs. Do not log it, send it to analytics, or include it
+  in a client-visible error. Use `auth: "org"` for links that should require an
+  Axilio sign-in and membership in your organization.
+</Warning>
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Embed live view" icon="window" href="/observability/embed-live-view">
-    The same live screen, in your own app.
+  <Card title="Embed the live view" icon="window" href="/observability/embed-live-view">
+    Add the screen to your application and configure its access.
   </Card>
-  <Card title="Recordings" icon="video" href="/observability/recordings">
-    Replay a session after it ends.
+  <Card title="Stream live events" icon="wave-pulse" href="/observability/live-session-events">
+    Process structured session activity over WebSocket.
   </Card>
-  <Card title="Events" icon="list-check" href="/observability/events">
-    See the step-by-step of a run.
+  <Card title="Review recordings" icon="video" href="/observability/recordings">
+    Retrieve a processed screen recording after the session.
+  </Card>
+  <Card title="Find sessions" icon="magnifying-glass" href="/observability/sessions">
+    Search active and historical sessions.
   </Card>
 </CardGroup>

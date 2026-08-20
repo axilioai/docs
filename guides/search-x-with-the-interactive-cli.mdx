@@ -1,0 +1,101 @@
+---
+title: "Search X with the interactive CLI"
+sidebarTitle: "Explore with the CLI"
+description: "Use the Axilio CLI to explore a mobile task before turning it into a workflow."
+---
+
+Use the interactive CLI to work out a mobile task one action at a time. This
+example opens X, searches for `agentic infrastructure`, and scrolls through the
+first few top posts.
+
+<Warning>
+  CLI `0.7.1` still targets the pre-`0.72` session endpoints and cannot start or
+  stop a session against the current API. This guide is retained for the phone
+  commands, but you cannot complete it until a compatible CLI is released.
+</Warning>
+
+## Before you start
+
+- Install the `axilio` CLI and run `axilio login`.
+- Use a phone that has X installed and signed in.
+
+<Tip>
+  Explore the available commands with `axilio --help`. Run `man axilio` for the
+  complete offline CLI reference.
+</Tip>
+
+## Start a session
+
+List your dedicated phones, then start a session on one and select it for the
+current shell:
+
+```bash
+axilio phones mine
+eval "$(axilio sessions start --phone-id ph_123 --export)"
+```
+
+Every following `axilio phone` command uses `AXILIO_SESSION` automatically.
+
+## Open X
+
+Observe the launcher, open the app drawer, and tap X:
+
+```bash
+axilio phone observe
+axilio phone swipe 244 950 244 300
+axilio phone tap --query "the X app"
+axilio phone observe
+```
+
+The swipe coordinates use the 488×1080 frame returned by `observe`. Adjust them
+if your phone returns a different frame size.
+
+## Search
+
+Focus the search field, enter the query, and submit it:
+
+```bash
+axilio phone tap --query "the Search field"
+axilio phone type "agentic infrastructure"
+axilio phone key enter
+axilio phone observe
+```
+
+The final `observe` verifies that X opened the **Top** results tab for the right
+query.
+
+## Scroll through the top posts
+
+Run these commands three times. Observe after each swipe so you can verify the
+screen before continuing:
+
+```bash
+axilio phone swipe 244 900 244 260
+axilio phone observe
+```
+
+## Stop and download the recording
+
+Stop the session as soon as you finish:
+
+```bash
+axilio sessions stop "$AXILIO_SESSION" --yes
+```
+
+Axilio records the session by default. In the
+[dashboard](https://app.axilio.ai/dashboard), open **Sessions**, select the
+completed session, open the video player's menu, and click **Download**.
+
+## Watch the demo
+
+<video
+  controls
+  playsInline
+  preload="metadata"
+  poster="/videos/cli-demo-poster.jpg"
+  className="mx-auto w-full max-w-xs rounded-xl"
+  src="/videos/cli-demo.mp4"
+  title="Axilio interactive CLI demo"
+>
+  Your browser does not support video playback.
+</video>
