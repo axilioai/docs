@@ -186,6 +186,7 @@
             "pages": [
               "api-reference/dcp/overview",
               "api-reference/dcp/raw-usage",
+              "api-reference/dcp/reconnect",
               "api-reference/dcp/reference"
             ]
           },

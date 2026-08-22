@@ -1,0 +1,154 @@
+---
+title: "Reconnect and resume"
+sidebarTitle: "Reconnect & resume"
+description: "Survive a dropped WebSocket: close codes, cursor resume, and idempotent re-send."
+---
+
+A session outlives its sockets. The allocation is the durable thing; the
+`control_url` and `telemetry_url` WebSockets are just channels to it, and a
+channel can drop — a network path change, a server replacement, a laptop
+switching Wi‑Fi. When that happens, you reconnect to the **same URL** and
+continue the same session: the server buffers recent frames, tells you your
+position in the stream, and deduplicates re-sent commands so nothing runs
+twice.
+
+<Note>
+  The [SDKs](/driver/overview) and the dashboard implement all of this for
+  you — a dropped socket is invisible, and a re-sent `tap()` executes exactly
+  once. Read on if you drive the WebSocket yourself.
+</Note>
+
+## Close codes: retry or stop
+
+When the server closes your socket, the close code tells you what to do:
+
+| Code | Meaning | What you do |
+| --- | --- | --- |
+| `1001` Going Away | The server instance is going away, or your connection went quiet too long | **Reconnect now**, presenting your cursor |
+| `1013` Try Again Later | The instance is draining and refused the connection | **Retry the same URL with backoff** — another instance answers |
+| `1011` Internal Error | The server failed setting up the connection | **Retry with backoff** |
+| `1000` `"session ended"` | The session is over | **Stop.** Do not retry |
+| `1000` `"Superseded"` | A newer connection of yours took over this socket | **Stop** — terminal for this connection |
+| `4409` `"control_held"` | Another controller holds the session's control | **Stop and surface it.** Never retry-loop against a held control channel |
+| Abrupt loss (no close frame) | The network path failed | Same as `1001`: reconnect with backoff and cursor |
+
+Use **bounded exponential backoff with jitter** for the retryable codes — a
+handful of attempts over tens of seconds, not a tight loop.
+
+When you reconnect, the **HTTP status of the upgrade** is the session-liveness
+signal:
+
+- `403` — the session is no longer active. Terminal: stop retrying.
+- `401` — the credential is bad.
+- The URL you already hold stays valid for any mid-session reconnect; you never
+  need to mint a new one for the same session.
+
+## The cursor: where you left off
+
+The server buffers every frame it sends you and can resume delivery from a
+position — but only you know which frames you actually processed, so **you**
+present the position. That position is the cursor: an opaque token the server
+hands you in-band. Track the latest one; never parse it.
+
+Cursors are strictly **opt-in**. Add `resume=1` to the connection URL and the
+server interleaves a small checkpoint frame after each delivered batch:
+
+```json
+// control socket (a CDP-shaped notification, no id)
+{ "method": "Axilio.cursor", "params": { "cursor": "1755861234567-0" } }
+
+// telemetry socket (a type-tagged frame)
+{ "type": "CURSOR", "cursor": "1755861234567-0" }
+```
+
+Without `resume=1` the stream is byte-for-byte what it always was — an
+off-the-shelf CDP client that never asks never sees a checkpoint.
+
+To resume, reconnect to the same URL with both parameters:
+
+```text
+wss://connect.axilio.ai/api/v1/realtime/ws/control?token=...&resume=1&cursor=1755861234567-0
+wss://connect.axilio.ai/api/v1/realtime/ws/telemetry?session_id=...&token=...&resume=1&cursor=...
+```
+
+- **With a cursor**, delivery continues strictly after that checkpoint.
+  Delivery is **at-least-once**: frames between your last checkpoint and the
+  drop are delivered again, so you must tolerate duplicates (below).
+- **Without a cursor**, you get a fresh connection's default: the control
+  socket starts live (no history), the telemetry socket replays the recent
+  window.
+
+## When the window has expired
+
+Buffers are bounded. The control socket retains roughly the last two minutes
+(and at most ~100 frames); the telemetry socket retains roughly the last ten
+minutes (~2000 frames). If you present a cursor older than the retained
+window, the server cannot replay the gap losslessly. Instead of failing the
+connection, it sends a **resync signal as the first frame**, then continues
+live:
+
+```json
+{ "method": "Axilio.resyncRequired", "params": { "requested": "...", "oldest": "..." } }   // control
+{ "type": "RESYNC_REQUIRED" }                                                              // telemetry
+```
+
+Treat your view of the device as stale: re-run `Screen.observe` on the control
+socket; refetch the session's history from the
+[events API](/observability/events) on the telemetry side.
+
+## Idempotency keys: re-sending safely
+
+Resume covers the frames coming *to* you. The command going *from* you when
+the socket died is ambiguous: did the phone execute it or not? The answer is
+re-send plus dedup. Give a mutating command an `idempotencyKey` in its
+params:
+
+```json
+{ "id": 18, "method": "Touch.tap", "params": { "x": 120, "y": 640, "idempotencyKey": "01J8QZ..." } }
+```
+
+- Generate a unique key (a UUID) per logical command, and reuse it **verbatim**
+  when re-sending that same command after a reconnect.
+- The device keeps a per-session ledger of `key → response`. A duplicate key
+  returns the recorded response without executing again — your re-send is a
+  true idempotent retry, and the tap lands exactly once.
+- Only mutating input (`Touch.*`, `Keyboard.*`) takes a key. Reads
+  (`Screen.observe`, `Screen.screenshot`, `Screen.find`) are naturally safe to
+  re-send and stay keyless.
+
+## The client checklist
+
+A reconnect-correct raw client does five things:
+
+1. **Tolerate duplicates after a resume.** At-least-once delivery means frames
+   after your last checkpoint come again. Match responses by request `id`;
+   deduplicate telemetry frames by span id and phase.
+2. **Never reuse a request `id` across a resumed connection.** A resumed
+   socket can still deliver a pre-drop response; a reused id would attach it
+   to the wrong command. Keep one monotonic counter for the life of your
+   process.
+3. **Classify closes.** `1000` and `4409` are terminal; `1001`, `1013`,
+   `1011`, and abrupt loss get bounded backoff with jitter. A `403` on
+   reconnect means the session is over.
+4. **Re-run [`Protocol.handshake`](/api-reference/dcp/reference#protocol-handshake)
+   after reconnecting**, before resuming work — capability state is
+   per-connection.
+5. **Don't send your own pings.** The server pings every 20 seconds; idle
+   connections are already kept alive.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Drive a phone with raw DCP" icon="bolt" href="/api-reference/dcp/raw-usage">
+    Open the socket, handshake, and send your first command.
+  </Card>
+  <Card title="Message reference" icon="list" href="/api-reference/dcp/reference">
+    Every method, its params, its result, and the error shape.
+  </Card>
+  <Card title="Live telemetry" icon="signal-stream" href="/observability/telemetry">
+    The second socket this contract also covers.
+  </Card>
+  <Card title="Use the SDK instead" icon="hand-pointer" href="/driver/overview">
+    Reconnect, resume, and keyed re-send built in.
+  </Card>
+</CardGroup>
