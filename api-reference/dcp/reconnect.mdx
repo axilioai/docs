@@ -6,7 +6,7 @@ description: "Survive a dropped WebSocket: close codes, cursor resume, and idemp
 
 A session outlives its sockets. The allocation is the durable thing; the
 `control_url` and `telemetry_url` WebSockets are just channels to it, and a
-channel can drop — a network path change, a server replacement, a laptop
+channel can drop: a network path change, a server replacement, a laptop
 switching Wi‑Fi. When that happens, you reconnect to the **same URL** and
 continue the same session: the server buffers recent frames, tells you your
 position in the stream, and deduplicates re-sent commands so nothing runs
@@ -14,7 +14,7 @@ twice.
 
 <Note>
   The [SDKs](/driver/overview) and the dashboard implement all of this for
-  you — a dropped socket is invisible, and a re-sent `tap()` executes exactly
+  you: a dropped socket is invisible, and a re-sent `tap()` executes exactly
   once. Read on if you drive the WebSocket yourself.
 </Note>
 
@@ -25,28 +25,28 @@ When the server closes your socket, the close code tells you what to do:
 | Code | Meaning | What you do |
 | --- | --- | --- |
 | `1001` Going Away | The server instance is going away, or your connection went quiet too long | **Reconnect now**, presenting your cursor |
-| `1013` Try Again Later | The instance is draining and refused the connection | **Retry the same URL with backoff** — another instance answers |
+| `1013` Try Again Later | The instance is draining and refused the connection | **Retry the same URL with backoff**; another instance answers |
 | `1011` Internal Error | The server failed setting up the connection | **Retry with backoff** |
 | `1000` `"session ended"` | The session is over | **Stop.** Do not retry |
-| `1000` `"Superseded"` | A newer connection of yours took over this socket | **Stop** — terminal for this connection |
+| `1000` `"Superseded"` | A newer connection of yours took over this socket | **Stop**; terminal for this connection |
 | `4409` `"control_held"` | Another controller holds the session's control | **Stop and surface it.** Never retry-loop against a held control channel |
 | Abrupt loss (no close frame) | The network path failed | Same as `1001`: reconnect with backoff and cursor |
 
-Use **bounded exponential backoff with jitter** for the retryable codes — a
+Use **bounded exponential backoff with jitter** for the retryable codes: a
 handful of attempts over tens of seconds, not a tight loop.
 
 When you reconnect, the **HTTP status of the upgrade** is the session-liveness
 signal:
 
-- `403` — the session is no longer active. Terminal: stop retrying.
-- `401` — the credential is bad.
+- `403` means the session is no longer active. Terminal: stop retrying.
+- `401` means the credential is bad.
 - The URL you already hold stays valid for any mid-session reconnect; you never
   need to mint a new one for the same session.
 
 ## The cursor: where you left off
 
 The server buffers every frame it sends you and can resume delivery from a
-position — but only you know which frames you actually processed, so **you**
+position. But only you know which frames you actually processed, so **you**
 present the position. That position is the cursor: an opaque token the server
 hands you in-band. Track the latest one; never parse it.
 
@@ -61,7 +61,7 @@ server interleaves a small checkpoint frame after each delivered batch:
 { "type": "CURSOR", "cursor": "1755861234567-0" }
 ```
 
-Without `resume=1` the stream is byte-for-byte what it always was — an
+Without `resume=1` the stream is byte-for-byte what it always was: an
 off-the-shelf CDP client that never asks never sees a checkpoint.
 
 To resume, reconnect to the same URL with both parameters:
@@ -110,8 +110,8 @@ params:
 - Generate a unique key (a UUID) per logical command, and reuse it **verbatim**
   when re-sending that same command after a reconnect.
 - The device keeps a per-session ledger of `key → response`. A duplicate key
-  returns the recorded response without executing again — your re-send is a
-  true idempotent retry, and the tap lands exactly once.
+  returns the recorded response without executing again, so your re-send is a
+  true idempotent retry and the tap lands exactly once.
 - Only mutating input (`Touch.*`, `Keyboard.*`) takes a key. Reads
   (`Screen.observe`, `Screen.screenshot`, `Screen.find`) are naturally safe to
   re-send and stay keyless.
@@ -131,7 +131,7 @@ A reconnect-correct raw client does five things:
    `1011`, and abrupt loss get bounded backoff with jitter. A `403` on
    reconnect means the session is over.
 4. **Re-run [`Protocol.handshake`](/api-reference/dcp/reference#protocol-handshake)
-   after reconnecting**, before resuming work — capability state is
+   after reconnecting**, before resuming work: capability state is
    per-connection.
 5. **Don't send your own pings.** The server pings every 20 seconds; idle
    connections are already kept alive.
