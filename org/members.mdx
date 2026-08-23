@@ -4,38 +4,31 @@ sidebarTitle: "Members"
 description: "Invite teammates to your organization and manage their roles."
 ---
 
-Invite teammates to share an organization. Manage members in your
-[dashboard](https://axilio.ai/dashboard), or from the SDK.
+Invite teammates and manage their access from the dashboard.
 
-<Note>
-  The SDK calls below take your organization ID, which you can find in your
-  dashboard settings.
-</Note>
+The CLI, SDKs, and public REST API do not currently expose organization-member
+management.
 
 ## Invite a teammate
 
-```python
-client.org.create_invitation(
-    org_id="org_123",
-    email="teammate@example.com",
-    role="member",
-)
-```
+1. Open [**Settings → Members**](https://app.axilio.ai/dashboard).
+2. Click **Invite member**.
+3. Enter the email address and choose **Admin**, **Member**, or **Viewer**.
+4. Click **Send invitation**.
 
 ## List members
 
-```python
-members = client.org.list_members(org_id="org_123")
-for member in members.members:
-    print(member)
-```
+1. Open **Settings → Members**.
+2. Search by name, email, or role.
+3. Sort the table by **Name**, **Email**, **Role**, **Status**, or join date.
 
 ## Change a role or remove someone
 
-```python
-client.org.update_member_role(org_id="org_123", user_id="user_456", role="admin")
-client.org.remove_member(org_id="org_123", user_id="user_456")
-```
+1. Open **Settings → Members**.
+2. Select the checkbox beside one or more members.
+3. Choose a new value from **Set role…** to change their roles, or click
+   **Remove** to remove them.
+4. Confirm the removal when prompted.
 
 ## Next steps
 

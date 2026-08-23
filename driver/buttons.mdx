@@ -5,15 +5,46 @@ description: "Press a named key like Enter to submit a form or fire the keyboard
 ---
 
 Some steps need a key press, not a tap — submitting a form, or firing the on-screen
-keyboard's **Go** / **Search**. Use [`key_press`](/driver/reference#driver-key_press)
-with a [`Key`](/driver/key) constant:
+keyboard's **Go** / **Search**.
 
-```python
-from axilio.drivers.mobile import Key
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone tap --query "the Search field"
+    axilio phone type "axilio"
+    axilio phone key enter
+    ```
+  </Tab>
 
-driver.find_text("Search").type_into("axilio")
-driver.key_press(Key.ENTER)   # submit
-```
+  <Tab title="Python SDK">
+    ```python
+    from axilio.drivers.mobile import Key
+
+    driver.find_text("Search").type_into("axilio")
+    driver.key_press(Key.ENTER)   # submit
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    search, err := driver.FindText("Search", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if search == nil {
+        log.Fatal("Search not found")
+    }
+    if err := search.TypeInto("axilio"); err != nil {
+        log.Fatal(err)
+    }
+    if err := driver.KeyPress(mobile.KeyEnter); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Key presses use the device-control WebSocket. They are not REST operations.
 
 <Note>
   `Key.ENTER` is the only named key today; the set grows as real needs appear. To

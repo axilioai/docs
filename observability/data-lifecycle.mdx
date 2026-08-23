@@ -1,0 +1,111 @@
+---
+title: "Data availability and security"
+sidebarTitle: "Data lifecycle"
+description: "Understand how live access, archived events, recordings, and usage data differ."
+---
+
+Axilio's observability surfaces have separate lifecycles. The live screen, live
+event stream, archived events, recording, and usage records are not one shared
+artifact. A control or expiry that applies to one surface does not automatically
+apply to the others.
+
+## Compare the data surfaces
+
+| Surface | Contains | Available | Persisted | Access boundary |
+| --- | --- | --- | --- | --- |
+| Live view | Interactive screen | While the session is active | Not by the live URL; recording is separate | Signed session URL or Axilio organization sign-in |
+| Live session events | Recent and newly published event frames | While active, with bounded recent replay | The replay window is temporary; the archive is separate | Signed `telemetry_url` |
+| Archived session events | Eligible events that reached the archive | After ingestion and during the available retention window | Subject to the session-event retention policy | API key with Viewer access, organization-scoped |
+| Recording | Recorded screen video | After processing, when recording was enabled | Subject to recording retention | API key for lookup, then a short-lived URL |
+| Usage and cost | Billed calls and aggregate usage | Billing lifecycle | Separate billing records | Authenticated Usage API |
+
+## Control live screen access
+
+Configure live view when allocating a phone:
+
+| Option | Effect |
+| --- | --- |
+| `auth: "token"` | The URL carries a session-scoped credential. |
+| `auth: "org"` | The viewer must sign in to Axilio and belong to your organization. |
+| `view_only: true` | Viewers cannot send input to the phone. |
+| `disabled: true` | No live-view URL is created for the session. |
+
+Organization authentication is useful for links shared inside your team. Token
+mode is normally required for embedding the view for your own users.
+
+## Control recorded screen content
+
+Set `recording=False` on an allocation when no video or rolling thumbnail should
+be written for that session. Workflows have an equivalent recording setting for
+their runs.
+
+The recording API reports `pending`, `ready`, or `expired`. It does not currently
+provide a separate `disabled` status, so retain the setting in your own session
+metadata when your application needs to distinguish disabled recording from an
+unavailable recording.
+
+## Understand archived events
+
+The session events API returns `retention_expired` with every response. When it
+is `true`, the retention gate withholds archived events. When it is `false`, an
+empty result only means that no matching archived events are currently
+available.
+
+The allocation and workflow APIs expose a `telemetry` setting for archived
+telemetry. Live WebSocket delivery is a separate surface and is not controlled
+by that setting or by the archive's retention status. Confirm the policy that
+applies to your account before treating a product setting as a persistence or
+deletion guarantee.
+
+<Warning>
+  If your organization requires contractual zero-data-retention or a guaranteed
+  hard-deletion timeline, confirm the applicable account policy with Axilio
+  before relying on a product setting alone.
+</Warning>
+
+## Treat tokenized URLs as credentials
+
+In token mode, `live_view_url` and `telemetry_url` contain bearer capabilities.
+Anyone who obtains one can use that surface while access remains valid.
+
+- Do not log or persist the full URLs.
+- Do not send them to analytics or error-reporting tools.
+- Do not expose them in browser-visible errors or support screenshots.
+- Pass them only to the component that needs the corresponding capability.
+- Deallocate the session if a URL leaks, and close any connection your
+  application already opened.
+
+Deallocation prevents new live connections. Clients should not depend on
+deallocation alone to close a viewer or WebSocket that is already connected.
+
+## Use organization-scoped APIs for historical data
+
+Archived events and recording lookups require API authentication and Viewer
+access or higher. They are scoped to your organization; another organization's
+session is returned as not found.
+
+The short-lived URL returned for a ready recording is a separate credential.
+Fetch it promptly, do not log it, and request a fresh URL when necessary.
+
+## Keep billing data conceptually separate
+
+Usage and cost records are the billing authority. They can have a different
+lifecycle from session content, recordings, and archived events. Expiry of a
+session artifact does not imply deletion of the corresponding billing record.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Embed live view securely" icon="window" href="/observability/embed-live-view">
+    Configure authentication, view-only access, and iframe behavior.
+  </Card>
+  <Card title="Review session events" icon="list-check" href="/observability/session-events">
+    Interpret retention state and archive availability.
+  </Card>
+  <Card title="Review recordings" icon="video" href="/observability/recordings">
+    Check processing and expiry status before retrieving video.
+  </Card>
+  <Card title="Usage and cost" icon="coins" href="/billing/usage-and-cost">
+    Review the separate billing surface.
+  </Card>
+</CardGroup>

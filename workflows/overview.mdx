@@ -1,13 +1,13 @@
 ---
 title: "Workflows and runs"
 sidebarTitle: "Overview"
-description: "A workflow is your automation saved on Axilio. A run is one execution of it."
+description: "Create, run, and monitor an Axilio workflow."
 ---
 
 A **workflow** is your automation saved on Axilio: the code that drives a phone,
 the same code you've seen in these docs. A **run** is one execution of a workflow.
 
-Save a workflow once, then run it again and again, on demand or on a schedule.
+Save a workflow once, then run it again and again on demand.
 
 ## The basics
 
@@ -15,10 +15,10 @@ Save a workflow once, then run it again and again, on demand or on a schedule.
   <Card title="Create" icon="square-plus" href="/workflows/create">
     Write and save your automation.
   </Card>
-  <Card title="Run" icon="play" href="/workflows/run">
-    Start a run, now or scheduled.
+  <Card title="Run" icon="play" href="#run">
+    Start one run or queue several in parallel.
   </Card>
-  <Card title="Watch a run" icon="list" href="/workflows/monitor">
+  <Card title="Watch a run" icon="list" href="#watch-a-run">
     Check its status and replay it.
   </Card>
 </CardGroup>
@@ -28,3 +28,13 @@ Save a workflow once, then run it again and again, on demand or on a schedule.
 When you write code with `session()`, you're driving a phone live. A workflow is
 that same code, saved so Axilio can run it for you on phones it manages. The script
 you test runs unchanged as a workflow.
+
+## Run
+
+Start one execution from the dashboard, CLI, an SDK, or the REST API. You can
+also queue several runs in parallel. [Learn how to run a workflow](/workflows/run).
+
+## Watch a run
+
+Use the run ID to check its status, replay its recording, and inspect its events.
+[Learn how to monitor a run](/workflows/monitor).

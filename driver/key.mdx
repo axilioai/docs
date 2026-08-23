@@ -7,11 +7,31 @@ description: "The named-key constants you pass to driver.key_press(). Today, tha
 `Key` holds the named-key constants for
 [`driver.key_press()`](/driver/reference#driver-key_press).
 
-```python
-from axilio.drivers.mobile import Key
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone key enter
+    ```
+  </Tab>
 
-driver.key_press(Key.ENTER)
-```
+  <Tab title="Python SDK">
+    ```python
+    from axilio.drivers.mobile import Key
+
+    driver.key_press(Key.ENTER)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    if err := driver.KeyPress(mobile.KeyEnter); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+This live phone action is not available through REST.
 
 ## Constants
 

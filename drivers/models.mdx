@@ -10,11 +10,28 @@ icons, layout — and power `find_text` and `observe`. The **vision-language
 models** understand a description and power `find(query=...)`. Both are listed,
 with live pricing, by one call:
 
-```python
-models = client.argus.list_models()
-for m in models.data:
-    print(m.id, m.pricing)
-```
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    models = client.argus.list_models()
+    for model in models.data:
+        print(model.id, model.pricing)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request GET \
+      --url https://argus.axilio.ai/api/v1/vision/models
+    ```
+
+    [API reference: List models](/api-reference/vision/vision/list-models)
+
+    The model catalog is public and does not require an API key.
+  </Tab>
+</Tabs>
+
+The CLI and Go SDK do not currently expose the model catalog.
 
 ## Axilio models
 
@@ -22,19 +39,61 @@ The Axilio line comes in two tiers: **Lite** is free, **Pro** reads harder
 screens (small fonts, dense layouts) for a small per-call price. You don't pass
 these ids anywhere — you pick the tier with `ocr_engine=`:
 
-```python
-driver.find_text("Sign in", ocr_engine="premium")   # Pro
-driver.find_text("Sign in")                         # Lite (the default)
-```
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    driver.find_text("Sign in", ocr_engine="premium")   # Pro
+    driver.find_text("Sign in")                         # Lite (the default)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    _, err := driver.FindText(
+        "Sign in",
+        false,
+        mobile.WithOCREngine("premium"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The CLI's `phone find-text` command does not currently expose an OCR-engine
+override. This driver operation is not available through REST.
 
 To use a tier for a whole session instead of every call, set it once:
 
-```python
-with client.session("android", default_ocr_engine="premium") as driver:
-    driver.find_text("Sign in")   # Pro, no kwarg needed
-```
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    with client.session(
+        "android",
+        phone_id="ph_123",
+        default_ocr_engine="premium",
+    ) as driver:
+        driver.find_text("Sign in")   # Pro, no kwarg needed
+    ```
+  </Tab>
 
-The ids below are what you'll see on your [usage rows](/observability/cost)
+  <Tab title="Go SDK">
+    ```go
+    driver := mobile.ConnectRemote(
+        controlURL,
+        mobile.WithDefaultOCREngine("premium"),
+    )
+    defer driver.Close()
+
+    if _, err := driver.FindText("Sign in", false); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The IDs below are what you'll see on your [inference usage records](/billing/usage-and-cost)
 and in the pricing list:
 
 | Model id | What it is | How you get it |
@@ -53,15 +112,55 @@ Describing something in plain English — `find(query="the heart icon")` — run
 vision-language model. Pass a model's `id` as `model=` to pick one, or set a
 session default:
 
-```python
-driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find "the buy button" \
+      --model anthropic/claude-haiku-4.5
+    ```
 
-with client.session(
-    "android",
-    default_model="anthropic/claude-haiku-4.5",
-) as driver:
-    driver.find(query="the buy button")   # haiku, no kwarg needed
-```
+    The CLI supports a per-command model override but not a saved session
+    default.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
+
+    with client.session(
+        "android",
+        phone_id="ph_123",
+        default_model="anthropic/claude-haiku-4.5",
+    ) as driver:
+        driver.find(query="the buy button")   # haiku, no kwarg needed
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    _, err := driver.Find(
+        "the buy button",
+        mobile.WithModel("anthropic/claude-haiku-4.5"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    driverWithDefault := mobile.ConnectRemote(
+        controlURL,
+        mobile.WithDefaultModel("anthropic/claude-haiku-4.5"),
+    )
+    defer driverWithDefault.Close()
+
+    if _, err := driverWithDefault.Find("the buy button"); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+These live-driver model settings are not REST operations. Use the Vision API
+only when you are sending your own image to Argus directly.
 
 Leave `model=` off and Argus picks a sensible default. An id that isn't in the
 list below is rejected before anything is billed.
@@ -70,7 +169,7 @@ Vision-language calls are billed per token:
 
 <div id="axilio-models" />
 
-Prices are pulled live, so they're never stale. See [Cost](/observability/cost)
+Prices are pulled live, so they're never stale. See [Usage and cost](/billing/usage-and-cost)
 to track what you actually spend.
 
 ## Calling Argus directly
@@ -79,7 +178,7 @@ The driver runs Argus for you on the live screen. If you have your own image to
 analyze, call it directly with [`client.argus`](/driver/client#client-argus) —
 the same models, on any image. See the [`Client` reference](/driver/client#client-argus)
 for the SDK methods (`locate`, `detect`, `list_models`), or the
-[Vision API reference](/api-reference/vision/inference/run-locate) for the REST
+[Vision API reference](/api-reference/vision/vision/run-locate) for the REST
 endpoints.
 
 ## Next steps
@@ -88,7 +187,7 @@ endpoints.
   <Card title="Find" icon="magnifying-glass" href="/driver/find">
     Where the engine and model options plug in.
   </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
+  <Card title="Usage and cost" icon="coins" href="/billing/usage-and-cost">
     See what your vision calls cost.
   </Card>
 </CardGroup>

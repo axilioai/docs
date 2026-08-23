@@ -1,25 +1,54 @@
 ---
 title: "Quickstart"
 sidebarTitle: "Quickstart"
-description: "Get a real Android phone and control it — screenshot, find something, tap it — in five minutes."
+description: "Get a real Android phone and control it from the dashboard, Python SDK, or Go SDK."
 ---
 
-In five minutes you'll get a real Android phone, read its screen, and tap
-something on it.
+In a few minutes, you will get a real Android phone and open **Settings**. The
+SDK paths also save its current screen.
 
 ## Before you start
 
-- **Python 3.10 or newer**
-- **An API key** — create one in the [dashboard](https://axilio.ai/dashboard).
-  See [Authentication](/authentication).
+- **An Axilio account** — create an API key in the
+  [dashboard](https://app.axilio.ai/dashboard) if you will use a client. See
+  [Authentication](/authentication).
+- **A dedicated phone** — rent one from **Phones** in the dashboard.
+  Copy its `phone_id`; the examples use `ph_123` as a placeholder.
+- **One interface** — the Axilio dashboard, CLI, Python 3.10 or newer, or Go.
 
-## 1. Install
+## 1. Install a client
 
-```bash
-pip install axilio
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    brew install axilioai/tap/axilio
+    ```
+
+    On Linux, use `curl -fsSL https://axilio.ai/install.sh | sh`.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```bash
+    pip install axilio
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```bash
+    mkdir axilio-quickstart
+    cd axilio-quickstart
+    go mod init axilio-quickstart
+    go get github.com/axilioai/platform-go@latest
+    ```
+  </Tab>
+</Tabs>
+
+The dashboard requires no installation. Use it for a manual first session, or
+install a client when you want repeatable automation.
 
 ## 2. Add your API key
+
+Skip this step when you use only the dashboard.
 
 ```bash
 export AXILIO_API_KEY=axl_your_key_here
@@ -27,29 +56,128 @@ export AXILIO_API_KEY=axl_your_key_here
 
 ## 3. Control a phone
 
-```python
-from axilio.platform import Client
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Click **Allocate A Phone** and select your dedicated phone.
+    3. Open the active session and click the phone screen to focus it.
+    4. Open **Settings** on the phone.
+    5. Return to **Sessions** and click **Release** when you finish.
 
-client = Client()
+    This is the manual path. It does not create the local `screen.png` used by
+    the SDK examples.
+  </Tab>
 
-# Borrow a phone. It's returned automatically when the block ends.
-with client.session("android") as driver:
-    # Save a picture of the screen.
-    with open("screen.png", "wb") as f:
-        f.write(driver.screenshot())
+  <Tab title="CLI">
+    The current CLI release still targets the pre-`0.72` session endpoints, so
+    it cannot complete this quickstart against the current API. Use an SDK until
+    the CLI is updated.
+  </Tab>
 
-    # Find something on the screen and tap it.
-    driver.find(query="the Settings icon").tap()
-```
+  <Tab title="Python SDK">
+    Save as `quickstart.py`:
 
-Run it:
+    ```python
+    from axilio.platform import Client
 
-```bash
-python quickstart.py
-```
+    client = Client()
 
-That's it — you borrowed a real phone, looked at its screen, and tapped something
-on it.
+    with client.session("android", phone_id="ph_123") as driver:
+        with open("screen.png", "wb") as output:
+            output.write(driver.screenshot())
+
+        driver.find(query="the Settings icon").tap()
+    ```
+
+    ```bash
+    python quickstart.py
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    Save as `main.go`:
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "errors"
+        "log"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/drivers/mobile"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        if err := run(context.Background()); err != nil {
+            log.Fatal(err)
+        }
+    }
+
+    func run(ctx context.Context) error {
+        api := client.NewClient(
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+        )
+
+        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+            PhoneID:   platformgo.String("ph_123"),
+        })
+        if err != nil {
+            return err
+        }
+        defer func() {
+            if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+                PhoneID: allocation.PhoneID,
+            }); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
+
+        if allocation.ControlURL == nil {
+            return errors.New("allocation returned no control URL")
+        }
+        driver := mobile.ConnectRemote(*allocation.ControlURL)
+        defer driver.Close()
+
+        screenshot, err := driver.Screenshot()
+        if err != nil {
+            return err
+        }
+        if err := os.WriteFile("screen.png", screenshot, 0o600); err != nil {
+            return err
+        }
+
+        settings, err := driver.Find("the Settings icon")
+        if err != nil {
+            return err
+        }
+        if err := settings.Tap(); err != nil {
+            return err
+        }
+
+        return nil
+    }
+    ```
+
+    ```bash
+    go run .
+    ```
+  </Tab>
+</Tabs>
+
+REST can allocate and release a phone, but screen capture, find, and tap use the
+device-control WebSocket. Use an SDK for this complete journey until the CLI is
+updated. See
+the [REST API reference](/api-reference/overview) for control-plane operations.
+
+That's it—you opened a session on a real phone, controlled it, and released the
+session. The SDK examples also saved its screen.
 
 ## Next steps
 
@@ -63,7 +191,7 @@ on it.
   <Card title="Devices" icon="mobile" href="/devices/overview">
     Pick a specific phone and manage the ones you have.
   </Card>
-  <Card title="Workflows & runs" icon="diagram-project" href="/workflows/overview">
+  <Card title="Workflows and runs" icon="diagram-project" href="/workflows/overview">
     Save your script and run it on demand.
   </Card>
 </CardGroup>

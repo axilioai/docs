@@ -1,43 +1,256 @@
 ---
 title: "Configuration"
 sidebarTitle: "Configuration"
-description: "Every Client option and environment variable in one place."
+description: "Configure the Axilio CLI, Python SDK, and Go SDK, including precedence, environment variables, and local state."
 ---
 
-## Client options
+Axilio can read configuration from command-line flags, environment variables,
+saved CLI state, and SDK client options. The supported values and their
+precedence are collected here.
 
-```python
-from axilio.platform import Client
+## CLI configuration
 
-client = Client(
-    api_key="axl_...",
-    base_url="https://api.axilio.ai",
-    timeout=30.0,
-    max_retries=3,
-)
+### Inspect the effective configuration
+
+```bash
+axilio config
+axilio status
+axilio doctor
 ```
 
-| Option | Default | What it does |
+- `axilio config` shows the effective API host, authentication source, active
+  organization, config path, and sessions directory without making a request.
+- `axilio status` verifies your effective credentials against the API.
+- `axilio doctor` checks authentication, connectivity, account state, CLI
+  version, configuration paths, and the current session.
+
+### Save configuration
+
+| Value | Set it | Clear it |
 |---|---|---|
-| `api_key` | `AXILIO_API_KEY` env | Your API key (`axl_…`). Required. |
-| `base_url` | `AXILIO_BASE_URL` env, then `https://api.axilio.ai` | The API host. |
-| `timeout` | `30.0` | Seconds to wait per request. |
-| `max_retries` | `3` | Automatic retries on temporary failures. |
+| API key | `axilio login --api-key axl_...` | `axilio logout` |
+| Browser OAuth session | `axilio login` | `axilio logout` |
+| API host | `axilio config set base-url https://api.axilio.ai` | `axilio config unset base-url` |
+| Active organization | `axilio orgs use <slug-or-id>` | `axilio orgs clear` |
+
+`base-url` is the only value edited directly through `axilio config set`. Pass
+an API origin without `/api/v1` or another path. Authentication and organization
+selection use their dedicated commands.
+
+### Resolution precedence
+
+The first non-empty value wins:
+
+| Setting | Precedence |
+|---|---|
+| Credentials | `--api-key` → `AXILIO_API_KEY` → saved API key → saved OAuth session |
+| API host | `--base-url` → `AXILIO_BASE_URL` → saved `base-url` → `https://api.axilio.ai` |
+| Organization | `--org` → `AXILIO_ORG` → saved active organization → OAuth session default |
+| Phone session | `--session` → `AXILIO_SESSION` → the only locally saved session → most recently started session → ambiguity error |
+
+<Note>
+  An API key belongs to one organization. `--org` and `AXILIO_ORG` can select
+  another organization only when you use browser OAuth.
+</Note>
+
+### Global flags
+
+These flags apply to API-backed CLI commands unless that command's help says
+otherwise:
+
+| Flag | What it does |
+|---|---|
+| `--api-key <key>` | Use an API key for this command without saving it. |
+| `--base-url <url>` | Use an API host for this command without saving it. |
+| `--org <slug-or-id>` | Select an organization for this OAuth-backed command without saving it. |
+| `-o, --output <table\|json>` | Choose human-readable output or one JSON document. Default: `table`. |
+| `-q, --quiet` | Suppress acknowledgments, notes, progress, and prompts while preserving result data, warnings, and errors. |
+| `--no-color` | Disable ANSI color in human-oriented output. |
+
+Phone-control commands also accept `--session <session-id>`. Run
+`axilio <command> --help` for command-specific flags such as `--yes`,
+`--timeout`, and `--out`.
+
+Built-in `-h, --help` and `-v, --version` remain text in every output mode and
+do not change configuration.
 
 ## Environment variables
 
-| Variable | What it does |
+| Variable | Used by | What it does |
+|---|---|---|
+| `AXILIO_API_KEY` | CLI, Python SDK | Authenticates API requests. Go programs can read it and pass it to `option.WithAPIKey`. |
+| `AXILIO_BASE_URL` | CLI, Python SDK | Overrides the API host. Use an origin such as `https://api.axilio.ai`, without `/api/v1`. |
+| `AXILIO_ARGUS_BASE_URL` | Python SDK | Overrides the Argus vision host. Default: `https://argus.axilio.ai`. |
+| `AXILIO_ORG` | CLI | Selects an OAuth organization by slug or ID. API keys ignore it. |
+| `AXILIO_SESSION` | CLI | Selects the locally saved phone session used by `axilio phone` commands. |
+| `AXILIO_DASHBOARD_URL` | CLI | Overrides the dashboard host opened during browser OAuth. It does not change the API host. |
+| `XDG_CONFIG_HOME` | CLI | Moves Axilio's config, OAuth fallback, saved sessions, and update cache from `$HOME/.config`. |
+| `NO_COLOR` | CLI help | Set to `1` to disable ANSI color on a terminal. `CLICOLOR_FORCE=1` can override it for redirected help. |
+| `CLICOLOR` | CLI help | Set to `1` to request ANSI color when output is a terminal and `TERM` is not `dumb`. |
+| `CLICOLOR_FORCE` | CLI help | Set to `1` to force ANSI color for redirected help or `TERM=dumb`. |
+| `TERM` | CLI help | `TERM=dumb` disables help color unless `CLICOLOR_FORCE=1`. |
+
+<Note>
+  Hosted Axilio sandboxes inject additional runtime variables. Do not set
+  `AXILIO_SANDBOX_TOKEN`, `AXILIO_ATLAS_ENDPOINT`, or `AXILIO_SDK_SOCKET`
+  yourself.
+</Note>
+
+## SDK client options
+
+These options configure SDK clients. The CLI has its own
+[configuration](#cli-configuration). The hosted session dashboard supplies its
+own authentication and connected driver, so you do not construct or configure
+an SDK client there.
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
+
+    client = Client(
+        api_key="axl_...",
+        base_url="https://api.axilio.ai",
+        argus_base_url="https://argus.axilio.ai",
+        timeout=30.0,
+        max_retries=3,
+    )
+    ```
+
+    | Option | Default | What it does |
+    |---|---|---|
+    | `api_key` | `AXILIO_API_KEY` | Authenticates API and Argus requests. Required outside a hosted sandbox. |
+    | `base_url` | `AXILIO_BASE_URL`, then `https://api.axilio.ai` | Sets the API host. The client appends `/api/v1`. |
+    | `argus_base_url` | `AXILIO_ARGUS_BASE_URL`, then `https://argus.axilio.ai` | Sets the Argus vision host. |
+    | `timeout` | `30.0` | Sets the request timeout in seconds for API and Argus calls. |
+    | `max_retries` | `3` | Sets the maximum retries for transient request failures. |
+
+    ### Generated and async Python clients
+
+    `AxilioApi` and `AsyncAxilioApi` are lower-level generated clients. They
+    require an explicit `api_key` and additionally accept these transport
+    options:
+
+    | Option | Default | What it does |
+    |---|---|---|
+    | `base_url` or `environment` | `AxilioApiEnvironment.DEFAULT` | Selects the full API base URL. Prefer an explicit `https://api.axilio.ai/api/v1` base URL. |
+    | `headers` | `None` | Adds headers to every request. |
+    | `timeout` | `60` | Sets the request timeout in seconds. |
+    | `max_retries` | `2` | Sets the maximum retries for failed requests. |
+    | `stream_reconnection_enabled` | `True` | Reconnects resumable streams after a disconnection. |
+    | `max_stream_reconnection_attempts` | unlimited | Caps stream reconnection attempts. |
+    | `follow_redirects` | `True` | Controls redirect behavior for the default HTTP client. |
+    | `httpx_client` | generated default | Supplies a custom `httpx.Client` or `httpx.AsyncClient`. |
+    | `logging` | silent | Configures the generated client's logger and log level. |
+  </Tab>
+
+  <Tab title="Go SDK">
+    The Go SDK does not read Axilio environment variables automatically. Read
+    them in your program, then pass explicit options:
+
+    ```go
+    api := client.NewClient(
+        option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+        option.WithBaseURL("https://api.axilio.ai/api/v1"),
+    )
+    ```
+
+    Unlike the CLI and Python `Client`, `option.WithBaseURL` expects the full
+    API prefix ending in `/api/v1`.
+
+    | Option | What it does |
+    |---|---|
+    | `option.WithAPIKey` | Sets the API-key authentication header. |
+    | `option.WithBaseURL` | Sets the complete API base URL. |
+    | `option.WithHTTPClient` | Supplies a custom HTTP client. |
+    | `option.WithHTTPHeader` | Adds headers to requests. |
+    | `option.WithMaxAttempts` | Sets total HTTP attempts. Default: `2`. |
+    | `option.WithoutRetries` | Disables retries so each request is attempted once. |
+    | `option.WithMaxStreamBufSize` | Sets the maximum streaming-message buffer. Default: 1 MB. |
+    | `option.WithMaxStreamReconnectAttempts` | Caps resumable-stream reconnection attempts. |
+    | `option.WithoutStreamReconnection` | Disables resumable-stream reconnection. |
+    | `option.WithBodyProperties` | Adds properties to generated request bodies. Usually set per request. |
+    | `option.WithQueryParameters` | Adds query parameters. Usually set per request. |
+  </Tab>
+</Tabs>
+
+## Per-request overrides
+
+For a single CLI invocation, use the [global flags](#global-flags) to override
+the API key, API host, or organization. The CLI does not expose equivalent
+per-request HTTP retry or request-timeout options.
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    Generated resource methods accept a final `request_options` dictionary:
+
+    ```python
+    phones = client.phones.list(
+        ownership="dedicated",
+        request_options={
+            "timeout_in_seconds": 10,
+            "max_retries": 1,
+        },
+    )
+    ```
+
+    Supported keys are `timeout_in_seconds`, `max_retries`,
+    `additional_headers`, `additional_query_parameters`,
+    `additional_body_parameters`, `chunk_size`,
+    `stream_reconnection_enabled`, and
+    `max_stream_reconnection_attempts`. Request-specific values override the
+    client defaults for that call.
+  </Tab>
+
+  <Tab title="Go SDK">
+    Use a context for a request deadline and pass request options after the
+    request object:
+
+    ```go
+    requestCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+    defer cancel()
+
+    phones, err := api.Phones.List(
+        requestCtx,
+        &platformgo.PhonesListRequest{
+            Ownership: platformgo.PhonesListRequestOwnershipDedicated,
+        },
+        option.WithMaxAttempts(4),
+    )
+    ```
+
+    The same `option.RequestOption` values accepted by `client.NewClient` can
+    override an individual generated request.
+  </Tab>
+</Tabs>
+
+## Local CLI state
+
+Unless you set `XDG_CONFIG_HOME`, CLI state lives under `~/.config/axilio`.
+
+| Location | Contents |
 |---|---|
-| `AXILIO_API_KEY` | The key the client uses to authenticate. |
-| `AXILIO_BASE_URL` | Override the API host. |
+| `config.json` | Saved API key, API host, and active organization. New files request mode `0600`. |
+| OS keychain | Preferred storage for browser-OAuth tokens under service `axilio-cli`. |
+| `oauth.json` | Mode-`0600` OAuth fallback when the OS keychain is unavailable. |
+| `sessions/<session-id>.json` | Locally saved session connection details used by `axilio phone`. |
+| `current-session` | The most recently started locally saved session. |
+| `update-check.json` | Cache for the daily CLI release check. |
+
+Deleting a local session record does not stop the corresponding Axilio session.
+The current CLI release cannot stop API `0.72` sessions; use an SDK or REST to
+deallocate the phone until the CLI is updated.
 
 ## Next steps
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="Authentication" icon="lock" href="/authentication">
-    Get a key and set it up.
+    Create a key or sign in through the CLI.
+  </Card>
+  <Card title="Client" icon="code" href="/driver/client">
+    Configure sessions and the Python driver.
   </Card>
   <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
-    How the SDK signals failures.
+    Handle request and driver failures.
   </Card>
 </CardGroup>

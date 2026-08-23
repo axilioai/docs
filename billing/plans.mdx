@@ -1,49 +1,34 @@
 ---
-title: "Your plan"
+title: "Phone rental plans"
 sidebarTitle: "Plans"
-description: "See your current plan and change it."
+description: "Compare daily, weekly, and monthly dedicated-phone rentals."
 ---
 
-A plan sets your monthly included balance, how many runs you can do at once, and
-your rates.
+A dedicated phone is billed at a flat daily, weekly, or monthly rate. It remains
+reserved for your organization throughout the rental period, and its sessions add
+no device-time charges.
 
-<div id="axilio-plans" />
+<div id="axilio-rental-plans" />
 
 These prices are pulled live from Axilio. See the
 [pricing page](https://axilio.ai) for full details.
 
 ## Vision model pricing
 
-`find(query=...)` and other vision calls use one of these models, billed per token
-on top of your device time.
+`find(query=...)` and other vision calls use one of these models. Paid models are
+billed separately from the phone's flat rental.
 
 <div id="axilio-models" />
 
-Prices are per million tokens, pulled live. See [Cost](/observability/cost) to
-track what you actually spend.
+Prices are per million tokens, pulled live. See
+[Usage and cost](/billing/usage-and-cost) to track what you actually spend.
 
-## Your current plan
+## Rent or manage a phone
 
-```python
-sub = client.billing.get_subscription()
-
-print(sub.plan_name)
-print(sub.included_balance_display)   # balance included each month
-print(sub.max_concurrent_runs)        # how many runs at once
-print(sub.current_period_end)
-```
-
-## Change your plan
-
-Start a checkout for a new plan, then open the link to finish:
-
-```python
-checkout = client.billing.create_checkout(plan_id="plan_pro", billing_cycle="monthly")
-print(checkout.checkout_url)
-```
-
-Find plan IDs and prices on the [pricing page](https://axilio.ai) or in your
-[dashboard](https://axilio.ai/dashboard).
+1. Open [**Phones**](https://app.axilio.ai/dashboard).
+2. Click **Rent A Phone** and choose **Daily**, **Weekly**, or **Monthly**.
+3. Complete checkout.
+4. To manage an existing rental, open **Settings → Billing → Dedicated Phones**.
 
 ## Next steps
 
@@ -52,6 +37,6 @@ Find plan IDs and prices on the [pricing page](https://axilio.ai) or in your
     Check your balance and add funds.
   </Card>
   <Card title="How billing works" icon="circle-info" href="/billing/overview">
-    Per-second billing, explained.
+    Flat rentals and separate vision usage, explained.
   </Card>
 </CardGroup>

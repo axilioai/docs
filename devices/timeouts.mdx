@@ -1,51 +1,303 @@
 ---
 title: "Sessions and timeouts"
 sidebarTitle: "Sessions"
-description: "How borrowing a phone works, and how long you hold one."
+description: "How sessions control your dedicated phone, and when they end."
 ---
 
-A **session** is one borrowed phone. It starts when you get the phone and ends
-when you give it back.
+A **session** is a temporary control lease on one of your dedicated phones. It
+is separate from the phone rental: ending a session stops control and makes the
+phone available for another session, but it does not erase the phone, sign out
+of its apps, or end your rental.
 
-## Start and end
+## What `client.session()` does
 
-A `with` block is the simplest session. The phone is yours inside it, and it goes
-back when the block ends, even if your code raises an error:
+`client.session()` is the Python SDK helper that manages the complete session
+lifecycle. When you use it with `with`, it:
 
-```python
-with client.session("android") as driver:
-    ...   # session is open
-# session closed, phone returned
-```
+1. Claims the selected phone and creates a session.
+2. Creates a [`MobileDriver`](/driver/reference) configured for that session.
+3. Opens the control connection when you send the first driver command.
+4. Closes the driver and releases the session when the block exits—even if your
+   code raises an error.
 
-## You pay for the time you hold it
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Click **Allocate A Phone** and choose a phone.
+    3. Open the active session to control it.
+    4. Return to **Sessions** and click **Release** when you finish.
 
-Billing runs from when you get the phone to when you return it. So return phones as
-soon as you're done. [More on billing](/billing/overview).
+    The dashboard manages the same allocation lifecycle, but leaving or
+    closing the page does not release the session automatically.
+  </Tab>
 
-## Don't leak phones
+  <Tab title="CLI">
+    The current CLI release cannot start or stop sessions against API `0.72`.
+    Use an SDK or REST until the CLI is updated.
+  </Tab>
 
-If you [get a phone yourself](/devices/allocate) with `allocate`, you have to call
-`deallocate`, or the phone stays yours and keeps costing you. A `session()` does
-this for you.
+  <Tab title="Python SDK">
+    The context manager releases the session automatically:
 
-## Connecting
+    ```python
+    with client.session("android", phone_id="ph_123") as driver:
+        # The session is active and driver controls the phone.
+        driver.find_text("Settings").tap()
 
-When a session starts, Axilio connects to the phone. `open_timeout` sets how many
-seconds to wait for that connection (10 by default):
+    # The driver is closed and the session is released.
+    # The dedicated phone and its app state remain yours.
+    ```
+  </Tab>
 
-```python
-with client.session("ANDROID", open_timeout=20) as driver:
-    ...
-```
+  <Tab title="Go SDK">
+    Allocate the phone and defer both driver and session cleanup:
+
+    ```go
+    err := func() error {
+        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+            PhoneID:   platformgo.String("ph_123"),
+        })
+        if err != nil {
+            return err
+        }
+        defer func() {
+            if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+                PhoneID: allocation.PhoneID,
+            }); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
+
+        if allocation.ControlURL == nil {
+            return errors.New("allocation returned no control URL")
+        }
+        driver := mobile.ConnectRemote(*allocation.ControlURL)
+        defer driver.Close()
+
+        settings, err := driver.Find("the Settings icon")
+        if err != nil {
+            return err
+        }
+        return settings.Tap()
+    }()
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    Allocate and release the session explicitly:
+
+    ```bash
+    ALLOCATION=$(curl --silent --show-error --fail-with-body --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123"
+      }')
+    PHONE_ID=$(printf '%s' "$ALLOCATION" | jq -r '.phone_id')
+    printf '%s\n' "$ALLOCATION" | jq
+
+    curl --request POST \
+      --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    API reference: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone),
+    [Release a phone](/api-reference/rest/phones/release-a-phone)
+
+    REST does not provide a context-manager equivalent. Your application owns
+    cleanup after allocation.
+  </Tab>
+</Tabs>
+
+Entering the `with` block allocates the phone and gives you the `driver`. The
+driver opens its control connection lazily when you send the first command, such
+as `observe()`, `find()`, or `tap()`.
+
+<Note>
+  The CLI's `sessions start` and `sessions stop` commands and the Go SDK's
+  `Allocate` and `Deallocate` methods manage the same underlying session
+  lifecycle. `client.session()` packages those steps into one Python context
+  manager.
+</Note>
+
+## Set an idle timeout
+
+Set `ttl.idle_timeout_seconds` during allocation when an inactive session
+should end automatically:
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
+    2. Click **Allocate A Phone**.
+    3. Enter the duration under **idle timeout (seconds)**.
+    4. Choose a phone and allocate it.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently expose the allocation's idle-timeout setting.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    device = client.phones.allocate(
+        phone_type="android",
+        pool="dedicated",
+        ttl={"idle_timeout_seconds": 300},
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    device, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
+        TTL: &platformgo.PhoneSessionTTLOptions{
+            IdleTimeoutSeconds: platformgo.Int64(300),
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+        PhoneID: device.PhoneID,
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "pool": "dedicated",
+        "ttl": {"idle_timeout_seconds": 300}
+      }'
+    ```
+
+    [API reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
+  </Tab>
+</Tabs>
+
+`client.session()` does not currently accept `ttl`; use direct allocation when
+you need this setting.
+
+## Connection timeout is not session duration
+
+`open_timeout` limits how long the SDK can spend opening the control WebSocket.
+That includes connecting to Axilio's control service and completing the
+WebSocket handshake. The SDK opens this connection when you send the first
+driver command, and uses the same timeout if it needs to reconnect later.
+
+This timeout does not wait for Android or an app to finish loading. After the
+WebSocket is open, it does not limit how long a driver command can run, close an
+idle connection, or set the session duration. The default is 10 seconds:
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    The CLI does not expose a separate control-connection timeout, and the
+    current release cannot start sessions against API `0.72`. Use an SDK until
+    the CLI is updated.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    with client.session(
+        "android",
+        phone_id="ph_123",
+        open_timeout=20,
+    ) as driver:
+        driver.observe()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    `WithOpenTimeout` applies when the first driver command opens the control
+    socket:
+
+    ```go
+    err := func() error {
+        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+            PhoneID:   platformgo.String("ph_123"),
+        })
+        if err != nil {
+            return err
+        }
+        defer func() {
+            if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+                PhoneID: allocation.PhoneID,
+            }); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
+
+        if allocation.ControlURL == nil {
+            return errors.New("allocation returned no control URL")
+        }
+        driver := mobile.ConnectRemote(
+            *allocation.ControlURL,
+            mobile.WithOpenTimeout(20*time.Second),
+        )
+        defer driver.Close()
+
+        _, err = driver.Observe()
+        return err
+    }()
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    `open_timeout` configures a device-control WebSocket client, not an HTTP
+    request. The REST API does not expose an equivalent setting.
+  </Tab>
+</Tabs>
+
+## When a session ends
+
+A session can end in three ways:
+
+- **Your code exits the `with` block.** `client.session()` closes the driver and
+  releases the session automatically.
+- **An optional idle timeout expires.** This applies when an idle timeout was
+  configured during allocation.
+- **The one-hour maximum is reached.** Axilio enforces this server-side limit as
+  a final safety net.
+
+If a timeout ends the session while your code is still running, subsequent
+driver commands fail because the control lease is no longer active.
+
+## Manual allocation and cleanup
+
+If you [allocate a phone yourself](/devices/allocate), call `deallocate` when you
+finish so it is available for another session. Use `client.session()` when you
+want Python to manage that cleanup automatically.
+
+## Dedicated sessions have no device-time charge
+
+Your flat rental covers the dedicated phone around the clock. Starting or
+holding a session does not add device-time charges. Vision calls can still incur
+separate usage charges. [More on billing](/billing/overview).
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone.
+    Start a session on a dedicated phone.
   </Card>
-  <Card title="Observability" icon="video" href="/observability/overview">
-    Watch and replay your sessions.
+  <Card title="Observability" icon="video" href="/observability">
+    Watch sessions and review available events and recordings.
   </Card>
 </CardGroup>

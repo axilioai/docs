@@ -1,0 +1,252 @@
+---
+title: "Usage and cost"
+sidebarTitle: "Usage and cost"
+description: "Review billed inference calls and summarize usage over time."
+---
+
+Use the Usage API to investigate billed inference calls and summarize activity
+over a selected time range. Usage data is a billing surface, separate from
+session events and recordings.
+
+## Understand cost units
+
+Fields whose names end in `_microdollars` are integer millionths of one US
+dollar. Divide them by `1_000_000` to convert them to dollars.
+
+Aggregate cost fields returned by `get_metrics`, including `cost_by_product`,
+are already expressed in dollars.
+
+## List billed inference calls
+
+`list_inferences` returns billed `detect` and `locate` calls for a required time
+window:
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Usage → Inferences**](https://app.axilio.ai/dashboard).
+    2. Choose the **Called** date range.
+    3. Filter by endpoint or model, or search for an inference ID.
+    4. Review each call's model, latency, cost, time, and associated session.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from datetime import datetime, timedelta, timezone
+
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=7)
+
+    result = client.usage.list_inferences(
+        start_date=start,
+        end_date=end,
+        limit=100,
+    )
+
+    for inference in result.inferences or []:
+        cost_dollars = inference.cost_microdollars / 1_000_000
+        print(
+            inference.inference_id,
+            inference.endpoint,
+            inference.model,
+            inference.latency_ms,
+            cost_dollars,
+        )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    end := time.Now().UTC()
+    start := end.AddDate(0, 0, -7)
+
+    result, err := api.Usage.ListInferences(ctx, &platformgo.UsageListInferencesRequest{
+        StartDate: start,
+        EndDate:   end,
+        Limit:     platformgo.Int64(100),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for _, inference := range result.Inferences {
+        costDollars := float64(inference.CostMicrodollars) / 1_000_000
+        fmt.Println(
+            inference.InferenceID,
+            inference.Endpoint,
+            inference.Model,
+            inference.LatencyMs,
+            costDollars,
+        )
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --get \
+      --url https://api.axilio.ai/api/v1/usage/inferences \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --data-urlencode "start_date=$START_DATE" \
+      --data-urlencode "end_date=$END_DATE" \
+      --data-urlencode "limit=100"
+    ```
+
+    [API reference: List inference calls](/api-reference/rest/usage/list-inference-calls)
+
+    Set `START_DATE` and `END_DATE` to RFC 3339 timestamps.
+  </Tab>
+</Tabs>
+
+<Note>
+  The CLI does not currently expose usage or billing-record commands. Use an
+  SDK, the REST API, or the dashboard.
+</Note>
+
+Each record can include its endpoint, model, latency, billed cost, and associated
+`session_id`. Direct API-key calls can have no session ID.
+
+## Filter calls by session
+
+Use `session_id` to find inference calls attributed to one phone session:
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    result = client.usage.list_inferences(
+        start_date=start,
+        end_date=end,
+        session_id=session_id,
+        order_by="created_at desc",
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    result, err := api.Usage.ListInferences(ctx, &platformgo.UsageListInferencesRequest{
+        StartDate: start,
+        EndDate:   end,
+        SessionID: platformgo.String(sessionID),
+        OrderBy:   platformgo.String("created_at desc"),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --get \
+      --url https://api.axilio.ai/api/v1/usage/inferences \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --data-urlencode "start_date=$START_DATE" \
+      --data-urlencode "end_date=$END_DATE" \
+      --data-urlencode "session_id=$SESSION_ID" \
+      --data-urlencode "order_by=created_at desc"
+    ```
+
+    [API reference: List inference calls](/api-reference/rest/usage/list-inference-calls)
+  </Tab>
+</Tabs>
+
+You can also filter by endpoint, model, inference ID search text, and sort order.
+
+<Note>
+  The dashboard shows each call's session, but it does not currently expose a
+  session-ID filter. Use an SDK or the REST API to retrieve only the calls for
+  one session.
+</Note>
+
+## Summarize usage over time
+
+`get_metrics` returns aggregate compute minutes, cost grouped by product, and
+time-series data for the requested period:
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Usage → Sessions**](https://app.axilio.ai/dashboard) for session
+       spend, or **Usage → Inferences** for inference spend.
+    2. Review the chart at the top of the page.
+
+    The dashboard chart uses a fixed last-30-day window. Use an SDK or the REST
+    API for a custom range, timezone, compute-minute totals, or the complete
+    product breakdown.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    metrics = client.usage.get_metrics(
+        start_date=end - timedelta(days=30),
+        end_date=end,
+        timezone="America/Chicago",
+    )
+
+    print(metrics.compute_minutes.total_minutes)
+    print(metrics.cost_by_product.sessions)   # dollars
+    print(metrics.cost_by_product.inference)  # dollars
+    print(metrics.cost_by_product.other)      # dollars
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    metrics, err := api.Usage.GetMetrics(ctx, &platformgo.UsageGetMetricsRequest{
+        StartDate: end.AddDate(0, 0, -30),
+        EndDate:   end,
+        Timezone:  platformgo.String("America/Chicago"),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(metrics.ComputeMinutes.TotalMinutes)
+    fmt.Println(metrics.CostByProduct.Sessions)  // dollars
+    fmt.Println(metrics.CostByProduct.Inference) // dollars
+    fmt.Println(metrics.CostByProduct.Other)     // dollars
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --get \
+      --url https://api.axilio.ai/api/v1/usage/metrics \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --data-urlencode "start_date=$START_DATE" \
+      --data-urlencode "end_date=$END_DATE" \
+      --data-urlencode "timezone=America/Chicago"
+    ```
+
+    [API reference: Get usage metrics](/api-reference/rest/usage/get-usage-metrics)
+  </Tab>
+</Tabs>
+
+Use hourly granularity for windows up to 24 hours and daily granularity for
+longer windows. Set an IANA timezone when local bucket boundaries matter.
+
+## Correlate cost with session events
+
+The [session events response](/observability/session-events) can include cost
+maps keyed by SDK-call span ID and inference ID. Those maps are useful for
+annotating a timeline, but the Usage API remains the billing authority.
+
+Usage records can have a different lifecycle from archived events and
+recordings. Expiry of session content does not imply deletion of its billing
+record.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="How billing works" icon="circle-info" href="/billing/overview">
+    Understand plans, balance, and billing behavior.
+  </Card>
+  <Card title="Balance and invoices" icon="wallet" href="/billing/balance-and-invoices">
+    Add funds and review invoices.
+  </Card>
+  <Card title="Find sessions" icon="magnifying-glass" href="/observability/sessions">
+    Locate a session before filtering its billed inference calls.
+  </Card>
+  <Card title="Review session events" icon="list-check" href="/observability/session-events">
+    Correlate billed activity with the archived timeline.
+  </Card>
+</CardGroup>
