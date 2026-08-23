@@ -51,7 +51,8 @@
               "index",
               "introduction",
               "quickstart",
-              "authentication"
+              "authentication",
+              "cli"
             ]
           },
           {
