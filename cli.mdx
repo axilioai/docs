@@ -1,0 +1,63 @@
+---
+title: "CLI"
+sidebarTitle: "CLI"
+description: "Install the axilio CLI with Homebrew or one curl command, and drive real phones from your terminal — built for people and coding agents alike."
+---
+
+The `axilio` CLI puts the whole platform in your terminal: start a phone
+session, see what's on screen, tap and type, and inspect sessions, runs, and
+API keys. It's a single static binary with stable exit codes and JSON output,
+so it works as well in a coding agent's hands as in yours.
+
+## Install
+
+### Homebrew (macOS, recommended)
+
+```bash
+brew install axilioai/tap/axilio
+```
+
+Homebrew also installs the manual: read it with `man axilio`, or run
+`axilio help --html` for the browser edition.
+
+### curl (macOS / Linux)
+
+```bash
+curl -fsSL https://axilio.ai/install.sh | sh
+```
+
+The script installs the latest release for your OS and architecture. Set
+`VERSION=v0.7.0` to pin a release, and `INSTALL_DIR` to choose the
+destination. It's [auditable on GitHub](https://github.com/axilioai/cli/blob/main/install.sh).
+
+Prebuilt binaries for Linux, macOS, and Windows are also on the
+[releases page](https://github.com/axilioai/cli/releases).
+
+## Use it
+
+Authenticate with your [API key](/authentication), then drive a phone:
+
+```bash
+axilio sessions start                 # start a phone session
+axilio phone observe                  # see what's on screen
+axilio phone tap --query "the search box"
+axilio phone type "androiddev"
+axilio sessions stop <id>             # release it
+```
+
+Beyond phone control, the CLI covers lifecycle and inspection: list phones,
+view runs and workflows, and manage API keys. Every runnable command emits one
+JSON document under `-o json` for scripting.
+
+## For coding agents
+
+`axilio init` writes an agent skill into your project: instructions that teach
+a coding agent to drive phones through the CLI and codify what it did as SDK
+code. The CLI's quiet mode, JSON output, and stable exit codes are designed
+for exactly this loop.
+
+## Source
+
+The CLI is open source at
+[github.com/axilioai/cli](https://github.com/axilioai/cli), released through
+the [axilioai/homebrew-tap](https://github.com/axilioai/homebrew-tap) cask.
