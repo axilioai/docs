@@ -1,152 +1,54 @@
 ---
 title: "Run a workflow"
 sidebarTitle: "Run"
-description: "Start one workflow run or queue several runs in parallel."
+description: "Start a run now, or on a schedule, from the dashboard or the SDK."
 ---
 
-A **run** is one execution of a workflow. Each entry in `runs` creates one run
-with its own phone session.
+A **run** is one execution of a workflow. Start one from the
+[dashboard](https://axilio.ai/dashboard) with a click, or from the SDK.
 
 ## Run it now
 
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open [**Workflows**](https://app.axilio.ai/dashboard).
-    2. Select the workflow.
-    3. Click **Run**.
-  </Tab>
+```python
+from axilio import RunRunTimeConfig
 
-  <Tab title="CLI">
-    The current CLI release cannot start a run against API `0.72`. Use the
-    dashboard, an SDK, or the REST API until the CLI is updated.
-  </Tab>
+result = client.runs.create(
+    workflow_id="wf_abc123",
+    number_of_runs=1,
+    run_time=RunRunTimeConfig(
+        is_immediate=True,
+        is_scheduled=False,
+        schedule_timeout_seconds=300,
+    ),
+)
+run_id = result.run_ids[0]
+```
 
-  <Tab title="Python SDK">
-    ```python
-    from axilio import RunConfig
+## Run it on a schedule
 
-    result = client.runs.create(
-        workflow_id=workflow_id,
-        runs=[RunConfig(variables=[{}])],
-        start_timeout_seconds=300,
-    )
-    run_id = result.run_ids[0]
-    ```
-  </Tab>
+Schedule it for later instead of running now:
 
-  <Tab title="Go SDK">
-    ```go
-    result, err := api.Runs.Create(ctx, &platformgo.RunCreateRequest{
-        WorkflowID: workflowID,
-        Runs: []*platformgo.RunConfig{
-            {Variables: []map[string]any{{}}},
-        },
-        StartTimeoutSeconds: platformgo.Int64(300),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    runID := result.RunIDs[0]
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    curl --request POST \
-      --url "https://api.axilio.ai/api/v1/workflows/$WORKFLOW_ID/runs" \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      --header "Content-Type: application/json" \
-      --data '{
-        "runs": [{"variables": [{}]}],
-        "start_timeout_seconds": 300
-      }'
-    ```
-
-    [API reference: Start a run](/api-reference/rest/runs/start-a-run)
-  </Tab>
-</Tabs>
-
-`start_timeout_seconds` controls how long a queued run may wait for a phone. It
-must be between 60 and 86,400 seconds and defaults to 300.
-
-<Note>
-  The current public dashboard, CLI, SDK, and REST contracts queue runs
-  immediately. They do not expose a future start-time or recurring schedule.
-</Note>
+```python
+run_time=RunRunTimeConfig(
+    is_immediate=False,
+    is_scheduled=True,
+    schedule_time="2026-01-01T09:00:00Z",
+    schedule_timeout_seconds=300,
+)
+```
 
 ## Run many at once
 
-Create one entry per run. Each run gets its own phone and
-[session observability surfaces](/observability).
-
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open [**Workflows**](https://app.axilio.ai/dashboard).
-    2. Select the workflow and click **Run**.
-    3. Choose **Start Now** and set **Number of Runs** to `3`.
-    4. Choose how Axilio should allocate phones, then click **Start Run**.
-
-    The dashboard accepts between 1 and 1,000 runs in one request.
-  </Tab>
-
-  <Tab title="CLI">
-    The current CLI release cannot start parallel runs against API `0.72`. Use
-    an SDK or the REST API until the CLI is updated.
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    result = client.runs.create(
-        workflow_id=workflow_id,
-        runs=[RunConfig(variables=[{}]) for _ in range(3)],
-    )
-    print(result.run_ids)
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    result, err := api.Runs.Create(ctx, &platformgo.RunCreateRequest{
-        WorkflowID: workflowID,
-        Runs: []*platformgo.RunConfig{
-            {Variables: []map[string]any{{}}},
-            {Variables: []map[string]any{{}}},
-            {Variables: []map[string]any{{}}},
-        },
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println(result.RunIDs)
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    curl --request POST \
-      --url "https://api.axilio.ai/api/v1/workflows/$WORKFLOW_ID/runs" \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      --header "Content-Type: application/json" \
-      --data '{
-        "runs": [
-          {"variables": [{}]},
-          {"variables": [{}]},
-          {"variables": [{}]}
-        ]
-      }'
-    ```
-
-    [API reference: Start a run](/api-reference/rest/runs/start-a-run)
-  </Tab>
-</Tabs>
+Set `number_of_runs` higher to run the workflow on several phones in parallel.
+Each one gets its own phone and its own [recording and events](/observability/overview).
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Watch a run" icon="list" href="/workflows/monitor">
-    Check its status and investigate its session.
+    Check status and replay the run.
   </Card>
-  <Card title="Observability" icon="video" href="/observability">
-    Review live views, available events and recordings, and usage.
+  <Card title="Observability" icon="video" href="/observability/overview">
+    See recordings, events, and cost.
   </Card>
 </CardGroup>

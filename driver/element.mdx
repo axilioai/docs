@@ -8,9 +8,6 @@ An `Element` is what [`driver.find()`](/driver/reference#driver-find) and
 [`driver.find_text()`](/driver/reference#driver-find_text) return. Act on it
 directly, or read its fields to drive [raw input](/driver/reference#tapping).
 
-This page documents the Python SDK object. See the driver task guides for CLI
-and Go SDK examples.
-
 ```python
 el = driver.find_text("Sign in")
 el.tap()
@@ -47,14 +44,10 @@ Swipe from this element to another `Element` — for example to drag a card onto
 target.
 
 ```python
-driver.find_text("Card").swipe_to(
-    driver.find_text("Archive"),
-    duration_ms=300,
-)
+driver.find_text("Card").swipe_to(driver.find_text("Archive"))
 ```
 
-**Returns** `None`. `other` is an `Element`; `duration_ms` is an `int`, default
-`300`.
+**Returns** `None`. `other` is an `Element`.
 
 ## Fields
 

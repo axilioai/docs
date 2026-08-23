@@ -1,108 +1,40 @@
 ---
 title: "Devices and sessions"
 sidebarTitle: "Overview"
-description: "A device is a dedicated real phone. A session gives you temporary control of it."
+description: "A device is a real phone in the cloud. A session is a phone you've borrowed to use."
 ---
 
-A device is a carrier-connected Android phone that agents can operate
-programmatically. A session is temporary access to one of these devices (phones).
+A **device** is a real Android phone in Axilio's cloud. A **session** is a phone
+you've borrowed to use.
 
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open [**Sessions**](https://app.axilio.ai/dashboard).
-    2. Click **Allocate A Phone**.
-    3. Choose **Use A Dedicated Phone** and select one of your phones.
-    4. Optionally enter a name or idle timeout, then click **Allocate**. The
-       session opens with a live, interactive view of the phone.
-    5. Click **Deallocate** when you finish to release the phone.
-  </Tab>
+You don't keep phones. You borrow one, do your thing, and give it back. You only
+pay for the time you hold it.
 
-  <Tab title="CLI">
-    The current CLI release still targets the pre-`0.72` session endpoints. Use
-    the dashboard, an SDK, or REST to allocate and release a phone until the CLI
-    is updated.
-  </Tab>
+```python
+from axilio.platform import Client
 
-  <Tab title="Python SDK">
-    The context manager releases the phone when the block exits:
+client = Client()
 
-    ```python
-    from axilio.platform import Client
-
-    client = Client()
-
-    with client.session("android", phone_id="ph_123") as driver:
-        driver.observe()
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    Allocate a phone and always release it when the function returns:
-
-    ```go
-    ctx := context.Background()
-    api := client.NewClient(
-        option.WithBaseURL("https://api.axilio.ai/api/v1"),
-        option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
-    )
-
-    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
-        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
-        PhoneID: allocation.PhoneID,
-    })
-
-    fmt.Println(allocation.PhoneID, allocation.SessionID)
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    ALLOCATION=$(curl --silent --show-error --fail-with-body --request POST \
-      --url https://api.axilio.ai/api/v1/phones:allocate \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      --header "Content-Type: application/json" \
-      --data '{
-        "phone_type": "android",
-        "pool": "dedicated"
-      }')
-    PHONE_ID=$(printf '%s' "$ALLOCATION" | jq -r '.phone_id')
-    printf '%s\n' "$ALLOCATION" | jq
-
-    curl --request POST \
-      --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
-    ```
-
-    API reference: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone),
-    [Release a phone](/api-reference/rest/phones/release-a-phone)
-
-    REST manages the session lifecycle. Phone commands use the
-    `control_url` WebSocket returned by allocation.
-  </Tab>
-</Tabs>
+with client.session("android") as driver:
+    ...   # the phone is yours inside this block
+# it's returned automatically here
+```
 
 ## The basics
 
 <CardGroup cols={3}>
   <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Start a session on a dedicated phone.
+    Borrow a phone.
   </Card>
   <Card title="See devices" icon="list" href="/devices/discover">
-    Inspect your dedicated-phone inventory.
+    What's free, and which phones are yours.
   </Card>
   <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How sessions start, end, and release a phone.
+    How borrowing works, and how long you hold a phone.
   </Card>
 </CardGroup>
 
 ## How it fits with the driver
 
-The Platform gives you access to the phone. The [driver](/driver/overview)
-controls it. `session()` opens your selected dedicated phone and hands you a
-driver to operate it.
+The Platform gives you the phone. The [driver](/driver/overview) controls it.
+`session()` does both: it borrows a phone and hands you a driver to drive it.

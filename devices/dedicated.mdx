@@ -4,13 +4,13 @@ sidebarTitle: "Dedicated devices"
 description: "Rent a specific phone that's yours around the clock, with no per-session cost."
 ---
 
-A **dedicated device** is a specific phone you rent. It is reserved for your
-organization around the clock for the rental period.
+By default you borrow any free phone. A **dedicated device** is a specific phone
+you rent, so it's yours around the clock, with no waiting for one to be free.
 
 - It's the **same phone every time**, so apps stay logged in and set up the way
   you left them.
-- You pay a **flat rental** (daily, weekly, or monthly). Sessions on a dedicated
-  phone cost **\$0** in device time.
+- You pay a **flat rental** (daily, weekly, or monthly) instead of per second.
+  Sessions on a dedicated phone cost **$0**.
 
 ## Rent one
 
@@ -18,148 +18,47 @@ Dedicated phones are billed as a flat rental:
 
 <div id="axilio-rental-plans" />
 
-Rentals start in the dashboard:
+Start a checkout for a rental plan, then open the link to finish:
 
-1. Open [**Phones**](https://app.axilio.ai/dashboard).
-2. Click **Rent A Phone**.
-3. Choose **Daily**, **Weekly**, or **Monthly**.
-4. Complete checkout. The phone appears on **Phones** after the rental is ready.
+```python
+checkout = client.billing.create_rental_checkout(plan_id="rental_monthly")
+print(checkout.checkout_url)
+```
 
-The CLI, SDKs, and public REST API can inspect rental subscriptions but do not
-currently start a rental checkout.
+Find rental plans in your [dashboard](https://axilio.ai/dashboard).
 
 ## Use your dedicated phone
 
-Select a dedicated phone by its `phone_id` when you start a session:
+Your rented phones show up in `devices.mine()`. Pass a phone's `phone_id` to
+`session()` to use that exact phone:
 
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open **Sessions** and click **Allocate A Phone**.
-    2. Choose **Use A Dedicated Phone**.
-    3. Select the phone and click **Allocate**.
-  </Tab>
+```python
+mine = client.phones.mine()
 
-  <Tab title="CLI">
-    The current CLI release cannot start or stop sessions against API `0.72`.
-    Use the dashboard, an SDK, or REST until the CLI is updated.
-  </Tab>
+for phone in mine.phones:
+    if phone.rental_expires_at:   # your dedicated phones
+        print(phone.nickname, phone.phone_id, phone.rental_expires_at)
 
-  <Tab title="Python SDK">
-    ```python
-    with client.session("android", phone_id="ph_123") as driver:
-        driver.observe()
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
-        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        PhoneID:   platformgo.String("ph_123"),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
-        PhoneID: allocation.PhoneID,
-    })
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    Find a dedicated phone, then allocate it by `phone_id`:
-
-    ```bash
-    curl --request GET \
-      --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
-
-    curl --request POST \
-      --url https://api.axilio.ai/api/v1/phones:allocate \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      --header "Content-Type: application/json" \
-      --data '{
-        "phone_type": "android",
-        "phone_id": "ph_123"
-      }'
-    ```
-
-    API reference: [List phones](/api-reference/rest/phones/list-the-orgs-phones),
-    [Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
-
-    The response's `control_url` uses the device-control WebSocket protocol;
-    phone actions themselves are not REST operations.
-  </Tab>
-</Tabs>
+with client.session("ANDROID", phone_id="<your phone_id>") as driver:
+    ...
+```
 
 ## Manage your rentals
 
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open **Settings → Billing**.
-    2. Select **Dedicated Phones** to see each rental and its renewal date.
-    3. Click **Cancel** on a rental to stop renewal at the end of its current period.
+```python
+subs = client.billing.list_rental_subscriptions()
 
-    You can also open **Phones** and click **Subscription** on a phone to manage
-    its subscription.
-  </Tab>
-
-  <Tab title="CLI">
-    The CLI does not currently list or change rental subscriptions. Use the
-    dashboard.
-  </Tab>
-
-  <Tab title="Python SDK">
-    The SDK can list rentals. Cancellation and checkout remain dashboard actions.
-
-    ```python
-    rentals = client.billing.get_rental_subscriptions()
-
-    for rental in rentals.subscriptions or []:
-        print(rental.phone_id, rental.status, rental.current_period_end)
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    The SDK can list rentals. Cancellation and checkout remain dashboard actions.
-
-    ```go
-    rentals, err := api.Billing.GetRentalSubscriptions(ctx)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    for _, rental := range rentals.Subscriptions {
-        phoneID := ""
-        if rental.PhoneID != nil {
-            phoneID = *rental.PhoneID
-        }
-        fmt.Println(phoneID, rental.Status, rental.CurrentPeriodEnd)
-    }
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    The API can list rentals. Cancellation and checkout remain dashboard
-    actions.
-
-    ```bash
-    curl --request GET \
-      --url https://api.axilio.ai/api/v1/billing/phone-rental-subscriptions \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
-    ```
-
-    [API reference: List phone rentals](/api-reference/rest/billing/list-phone-rentals)
-  </Tab>
-</Tabs>
+client.billing.renew_rental_subscriptions(subscription_ids=["sub_123"])
+client.billing.cancel_rental_subscriptions(subscription_ids=["sub_123"])
+```
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Start a session on a dedicated phone.
+    Borrow a phone from the shared pool.
   </Card>
   <Card title="How billing works" icon="credit-card" href="/billing/overview">
-    Flat rentals and separate vision usage.
+    Per-second time vs flat rentals.
   </Card>
 </CardGroup>

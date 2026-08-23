@@ -40,27 +40,6 @@ mint dev
 
 View your local preview at `http://localhost:3000`.
 
-## Contributing
-
-Install the repository-owned Git hooks after cloning:
-
-```bash
-scripts/install-git-hooks.sh
-```
-
-The pre-push hook checks every outgoing branch and tag against the identity policy pinned to the live `origin/main`. Run the doctor after changing remotes or hook configuration:
-
-```bash
-scripts/install-git-hooks.sh --check
-```
-
-Before you commit, configure an approved Axilio identity:
-
-```bash
-git config user.name "Your Name"
-git config user.email "you@axilio.ai"
-```
-
 ## Publishing changes
 
 Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.

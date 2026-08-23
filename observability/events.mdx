@@ -1,0 +1,27 @@
+---
+title: "Events"
+sidebarTitle: "Events"
+description: "See the step-by-step of a run: every action your agent took."
+---
+
+A run's events are the step-by-step record of what your agent did: every tap, the
+screens it looked at, and the decisions it made.
+
+```python
+run = client.runs.get(run_id)
+events = client.runs.list_events(session_id=run.session_id, limit=100, offset=0)
+
+for event in events.events:
+    print(event)
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Recordings" icon="video" href="/observability/recordings">
+    Replay the same run as a video.
+  </Card>
+  <Card title="Cost" icon="coins" href="/observability/cost">
+    What each run cost.
+  </Card>
+</CardGroup>

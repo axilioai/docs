@@ -8,9 +8,6 @@ description: "The SDK entrypoint — open a session to get a driver, and call Ar
 [session](#client-session) to get a [`driver`](/driver/reference), or call
 [Argus](#client-argus) directly on your own images.
 
-This page documents the Python SDK object. Direct Vision REST equivalents are
-included where they apply; use the task guides for CLI and Go SDK examples.
-
 ```python
 from axilio.platform import Client
 
@@ -25,16 +22,15 @@ Open a session on a phone and return a [`driver`](/driver/reference) to control 
 Use it as a context manager so the phone is always released when you're done.
 
 ```python
-with client.session("android", phone_id="ph_123") as driver:
+with client.session("android") as driver:
     driver.find_text("Settings").tap()
 ```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `phone_type` | `"android"` | `"android"` | The device kind. Only Android is supported today. |
-| `phone_id` | `str` | `None` | Select the dedicated phone to use. Find IDs with `client.phones.list(ownership="dedicated")`. |
+| `phone_id` | `str` | `None` | Pin the session to a specific phone instead of any available one. |
 | `workflow_id` | `str` | `None` | Attach the session to a workflow run. |
-| `open_timeout` | `float` | `10.0` | Seconds to wait while opening the phone's control connection. |
 | `default_ocr_engine` | `"free" \| "premium"` | `"free"` | Text engine for every [`find_text`](/driver/reference#driver-find_text) in the session. |
 | `default_model` | `str` | auto | [Vision model](/drivers/models) for every [`find`](/driver/reference#driver-find) in the session. |
 
@@ -47,48 +43,24 @@ with client.session("android", phone_id="ph_123") as driver:
 runs Argus for you on the live screen; call it directly when you have your own
 image. See [Models](/drivers/models) for ids and pricing.
 
-The CLI and Go SDK do not currently expose a direct Argus client. Use the
-Python SDK or Vision REST API for your own images.
-
 ### `client.argus.locate()`
 Find something in an image by describing it — the same engine as
 [`driver.find()`](/driver/reference#driver-find).
 
-<Tabs sync={false}>
-  <Tab title="Python SDK">
-    ```python
-    result = client.argus.locate(
-        image=image_b64,
-        query="the blue Continue button",
-    )
-    if result.found:
-        print(result.bbox, result.confidence, result.cost_microdollars)
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    jq -n \
-      --arg image "$IMAGE_B64" \
-      --arg query "the blue Continue button" \
-      '{image: $image, query: $query}' |
-      curl --request POST \
-        --url https://argus.axilio.ai/api/v1/vision/locate \
-        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-        --header "Content-Type: application/json" \
-        --data-binary @-
-    ```
-
-    [API reference: Run locate](/api-reference/vision/vision/run-locate)
-  </Tab>
-</Tabs>
+```python
+result = client.argus.locate(
+    image=image_b64,
+    query="the blue Continue button",
+)
+if result.found:
+    print(result.bbox, result.confidence, result.cost_microdollars)
+```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `image` | `str` | required | Base64-encoded image data. |
 | `query` | `str` | required | Plain-English description of what to find. |
 | `model` | `str` | auto | A [vision model](/drivers/models) id. |
-| `texts` | `list` | `None` | Optional OCR text elements to include as model context. |
 
 **Returns** a result with `found` (`bool`), `bbox`, `confidence` (`float`), and
 `cost_microdollars` (`int`).
@@ -96,28 +68,9 @@ Find something in an image by describing it — the same engine as
 ### `client.argus.detect()`
 Read an image — its text, its icons, or both.
 
-<Tabs sync={false}>
-  <Tab title="Python SDK">
-    ```python
-    result = client.argus.detect(image=image_b64, inference_type="combined")
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    jq -n \
-      --arg image "$IMAGE_B64" \
-      '{image: $image, inference_type: "combined"}' |
-      curl --request POST \
-        --url https://argus.axilio.ai/api/v1/vision/detect \
-        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-        --header "Content-Type: application/json" \
-        --data-binary @-
-    ```
-
-    [API reference: Run inference](/api-reference/vision/vision/run-inference)
-  </Tab>
-</Tabs>
+```python
+result = client.argus.detect(image=image_b64, inference_type="combined")
+```
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
@@ -125,31 +78,17 @@ Read an image — its text, its icons, or both.
 | `inference_type` | `"ocr" \| "yolo" \| "combined"` | server default | `ocr` = text, `yolo` = icons, `combined` = both. |
 | `ocr_engine` | `"free" \| "premium"` | `"free"` | Text engine for the OCR pass. |
 | `confidence_threshold` | `float` | server default | Minimum confidence for detections and OCR results. |
-| `nms_iou_threshold` | `float` | server default | Intersection-over-union threshold used to remove overlapping detections. |
 
 **Returns** the detected text and icons.
 
 ### `client.argus.list_models()`
 List every model Argus supports, with live pricing.
 
-<Tabs sync={false}>
-  <Tab title="Python SDK">
-    ```python
-    models = client.argus.list_models()
-    for model in models.data:
-        print(model.id, model.pricing)
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    curl --request GET \
-      --url https://argus.axilio.ai/api/v1/vision/models
-    ```
-
-    [API reference: List models](/api-reference/vision/vision/list-models)
-  </Tab>
-</Tabs>
+```python
+models = client.argus.list_models()
+for m in models.data:
+    print(m.id, m.pricing)
+```
 
 **Returns** a list on `.data`, each entry carrying `id` and `pricing`. See
 [Models](/drivers/models).

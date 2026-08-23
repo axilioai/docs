@@ -1,8 +1,0 @@
-email	names	surfaces	first_seen_oid	last_seen_oid	disposition
-109931778+mintlify[bot]@users.noreply.github.com	mintlify[bot]	author+committer	372b0fec323e4bfeefe9b11f6ff274e30f89f7e0	7802a607522d2ee9c47ad94d12ce554f4a4f1791	active:domain-tree:github.com
-221408916+kunwar-axilio@users.noreply.github.com	kunwar-axilio	author	303946970e6926a4949963f70a2f302fa0421531	b728a961734ade9624c6a514ba16e4a1fde69879	active:domain-tree:github.com
-41898282+github-actions[bot]@users.noreply.github.com	github-actions[bot]	author+committer	32b7c143896cb1229e981f8b05a67325fe79f569	b26e5161c3ea9776890f1d8b5f3a25c5fd655862	active:domain-tree:github.com
-kunwar@axilio.ai	kunwar-axilio	author+committer	9dabc6afa34e676f038b889a794d12a6b38ba752	acc69c73b505e5a663d120d7ba404cf8d5f92189	active:domain:axilio.ai
-noreply@anthropic.com	Claude Opus 4.8	trailer	9a749612a25a466cfb407e202900505c7474c7f0	4c92ab5cc706eb341392bcdd6924e7e80aaada82	grandfathered:2-trailer-objects
-noreply@github.com	GitHub	committer	9dabc6afa34e676f038b889a794d12a6b38ba752	acc69c73b505e5a663d120d7ba404cf8d5f92189	active:domain-tree:github.com
-ross@axilio.ai	Ross Koepke	author+committer	f1c78758300c9e34c90aa2a8c65346575989e532	abb2e5f5c2f4d3b108fa10f1226e61c9a40cba3c	active:domain:axilio.ai

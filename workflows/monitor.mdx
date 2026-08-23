@@ -6,69 +6,22 @@ description: "Check whether a run is still going, and whether it succeeded."
 
 Check on a run with its run id:
 
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open [**Runs**](https://app.axilio.ai/dashboard).
-    2. Search for the run ID.
-    3. Open the matching run to review its status and session.
-  </Tab>
+```python
+run = client.runs.get(run_id)
 
-  <Tab title="CLI">
-    ```bash
-    axilio runs get "$RUN_ID"
-    ```
-
-    Add `-o json` when your program needs to branch on the result.
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    run = client.runs.get(run_id)
-
-    print(run.status)         # e.g. running, completed
-    print(run.success)        # True or False once it's done
-    print(run.error_message)  # why it failed, if it did
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    run, err := api.Runs.Get(ctx, &platformgo.RunsGetRequest{
-        RunID: runID,
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println(run.Status)
-    if run.Success != nil {
-        fmt.Println(*run.Success)
-    }
-    if run.ErrorMessage != nil {
-        fmt.Println(*run.ErrorMessage)
-    }
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    curl --request GET \
-      --url "https://api.axilio.ai/api/v1/runs/$RUN_ID" \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
-    ```
-
-    [API reference: Get a run](/api-reference/rest/runs/get-a-run)
-  </Tab>
-</Tabs>
+print(run.status)         # e.g. running, completed
+print(run.success)        # True or False once it's done
+print(run.error_message)  # why it failed, if it did
+```
 
 To watch a run as it happens, replay it as a video, or see its step-by-step
-events, see [Observability](/observability).
+events, see [Observability](/observability/overview).
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Observability" icon="video" href="/observability">
-    Live views, available events and recordings, and usage.
+  <Card title="Observability" icon="video" href="/observability/overview">
+    Recordings, events, and cost.
   </Card>
   <Card title="Run" icon="play" href="/workflows/run">
     Start another run.

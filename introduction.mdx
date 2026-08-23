@@ -4,9 +4,9 @@ sidebarTitle: "Introduction"
 description: "Axilio is a cloud of real Android phones your code can control — see the screen, tap, type, and swipe, just like a person would."
 ---
 
-Axilio is a cloud of **real Android phones** that your code can control. Use the
-CLI, Python SDK, or Go SDK to get a phone, see its screen, and tap, type, and
-swipe—exactly like a person using it.
+Axilio is a cloud of **real Android phones** that your code can control. You write
+a few lines of Python; Axilio hands you a phone and lets you see its screen and
+tap, type, and swipe — exactly like a person using it.
 
 ## Why a real phone?
 
@@ -27,29 +27,24 @@ Three things, in order:
   <Step title="Client — your connection to Axilio">
     Reads your API key and lets you reach everything: phones, runs, billing.
   </Step>
-  <Step title="Session — use a dedicated phone">
-    Start a session on one of your organization's dedicated phones. Ending the
-    session releases it for your next task.
+  <Step title="Session — borrow a phone">
+    Ask for a phone and Axilio gives you one. It's yours until you're done, then
+    it goes back to the pool. You only pay for the time you hold it.
   </Step>
   <Step title="Driver — control the phone">
     Find things on the screen, then tap, type, and swipe.
   </Step>
 </Steps>
 
-The Python SDK version looks like this. See the [Quickstart](/quickstart) for
-equivalent CLI and Go SDK examples.
-
 ```python
 from axilio.platform import Client
 
 client = Client()  # reads your API key from the environment
 
-with client.session("android", phone_id="ph_123") as driver:
+with client.session("android") as driver:
     driver.find(query="the search box").type_into("axilio")
     photo = driver.screenshot()
 ```
-
-Replace `ph_123` with the ID of your dedicated phone.
 
 ## What makes it different
 
@@ -60,8 +55,8 @@ Replace `ph_123` with the ID of your dedicated phone.
 - **Find things in plain English** — describe what you want (`find(query="the blue
   Continue button")`) instead of writing brittle coordinates.
 - **Run many at once** — start lots of phones in parallel, each isolated.
-- **Simple pricing** — rent a dedicated phone at a flat daily, weekly, or monthly rate.
-- **Recordings** — when recording is enabled, review what appeared on screen.
+- **Simple pricing** — pay by the second for the time you use a phone.
+- **Replay** — watch a recording of everything your agent did.
 
 ## Next steps
 
@@ -76,6 +71,6 @@ Replace `ph_123` with the ID of your dedicated phone.
     Find things on the screen and act on them.
   </Card>
   <Card title="Devices" icon="mobile" href="/devices/overview">
-    How dedicated phones and sessions work.
+    How borrowing and returning phones works.
   </Card>
 </CardGroup>
