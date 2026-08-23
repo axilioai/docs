@@ -8,9 +8,6 @@ A `Screen` is what [`driver.observe()`](/driver/reference#driver-observe) return
 a single snapshot of all recognized text and icons. Query it locally, with no round
 trip to the device.
 
-This page documents the Python SDK object. See [Observe](/driver/observe) for
-CLI and Go SDK examples.
-
 ```python
 screen = driver.observe()
 row = screen.find_text("Sign in")            # Element | None

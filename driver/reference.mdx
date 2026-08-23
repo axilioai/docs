@@ -11,9 +11,9 @@ swiping, and reading the screen. Methods that locate something return an
 [`Screen`](/driver/screen).
 
 <Info>
-  This page documents the Python SDK signatures. For CLI and Go SDK examples,
-  start with [How the driver works](/driver/overview) and the task guides. Live
-  phone actions use the device-control WebSocket and are not REST endpoints.
+  This page is the signature reference. To learn the model — how you chain a
+  **find** into an action — start with [How the driver works](/driver/overview)
+  and the [Basics](/driver/find).
 </Info>
 
 ```python
@@ -55,7 +55,6 @@ for item in driver.find_all_text(contains="Notification"):
 |---|---|---|---|
 | `contains` | `str` | `None` | Keep matches that contain this substring. |
 | `pattern` | `str` | `None` | Keep matches against this regular expression. |
-| `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine. `premium` handles harder screens. |
 
 **Returns** <code>list[<a href="/driver/element">Element</a>]</code> — every match, or an empty list.
 
@@ -77,7 +76,6 @@ driver.find(
 | `query` | `str` | required | A plain-English description of what to find (keyword-only). |
 | `timeout` | `float` | `10.0` | Seconds to wait for the model before giving up. |
 | `model` | `str` | session default | A [vision model](/drivers/models) id. |
-| `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine used to provide screen context to the model. |
 
 **Returns** [`Element`](/driver/element). **Raises** `ElementNotFoundError` on a miss —
 import it from `axilio.drivers.mobile`.
@@ -171,10 +169,7 @@ driver.wait_for_text("Confirmed", timeout=30).tap()
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `text` | `str` | required | The visible text to wait for. |
-| `timeout` | `float` | `10.0` | Seconds to wait before giving up. |
-| `poll_ms` | `int` | `300` | Milliseconds between screen reads. |
-| `exact` | `bool` | `False` | Require the whole label to match. |
-| `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine. |
+| `timeout` | `int` | `10` | Seconds to wait before giving up. |
 
 **Returns** [`Element`](/driver/element). **Raises** `TimeoutError` — import it from
 `axilio.drivers.mobile`.
@@ -190,10 +185,7 @@ driver.wait_until_gone("Loading", timeout=15)
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `text` | `str` | required | The visible text to wait to disappear. |
-| `timeout` | `float` | `10.0` | Seconds to wait before giving up. |
-| `poll_ms` | `int` | `300` | Milliseconds between screen reads. |
-| `exact` | `bool` | `False` | Require the whole label to match. |
-| `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine. |
+| `timeout` | `int` | `10` | Seconds to wait before giving up. |
 
 **Returns** `None`. **Raises** `TimeoutError`.
 
@@ -209,7 +201,6 @@ screen = driver.wait_for(lambda s: s.find_text("Done") is not None)
 |---|---|---|---|
 | `predicate` | `(Screen) -> object` | required | Called with each [`Screen`](/driver/screen); a truthy return ends the wait. |
 | `timeout` | `float` | `10.0` | Seconds to wait before giving up. |
-| `poll_ms` | `int` | `300` | Milliseconds between screen reads. |
 
 **Returns** [`Screen`](/driver/screen). **Raises** `TimeoutError`.
 
@@ -224,8 +215,7 @@ screen = driver.observe()
 prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
 ```
 
-**Returns** [`Screen`](/driver/screen). Pass `ocr_engine="free"` or
-`ocr_engine="premium"` to override the session default for this read.
+**Returns** [`Screen`](/driver/screen).
 
 ### `driver.screenshot()`
 Take a picture of the screen as PNG image data — to save, log, or debug a run.

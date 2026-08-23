@@ -4,59 +4,15 @@ sidebarTitle: "Embed live view"
 description: "Put a phone's live, interactive screen in your own app with one iframe."
 ---
 
-When an allocation includes `live_view_url`, the URL opens a hosted page showing
-the phone's live screen. It accepts taps, swipes, and keyboard input unless you
-configure it as view-only. Open it in a browser tab or embed it in your own app
-as an iframe.
+When you allocate a phone, the response includes a `live_view_url`: a hosted
+page showing the phone's live screen. It's fully interactive — taps, swipes,
+and typing reach the phone — and it works opened in a browser tab or embedded
+in your own app as an iframe.
 
-<Tabs sync={false}>
-  <Tab title="CLI">
-    The current CLI release cannot start sessions against API `0.72`. Use an SDK
-    or REST to obtain the iframe URL until it is updated.
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    device = client.phones.allocate(phone_type="android", pool="dedicated")
-    print(device.live_view_url)
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    device, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
-        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    if device.LiveViewURL != nil {
-        fmt.Println(*device.LiveViewURL)
-    }
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    curl --request POST \
-      --url https://api.axilio.ai/api/v1/phones:allocate \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      --header "Content-Type: application/json" \
-      --data '{
-        "phone_type": "android",
-        "pool": "dedicated"
-      }'
-    ```
-
-    [API reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
-
-    Use the response's `live_view_url` as the iframe `src`.
-  </Tab>
-</Tabs>
-
-Keep the allocation active while the iframe is mounted. Deallocate the returned
-`phone_id` when you remove the viewer.
+```python
+device = client.phones.allocate(phone_type="ANDROID")
+print(device.live_view_url)
+```
 
 ## Embed it
 
@@ -68,28 +24,28 @@ Keep the allocation active while the iframe is mounted. Deallocate the returned
 ></iframe>
 ```
 
-That's the whole integration. The stream starts muted, which usually lets it
-render without a play button under modern browser autoplay policies.
+That's the whole integration. The stream starts muted, so it renders without a
+play button under every browser autoplay policy.
 
-If your app sets a `Content-Security-Policy`, allow the live-view page as a
-frame source:
+The page and its connections use exactly two origins. If your app sets a
+`Content-Security-Policy`, allow them:
 
 ```
 frame-src https://app.axilio.ai;
+connect-src https://connect.axilio.ai wss://connect.axilio.ai;
 ```
-
-The cross-origin live-view page governs its own network connections. Your
-parent page does not need to add Axilio's WebSocket origin to `connect-src` for
-the iframe to connect.
 
 ### Keyboard input
 
-Browsers deliver keystrokes to an iframe only while it has focus. Ask the viewer
-to click or tap inside the phone screen before typing. Do not rely on a click
-listener on the parent `<iframe>` element: clicks inside a cross-origin iframe
-do not bubble to its parent page.
+Browsers deliver keystrokes to an iframe only while it has focus, and Safari
+grants focus to a cross-origin iframe only from a user action. Call
+`iframe.focus()` inside a click handler on your page:
 
-Pointer input works as soon as the viewer interacts with the embedded screen.
+```js
+iframe.addEventListener("click", () => iframe.focus())
+```
+
+Pointer input (tap, swipe) works without this.
 
 ## Appearance
 
@@ -100,7 +56,7 @@ UI. Two query params tune the look:
 
 | Param | Values | Default |
 | --- | --- | --- |
-| `bg` | `transparent`, `dark`, `light`, or a 3/6-digit hex color such as `1e293b` | `transparent` |
+| `bg` | `transparent`, `dark`, `light`, or a hex color (e.g. `1e293b` or `#1e293b`) | `transparent` |
 | `frame` | `device` to wrap the screen in a phone mockup | screen only |
 
 ```html
@@ -120,90 +76,33 @@ The page never shows Axilio branding, so it fits a white-labeled product.
 
 ## Treat the URL as a secret
 
-In token mode, `live_view_url` carries a signed credential scoped to one
-session. Anyone who has the URL can watch and, unless the view is read-only,
-drive the phone while access remains valid. Handle it like a credential:
+`live_view_url` carries a signed token scoped to this one session. Anyone who
+has the URL can watch — and, unless the session is view-only — drive the phone
+until the session ends. Handle it like a credential:
 
 - Don't log it or send it to analytics.
 - Prefer `view_only` or `auth: "org"` (below) when the URL travels beyond
   people you trust.
-- There is no standalone rotation. If a URL leaks, deallocate the session to
-  prevent new connections and close any viewer your application already opened.
+- There is no rotation: to kill a leaked URL, end the session with
+  `deallocate`. Every live view URL stops working the moment its session ends.
 
 ## Options
 
 Set live view behavior per session when you allocate:
 
-<Tabs sync={false}>
-  <Tab title="Python SDK">
-    ```python
-    device = client.phones.allocate(
-        phone_type="android",
-        pool="dedicated",
-        live_view={"auth": "token", "view_only": True},
-    )
-    ```
-  </Tab>
+```python
+device = client.phones.allocate(
+    phone_type="ANDROID",
+    live_view={"view_only": True},
+)
+```
 
-  <Tab title="Go SDK">
-    ```go
-    device, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
-        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
-        LiveView: &platformgo.PhoneLiveViewOptions{
-            Auth:     platformgo.PhoneLiveViewOptionsAuthToken.Ptr(),
-            ViewOnly: platformgo.Bool(true),
-        },
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    if device.LiveViewURL == nil {
-        if _, cleanupErr := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
-            PhoneID: device.PhoneID,
-        }); cleanupErr != nil {
-            log.Printf("release phone: %v", cleanupErr)
-        }
-        log.Fatal("allocation returned no live view URL")
-    }
-    fmt.Println(*device.LiveViewURL)
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    curl --request POST \
-      --url https://api.axilio.ai/api/v1/phones:allocate \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      --header "Content-Type: application/json" \
-      --data '{
-        "phone_type": "android",
-        "pool": "dedicated",
-        "live_view": {
-          "auth": "token",
-          "view_only": true
-        }
-      }'
-    ```
-
-    [API reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
-  </Tab>
-</Tabs>
-
-The view-only setting lasts for that allocation. Keep it active while the
-iframe is mounted, then deallocate the phone.
-
-The CLI and dashboard allocation flows do not currently expose live-view
-access options. Use an SDK or the REST API when you need to change them.
-
-| Setting | Values | Default | Effect |
-| --- | --- | --- | --- |
-| `auth` | `"token"`, `"org"` | `"token"` | `"token"` puts a session-scoped credential in the URL. `"org"` requires an Axilio sign-in and membership in your organization. |
-| `view_only` | `false`, `true` | `false` | `false` allows interaction. `true` makes the view watch-only, enforced on our side rather than only hidden in the page. |
-| `disabled` | `false`, `true` | `false` | `true` prevents Axilio from creating a live view and omits `live_view_url`. |
-
-You can omit `live_view` to use all three defaults. If `disabled` is `true`,
-the other settings have no effect because no live view is created.
+| Option | Effect |
+| --- | --- |
+| `auth: "token"` (default) | The URL carries its own credential. No sign-in; embeds anywhere. |
+| `auth: "org"` | The URL carries no credential. Viewers must sign in to Axilio and belong to your organization. A leaked URL is useless to outsiders. |
+| `view_only: true` | Watch-only. Input never reaches the phone — enforced on our side, not just hidden in the page. |
+| `disabled: true` | No live view exists for this session; `live_view_url` is omitted. |
 
 <Note>
   `auth: "org"` is for sharing inside your team — open it in a tab or link it
@@ -212,27 +111,17 @@ the other settings have no effect because no live view is created.
   For embeds, use the default token mode.
 </Note>
 
-## Multiple viewers
+## One viewer at a time
 
-More than one viewer can watch the same session. An interactive viewer can send
-input to the phone. Inputs from multiple interactive viewers can interleave;
-this screen path does not assign one viewer exclusive control. Make observers
-view-only when one viewer should control the phone.
-
-## Troubleshooting
-
-| Symptom | Check |
-| --- | --- |
-| The iframe is blocked | Allow `https://app.axilio.ai` in the parent page's `frame-src` policy. |
-| Typing has no effect | Click or tap inside the phone screen before typing. |
-| The view is read-only | Check whether the allocation enabled `view_only`. |
-| The view no longer connects | Confirm that the phone session is still active. |
+A session streams to one viewer at a time. If a second viewer opens the live
+view — in your app or in the Axilio dashboard — the newest viewer takes over
+and the previous one is disconnected.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Live session events" icon="wave-pulse" href="/observability/live-session-events">
-    Stream structured session activity over a WebSocket.
+  <Card title="Live telemetry" icon="wave-pulse" href="/observability/telemetry">
+    Stream the session's events over a WebSocket.
   </Card>
   <Card title="Get a device" icon="mobile" href="/devices/allocate">
     Where `live_view_url` comes from.

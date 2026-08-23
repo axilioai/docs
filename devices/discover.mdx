@@ -1,78 +1,40 @@
 ---
 title: "See available devices"
 sidebarTitle: "See devices"
-description: "List your organization's dedicated phones and inspect their status."
+description: "Check what phones are free, and which ones are yours."
 ---
 
-## Your dedicated phones
+## What's free
 
-List every [dedicated phone](/devices/dedicated) your organization rents,
-including phones that are busy or offline:
+`available` shows how many phones are free to borrow right now:
 
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open [**Phones**](https://app.axilio.ai/dashboard).
-    2. Search by phone name or use the **Status**, **Type**, and rental-expiration filters.
-    3. Open a phone to inspect its status, model, location, and subscription.
-  </Tab>
+```python
+free = client.phones.available()
+print(free.android_count, "Android phones free")
+```
 
-  <Tab title="CLI">
-    ```bash
-    axilio phones mine
-    ```
+## Your phones
 
-    Add `-o json` for structured output.
-  </Tab>
+`mine` lists the phones tied to your account, like
+[dedicated ones you rented](/billing/plans):
 
-  <Tab title="Python SDK">
-    ```python
-    dedicated = client.phones.list(ownership="dedicated")
+```python
+mine = client.phones.mine()
 
-    for phone in dedicated.phones or []:
-        print(phone.phone_id, phone.nickname, phone.status)
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    dedicated, err := api.Phones.List(ctx, &platformgo.PhonesListRequest{
-        Ownership: platformgo.PhonesListRequestOwnershipDedicated,
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    for _, phone := range dedicated.Phones {
-        nickname := ""
-        if phone.Nickname != nil {
-            nickname = *phone.Nickname
-        }
-        fmt.Println(phone.PhoneID, nickname, phone.Status)
-    }
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    curl --request GET \
-      --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
-    ```
-
-    [API reference: List phones](/api-reference/rest/phones/list-the-orgs-phones)
-  </Tab>
-</Tabs>
+for phone in mine.phones:
+    print(phone.phone_id, phone.nickname, phone.status)
+```
 
 Pass a phone's `phone_id` to [`session`](/devices/allocate) to use that exact
-phone. A phone with an active status and no current session is available to use.
+phone.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Start a session on a dedicated phone.
+    Borrow a phone.
   </Card>
   <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How sessions start and end.
+    How borrowing works.
   </Card>
 </CardGroup>

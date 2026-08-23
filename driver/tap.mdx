@@ -6,109 +6,27 @@ description: "Tap something on the screen, or tap and hold."
 
 Tap whatever you [found](/driver/find):
 
-<Tabs sync={false}>
-  <Tab title="CLI">
-    ```bash
-    axilio phone find-text "Settings" -o json |
-      jq -r '.center | "\(.x) \(.y)"' |
-      xargs -n 2 axilio phone tap
-    ```
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    driver.find_text("Settings").tap()
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    settings, err := driver.FindText("Settings", false)
-    if err != nil {
-        log.Fatal(err)
-    }
-    if settings == nil {
-        log.Fatal("Settings not found")
-    }
-    if err := settings.Tap(); err != nil {
-        log.Fatal(err)
-    }
-    ```
-  </Tab>
-</Tabs>
+```python
+driver.find_text("Settings").tap()
+```
 
 ## Tap and hold
 
 [`long_press`](/driver/element#element-long_press) presses and holds, for example to open a menu:
 
-<Tabs sync={false}>
-  <Tab title="CLI">
-    The CLI's long-press command uses coordinates. Find the element's center,
-    then press it:
-
-    ```bash
-    axilio phone find-text "Photo" -o json |
-      jq -r '.center | "\(.x) \(.y)"' |
-      xargs -n 2 axilio phone long-press --duration-ms 1500
-    ```
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    driver.find_text("Photo").long_press()
-    driver.find_text("Photo").long_press(duration_ms=1500)
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    photo, err := driver.FindText("Photo", false)
-    if err != nil {
-        log.Fatal(err)
-    }
-    if photo == nil {
-        log.Fatal("Photo not found")
-    }
-    if err := photo.LongPress(1500); err != nil {
-        log.Fatal(err)
-    }
-    ```
-  </Tab>
-</Tabs>
+```python
+driver.find_text("Photo").long_press()
+driver.find_text("Photo").long_press(duration_ms=1500)   # hold longer
+```
 
 ## Tap an exact spot
 
 If you already know the point (an `x`, `y` on the screen), tap it directly:
 
-<Tabs sync={false}>
-  <Tab title="CLI">
-    ```bash
-    axilio phone tap 540 1180
-    axilio phone long-press 540 1180
-    ```
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    driver.tap({"x": 540, "y": 1180})
-    driver.long_press({"x": 540, "y": 1180})
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    point := mobile.Coords{X: 540, Y: 1180}
-    if err := driver.Tap(point); err != nil {
-        log.Fatal(err)
-    }
-    if err := driver.LongPress(point, 800); err != nil {
-        log.Fatal(err)
-    }
-    ```
-  </Tab>
-</Tabs>
-
-These phone actions use the device-control WebSocket and are not REST endpoints.
+```python
+driver.tap({"x": 540, "y": 1180})
+driver.long_press({"x": 540, "y": 1180})
+```
 
 ## Next steps
 

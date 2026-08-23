@@ -4,33 +4,13 @@ sidebarTitle: "Observe"
 description: "Read the whole screen at once (all the text and icons) and pull the data you need from it."
 ---
 
-[`observe`](/driver/reference#driver-observe) reads **everything on the screen at once**: all the text and icons. You
-can look through the result and pull out the data you need in your code.
+[`observe`](/driver/reference#driver-observe) reads **everything on the screen at once**: all the text and icons. So
+you can look through it, and pull out the data you need, in your code.
 
-<Tabs sync={false}>
-  <Tab title="CLI">
-    ```bash
-    axilio phone observe -o json | jq '.texts | length'
-    ```
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    screen = driver.observe()
-    print(len(screen.texts), "pieces of text")
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    screen, err := driver.Observe()
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println(len(screen.Texts), "pieces of text")
-    ```
-  </Tab>
-</Tabs>
+```python
+screen = driver.observe()
+print(len(screen.texts), "pieces of text")
+```
 
 ## What you get
 
@@ -41,43 +21,12 @@ See the [Screen reference](/driver/screen) for the full list.
 
 Search the snapshot without going back to the phone:
 
-<Tabs sync={false}>
-  <Tab title="CLI">
-    ```bash
-    axilio phone observe -o json > screen.json
-    jq '.texts[] | select(.text | test("\\$[0-9]+\\.[0-9]{2}"))' screen.json
-    jq '.texts[] | select(.text | contains("Total"))' screen.json
-    ```
-  </Tab>
+```python
+screen = driver.observe()
 
-  <Tab title="Python SDK">
-    ```python
-    screen = driver.observe()
-
-    prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
-    total = screen.find_text("Total")
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    screen, err := driver.Observe()
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    prices, err := screen.FindAllText("", `\$\d+\.\d{2}`)
-    if err != nil {
-        log.Fatal(err)
-    }
-    total := screen.FindText("Total", false)
-    fmt.Println(len(prices), total)
-    ```
-  </Tab>
-</Tabs>
-
-Reading the live screen uses the device-control WebSocket. It is not a REST
-operation.
+prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
+total = screen.find_text("Total")
+```
 
 This is how you get data off the screen today: **observe** it, then read the text
 you want. (A one-call `extract` is on the roadmap.)

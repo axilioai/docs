@@ -1,337 +1,38 @@
 ---
 title: "Create a workflow"
 sidebarTitle: "Create"
-description: "Prototype phone automation in the session dashboard or an SDK, then save it as a workflow."
+description: "Write your automation in the code editor, then save it as a workflow."
 ---
 
-Prototype your phone task in the session dashboard or an SDK before you save it
-as a workflow. These examples open X, search for `agentic infrastructure`, and
-scroll through three screens of top posts.
+A workflow is just the Python you've been writing, saved on Axilio.
 
-<Tabs sync={false}>
-  <Tab title="Session dashboard">
-    The session dashboard pre-connects `driver` and provides `Key`. Put the phone
-    on its launcher, paste the script into the code editor, and run the whole file.
+## Write it in the editor
 
-    ```python
-    # `driver` and `Key` are pre-bound to this session's phone.
-    screen = driver.observe()
-    center_x = screen.width // 2
+The easiest way is the **code editor** in your
+[dashboard](https://axilio.ai/dashboard). Write your automation, run it against a
+live phone as you go, and save it when it works. It's the same code you'd write
+anywhere:
 
-    # Open the app drawer, then open X.
-    driver.swipe(
-        {"x": center_x, "y": int(screen.height * 0.88)},
-        {"x": center_x, "y": int(screen.height * 0.28)},
-    )
-    driver.find(query="the X app").tap()
+```python
+with client.session("android") as driver:
+    driver.find(query="the search box").type_into("axilio")
+    driver.find_text("Search").tap()
+```
 
-    # Search for the query and wait for the Top results tab.
-    driver.wait_for_text("Search")
-    driver.find(query="the Search field").type_into("agentic infrastructure")
-    driver.key_press(Key.ENTER)
-    driver.wait_for_text("Top", exact=True)
+## Or create it from the SDK
 
-    # Scroll through three result screens and verify each one.
-    for index in range(1, 4):
-        screen = driver.observe()
-        driver.swipe(
-            {"x": screen.width // 2, "y": int(screen.height * 0.83)},
-            {"x": screen.width // 2, "y": int(screen.height * 0.24)},
-        )
-        screen = driver.observe()
-        print(
-            f"result screen {index}: "
-            f"{len(screen.texts)} texts, {len(screen.icons)} icons"
-        )
-    ```
-  </Tab>
+You can also save a workflow straight from code:
 
-  <Tab title="Python SDK">
-    Set `AXILIO_API_KEY`, then run the script with the Axilio Python SDK. The
-    session context releases the phone when the script exits.
+```python
+workflow = client.workflows.create_from_code(
+    name="Search Axilio",
+    code_source=open("automation.py").read(),
+)
+print(workflow.workflow_id)
+```
 
-    ```python
-    from axilio.drivers.mobile import Key
-    from axilio.platform import Client
-
-    client = Client()
-
-    with client.session("android") as driver:
-        screen = driver.observe()
-        center_x = screen.width // 2
-
-        driver.swipe(
-            {"x": center_x, "y": int(screen.height * 0.88)},
-            {"x": center_x, "y": int(screen.height * 0.28)},
-        )
-        driver.find(query="the X app").tap()
-
-        driver.wait_for_text("Search")
-        driver.find(query="the Search field").type_into("agentic infrastructure")
-        driver.key_press(Key.ENTER)
-        driver.wait_for_text("Top", exact=True)
-
-        for index in range(1, 4):
-            screen = driver.observe()
-            driver.swipe(
-                {"x": screen.width // 2, "y": int(screen.height * 0.83)},
-                {"x": screen.width // 2, "y": int(screen.height * 0.24)},
-            )
-            screen = driver.observe()
-            print(
-                f"result screen {index}: "
-                f"{len(screen.texts)} texts, {len(screen.icons)} icons"
-            )
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    Set `AXILIO_API_KEY`, then run the script with the Axilio Go SDK. The
-    deferred cleanup closes the driver and releases the phone.
-
-    ```go
-    package main
-
-    import (
-        "context"
-        "errors"
-        "fmt"
-        "log"
-        "os"
-        "time"
-
-        platformgo "github.com/axilioai/platform-go"
-        "github.com/axilioai/platform-go/client"
-        "github.com/axilioai/platform-go/drivers/mobile"
-        "github.com/axilioai/platform-go/option"
-    )
-
-    func main() {
-        if err := run(context.Background()); err != nil {
-            log.Fatal(err)
-        }
-    }
-
-    func run(ctx context.Context) error {
-        apiKey := os.Getenv("AXILIO_API_KEY")
-        if apiKey == "" {
-            return errors.New("set AXILIO_API_KEY")
-        }
-
-        api := client.NewClient(
-            option.WithBaseURL("https://api.axilio.ai/api/v1"),
-            option.WithAPIKey(apiKey),
-        )
-        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
-            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        })
-        if err != nil {
-            return err
-        }
-        defer func() {
-            if _, err := api.Phones.Deallocate(
-                ctx,
-                &platformgo.PhonesDeallocateRequest{PhoneID: allocation.PhoneID},
-            ); err != nil {
-                log.Printf("release phone: %v", err)
-            }
-        }()
-
-        if allocation.ControlURL == nil {
-            return errors.New("allocation returned no control URL")
-        }
-        driver := mobile.ConnectRemote(*allocation.ControlURL)
-        defer driver.Close()
-
-        screen, err := driver.Observe()
-        if err != nil {
-            return err
-        }
-        centerX := screen.Width / 2
-        if err := driver.Swipe(
-            mobile.Coords{X: centerX, Y: int(float64(screen.Height) * 0.88)},
-            mobile.Coords{X: centerX, Y: int(float64(screen.Height) * 0.28)},
-            300,
-        ); err != nil {
-            return err
-        }
-
-        xApp, err := driver.Find("the X app")
-        if err != nil {
-            return err
-        }
-        if err := xApp.Tap(); err != nil {
-            return err
-        }
-
-        if _, err := driver.WaitForText("Search", 10*time.Second, false); err != nil {
-            return err
-        }
-        search, err := driver.Find("the Search field")
-        if err != nil {
-            return err
-        }
-        if err := search.TypeInto("agentic infrastructure"); err != nil {
-            return err
-        }
-        if err := driver.KeyPress(mobile.KeyEnter); err != nil {
-            return err
-        }
-        if _, err := driver.WaitForText("Top", 10*time.Second, true); err != nil {
-            return err
-        }
-
-        for index := 1; index <= 3; index++ {
-            screen, err = driver.Observe()
-            if err != nil {
-                return err
-            }
-            if err := driver.Swipe(
-                mobile.Coords{
-                    X: screen.Width / 2,
-                    Y: int(float64(screen.Height) * 0.83),
-                },
-                mobile.Coords{
-                    X: screen.Width / 2,
-                    Y: int(float64(screen.Height) * 0.24),
-                },
-                300,
-            ); err != nil {
-                return err
-            }
-            screen, err = driver.Observe()
-            if err != nil {
-                return err
-            }
-            fmt.Printf(
-                "result screen %d: %d texts, %d icons\n",
-                index,
-                len(screen.Texts),
-                len(screen.Icons),
-            )
-        }
-
-        return nil
-    }
-    ```
-  </Tab>
-</Tabs>
-
-The relative swipe coordinates preserve the gestures when a session uses a
-different frame size.
-
-## Save it as a workflow
-
-Save the tested automation as a workflow:
-
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open [**Workflows**](https://app.axilio.ai/dashboard).
-    2. Click **Create Workflow**.
-    3. Name the workflow and paste the tested source into the editor.
-    4. Save the workflow.
-  </Tab>
-
-  <Tab title="CLI">
-    The CLI can list workflows but does not currently create one or save its
-    source code. Use the dashboard, an SDK, or the REST API.
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    from pathlib import Path
-
-    workflow = client.workflows.create(
-        name="Search_Axilio",
-        code=Path("automation.py").read_text(),
-    )
-    print(workflow.workflow_id)
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    source, err := os.ReadFile("automation.py")
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    workflow, err := api.Workflows.Create(ctx, &platformgo.WorkflowCreateRequest{
-        Name: "Search_Axilio",
-        Code: platformgo.String(string(source)),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println(workflow.WorkflowID)
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    jq -n --rawfile code automation.py \
-      '{name: "Search_Axilio", code: $code}' |
-      curl --request POST \
-        --url https://api.axilio.ai/api/v1/workflows \
-        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-        --header "Content-Type: application/json" \
-        --data-binary @-
-    ```
-
-    [API reference: Create a workflow](/api-reference/rest/workflows/create-a-workflow)
-  </Tab>
-</Tabs>
-
-### Update saved code
-
-Saving code creates a new workflow revision:
-
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    1. Open [**Workflows**](https://app.axilio.ai/dashboard).
-    2. Select the workflow to open its editor.
-    3. Change the source and click **Save**.
-
-    Each saved change creates a workflow revision. Use **Revision history** to
-    inspect or restore an earlier version.
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    client.workflows.save_code(
-        workflow.workflow_id,
-        source=Path("automation.py").read_text(),
-    )
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    _, err = api.Workflows.SaveCode(ctx, &platformgo.WorkflowSaveCodeRequest{
-        WorkflowID: workflowID,
-        Source:     string(source),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    jq -n --rawfile source automation.py '{source: $source}' |
-      curl --request POST \
-        --url "https://api.axilio.ai/api/v1/workflows/$WORKFLOW_ID/code" \
-        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-        --header "Content-Type: application/json" \
-        --data-binary @-
-    ```
-
-    [API reference: Save workflow code](/api-reference/rest/workflows/save-workflow-code)
-  </Tab>
-</Tabs>
-
-The CLI does not currently save workflow code.
+Update its code later with `client.workflows.save_code(workflow.workflow_id,
+source=...)`.
 
 ## Next steps
 
