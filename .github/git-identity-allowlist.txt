@@ -1,7 +1,0 @@
-# Active organization and GitHub-generated identity families.
-domain axilio.ai
-domain-tree github.com
-
-# Historical external attribution retained only on these immutable main objects.
-grandfather 4c92ab5cc706eb341392bcdd6924e7e80aaada82 trailer noreply@anthropic.com
-grandfather 9a749612a25a466cfb407e202900505c7474c7f0 trailer noreply@anthropic.com
