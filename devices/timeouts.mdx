@@ -55,8 +55,15 @@ becomes unavailable.
   </Tab>
 
   <Tab title="REST API">
-    Use `GET /api/v1/phones/sessions` for the filtered session table and
-    `GET /api/v1/phones/sessions/{session_id}` for one session.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/phones/sessions?limit=20" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/phones/sessions/sess_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     REST references: [List sessions](/api-reference/rest/phones/list-sessions) ·
     [Get a session](/api-reference/rest/phones/get-a-session)
@@ -115,14 +122,20 @@ ends at the one-hour platform cap.
   </Tab>
 
   <Tab title="REST API">
-    ```json
-    {
-      "phone_type": "android",
-      "phone_id": "ph_123",
-      "ttl": {
-        "idle_timeout_seconds": 300
-      }
-    }
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123",
+        "pool": "dedicated",
+        "ttl": {
+          "idle_timeout_seconds": 300
+        }
+      }'
     ```
 
     [REST reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)

@@ -102,8 +102,9 @@ only whether bytes are still uploading or ready in storage.
   </Tab>
   <Tab title="REST">
     ```bash
-    curl "https://api.axilio.ai/api/v1/phones/sessions/$SESSION_ID/files?limit=50" \
-      -H "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/phones/sessions/sess_123/files?limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
     `GET /api/v1/phones/sessions/{session_id}/files` returns captured files

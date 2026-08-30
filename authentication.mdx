@@ -86,8 +86,9 @@ with `axl_`.
     Send the key in the `X-Axilio-Api-Key` header:
 
     ```bash
-    curl https://api.axilio.ai/api/v1/files \
-      -H "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/files \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
     Do not send the key to presigned file upload or download URLs. Those URLs

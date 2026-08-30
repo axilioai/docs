@@ -75,9 +75,23 @@ always the authority.
   </Tab>
 
   <Tab title="REST API">
-    Start a session with `POST /api/v1/phones:allocate` and include the
-    dedicated phone's `phone_id`. Release it with
-    `POST /api/v1/phones/{phone_id}:deallocate`.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123",
+        "pool": "dedicated"
+      }'
+
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones/ph_123:deallocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     See [Allocate a phone](/devices/allocate) for a complete request and
     cleanup sequence.

@@ -53,8 +53,15 @@ the phone; the ID does not change.
   </Tab>
 
   <Tab title="REST API">
-    Use `GET /api/v1/runs` to list recent runs and
-    `GET /api/v1/runs/{run_id}` for one run.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/runs?workflow_id=wf_123&limit=20" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/runs/run_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     REST references: [List runs](/api-reference/rest/runs/list-runs) · [Get a run](/api-reference/rest/runs/get-a-run)
   </Tab>
@@ -110,7 +117,12 @@ See [Telemetry](/observability/telemetry) for SDK helpers and archive behavior.
   </Tab>
 
   <Tab title="REST API">
-    Send `POST /api/v1/runs/{run_id}:cancel`.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/runs/run_123:cancel \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     [REST reference: Cancel a run](/api-reference/rest/runs/cancel-a-run)
   </Tab>
@@ -158,8 +170,15 @@ bounded time window and statistics for a workflow's total and success rate.
   </Tab>
 
   <Tab title="REST API">
-    Use `GET /api/v1/runs/history` for a reporting window and
-    `GET /api/v1/runs/stats/{workflow_id}` for workflow statistics.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/runs/history?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&workflow_id=wf_123&limit=50&offset=0" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/runs/stats/wf_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     REST references: [List run history](/api-reference/rest/runs/list-run-history) ·
     [Get workflow stats](/api-reference/rest/runs/get-workflow-stats)

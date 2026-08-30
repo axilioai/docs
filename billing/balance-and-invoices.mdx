@@ -96,8 +96,15 @@ customer-portal session.
   </Tab>
 
   <Tab title="REST API">
-    Use `GET /api/v1/billing/history` to list invoices and
-    `GET /api/v1/billing/history/{invoice_id}/pdf` to mint a temporary PDF URL.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/billing/history?limit=20&offset=0" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/history/inv_123/pdf \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     REST references:
     [List billing history](/api-reference/rest/billing/list-billing-history) ·
@@ -143,7 +150,22 @@ itself remains a dashboard action.
   </Tab>
 
   <Tab title="REST API">
-    Use `GET` and `PUT /api/v1/billing/auto-recharge`.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/auto-recharge \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --request PUT \
+      --url https://api.axilio.ai/api/v1/billing/auto-recharge \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "enabled": true,
+        "threshold_cents": 500,
+        "target_cents": 2500
+      }'
+    ```
 
     REST references:
     [Get auto-recharge settings](/api-reference/rest/billing/get-auto-recharge-settings) ·

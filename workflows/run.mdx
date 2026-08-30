@@ -121,16 +121,19 @@ Create one run entry per execution:
   </Tab>
 
   <Tab title="REST API">
-    Send three complete entries in the `runs` array:
-
-    ```json
-    {
-      "runs": [
-        {"variables": [{}]},
-        {"variables": [{}]},
-        {"variables": [{}]}
-      ]
-    }
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/runs \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "runs": [
+          {"variables": [{}]},
+          {"variables": [{}]},
+          {"variables": [{}]}
+        ]
+      }'
     ```
 
     The endpoint accepts 1–1,000 entries per request.
@@ -148,17 +151,74 @@ timeout expires.
 Set `phone_id` on each run entry when that run must use one exact dedicated
 phone:
 
-```python
-result = client.runs.create(
-    "wf_123",
-    runs=[
-        RunConfig(phone_id="ph_123", variables=[{}]),
-        RunConfig(phone_id="ph_456", variables=[{}]),
-    ],
-)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows), select the workflow, and click **Run**.
+    2. Choose **Run Now** and set **Number of Runs**.
+    3. Enable **Use Dedicated Phones** and select one or more active, idle phones.
+    4. Set **Queue Timeout (min)** and start the run.
 
-The CLI equivalent is `axilio runs start wf_123 --phone-id ph_123`.
+    When you select fewer phones than runs, Axilio assigns the selected phones
+    to runs in round-robin order.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs start wf_123 --phone-id ph_123
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    result = client.runs.create(
+        "wf_123",
+        runs=[
+            RunConfig(phone_id="ph_123", variables=[{}]),
+            RunConfig(phone_id="ph_456", variables=[{}]),
+        ],
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    result, err := api.Runs.Create(ctx, &platformgo.RunCreateRequest{
+        WorkflowID: "wf_123",
+        Runs: []*platformgo.RunConfig{
+            {
+                PhoneID:   platformgo.String("ph_123"),
+                Variables: []map[string]any{{}},
+            },
+            {
+                PhoneID:   platformgo.String("ph_456"),
+                Variables: []map[string]any{{}},
+            },
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/runs \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "runs": [
+          {"phone_id": "ph_123", "variables": [{}]},
+          {"phone_id": "ph_456", "variables": [{}]}
+        ]
+      }'
+    ```
+
+    [REST reference: Start a run](/api-reference/rest/runs/start-a-run)
+  </Tab>
+</Tabs>
 
 <Warning>
   Run variables are stored and delivered to workflow code as plaintext. Do not

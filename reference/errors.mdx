@@ -89,7 +89,7 @@ detail. Validation responses can also include field-specific errors.
 
   <Tab title="REST API">
     ```bash
-    curl --include --silent --show-error \
+    curl --silent --show-error --fail-with-body --include \
       --url https://api.axilio.ai/api/v1/runs/run_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```

@@ -115,8 +115,11 @@ and billing processing state for each phone session.
   </Tab>
 
   <Tab title="REST API">
-    Use `GET /api/v1/usage/sessions` with required `start_date` and `end_date`
-    query parameters.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/usage/sessions?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     [REST reference: List phone sessions with cost](/api-reference/rest/usage/list-phone-sessions-with-cost)
   </Tab>
@@ -171,8 +174,11 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
   </Tab>
 
   <Tab title="REST API">
-    Use `GET /api/v1/usage/inferences` with a reporting window and optional
-    endpoint, model, session, search, and paging filters.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/usage/inferences?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&endpoint_filter=locate&limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     [REST reference: List inference calls](/api-reference/rest/usage/list-inference-calls)
   </Tab>

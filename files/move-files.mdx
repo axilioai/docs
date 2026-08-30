@@ -108,32 +108,43 @@ steps separately.
     ```bash
     FILE_SIZE=$(wc -c < photo.jpg)
 
-    curl -X POST https://api.axilio.ai/api/v1/files \
-      -H "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d "{\"filename\":\"photo.jpg\",\"mime_type\":\"image/jpeg\",\"size_bytes\":$FILE_SIZE}"
+    REGISTER_RESPONSE=$(curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/files \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data "{\"filename\":\"photo.jpg\",\"mime_type\":\"image/jpeg\",\"size_bytes\":$FILE_SIZE}")
+
+    FILE_ID=$(jq -r '.file.id' <<<"$REGISTER_RESPONSE")
+    UPLOAD_URL=$(jq -r '.upload_url' <<<"$REGISTER_RESPONSE")
     ```
 
-    Copy `file.id` and `upload_url` from the response. Upload the raw bytes to
-    the presigned URL without the Axilio API-key header, then complete the file:
+    The command stores `file.id` and `upload_url`. Upload the raw bytes to the
+    presigned URL without the Axilio API-key header, then complete the file:
 
     ```bash
-    curl -X PUT "$UPLOAD_URL" \
-      -H "Content-Type: image/jpeg" \
-      -H "Content-Length: $FILE_SIZE" \
+    curl --silent --show-error --fail-with-body \
+      --request PUT \
+      --url "$UPLOAD_URL" \
+      --header "Content-Type: image/jpeg" \
+      --header "Content-Length: $FILE_SIZE" \
       --data-binary @photo.jpg
 
-    curl -X POST "https://api.axilio.ai/api/v1/files/$FILE_ID/complete" \
-      -H "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/files/$FILE_ID/complete" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
     Push the ready file by creating a phone delivery:
 
     ```bash
-    curl -X POST "https://api.axilio.ai/api/v1/phones/$PHONE_ID/deliveries" \
-      -H "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d "{\"file_id\":\"$FILE_ID\"}"
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones/ph_123/deliveries \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data "{\"file_id\":\"$FILE_ID\"}"
     ```
 
     REST references:
@@ -193,11 +204,17 @@ Axilio authentication header.
     expired URL.
   </Tab>
   <Tab title="REST">
-    Call `GET /api/v1/files`, select a ready entry in your application, and
-    download its `download_url`:
-
     ```bash
-    curl -L "$DOWNLOAD_URL" -o photo.jpg
+    DOWNLOAD_URL=$(curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/files?limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" |
+      jq -r '.files[] | select(.filename == "photo.jpg" and .status == "ready") | .download_url' |
+      head -n 1)
+
+    curl --silent --show-error --fail-with-body \
+      --location \
+      --url "$DOWNLOAD_URL" \
+      --output photo.jpg
     ```
 
     [REST reference: List the organization's files](/api-reference/rest/files/list-the-orgs-files)
@@ -234,10 +251,12 @@ name they used at push time.
   </Tab>
   <Tab title="REST">
     ```bash
-    curl -X PATCH "https://api.axilio.ai/api/v1/files/$FILE_ID" \
-      -H "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{"filename":"launch-photo.jpg"}'
+    curl --silent --show-error --fail-with-body \
+      --request PATCH \
+      --url https://api.axilio.ai/api/v1/files/file_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"filename":"launch-photo.jpg"}'
     ```
 
     [REST reference: Rename a file](/api-reference/rest/files/rename-a-file)
@@ -280,8 +299,10 @@ schedules removal from phones that hold or are receiving a delivered copy.
   </Tab>
   <Tab title="REST">
     ```bash
-    curl -X DELETE "https://api.axilio.ai/api/v1/files/$FILE_ID" \
-      -H "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    curl --silent --show-error --fail-with-body \
+      --request DELETE \
+      --url https://api.axilio.ai/api/v1/files/file_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
     The response includes `phones_pending_removal`.

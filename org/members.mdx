@@ -76,7 +76,11 @@ members.
   </Tab>
 
   <Tab title="REST API">
-    Use `GET /api/v1/organization/invitations`.
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/organization/invitations \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
 
     [REST reference: List pending invitations](/api-reference/rest/organization/list-pending-invitations)
   </Tab>

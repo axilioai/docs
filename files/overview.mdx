@@ -90,8 +90,9 @@ sort by creation time, filename, size, or source.
   </Tab>
   <Tab title="REST">
     ```bash
-    curl "https://api.axilio.ai/api/v1/files?limit=50" \
-      -H "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/files?limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
     `GET /api/v1/files` returns `files`, `total`, and `usage`.
