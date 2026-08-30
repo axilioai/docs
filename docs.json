@@ -50,10 +50,9 @@
             "pages": [
               "index",
               "introduction",
-              "quickstart",
-              "authentication",
               "cli",
-              "guides/search-x-with-the-interactive-cli"
+              "quickstart",
+              "authentication"
             ]
           },
           {
@@ -232,6 +231,11 @@
     ]
   },
   "redirects": [
+    {
+      "source": "/guides/search-x-with-the-interactive-cli",
+      "destination": "/cli",
+      "permanent": true
+    },
     {
       "source": "/go-quickstart",
       "destination": "/quickstart#go"

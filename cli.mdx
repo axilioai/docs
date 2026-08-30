@@ -1,7 +1,7 @@
 ---
-title: "CLI"
-sidebarTitle: "CLI"
-description: "Install the Axilio CLI, sign in, drive phones, and manage workflows, files, Telemetry, usage, billing, and API keys from a terminal."
+title: "Explore with the CLI"
+sidebarTitle: "Explore with the CLI"
+description: "Install the Axilio CLI, explore a mobile task one action at a time, and use platform operations from a terminal."
 ---
 
 The `axilio` CLI exposes phone control and platform operations to people,
@@ -49,24 +49,139 @@ axilio status
 For CI or another non-interactive environment, supply an organization-scoped
 API key through `AXILIO_API_KEY`. See [Authentication](/authentication).
 
-## Drive your first session
+## Explore a read-only task
 
-Start a session and export its ID into the current shell:
+Work out a mobile task one action at a time before turning it into an SDK
+script. This example opens X, searches for `agentic infrastructure`, and
+scrolls through the first few **Top** results without changing the account.
+
+### Before you start
+
+- Install the CLI above, run `axilio login`, and verify the setup with
+  `axilio doctor`.
+- Use a dedicated phone where X is already installed and signed in.
+- Make sure you are authorized to inspect the signed-in account. This guide
+  does not post, follow, like, message, or change settings.
+
+<Tip>
+  Explore the available commands with `axilio --help`. Run `man axilio` or
+  `axilio help --html` for the complete installed reference.
+</Tip>
+
+### Start a session
+
+In Bash or Zsh, list dedicated phones that can be allocated now, then start a
+session on one and select it for the current shell:
 
 ```bash
 axilio phones list
 eval "$(axilio sessions start --phone-id ph_123 --export)"
-axilio phone observe
-axilio phone tap --query "the search box"
-axilio phone type "axilio"
-axilio sessions stop "$AXILIO_SESSION" --yes
-unset AXILIO_SESSION
+
+cleanup() {
+  if [ -n "${AXILIO_SESSION:-}" ]; then
+    axilio sessions stop "$AXILIO_SESSION" --yes
+    unset AXILIO_SESSION
+  fi
+}
+trap cleanup EXIT
 ```
 
-`axilio phones list` shows the dedicated phones that can be allocated now.
+Replace `ph_123` with an ID from the first command. Every following
+`axilio phone` command uses `AXILIO_SESSION` automatically. The cleanup trap
+releases the phone if a later command fails or you exit the shell.
+
+<Note>
+  The pre-existing demo below uses `axilio phones mine`, which remains a valid
+  way to inspect all dedicated inventory. This guide uses `axilio phones list`
+  because it filters the result to phones that can be allocated immediately.
+</Note>
+
 The CLI saves session connection information locally. When several local
 sessions exist, use `--session` or `AXILIO_SESSION` to select the one a phone
 command should control.
+
+### Open X
+
+Observe the launcher, open the app drawer, and tap X:
+
+```bash
+axilio phone observe
+axilio phone swipe 244 950 244 300
+axilio phone tap --query "the X app"
+axilio phone observe
+```
+
+The swipe uses coordinates because opening the whole app drawer is a screen
+gesture, not a tappable element. These coordinates match the 488x1080 frame in
+the demo. Adjust them if `observe` reports a different screen size. The X tap
+uses a semantic target because one is available.
+
+### Search
+
+Focus the search field, enter the query, and submit it:
+
+```bash
+axilio phone tap --query "the Search field"
+axilio phone type "agentic infrastructure"
+axilio phone key enter
+axilio phone observe
+```
+
+The final `observe` verifies that X opened the **Top** results for the intended
+query before you continue.
+
+### Scroll through the top results
+
+Run these commands up to three times. Observe after each swipe so you can check
+the screen before continuing:
+
+```bash
+axilio phone swipe 244 900 244 260
+axilio phone observe
+```
+
+This swipe also uses coordinates because it scrolls the whole results view.
+
+### Stop the session
+
+Stop as soon as you finish, then clear the shell trap:
+
+```bash
+cleanup
+trap - EXIT
+```
+
+Screen recording is enabled by default unless the session or workflow turns it
+off. The CLI does not currently look up or download recordings. To replay this
+session, open **Sessions** in the
+[Dashboard](https://app.axilio.ai/dashboard), select the completed session, and
+use its recording when the status becomes `ready`. Python, Go, and REST lookup
+options are documented in [Recordings](/observability/recordings).
+
+### Watch the demo
+
+The original poster and recording still match the X interaction above. The
+inventory command shown in the recording is the supported `phones mine`
+variant described earlier.
+
+<video
+  controls
+  playsInline
+  preload="metadata"
+  poster="/videos/cli-demo-poster.jpg"
+  className="mx-auto w-full max-w-xs rounded-xl"
+  src="/videos/cli-demo.mp4"
+  title="Axilio interactive CLI demo"
+>
+  Your browser does not support video playback.
+</video>
+
+### Turn the exploration into code
+
+Once the sequence is reliable, reproduce it with the
+[Python or Go SDK](/quickstart). Keep semantic targets for taps, retain
+coordinate gestures only where the whole screen must move, observe after
+important transitions, and preserve guaranteed session cleanup.
 
 ## Command map
 
@@ -115,8 +230,8 @@ are published through
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Explore a task" icon="magnifying-glass" href="/guides/search-x-with-the-interactive-cli">
-    Search X one action at a time with semantic phone commands.
+  <Card title="SDK quickstart" icon="code" href="/quickstart">
+    Turn a proven CLI sequence into a Python or Go program.
   </Card>
   <Card title="Control reference" icon="hand-pointer" href="/driver/reference">
     Compare CLI commands with the Python and Go driver methods.
