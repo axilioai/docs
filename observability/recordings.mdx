@@ -20,6 +20,7 @@ Disable recording for one directly allocated phone:
 ```python
 allocation = client.phones.allocate(
     phone_type="android",
+    phone_id="ph_123",
     recording=False,
 )
 ```
@@ -105,6 +106,8 @@ with httpx.stream("GET", recording.url) as response:
   The CLI does not currently have a recording lookup or download command. Use
   the dashboard, Python or Go SDK, or the REST recording operation.
 </Note>
+
+[REST reference: Get a session recording](/api-reference/rest/phones/get-a-session-recording)
 
 ## Next steps
 

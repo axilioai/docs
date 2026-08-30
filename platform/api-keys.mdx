@@ -55,6 +55,8 @@ Listing, creating, and deleting API keys requires an organization admin.
       --header "Content-Type: application/json" \
       --data '{"name":"ci-bot"}'
     ```
+
+    [REST reference: Create an API key](/api-reference/rest/api-keys/create-an-api-key)
   </Tab>
 </Tabs>
 
@@ -96,6 +98,8 @@ Listing, creating, and deleting API keys requires an organization admin.
 
   <Tab title="REST API">
     Use `GET /api/v1/api-keys`.
+
+    [REST reference: List API keys](/api-reference/rest/api-keys/list-api-keys)
   </Tab>
 </Tabs>
 
@@ -147,6 +151,9 @@ every consumer, then delete the old key.
   <Tab title="REST API">
     Create the replacement with `POST /api/v1/api-keys`. Delete the old key
     with `DELETE /api/v1/api-keys/{key_id}` after migration.
+
+    REST references: [Create an API key](/api-reference/rest/api-keys/create-an-api-key) ·
+    [Delete an API key](/api-reference/rest/api-keys/delete-an-api-key)
   </Tab>
 </Tabs>
 

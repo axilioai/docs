@@ -179,6 +179,56 @@ html.light .api-role {
   background: rgba(0, 0, 0, 0.03);
 }
 
+/* ── Homepage agent prompt — one compact action that inherits the same quiet,
+   instrument-panel treatment as the standard cards. ─────────────────────── */
+.axilio-copy-prompt-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.08);
+  font: 700 0.78rem/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.axilio-copy-prompt-button:hover:not(:disabled),
+.axilio-copy-prompt-button[data-state="copied"] {
+  border-color: #10b981;
+  color: #ecfdf5;
+  background: rgba(16, 185, 129, 0.16);
+}
+
+.axilio-copy-prompt-button:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
+}
+
+.axilio-copy-prompt-button:disabled {
+  cursor: default;
+}
+
+.axilio-copy-prompt-button svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html.light .axilio-copy-prompt-button {
+  border-color: rgba(5, 150, 105, 0.38);
+  color: #047857;
+  background: rgba(16, 185, 129, 0.08);
+}
+
 /* ── Homepage interface chooser — four purpose-built, independently linked
    launch cards. The large surface owns the destination; SDK and CLI source
    links remain smaller, explicit secondary actions. ─────────────────────── */

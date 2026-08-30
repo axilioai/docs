@@ -43,7 +43,11 @@ The public API, SDKs, and CLI do not start checkout, renew, or cancel a rental.
         log.Fatal(err)
     }
     for _, rental := range rentals.Subscriptions {
-        fmt.Println(rental.ID, rental.Status, rental.CurrentPeriodEnd)
+        phoneID := "not assigned"
+        if rental.PhoneID != nil {
+            phoneID = *rental.PhoneID
+        }
+        fmt.Println(phoneID, rental.Status, rental.CurrentPeriodEnd)
     }
     ```
   </Tab>
@@ -54,6 +58,8 @@ The public API, SDKs, and CLI do not start checkout, renew, or cancel a rental.
       --url https://api.axilio.ai/api/v1/billing/phone-rental-subscriptions \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    [REST reference: List phone rentals](/api-reference/rest/billing/list-phone-rentals)
   </Tab>
 </Tabs>
 

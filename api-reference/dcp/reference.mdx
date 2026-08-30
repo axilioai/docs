@@ -26,7 +26,7 @@ more work.
 
 | Param | Type | Required | Description |
 | --- | --- | --- | --- |
-| `client_version` | string | No | Your client's version, for the phone's logs. |
+| `client_version` | string | No | Reserved informational field; the phone currently accepts but does not act on it. |
 | `min_protocol` | integer | No | Informational; the phone reports its own version in the result. |
 
 **Result**
@@ -127,7 +127,9 @@ Type a string into the focused field.
 **Result** — an empty object `{}`.
 
 ### `Keyboard.keyPress`
-Press a named key or a single printable character.
+Press a supported named key. Raw DCP accepts `enter` and `capslock`; the CLI
+and SDKs expose Enter as their customer-facing named key. Use
+`Keyboard.typeText` for printable text.
 
 ```json
 { "id": 7, "method": "Keyboard.keyPress", "params": { "key": "enter" } }
@@ -135,7 +137,7 @@ Press a named key or a single printable character.
 
 | Param | Type | Required | Description |
 | --- | --- | --- | --- |
-| `key` | string | Yes | A named key (`"enter"`, `"tab"`, `"backspace"`, ...) or a single character. |
+| `key` | string | Yes | `"enter"` or `"capslock"`. Other values are rejected. |
 | `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
@@ -180,7 +182,7 @@ Read the screen — its text and icons, with bounding boxes.
 Find one element by describing it in plain English.
 
 ```json
-{ "id": 10, "method": "Screen.find", "params": { "query": "the Settings icon" } }
+{ "id": 10, "method": "Screen.find", "params": { "query": "the search icon" } }
 ```
 
 | Param | Type | Required | Description |

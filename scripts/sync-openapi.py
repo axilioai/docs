@@ -17,6 +17,8 @@ renames; it just does the few things Mintlify needs that the spec can't express:
                  badge rendered above each endpoint (AXI-1123).
   5. MDX placeholders - escape angle-bracket sort placeholders so Mintlify does
                  not interpret them as JSX tags on generated endpoint pages.
+  6. known description drift - correct customer-visible schema prose when the
+                 deployed runtime contract is newer than its source comment.
 
 DROP is retained only as a thin safety net: the backend's openapi_guard_test now
 locks the surface at the source, but if a management/destructive route ever
@@ -75,6 +77,52 @@ def escape_mdx_placeholders(node):
                 node[index] = value
             else:
                 escape_mdx_placeholders(value)
+
+
+_DESCRIPTION_CORRECTIONS = {
+    (
+        "Persist telemetry spans for this workflow's runs (default true). "
+        "false skips the durable trace store; the live telemetry stream still "
+        "works while a run is active."
+    ): (
+        "Emit telemetry for this workflow's runs (default true). false suppresses "
+        "both live frames and durable trace storage."
+    ),
+    "OTel trace id (32 lowercase hex chars) of the session the log belongs to.": (
+        "Telemetry trace ID (32 lowercase hex characters) for the session that "
+        "produced this log."
+    ),
+    (
+        "OTel span id (16 lowercase hex chars). Upsert key: the live copy of "
+        "this span carries the same id."
+    ): (
+        "Telemetry span ID (16 lowercase hex characters). The live and archived "
+        "copies of a span use the same ID."
+    ),
+    (
+        "OTel trace id (32 lowercase hex chars), derived from the session id: "
+        "one session is one trace."
+    ): (
+        "Telemetry trace ID (32 lowercase hex characters), derived from the "
+        "session ID; one session produces one trace."
+    ),
+}
+
+
+def correct_known_description_drift(node):
+    """Normalize descriptions whose generated prose trails runtime behavior."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if isinstance(value, str):
+                node[key] = _DESCRIPTION_CORRECTIONS.get(value, value)
+            else:
+                correct_known_description_drift(value)
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            if isinstance(value, str):
+                node[index] = _DESCRIPTION_CORRECTIONS.get(value, value)
+            else:
+                correct_known_description_drift(value)
 
 
 # Safety net only. The backend curates the public surface at the source
@@ -164,6 +212,7 @@ def build(url: str, server: str, out: str):
     spec = fetch(url)
     spec["servers"] = [{"url": server, "description": "Production"}]
     strip_schema(spec)
+    correct_known_description_drift(spec)
     escape_mdx_placeholders(spec)
     drop_internal(spec)   # safety net only; backend curates at the source
     titlecase_tags(spec)

@@ -1,44 +1,45 @@
 ---
 title: "Phones and sessions"
 sidebarTitle: "Overview"
-description: "Choose a shared or dedicated phone, start a session, and release it when you finish."
+description: "Choose a dedicated phone, start a session, and release it when you finish."
 ---
 
-A **phone** is a real mobile device in Axilio's cloud. A **session** is the
-period when your organization controls one phone.
+A **phone** is a real Android device reserved for your organization. A
+**session** is the period when your organization controls that phone.
 
-You can start an interactive session and drive the phone yourself, or let a
-[workflow run](/workflows/overview) create the session. A run and its session
-have different IDs.
+Dedicated phones keep their apps and device state between sessions. You can
+start an interactive session and drive a phone yourself, or let a
+[workflow run](/workflows/overview) create the session. For a workflow run, the
+run ID is also its session ID.
 
-## Choose a phone
+## Before you allocate
 
-| Phone source | When to use it | Billing |
-| --- | --- | --- |
-| Shared pool | You need any available Android phone. | Phone time is metered while the session is active. |
-| Dedicated inventory | You need the same rented phone, its installed apps, or its saved state. | The phone is covered by its flat rental; its sessions add no phone-time charge. |
+Open [**Phones**](https://app.axilio.ai/dashboard) to rent a phone or inspect
+the dedicated phones your organization already rents. A phone must be idle and
+active before a new session can claim it.
 
-Availability is a snapshot. Another session can claim a free phone before your
-allocation request reaches the service, so the allocation result is always the
-authority.
+Availability is a snapshot. Another session can claim an idle phone before
+your allocation request reaches the service, so the allocation result is
+always the authority.
 
 ## Start a session
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Open [**Sessions**](https://app.axilio.ai/dashboard), choose your
-    organization, and click **Allocate A Phone**. Select the shared pool, any
-    available dedicated phone, or one exact dedicated phone.
+    Open [**Sessions**](https://app.axilio.ai/dashboard), click
+    **Allocate A Phone**, choose **Use A Dedicated Phone**, and select **Any
+    available** or one exact idle phone.
   </Tab>
 
   <Tab title="CLI">
     ```bash
-    axilio sessions start
+    axilio phones list
     axilio sessions start --phone-id ph_123
     ```
 
-    The first command uses the shared pool. The second pins a dedicated phone
-    returned by `axilio phones mine`.
+    `axilio phones list` returns the dedicated phones that can be allocated
+    now. Use `axilio phones mine` when you also need to see busy or offline
+    inventory.
   </Tab>
 
   <Tab title="Python SDK">
@@ -47,7 +48,7 @@ authority.
 
     client = Client()
 
-    with client.session("android") as driver:
+    with client.session("android", phone_id="ph_123") as driver:
         screen = driver.observe()
     # The phone is released when the block exits.
     ```
@@ -57,36 +58,50 @@ authority.
     ```go
     allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
         PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        PhoneID:   platformgo.String("ph_123"),
     })
     if err != nil {
         log.Fatal(err)
     }
-    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
-        PhoneID: allocation.PhoneID,
-    })
+    defer func() {
+        if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+            PhoneID: allocation.PhoneID,
+        }); err != nil {
+            log.Printf("release phone: %v", err)
+        }
+    }()
     ```
   </Tab>
 
   <Tab title="REST API">
-    Start a session with `POST /api/v1/phones:allocate`. Release it with
+    Start a session with `POST /api/v1/phones:allocate` and include the
+    dedicated phone's `phone_id`. Release it with
     `POST /api/v1/phones/{phone_id}:deallocate`.
 
-    See the [REST API reference](/api-reference/overview) for request and
-    response schemas.
+    See [Allocate a phone](/devices/allocate) for a complete request and
+    cleanup sequence.
+
+    REST references: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone) ·
+    [Release a phone](/api-reference/rest/phones/release-a-phone)
   </Tab>
 </Tabs>
 
 ## What a session gives you
 
-An allocation returns a `phone_id` and `session_id`. Depending on the options
-you enabled, it can also return:
+An allocation returns a `phone_id`, `session_id`, `control_url`, and
+`telemetry_url`. It also returns `live_view_url` unless you disabled hosted
+live view:
 
-- `control_url` for the Device Control Protocol
-- `telemetry_url` for the live Telemetry stream
-- `live_view_url` for the hosted interactive viewer
+- `control_url` connects to the Device Control Protocol.
+- `telemetry_url` connects to the live Telemetry stream. The URL is still
+  present when `telemetry=false`, but that session emits no frames.
+- `live_view_url` opens the hosted interactive viewer when live view is
+  enabled.
 
-Treat every returned URL as a credential. It is scoped to the session and stops
-accepting new connections after the session ends.
+Treat control and Telemetry URLs, plus token-authenticated live-view URLs, as
+credentials. They are scoped to the session and stop accepting new connections
+after the session ends. An organization-authenticated live-view URL instead
+requires Axilio sign-in and membership in the session's organization.
 
 ## Next steps
 
@@ -95,7 +110,7 @@ accepting new connections after the session ends.
     Start and release a session through each supported interface.
   </Card>
   <Card title="Discover phones" icon="list" href="/devices/discover">
-    Check shared capacity and your dedicated inventory.
+    Find an idle dedicated phone or inspect your complete inventory.
   </Card>
   <Card title="Session lifecycle" icon="clock" href="/devices/timeouts">
     Inspect sessions and understand idle and connection timeouts.

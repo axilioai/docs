@@ -15,6 +15,8 @@ Any WebSocket client works.
 
 - **An API key** — create one in the [dashboard](https://app.axilio.ai/dashboard).
   See [Authentication](/authentication).
+- **A dedicated phone ID** — choose an idle phone in **Phones** or run
+  `axilio phones list`.
 - **A WebSocket client.** For the examples: `pip install axilio websockets`.
 
 ## 1. Get a phone and its control URL
@@ -27,14 +29,15 @@ from axilio.platform import Client
 
 client = Client()
 
-device = client.phones.allocate(phone_type="android")
-print(device.control_url)
+device = client.phones.allocate(phone_type="android", phone_id="ph_123")
+control_url = device.control_url
 ```
 
 <Note>
-  The `control_url` is self-contained: its credential is embedded, so you connect
-  with no extra headers. It stops working when the session ends, so treat it as a
-  secret and don't cache it across sessions.
+  The `control_url` is self-contained: its credential is embedded, so you
+  connect with no extra headers. Pass it directly to your WebSocket client.
+  Never put it in logs, shell history, tickets, or chat, and do not cache it
+  across sessions. It stops working when the session ends.
 </Note>
 
 ## 2. Open the socket and handshake

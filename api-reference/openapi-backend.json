@@ -2632,7 +2632,7 @@
             "type": "integer"
           },
           "trace_id": {
-            "description": "OTel trace id (32 lowercase hex chars) of the session the log belongs to.",
+            "description": "Telemetry trace ID (32 lowercase hex characters) for the session that produced this log.",
             "type": "string"
           }
         },
@@ -2877,7 +2877,7 @@
             "type": "string"
           },
           "span_id": {
-            "description": "OTel span id (16 lowercase hex chars). Upsert key: the live copy of this span carries the same id.",
+            "description": "Telemetry span ID (16 lowercase hex characters). The live and archived copies of a span use the same ID.",
             "type": "string"
           },
           "span_type": {
@@ -2894,7 +2894,7 @@
             "description": "Span outcome. Always set in the archive; omitted on the live stream's \"start\" phase, where the span has no outcome yet."
           },
           "trace_id": {
-            "description": "OTel trace id (32 lowercase hex chars), derived from the session id: one session is one trace.",
+            "description": "Telemetry trace ID (32 lowercase hex characters), derived from the session ID; one session produces one trace.",
             "type": "string"
           }
         },
@@ -3921,7 +3921,7 @@
             "type": "boolean"
           },
           "telemetry": {
-            "description": "Persist telemetry spans for this workflow's runs (default true). false skips the durable trace store; the live telemetry stream still works while a run is active.",
+            "description": "Emit telemetry for this workflow's runs (default true). false suppresses both live frames and durable trace storage.",
             "type": "boolean"
           }
         },
@@ -4393,7 +4393,7 @@
             "type": "string"
           },
           "telemetry": {
-            "description": "Persist telemetry spans for this workflow's runs (default true). false skips the durable trace store; the live telemetry stream still works while a run is active.",
+            "description": "Emit telemetry for this workflow's runs (default true). false suppresses both live frames and durable trace storage.",
             "type": "boolean"
           }
         },

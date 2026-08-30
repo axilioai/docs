@@ -16,7 +16,7 @@ The same hosted viewer works outside the dashboard. A phone allocation returns
 from axilio.platform import Client
 
 client = Client()
-allocation = client.phones.allocate(phone_type="android")
+allocation = client.phones.allocate(phone_type="android", phone_id="ph_123")
 
 print(allocation.live_view_url)
 ```
@@ -42,6 +42,8 @@ organization, and sessions whose live view was disabled. Its response is a
 bearer viewer URL even when the allocation originally used org authentication.
 Minting a new URL does not revoke an older one.
 
+[REST reference: Mint a live-view token](/api-reference/rest/phones/mint-a-live-view-token)
+
 ## Choose authentication and input behavior
 
 ```python
@@ -49,6 +51,7 @@ from axilio import PhoneLiveViewOptions
 
 allocation = client.phones.allocate(
     phone_type="android",
+    phone_id="ph_123",
     live_view=PhoneLiveViewOptions(
         auth="token",
         view_only=True,
@@ -128,6 +131,9 @@ allocation URL in token mode and every URL returned by
 - Prefer `auth="org"` for internal sharing that should require membership.
 - End the session if a token-mode URL is exposed. The URL stops working when
   the session ends.
+
+Release directly allocated phones when you finish. Closing the viewer does not
+deallocate the phone.
 
 ## Next steps
 

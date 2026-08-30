@@ -1,77 +1,28 @@
 ---
 title: "Discover phones"
 sidebarTitle: "Discover"
-description: "Check shared-pool capacity and list every phone your organization rents."
+description: "Find an idle dedicated phone or inspect every phone your organization rents."
 ---
 
-The availability endpoint answers two different questions:
+Use the dedicated-phone inventory to choose the `phone_id` for a session. A
+phone can be allocated when its `status` is `active` and
+`current_session_id` is empty. The full inventory also shows phones already in
+a session and phones whose status is `inactive`, `maintenance`, or `suspended`.
 
-- How many shared phones are free now?
-- How many of your organization's dedicated phones are idle now?
-
-Use the dedicated inventory endpoint when you need IDs, nicknames, status, or
-the current session for every phone you rent.
-
-## Check availability
+## Find a phone
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Open [**Sessions**](https://app.axilio.ai/dashboard) and click
-    **Allocate A Phone**. The picker shows the shared option and the dedicated
-    phones that can be claimed.
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    capacity = client.phones.availability(phone_type="android")
-
-    print("shared free:", capacity.shared.available)
-    print("dedicated idle:", capacity.dedicated.idle)
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    phoneType := platformgo.PhonesAvailabilityRequestPhoneTypeAndroid
-    capacity, err := api.Phones.Availability(ctx, &platformgo.PhonesAvailabilityRequest{
-        PhoneType: &phoneType,
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println(capacity.Shared.Available, capacity.Dedicated.Idle)
-    ```
-  </Tab>
-
-  <Tab title="REST API">
-    ```bash
-    curl --silent --show-error --fail-with-body \
-      --url "https://api.axilio.ai/api/v1/phones/availability?phone_type=android" \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
-    ```
-  </Tab>
-</Tabs>
-
-Availability is advisory. Allocate the phone and handle a conflict if another
-request claims it first.
-
-The CLI does not expose a shared-capacity count. Run `axilio sessions start`
-without `--phone-id` to claim an available shared phone.
-
-## List dedicated inventory
-
-<Tabs sync={false}>
-  <Tab title="Dashboard">
-    Open [**Phones**](https://app.axilio.ai/dashboard), then search or filter the
-    organization's dedicated inventory.
+    Open [**Phones**](https://app.axilio.ai/dashboard). Search or filter your
+    dedicated inventory, then choose **Allocate** on an idle phone.
   </Tab>
 
   <Tab title="CLI">
     ```bash
-    # Dedicated phones that are free now.
+    # Dedicated phones that can be allocated now.
     axilio phones list
 
-    # Your complete dedicated inventory.
+    # Complete dedicated inventory, including busy and offline phones.
     axilio phones mine
     axilio phones mine -o json
     ```
@@ -82,7 +33,12 @@ without `--phone-id` to claim an available shared phone.
     inventory = client.phones.list(ownership="dedicated")
 
     for phone in inventory.phones or []:
-        print(phone.phone_id, phone.nickname, phone.status, phone.current_session_id)
+        print(
+            phone.phone_id,
+            phone.nickname,
+            phone.status,
+            phone.current_session_id,
+        )
     ```
   </Tab>
 
@@ -95,7 +51,7 @@ without `--phone-id` to claim an available shared phone.
         log.Fatal(err)
     }
     for _, phone := range inventory.Phones {
-        fmt.Println(phone.PhoneID, phone.Status)
+        fmt.Println(phone.PhoneID, phone.Status, phone.CurrentSessionID)
     }
     ```
   </Tab>
@@ -106,8 +62,14 @@ without `--phone-id` to claim an available shared phone.
       --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    This endpoint returns the full rented inventory. Require `status=active`
+    and an empty `current_session_id`, then handle an allocation
+    conflict in case another session claims it first.
+
+    [REST reference: List the organization's phones](/api-reference/rest/phones/list-the-orgs-phones)
   </Tab>
 </Tabs>
 
 Pass a returned `phone_id` to [Allocate a phone](/devices/allocate) when you
-need that exact phone.
+start the session.

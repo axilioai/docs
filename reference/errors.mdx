@@ -1,57 +1,312 @@
 ---
-title: "Errors"
+title: "Errors and recovery"
 sidebarTitle: "Errors"
-description: "How the SDK signals failures: ApiError for API calls, typed errors for device control."
+description: "Classify API, phone-control, workflow-run, and Dashboard live-video failures and choose a safe recovery."
 ---
 
-The SDK raises two kinds of error.
+Axilio reports failures at four customer-visible layers:
 
-## API calls
+1. **API errors** reject an HTTP request.
+2. **Phone-control errors** occur over the Device Control Protocol.
+3. **Run failures** happen after a workflow run was accepted.
+4. **Dashboard live-video errors** affect the browser viewer separately from
+   SDK or CLI control.
 
-Anything that talks to the API raises `axilio.platform.ApiError` on a failure.
-Check `status_code` and `body`:
+Identify the layer before retrying. A failed live-video connection, for
+example, does not necessarily mean the phone session or DCP control path failed.
 
-```python
-from axilio.platform import ApiError
+## API errors
 
-try:
-    run = client.runs.get("run_123")
-except ApiError as e:
-    if e.status_code == 404:
-        print("not found")
-    elif e.status_code == 429:
-        ...   # rate limited, back off and retry
-    else:
-        raise
-```
+HTTP failures use a Problem Details JSON body with a status and human-readable
+detail. Validation responses can also include field-specific errors.
 
-## Device control
+| Status | Meaning | Recovery |
+| --- | --- | --- |
+| `400 Bad Request` | A business rule or input check failed. | Read the detail, correct the request, and do not retry it unchanged. |
+| `401 Unauthorized` | The credential is missing, invalid, or expired. | Run `axilio login` or supply a valid organization-scoped API key. |
+| `402 Payment Required` | Balance, plan, or quota state blocks the operation. | Read the detail, then correct the account requirement in the Dashboard. |
+| `403 Forbidden` | The caller lacks the required organization permission. | Select the correct organization or ask an administrator for access. |
+| `404 Not Found` | The resource does not exist or is not visible to the organization. | Verify the ID and organization. |
+| `408 Request Timeout` | The request exceeded a server or gateway deadline. | Retry with backoff only when the operation is safe to repeat. |
+| `409 Conflict` | Current state conflicts with the request, such as a busy phone or duplicate active name. | Refresh the resource, resolve the conflict, and try again. |
+| `422 Unprocessable Entity` | The body or query does not match the endpoint schema. | Correct the fields identified by the validation errors. |
+| `429 Too Many Requests` | The caller exceeded a rate limit. | Honor retry guidance and back off. |
+| `500 Internal Server Error` | Axilio encountered an unexpected failure. | Retry once with backoff; report it if it persists. |
+| `502 Bad Gateway` | A phone or edge service rejected the operation. | Read the detail and correct the upstream condition. |
+| `503 Service Unavailable` | A service is temporarily unavailable. | Retry with backoff. |
+| `504 Gateway Timeout` | A phone or edge service missed its deadline. | Retry later; use a new session if the current one cannot recover. |
 
-Driving a phone raises typed errors from `axilio.drivers.mobile`:
+<Tabs sync={false}>
+  <Tab title="CLI">
+    The CLI writes errors to standard error and returns a stable exit status:
 
-```python
-from axilio.drivers.mobile import ElementNotFoundError, TimeoutError
+    ```bash
+    axilio runs get run_123
+    status=$?
 
-with client.session("android") as driver:
+    case "$status" in
+      0) echo "success" ;;
+      2) echo "invalid command or request" ;;
+      3) echo "authentication or permission failure" ;;
+      4) echo "not found" ;;
+      5) echo "timed out" ;;
+      6) echo "service or phone unavailable" ;;
+      7) echo "canceled" ;;
+      *) echo "unclassified failure" ;;
+    esac
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import ApiError
+
     try:
-        driver.find(query="a button that isn't there", timeout=5).tap()
-    except ElementNotFoundError:
-        ...
-    except TimeoutError:
-        ...
-```
+        run = client.runs.get("run_123")
+    except ApiError as error:
+        print(error.status_code, error.body)
+        if error.status_code in {429, 500, 503, 504}:
+            print("retry with backoff when the operation is safe")
+        else:
+            raise
+    ```
+  </Tab>
 
-Others include `ConnectionError`, `DeviceOfflineError`, `NotConnectedError`, and
-`UnauthorizedError`. They all subclass `axilio.drivers.mobile.AxilioError`, so you
-can catch broadly when you want to.
+  <Tab title="Go SDK">
+    ```go
+    _, err := api.Runs.Get(ctx, &platformgo.RunsGetRequest{
+        RunID: "run_123",
+    })
+    if err != nil {
+        var apiErr *core.APIError
+        if errors.As(err, &apiErr) {
+            log.Printf("status=%d", apiErr.StatusCode)
+        }
+        return err
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --include --silent --show-error \
+      --url https://api.axilio.ai/api/v1/runs/run_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    [REST reference: Get a run](/api-reference/rest/runs/get-a-run)
+  </Tab>
+</Tabs>
+
+### CLI exit statuses
+
+Branch on the status rather than parsing human-readable error text.
+
+| Status | Meaning |
+| --- | --- |
+| `0` | Success. |
+| `1` | Generic failure, including HTTP `402` and `409`. |
+| `2` | Invalid syntax, arguments, values, or HTTP `400`/`422`. |
+| `3` | Missing or rejected credentials, or HTTP `401`/`403`. |
+| `4` | Resource, active allocation, or element not found, or HTTP `404`. |
+| `5` | Timeout, including HTTP `408`. |
+| `6` | Service or phone unavailable, rate-limited, or HTTP `429`/`5xx`. |
+| `7` | Canceled by the user, shell, or system. |
+
+## Phone-control errors
+
+Python maps stable phone-control error codes to exception classes. Go returns `*mobile.Error`
+with `Code`, `Message`, and `Retryable`. The CLI maps them to the exit statuses
+above.
+
+| Code | Python exception | CLI exit | Meaning | Retryable by default |
+| --- | --- | --- | --- | --- |
+| `unknown_op` | `UnknownOpError` | `1` | The executor does not recognize the operation. | No |
+| `invalid_args` | `InvalidArgsError` | `2` | The command parameters are invalid. | No |
+| `no_allocation` | `NoAllocationError` | `4` | No active allocation exists for the command. | No |
+| `not_connected` | `NotConnectedError` | `6` | The executor cannot reach the phone agent. | No |
+| `device_offline` | `DeviceOfflineError` | `6` | The phone is temporarily unavailable. | Yes |
+| `unauthorized` | `UnauthorizedError` | `3` | The session credential was rejected. | No |
+| `internal` | `InternalError` | `1` | The executor encountered an unclassified failure. | No |
+| `canceled` | `CanceledError` | `7` | The operation context or deadline was canceled. | No |
+| `connection` | `ConnectionError` | `6` | The control transport exhausted its bounded reconnect budget. | Yes |
+| `session_ended` | `SessionEndedError` | `1` | The session ended or the connection was superseded. | No |
+| `control_held` | `ControlHeldError` | `1` | Another controller holds the session's control lease. | No |
+| `element_not_found` | `ElementNotFoundError` | `4` | A semantic selector matched nothing. | No |
+| `timeout` | `TimeoutError` | `5` | A command or wait loop exceeded its deadline. | Yes |
+
+Prefer the `retryable` value carried by the actual error over a table default.
+The SDK transport automatically attempts bounded reconnect and cursor resume
+before it surfaces a connection error.
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find "the Continue button" --timeout 5s
+    status=$?
+
+    case "$status" in
+      0) echo "found" ;;
+      4) echo "observe again or refine the description" ;;
+      5|6) echo "retry if the session is still active" ;;
+      *) echo "inspect stderr" ;;
+    esac
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from axilio.drivers.mobile import AxilioError, ElementNotFoundError
+
+    with client.session("android", phone_id="ph_123") as driver:
+        try:
+            driver.find(query="the Continue button", timeout=5).tap()
+        except ElementNotFoundError:
+            print("observe again or refine the description")
+        except AxilioError as error:
+            print(error.code, error.retryable, error.message)
+            if not error.retryable:
+                raise
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    element, err := driver.Find("the Continue button")
+    if err != nil {
+        if mobile.IsElementNotFound(err) {
+            log.Print("observe again or refine the description")
+            return nil
+        }
+        var driverErr *mobile.Error
+        if errors.As(err, &driverErr) {
+            log.Printf("code=%s retryable=%t", driverErr.Code, driverErr.Retryable)
+        }
+        return err
+    }
+    return element.Tap()
+    ```
+  </Tab>
+</Tabs>
+
+For `session_ended`, create or select a live session. For `control_held`, close
+or coordinate with the existing controller instead of retrying against the
+one-controller guardrail. See [Reconnect and resume](/api-reference/dcp/reconnect)
+for the transport contract.
+
+## Workflow-run failures
+
+Creating a run can succeed while the run later fails waiting for a phone or
+executing workflow code. A successful fetch of a failed run still returns HTTP
+`200` and CLI exit status `0`; branch on the run's `status` field.
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio runs get run_123 -o json
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    run = client.runs.get("run_123")
+    if run.status == "failed":
+        print(run.error_message)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    run, err := api.Runs.Get(ctx, &platformgo.RunsGetRequest{
+        RunID: "run_123",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    if run.GetStatus() == platformgo.RunResponseStatusFailed {
+        if message := run.GetErrorMessage(); message != nil {
+            log.Print(*message)
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/runs/run_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    [REST reference: Get a run](/api-reference/rest/runs/get-a-run)
+  </Tab>
+</Tabs>
+
+Use `error_message` for the terminal reason. Inspect the run's
+[Telemetry](/observability/telemetry) and retained
+[frames](/observability/frames) for the execution sequence and output logs.
+
+## Dashboard live-video errors
+
+The Dashboard can report that it could not reach the live phone, lost the
+connection, or reached the live-viewer limit. These messages describe the
+browser's WebRTC video and input path, not the DCP connection used by the CLI
+and SDKs.
+
+After an established video connection drops, the Dashboard retries up to three
+times before presenting **Reconnect**. A viewer-limit message means another
+Dashboard or embedded viewer occupies the available slot; close one before
+reconnecting.
+
+The CLI and SDKs do not expose this Dashboard live-video state. If you already
+control the same session, test the independent DCP path:
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio sessions current
+    axilio phone observe
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    screen = driver.observe()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    screen, err := driver.Observe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(screen.Hash)
+    ```
+  </Tab>
+</Tabs>
+
+If control succeeds, only the browser viewer needs recovery. If it fails, use
+the DCP error above. A session created only in the Dashboard is not
+automatically attached to a separate CLI process.
+
+## Report a persistent problem
+
+Include the method or command, error status or code, affected resource IDs,
+approximate time, and whether the live-video path, control path, or both were
+affected. Do not share API keys, session credentials, `control_url`,
+`telemetry_url`, or `live_view_url`.
 
 ## Next steps
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="Configuration" icon="gear" href="/reference/configuration">
-    Client options and environment variables.
+    Configure credentials, retries, timeouts, and client state.
   </Card>
-  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
-    Where device-control errors come from.
+  <Card title="Session lifecycle" icon="clock" href="/devices/timeouts">
+    Understand session and connection deadlines.
+  </Card>
+  <Card title="Live view" icon="tower-broadcast" href="/observability/live-view">
+    Protect and recover the browser viewer.
   </Card>
 </CardGroup>

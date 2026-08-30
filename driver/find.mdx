@@ -1,116 +1,210 @@
 ---
 title: "Find"
 sidebarTitle: "Find"
-description: "Locate something on the screen by its text, or by describing it in plain English."
+description: "Locate something on the screen by visible text or a natural-language description."
 ---
 
-`find` locates something on the screen so you can act on it. There are two ways:
-by its **text**, or by **describing** it.
+Find an element before you act on it. Use OCR text matching when a visible label
+exists and semantic vision when the target is easier to describe.
 
-## By its text
+The examples assume you already selected a
+[dedicated-phone session](/devices/allocate).
 
-[`find_text`](/driver/reference#driver-find_text) finds anything with a visible label, like a button or a menu item.
-Fast and exact.
+## Find by visible text
 
-```python
-driver.find_text("Settings").tap()
-```
+Text matching returns the first OCR element that matches. By default the match
+is a case-insensitive substring. Exact matching is case-sensitive.
 
-It hands back what it found, or nothing if it's not there:
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find-text "Continue" -o json
+    axilio phone find-text "Continue" --exact -o json
+    ```
 
-```python
-result = driver.find_text("Sign in")
-if result:
-    result.tap()
-```
+    A miss succeeds with `null` in JSON output.
+  </Tab>
 
-<Warning>
-  Because it can come back empty, calling `.tap()` right away can fail if the
-  screen hasn't loaded. To be safe, [wait for the text](/driver/wait). That waits
-  until it appears, then taps it:
+  <Tab title="Python SDK">
+    ```python
+    result = driver.find_text("Continue")
+    if result is not None:
+        result.tap()
+    ```
+  </Tab>
 
-  ```python
-  driver.wait_for_text("Sign in").tap()
-  ```
-</Warning>
+  <Tab title="Go SDK">
+    ```go
+    result, err := driver.FindText("Continue", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if result != nil {
+        if err := result.Tap(); err != nil {
+            log.Fatal(err)
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
 
-Get every match with [`find_all_text`](/driver/reference#driver-find_all_text). Handy for lists and feeds:
+If the screen may still be loading, [wait for the text](/driver/wait) instead of
+acting on a possible empty result.
 
-```python
-for item in driver.find_all_text(contains="Notification"):
-    print(item.text)
-```
+## Find every text match
 
-## By describing it
+Use a substring for a simple list or a regular expression for structured text.
+The two criteria are mutually exclusive.
 
-When there's no text to match, like an icon or an image, describe it in plain
-English with `find`:
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find-all-text "Notification" -o json
+    axilio phone find-all-text --pattern '\$[0-9]+\.[0-9]{2}' -o json
+    ```
 
-```python
-driver.find(query="the heart icon under the photo").tap()
-```
+    With neither criterion, `find-all-text` returns every OCR text element. Add
+    `--ocr-engine premium` for a harder screen.
+  </Tab>
 
-Unlike `find_text`, `find` speaks up when it can't find what you asked for:
+  <Tab title="Python SDK">
+    ```python
+    for item in driver.find_all_text(contains="Notification"):
+        print(item.text)
 
-```python
-from axilio.drivers.mobile import ElementNotFoundError
+    prices = driver.find_all_text(pattern=r"\$\d+\.\d{2}")
+    ```
+  </Tab>
 
-try:
-    driver.find(query="the shopping cart").tap()
-except ElementNotFoundError:
-    print("no cart on this screen")
-```
+  <Tab title="Go SDK">
+    ```go
+    items, err := driver.FindAllText("Notification", "")
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, item := range items {
+        fmt.Println(item.Text)
+    }
+    ```
+  </Tab>
+</Tabs>
 
-<Note>
-  Describing something uses [Argus](/drivers/models), Axilio's vision model, so it
-  costs a little more than finding by text. On steps you run a lot, prefer text.
-  You can [see the per-call cost](/usage/overview) of every vision call.
-</Note>
+## Find by description
 
-## Which to use
+Semantic `find` uses a billable [vision model](/drivers/models). It raises an
+element-not-found error when no target matches.
 
-- **Text** when there's a label you can read. It's faster and exact.
-- **Describing** when there isn't: an icon, or something easier to describe than
-  to name.
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find "the search icon" -o json
+    ```
 
-## Picking the engine and model
+    A miss returns the CLI not-found exit status (`4`). Use
+    `axilio phone tap --query "the search icon"` when you want to find and tap
+    in one command.
+  </Tab>
 
-Both ways take options. Text reading has a free engine and a premium one that
-handles harder screens; describing can run on [any supported model](/drivers/models):
+  <Tab title="Python SDK">
+    ```python
+    from axilio.drivers.mobile import ElementNotFoundError
 
-```python
-driver.find_text("Sign in", ocr_engine="premium")
-driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
-```
+    try:
+        driver.find(query="the search icon").tap()
+    except ElementNotFoundError:
+        print("search icon not found")
+    ```
+  </Tab>
 
-Repeating those on every call gets old, so you can set them once for the whole
-session — any call that doesn't pass its own value uses the default:
+  <Tab title="Go SDK">
+    ```go
+    target, err := driver.Find("the search icon")
+    if err != nil {
+        if mobile.IsElementNotFound(err) {
+            log.Print("search icon not found")
+            return
+        }
+        log.Fatal(err)
+    }
+    if err := target.Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
-```python
-with client.session(
-    "android",
-    default_ocr_engine="premium",
-    default_model="anthropic/claude-haiku-4.5",
-) as driver:
-    driver.find_text("Sign in")           # premium engine
-    driver.find(query="the buy button")   # haiku
-```
+Review individual inference charges in [Usage](/usage/overview). Prefer OCR
+matching when a stable visible label exists.
 
-See [Models](/drivers/models) for every id, what it does, and what it costs.
+## Choose the OCR engine and model
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find "the buy button" \
+      --ocr-engine premium \
+      --model anthropic/claude-haiku-4.5
+    ```
+
+    `find`, `find-all-text`, and `observe` accept an OCR-engine override.
+    `find-text` and `wait-for` do not.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.find_text("Sign in", ocr_engine="premium")
+    driver.find(
+        query="the buy button",
+        model="anthropic/claude-haiku-4.5",
+    )
+    ```
+
+    Set defaults for one dedicated-phone session:
+
+    ```python
+    with client.session(
+        "android",
+        phone_id="ph_123",
+        default_ocr_engine="premium",
+        default_model="anthropic/claude-haiku-4.5",
+    ) as driver:
+        driver.find_text("Sign in")
+        driver.find(query="the buy button")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    driver := mobile.ConnectRemote(
+        controlURL,
+        mobile.WithDefaultOCREngine("premium"),
+        mobile.WithDefaultModel("anthropic/claude-haiku-4.5"),
+    )
+    defer driver.Close()
+
+    if _, err := driver.Find("the buy button"); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Text filtering and wait loops are client-side helpers. Semantic find is backed
+by DCP `Screen.find`; none of these live phone operations is a REST endpoint.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Tap" icon="hand-pointer" href="/driver/tap">
-    Tap what you found.
-  </Card>
-  <Card title="Type" icon="keyboard" href="/driver/type">
-    Type into what you found.
-  </Card>
-  <Card title="Observe" icon="table-list" href="/driver/observe">
-    Read the whole screen at once.
+    Act on what you found.
   </Card>
   <Card title="Wait" icon="hourglass-half" href="/driver/wait">
-    Wait for something before you act on it.
+    Wait for a target before acting.
+  </Card>
+  <Card title="Observe" icon="table-list" href="/driver/observe">
+    Read and search one complete screen snapshot.
+  </Card>
+  <Card title="Models" icon="layer-group" href="/drivers/models">
+    Choose a vision model and understand inference pricing.
   </Card>
 </CardGroup>

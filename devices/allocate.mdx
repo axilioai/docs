@@ -1,11 +1,11 @@
 ---
 title: "Allocate a phone"
 sidebarTitle: "Allocate"
-description: "Start a shared or dedicated phone session and release it safely."
+description: "Start a session on a dedicated phone and release it safely."
 ---
 
-Allocate from the shared pool when any available Android phone works. Pass a
-`phone_id` when you need one exact [dedicated phone](/devices/dedicated).
+Start a session on any idle dedicated phone, or pass a `phone_id` to choose an
+exact device.
 
 ## Start and release
 
@@ -13,26 +13,26 @@ Allocate from the shared pool when any available Android phone works. Pass a
   <Tab title="Dashboard">
     1. Open [**Sessions**](https://app.axilio.ai/dashboard) and choose your organization.
     2. Click **Allocate A Phone**.
-    3. Choose the shared pool, any available dedicated phone, or one exact dedicated phone.
+    3. Choose **Use A Dedicated Phone**, then select **Any available** or one exact idle phone.
     4. Optionally add a session name, tags, or an idle timeout.
     5. Click **Allocate**.
-    6. Click **Deallocate** when you finish.
+    6. Click **Release** in the session list or **Deallocate** in the active session view when you finish.
   </Tab>
 
   <Tab title="CLI">
     ```bash
-    # Use the shared pool.
-    axilio sessions start
+    axilio phones list
+    eval "$(axilio sessions start --phone-id ph_123 --export)"
 
-    # Or pin one dedicated phone.
-    axilio sessions start --phone-id ph_123
-
-    # Release by session ID or phone ID.
-    axilio sessions stop sess_123 --yes
+    # Release by session ID and clear the shell selection.
+    axilio sessions stop "$AXILIO_SESSION" --yes
+    unset AXILIO_SESSION
     ```
 
-    Use `eval "$(axilio sessions start --export)"` when one shell must pin the
-    new session through `AXILIO_SESSION`.
+    `--export` prints a shell assignment that pins later CLI commands to the
+    new session. If you do not need that environment variable, run
+    `axilio sessions start --phone-id ph_123` and retain the returned session
+    ID for cleanup.
   </Tab>
 
   <Tab title="Python SDK">
@@ -52,7 +52,7 @@ Allocate from the shared pool when any available Android phone works. Pass a
     ```python
     allocation = client.phones.allocate(
         phone_type="android",
-        phone_id="ph_123",
+        pool="dedicated",
     )
     try:
         print(allocation.phone_id, allocation.session_id)
@@ -60,13 +60,16 @@ Allocate from the shared pool when any available Android phone works. Pass a
     finally:
         client.phones.deallocate(allocation.phone_id)
     ```
+
+    `pool="dedicated"` chooses any idle rented phone. Add
+    `phone_id="ph_123"` to pin the request to an exact phone.
   </Tab>
 
   <Tab title="Go SDK">
     ```go
     allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
         PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
-        PhoneID:   platformgo.String("ph_123"), // omit for the shared pool
+        Pool:      platformgo.PhoneAllocateRequestPoolDedicated.Ptr(),
     })
     if err != nil {
         log.Fatal(err)
@@ -79,6 +82,9 @@ Allocate from the shared pool when any available Android phone works. Pass a
         }
     }()
     ```
+
+    `PoolDedicated` chooses any idle rented phone. Add
+    `PhoneID: platformgo.String("ph_123")` to pin the request.
   </Tab>
 
   <Tab title="REST API">
@@ -88,7 +94,7 @@ Allocate from the shared pool when any available Android phone works. Pass a
       --url https://api.axilio.ai/api/v1/phones:allocate \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
       --header "Content-Type: application/json" \
-      --data '{"phone_type":"android"}')
+      --data '{"phone_type":"android","pool":"dedicated"}')
 
     PHONE_ID=$(printf '%s' "$ALLOCATION" | jq -r '.phone_id')
     printf '%s\n' "$ALLOCATION" | jq
@@ -99,13 +105,19 @@ Allocate from the shared pool when any available Android phone works. Pass a
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
-    Add `"phone_id":"ph_123"` to pin a dedicated phone.
+    REST references: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone) ·
+    [Release a phone](/api-reference/rest/phones/release-a-phone)
   </Tab>
 </Tabs>
 
+The Dashboard, generated SDK allocation methods, and REST API support **Any
+available** dedicated selection. The CLI and Python `client.session()` helper
+use the exact-phone path shown above, so give them a dedicated `phone_id`.
+
 <Warning>
-  Direct allocation is a lease. Release the phone when you finish. Shared phone
-  time remains billable until release or automatic session expiry.
+  Direct allocation is a lease. Release the phone when you finish so another
+  session can use it. Dedicated-phone rental charges are separate from session
+  lifetime.
 </Warning>
 
 ## Allocation options
@@ -121,6 +133,12 @@ The public API can also set:
 - `ttl.idle_timeout_seconds` to release an unattended phone
 - `workflow_id` to associate an explicitly allocated session with a workflow
 
+Recording, Telemetry, file capture, and interactive token-authenticated live
+view default to enabled. A session name uses 1 to 64 letters, numbers, dots,
+hyphens, or underscores and must be unique among active sessions. An allocation
+accepts up to 50 tags; tag keys are limited to 40 UTF-8 bytes and values to 128
+UTF-8 bytes.
+
 The Python `client.session()` helper intentionally exposes the common
 interactive path. Use `client.phones.allocate()` when you need the full option
 set.
@@ -129,7 +147,7 @@ set.
 
 <CardGroup cols={2}>
   <Card title="Discover phones" icon="list" href="/devices/discover">
-    Check shared availability or find a dedicated phone ID.
+    Find an idle dedicated phone ID.
   </Card>
   <Card title="Session lifecycle" icon="clock" href="/devices/timeouts">
     Configure idle timeout and inspect active or completed sessions.

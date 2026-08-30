@@ -5,12 +5,20 @@ description: "Run agents on real Android phones and control them through the Das
 mode: "wide"
 ---
 
-Axilio gives agents **real Android phones in the cloud**. Allocate a phone,
-control its screen, run reusable workflows, and inspect what happened through
-the interface that fits your application.
+Axilio gives agents **real, dedicated Android phones in the cloud**. Pick up a
+phone, read its screen, then tap, type, and swipe just as a person would.
 
-Use Axilio when a mobile app has no suitable API. Your agent can interact with
-the app through the same screen and carrier network a person uses.
+Use Axilio when a mobile app has no suitable public API. Your agent can work
+through the same screen and carrier network a person uses, then turn a tested
+interaction into a repeatable Python or Go program.
+
+## Give your AI a phone
+
+Paste this prompt into Claude, Codex, or Cursor. It installs the official CLI,
+asks you to complete secure authentication, verifies a dedicated-phone session
+with a read-only observation, and then helps you build a durable SDK script.
+
+<div id="axilio-agent-prompt-copy" />
 
 <CardGroup cols={2}>
   <Card title="SDK quickstart" icon="rocket" href="/quickstart">
@@ -31,7 +39,7 @@ the app through the same screen and carrier network a person uses.
 
 <CardGroup cols={3}>
   <Card title="Phones and Sessions" icon="mobile" href="/devices/overview">
-    Find available phones, allocate a session, and release it when you finish.
+    Choose a dedicated phone, allocate a session, and release it when you finish.
   </Card>
   <Card title="Workflows and Runs" icon="diagram-project" href="/workflows/overview">
     Save session-driving code as a workflow and run it on demand.

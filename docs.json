@@ -52,7 +52,8 @@
               "introduction",
               "quickstart",
               "authentication",
-              "cli"
+              "cli",
+              "guides/search-x-with-the-interactive-cli"
             ]
           },
           {
@@ -104,25 +105,21 @@
             ]
           },
           {
-            "group": "Account and Billing",
+            "group": "Billing",
             "icon": "credit-card",
             "pages": [
-              {
-                "group": "Billing",
-                "pages": [
-                  "billing/overview",
-                  "billing/balance-and-invoices",
-                  "billing/plans"
-                ]
-              },
-              {
-                "group": "Organization",
-                "pages": [
-                  "org/overview",
-                  "org/members",
-                  "platform/api-keys"
-                ]
-              }
+              "billing/overview",
+              "billing/balance-and-invoices",
+              "billing/plans"
+            ]
+          },
+          {
+            "group": "Organization",
+            "icon": "users",
+            "pages": [
+              "org/overview",
+              "org/members",
+              "platform/api-keys"
             ]
           },
           {
@@ -237,7 +234,7 @@
   "redirects": [
     {
       "source": "/go-quickstart",
-      "destination": "/quickstart"
+      "destination": "/quickstart#go"
     },
     {
       "source": "/concepts/devices",
@@ -361,11 +358,11 @@
     },
     {
       "source": "/vision/locate",
-      "destination": "/api-reference/vision/inference/run-locate"
+      "destination": "/api-reference/vision/vision/run-locate"
     },
     {
       "source": "/vision/detect",
-      "destination": "/api-reference/vision/inference/run-inference"
+      "destination": "/api-reference/vision/vision/run-inference"
     },
     {
       "source": "/driver/models",

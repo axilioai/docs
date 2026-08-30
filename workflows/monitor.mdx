@@ -4,8 +4,9 @@ sidebarTitle: "Monitor"
 description: "List, inspect, watch, cancel, and summarize workflow runs."
 ---
 
-Use the run ID returned at creation time. A run's `session_id` appears after a
-phone starts it; the two IDs are intentionally different.
+Use the run ID returned at creation time. For a workflow run, that run ID is
+also the session ID. Phone and session details populate after Axilio allocates
+the phone; the ID does not change.
 
 ## List and inspect runs
 
@@ -54,6 +55,8 @@ phone starts it; the two IDs are intentionally different.
   <Tab title="REST API">
     Use `GET /api/v1/runs` to list recent runs and
     `GET /api/v1/runs/{run_id}` for one run.
+
+    REST references: [List runs](/api-reference/rest/runs/list-runs) · [Get a run](/api-reference/rest/runs/get-a-run)
   </Tab>
 </Tabs>
 
@@ -108,6 +111,8 @@ See [Telemetry](/observability/telemetry) for SDK helpers and archive behavior.
 
   <Tab title="REST API">
     Send `POST /api/v1/runs/{run_id}:cancel`.
+
+    [REST reference: Cancel a run](/api-reference/rest/runs/cancel-a-run)
   </Tab>
 </Tabs>
 
@@ -155,6 +160,9 @@ bounded time window and statistics for a workflow's total and success rate.
   <Tab title="REST API">
     Use `GET /api/v1/runs/history` for a reporting window and
     `GET /api/v1/runs/stats/{workflow_id}` for workflow statistics.
+
+    REST references: [List run history](/api-reference/rest/runs/list-run-history) ·
+    [Get workflow stats](/api-reference/rest/runs/get-workflow-stats)
   </Tab>
 </Tabs>
 

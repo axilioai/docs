@@ -4,8 +4,8 @@ sidebarTitle: "Run"
 description: "Queue a workflow immediately on one or more phones."
 ---
 
-One entry in `runs` creates one run. Every run gets a unique run ID and later a
-separate session ID when a phone starts it.
+One entry in `runs` creates one run. Its unique run ID is also used as the
+session ID when the phone starts it.
 
 ## Queue a run
 
@@ -14,7 +14,7 @@ separate session ID when a phone starts it.
     1. Open [**Workflows**](https://app.axilio.ai/dashboard).
     2. Select the workflow and click **Run**.
     3. Choose **Run Now**.
-    4. Choose shared allocation or select dedicated phones.
+    4. Choose **Use Dedicated Phones**, then select one or more phones.
     5. Set **Number of Runs** and **Queue Timeout (min)**, then start the run.
   </Tab>
 
@@ -69,6 +69,8 @@ separate session ID when a phone starts it.
         "start_timeout_seconds": 300
       }'
     ```
+
+    [REST reference: Start a run](/api-reference/rest/runs/start-a-run)
   </Tab>
 </Tabs>
 
@@ -132,6 +134,8 @@ Create one run entry per execution:
     ```
 
     The endpoint accepts 1–1,000 entries per request.
+
+    [REST reference: Start a run](/api-reference/rest/runs/start-a-run)
   </Tab>
 </Tabs>
 
@@ -139,7 +143,7 @@ Concurrency and phone availability determine how many runs execute at once.
 The remainder stay queued until a phone becomes available or their start
 timeout expires.
 
-## Pin dedicated phones
+## Select dedicated phones
 
 Set `phone_id` on each run entry when that run must use one exact dedicated
 phone:

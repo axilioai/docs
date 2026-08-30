@@ -39,7 +39,7 @@ deduplicates replayed frames:
 from axilio.platform import Client
 
 client = Client()
-allocation = client.phones.allocate(phone_type="android")
+allocation = client.phones.allocate(phone_type="android", phone_id="ph_123")
 
 telemetry = client.telemetry(
     allocation.session_id,
@@ -108,6 +108,8 @@ for frame in telemetry.tail():
 
 The token operation is org-scoped and read-only. It refuses inactive sessions.
 For an ended session, read [archived frames](/observability/frames) instead.
+
+[REST reference: Mint a Telemetry stream URL](/api-reference/rest/phones/mint-a-telemetry-stream-url)
 
 ## Stream behavior
 

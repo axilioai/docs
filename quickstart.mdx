@@ -13,6 +13,8 @@ will follow your selection.
 - **An Axilio API key:** open the [Dashboard](https://app.axilio.ai/dashboard),
   select your organization, and choose **API Keys**. See
   [Authentication](/authentication) for details.
+- **A dedicated phone ID:** open **Phones** in the Dashboard and choose an idle
+  phone, or run `axilio phones list`. Replace `ph_123` below with its ID.
 
 <Tabs>
   <Tab title="Python" id="python">
@@ -69,7 +71,7 @@ from axilio.platform import Client
 client = Client()
 
 # The context manager allocates a phone and releases it on every exit path.
-with client.session("android") as driver:
+with client.session("android", phone_id="ph_123") as driver:
     screen = driver.observe()
     print(f"Found {len(screen.texts)} text regions and {len(screen.icons)} icons")
 
@@ -115,6 +117,7 @@ func run() error {
 
     session, err := c.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
         PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        PhoneID:   platformgo.String("ph_123"),
     })
     if err != nil {
         return fmt.Errorf("allocate phone: %w", err)

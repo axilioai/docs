@@ -1,66 +1,79 @@
 ---
 title: "Screen"
 sidebarTitle: "Screen"
-description: "What observe() returns — a snapshot of all on-screen text and icons, queryable without re-capturing."
+description: "Query one observed snapshot without capturing the phone again."
 ---
 
-A `Screen` is what [`driver.observe()`](/driver/reference#driver-observe) returns:
-a single snapshot of all recognized text and icons. Query it locally, with no round
-trip to the device.
+`observe` returns a `Screen`: one snapshot of recognized text, icons,
+dimensions, hash, and capture time. Local screen queries do not make another
+device or inference request.
 
-```python
-screen = driver.observe()
-row = screen.find_text("Sign in")            # Element | None
-prices = screen.find_all_text(contains="$")  # list[Element]
-```
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    screen = driver.observe()
+    row = screen.find_text("Sign in")
+    prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
+    ```
+  </Tab>
 
-## Methods
+  <Tab title="Go SDK">
+    ```go
+    screen, err := driver.Observe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    row := screen.FindText("Sign in", false)
+    if row != nil {
+        fmt.Println(row.Text)
+    }
+    prices, err := screen.FindAllText("", `\$\d+\.\d{2}`)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(len(prices))
+    ```
+  </Tab>
 
-### `screen.find_text()`
-Best text match in the snapshot.
+  <Tab title="CLI JSON">
+    ```bash
+    axilio phone observe -o json > screen.json
+    jq '.texts[] | select(.text | contains("Sign in"))' screen.json
+    ```
+  </Tab>
+</Tabs>
 
-```python
-screen.find_text("Total", exact=False)
-```
+## Find one text element
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `text` | `str` | required | The text to match. |
-| `exact` | `bool` | `False` | Require the whole label to match, not a substring. |
+Python `screen.find_text(text, exact=False)` and Go
+`screen.FindText(text, exact)` return the first matching OCR element or an empty
+result. A non-exact match is a case-insensitive substring; an exact match is
+case-sensitive.
 
-**Returns** <code><a href="/driver/element">Element</a> | None</code>.
+## Find all text elements
 
-### `screen.find_all_text()`
-Every text match in the snapshot.
-
-```python
-screen.find_all_text(pattern=r"\$\d+\.\d{2}")
-```
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `contains` | `str` | `None` | Keep matches containing this substring. |
-| `pattern` | `str` | `None` | Keep matches against this regular expression. |
-
-**Returns** <code>list[<a href="/driver/element">Element</a>]</code>.
+Python `screen.find_all_text(contains=..., pattern=...)` and Go
+`screen.FindAllText(contains, pattern)` return every match. Choose either a
+substring or a regular expression, not both. With neither criterion, the
+method returns all recognized text.
 
 ## Fields
 
-| Field | Type | Description |
-|---|---|---|
-| `screen.texts` | <code>list[<a href="/driver/element">Element</a>]</code> | Every recognized text element. |
-| `screen.icons` | `list` | Detected icons, each with `bbox`, `center`, `confidence`. |
-| `screen.width`, `screen.height` | `int` | Screen dimensions, in pixels. |
-| `screen.captured_at` | `datetime` | When the snapshot was taken. |
-| `screen.hash` | `str` | Content hash. Compare across snapshots to detect change. |
+| Python | Go | Description |
+| --- | --- | --- |
+| `screen.texts` | `screen.Texts` | Recognized text elements. |
+| `screen.icons` | `screen.Icons` | Detected icons with geometry and confidence. |
+| `screen.width`, `screen.height` | `screen.Width`, `screen.Height` | Screen dimensions in pixels. |
+| `screen.captured_at` | `screen.CapturedAt` | When the snapshot was captured. |
+| `screen.hash` | `screen.Hash` | Content hash for comparing snapshots. |
 
 ## See also
 
 <CardGroup cols={2}>
-  <Card title="Driver" icon="mobile" href="/driver/reference">
-    `observe()` and every other action.
+  <Card title="Observe" icon="table-list" href="/driver/observe">
+    Capture and inspect the current screen.
   </Card>
   <Card title="Element" icon="crosshairs" href="/driver/element">
-    The items a screen holds.
+    Act on a located result.
   </Card>
 </CardGroup>

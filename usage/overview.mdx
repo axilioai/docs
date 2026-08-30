@@ -75,6 +75,8 @@ The public usage surface has three views:
       --url "https://api.axilio.ai/api/v1/usage/metrics?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&granularity=daily" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    [REST reference: Get usage metrics](/api-reference/rest/usage/get-usage-metrics)
   </Tab>
 </Tabs>
 
@@ -114,6 +116,8 @@ and billing processing state for each phone session.
   <Tab title="REST API">
     Use `GET /api/v1/usage/sessions` with required `start_date` and `end_date`
     query parameters.
+
+    [REST reference: List phone sessions with cost](/api-reference/rest/usage/list-phone-sessions-with-cost)
   </Tab>
 </Tabs>
 
@@ -168,6 +172,8 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
   <Tab title="REST API">
     Use `GET /api/v1/usage/inferences` with a reporting window and optional
     endpoint, model, session, search, and paging filters.
+
+    [REST reference: List inference calls](/api-reference/rest/usage/list-inference-calls)
   </Tab>
 </Tabs>
 

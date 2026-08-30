@@ -45,6 +45,8 @@ description: "Read your balance, add funds in the dashboard, configure alerts, a
       --url https://api.axilio.ai/api/v1/billing/balance \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    [REST reference: Get account balance](/api-reference/rest/billing/get-account-balance)
   </Tab>
 </Tabs>
 
@@ -96,6 +98,10 @@ customer-portal session.
   <Tab title="REST API">
     Use `GET /api/v1/billing/history` to list invoices and
     `GET /api/v1/billing/history/{invoice_id}/pdf` to mint a temporary PDF URL.
+
+    REST references:
+    [List billing history](/api-reference/rest/billing/list-billing-history) ·
+    [Get an invoice PDF URL](/api-reference/rest/billing/get-an-invoice-pdf-url)
   </Tab>
 </Tabs>
 
@@ -138,6 +144,10 @@ itself remains a dashboard action.
 
   <Tab title="REST API">
     Use `GET` and `PUT /api/v1/billing/auto-recharge`.
+
+    REST references:
+    [Get auto-recharge settings](/api-reference/rest/billing/get-auto-recharge-settings) ·
+    [Update auto-recharge settings](/api-reference/rest/billing/update-auto-recharge-settings)
   </Tab>
 </Tabs>
 

@@ -27,7 +27,7 @@ network.
 | **Session** | A temporary reservation of one phone. Release the session when the work is done. |
 | **Driver** | The control interface inside a session. It observes the screen and performs input actions. |
 | **Workflow** | Session-driving code saved in Axilio so it can run again unchanged. |
-| **Run** | One execution of a workflow. A run receives its own run ID and, after allocation, a distinct session ID. |
+| **Run** | One execution of a workflow. Its run ID is also used as the session ID after allocation. |
 | **File** | An item in your organization's library. It either entered by upload or was captured from a session. |
 | **Telemetry** | The customer-facing frames, traces, logs, and summaries that explain an execution. |
 
@@ -42,7 +42,7 @@ from axilio.platform import Client
 
 client = Client()  # reads AXILIO_API_KEY from the environment
 
-with client.session("android") as driver:
+with client.session("android", phone_id="ph_123") as driver:
     screen = driver.observe()
     print(f"Found {len(screen.texts)} text regions")
     png = driver.screenshot()

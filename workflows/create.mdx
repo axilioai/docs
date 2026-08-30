@@ -19,6 +19,11 @@ with client.session("android") as driver:
     driver.find_text("Search").tap()
 ```
 
+Inside a hosted workflow, `client.session()` connects to the phone already
+assigned to that run. Select the dedicated phone when you
+[queue the run](/workflows/run#select-dedicated-phones), not inside the saved
+source.
+
 ## Create the workflow
 
 <Tabs sync={false}>
@@ -83,14 +88,15 @@ with client.session("android") as driver:
         --header "Content-Type: application/json" \
         --data-binary @-
     ```
+
+    [REST reference: Create a workflow](/api-reference/rest/workflows/create-a-workflow)
   </Tab>
 </Tabs>
 
-Recording, durable Telemetry, and file capture default to enabled. Set
-`recording=false` to suppress video, `telemetry=false` to skip the archived
-trace, or `capture=false` to skip session file capture for every run. Live
-Telemetry remains available while a run is active even when its durable trace
-is disabled.
+Recording, Telemetry, and file capture default to enabled. Set
+`recording=false` to suppress video, `telemetry=false` to suppress both live and
+archived Telemetry, or `capture=false` to skip session file capture for every
+run.
 
 ## Pull and save code
 
@@ -134,6 +140,10 @@ is disabled.
   <Tab title="REST API">
     `GET /api/v1/workflows/{workflow_id}/code` returns the current source.
     `POST /api/v1/workflows/{workflow_id}/code` saves a new revision.
+
+    REST references:
+    [Get current workflow code](/api-reference/rest/workflows/get-current-workflow-code) ·
+    [Save workflow code](/api-reference/rest/workflows/save-workflow-code)
   </Tab>
 </Tabs>
 
@@ -186,6 +196,10 @@ revision so the action remains auditable.
     Use `GET /api/v1/workflows/{workflow_id}/revisions` to list history and
     `POST /api/v1/workflows/{workflow_id}/code/restore` to restore one revision
     as a new revision.
+
+    REST references:
+    [List workflow revisions](/api-reference/rest/workflows/list-workflow-revisions) ·
+    [Restore a workflow revision](/api-reference/rest/workflows/restore-a-workflow-revision)
   </Tab>
 </Tabs>
 

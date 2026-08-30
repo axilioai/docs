@@ -29,13 +29,15 @@ their high-level actions by sending these DCP methods.
 ## How the wire looks
 
 DCP is JSON-RPC framed like the Chrome DevTools Protocol — the frame *is* the
-whole payload, at the top level, with no envelope:
+whole payload, at the top level, with no envelope. A command looks like this:
 
 ```json
-// command  (you → phone)
 { "id": 1, "method": "Touch.tap", "params": { "x": 540, "y": 1180 } }
+```
 
-// response (phone → you)
+The phone returns a response with the same `id`:
+
+```json
 { "id": 1, "result": {} }
 ```
 

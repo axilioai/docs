@@ -4,38 +4,122 @@ sidebarTitle: "Models"
 description: "Every model the driver can use — the Axilio model line and the vision-language models — with slugs, pricing, and how to select each one."
 ---
 
-**Argus** is Axilio's vision model, and it's how the driver sees the screen.
-It runs two families of models. The **Axilio models** read the screen — text,
-icons, layout — and power `find_text` and `observe`. The **vision-language
-models** understand a description and power `find(query=...)`. Both are listed,
-with live pricing, by one call:
+**Argus** is Axilio's vision model, and it is how the driver sees the screen.
+It runs two families of models. The **Axilio models** read text, icons, and
+layout for `find_text` and `observe`. The **vision-language models** understand
+a description for `find(query=...)`. The public catalog lists both families
+with live pricing.
 
-```python
-models = client.argus.list_models()
-for m in models.data:
-    print(m.id, m.pricing)
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    The CLI does not have a model-catalog command. Use an SDK or the public
+    REST operation, then pass the chosen engine or model to `axilio phone`.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    models = client.argus.list_models()
+    for model in models.data:
+        print(model.id, model.pricing)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    visionClient := argusclient.NewClient()
+    models, err := visionClient.Vision.ListModels(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, model := range models.Data {
+        fmt.Println(model.ID, model.Pricing)
+    }
+    ```
+
+    Import the generated client as
+    `argusclient "github.com/axilioai/platform-go/argus/client"`.
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      https://argus.axilio.ai/api/v1/vision/models
+    ```
+
+    The catalog is public; this request does not need an API key. See
+    [List Models](/api-reference/vision/vision/list-models).
+  </Tab>
+</Tabs>
 
 ## Axilio models
 
-The Axilio line comes in two tiers: **Lite** is free, **Pro** reads harder
-screens (small fonts, dense layouts) for a small per-call price. You don't pass
-these ids anywhere — you pick the tier with `ocr_engine=`:
+The Axilio line comes in two tiers: **Lite** is free, and **Pro** reads harder
+screens such as small fonts and dense layouts for a per-call price. You do not
+pass these model IDs to the driver. Pick the tier with an OCR-engine option:
 
-```python
-driver.find_text("Sign in", ocr_engine="premium")   # Pro
-driver.find_text("Sign in")                         # Lite (the default)
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone observe --ocr-engine premium
+    axilio phone find-all-text "Sign in" --ocr-engine premium
+    ```
 
-To use a tier for a whole session instead of every call, set it once:
+    `phone find-text` and `phone wait-for` use their default OCR engine and do
+    not accept an engine override.
+  </Tab>
 
-```python
-with client.session("android", default_ocr_engine="premium") as driver:
-    driver.find_text("Sign in")   # Pro, no kwarg needed
-```
+  <Tab title="Python SDK">
+    ```python
+    driver.find_text("Sign in", ocr_engine="premium")  # Pro
+    driver.find_text("Sign in")                        # Lite, the default
+    ```
+  </Tab>
 
-The ids below are what you'll see on your [usage rows](/usage/overview)
-and in the pricing list:
+  <Tab title="Go SDK">
+    ```go
+    element, err := driver.FindText(
+        "Sign in",
+        false,
+        mobile.WithOCREngine("premium"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    if element == nil {
+        log.Fatal("Sign in is not visible")
+    }
+    fmt.Println(element.Center)
+    ```
+  </Tab>
+</Tabs>
+
+To use a tier for a whole SDK driver instead of every call, set it once:
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    with client.session(
+        "android",
+        phone_id="ph_123",
+        default_ocr_engine="premium",
+    ) as driver:
+        driver.find_text("Sign in")  # Pro, no per-call option needed
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    driver := mobile.ConnectRemote(
+        controlURL,
+        mobile.WithDefaultOCREngine("premium"),
+    )
+    defer driver.Close()
+    ```
+  </Tab>
+</Tabs>
+
+The IDs below are what you see on [usage rows](/usage/overview) and in the
+pricing list:
 
 | Model id | What it is | How you get it |
 | --- | --- | --- |
@@ -49,19 +133,64 @@ and in the pricing list:
 
 ## Vision-language models
 
-Describing something in plain English — `find(query="the heart icon")` — runs a
-vision-language model. Pass a model's `id` as `model=` to pick one, or set a
-session default:
+Describing something in plain English, such as `find(query="the heart icon")`,
+runs a vision-language model. Pass a catalog ID to choose one:
 
-```python
-driver.find(query="the buy button", model="anthropic/claude-haiku-4.5")
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone find "the buy button" \
+      --model anthropic/claude-haiku-4.5
+    ```
+  </Tab>
 
-with client.session(
-    "android",
-    default_model="anthropic/claude-haiku-4.5",
-) as driver:
-    driver.find(query="the buy button")   # haiku, no kwarg needed
-```
+  <Tab title="Python SDK">
+    ```python
+    driver.find(
+        query="the buy button",
+        model="anthropic/claude-haiku-4.5",
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    element, err := driver.Find(
+        "the buy button",
+        mobile.WithModel("anthropic/claude-haiku-4.5"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(element.Center)
+    ```
+  </Tab>
+</Tabs>
+
+Python and Go can also set a driver default:
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    with client.session(
+        "android",
+        phone_id="ph_123",
+        default_model="anthropic/claude-haiku-4.5",
+    ) as driver:
+        driver.find(query="the buy button")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    driver := mobile.ConnectRemote(
+        controlURL,
+        mobile.WithDefaultModel("anthropic/claude-haiku-4.5"),
+    )
+    defer driver.Close()
+    ```
+  </Tab>
+</Tabs>
 
 Leave `model=` off and Argus picks a sensible default. An id that isn't in the
 list below is rejected before anything is billed.
@@ -76,8 +205,10 @@ to track what you actually spend.
 ## Calling Argus directly
 
 The driver runs Argus for you on the live screen. If you have your own image to
-analyze, call it directly with [`client.argus`](/driver/client#client-argus) —
-the same models, on any image. See the [`Client` reference](/driver/client#client-argus)
+analyze, call it directly with
+[`client.argus`](/driver/client#call-argus-on-your-own-image) — the same models,
+on any image. See the
+[`Client` reference](/driver/client#call-argus-on-your-own-image)
 for the SDK methods (`locate`, `detect`, `list_models`), or the
 [Vision API reference](/api-reference/vision/vision/run-locate) for the REST
 endpoints.

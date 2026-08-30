@@ -4,9 +4,10 @@ sidebarTitle: "Session lifecycle"
 description: "Inspect sessions and distinguish idle timeout, connection timeout, and the maximum session duration."
 ---
 
-A session starts when Axilio allocates a phone. It ends when you release the
-phone, an idle timeout fires, or the platform's maximum session duration is
-reached.
+A session starts when Axilio allocates a phone. The common customer-visible
+boundaries are manual release, an optional idle timeout, and the platform's
+maximum session duration. Axilio can also close a session when its phone
+becomes unavailable.
 
 ## Inspect sessions
 
@@ -46,21 +47,32 @@ reached.
     session, err := api.Phones.GetSession(ctx, &platformgo.PhonesGetSessionRequest{
         SessionID: "sess_123",
     })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(sessions.Total, session.Status, session.PhoneID, session.RecordingStatus)
     ```
   </Tab>
 
   <Tab title="REST API">
     Use `GET /api/v1/phones/sessions` for the filtered session table and
     `GET /api/v1/phones/sessions/{session_id}` for one session.
+
+    REST references: [List sessions](/api-reference/rest/phones/list-sessions) ·
+    [Get a session](/api-reference/rest/phones/get-a-session)
   </Tab>
 </Tabs>
 
 ## Idle timeout
 
 `ttl.idle_timeout_seconds` closes a session after that many seconds without a
-user connection. Omit it for no idle timeout. Explicit values are clamped to
-1–3,600 seconds. A session without an idle timeout still ends at the one-hour
-platform cap.
+live user connection. A connected control, live-view, or Telemetry viewer keeps
+the session active; after the last viewer disconnects, the idle clock resumes.
+A session that was never connected is idle from allocation time.
+
+Omit the value, or pass a nonpositive value, for no idle timeout. Positive
+values are clamped to 1–3,600 seconds. A session without an idle timeout still
+ends at the one-hour platform cap.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
@@ -74,6 +86,7 @@ platform cap.
 
     allocation = client.phones.allocate(
         phone_type="android",
+        phone_id="ph_123",
         ttl=PhoneSessionTtlOptions(idle_timeout_seconds=300),
     )
     ```
@@ -83,10 +96,21 @@ platform cap.
     ```go
     allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
         PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        PhoneID:   platformgo.String("ph_123"),
         TTL: &platformgo.PhoneSessionTTLOptions{
             IdleTimeoutSeconds: platformgo.Int64(300),
         },
     })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer func() {
+        if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+            PhoneID: allocation.PhoneID,
+        }); err != nil {
+            log.Printf("release phone: %v", err)
+        }
+    }()
     ```
   </Tab>
 
@@ -94,11 +118,14 @@ platform cap.
     ```json
     {
       "phone_type": "android",
+      "phone_id": "ph_123",
       "ttl": {
         "idle_timeout_seconds": 300
       }
     }
     ```
+
+    [REST reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
   </Tab>
 </Tabs>
 
@@ -108,10 +135,11 @@ session remains active until you stop it or the maximum duration is reached.
 ## Connection timeout is different
 
 Python's `open_timeout` controls how long the SDK waits to connect to the
-allocated phone. It does not set the session lifetime:
+allocated phone. It does not set the session lifetime, wait for an app screen,
+or change a command deadline:
 
 ```python
-with client.session("android", open_timeout=20) as driver:
+with client.session("android", phone_id="ph_123", open_timeout=20) as driver:
     print(driver.observe())
 ```
 
@@ -120,3 +148,7 @@ with client.session("android", open_timeout=20) as driver:
 Use `client.session()` when Python owns the whole lifetime. For direct
 allocations, put deallocation in `finally` or `defer`. With the CLI, run
 `axilio sessions stop <session-id> --yes`.
+
+Closing a Dashboard tab does not release the phone. End the session with
+**Release** or **Deallocate**. Ending a session frees its control lease; it does
+not erase the dedicated phone's apps or state and does not end its rental.

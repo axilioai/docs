@@ -54,13 +54,16 @@ API key through `AXILIO_API_KEY`. See [Authentication](/authentication).
 Start a session and export its ID into the current shell:
 
 ```bash
-eval "$(axilio sessions start --export)"
+axilio phones list
+eval "$(axilio sessions start --phone-id ph_123 --export)"
 axilio phone observe
 axilio phone tap --query "the search box"
 axilio phone type "axilio"
-axilio sessions stop "$AXILIO_SESSION"
+axilio sessions stop "$AXILIO_SESSION" --yes
+unset AXILIO_SESSION
 ```
 
+`axilio phones list` shows the dedicated phones that can be allocated now.
 The CLI saves session connection information locally. When several local
 sessions exist, use `--session` or `AXILIO_SESSION` to select the one a phone
 command should control.
@@ -97,7 +100,8 @@ newline-delimited JSON because frames arrive over time:
 - `axilio runs watch <run-id> -o json` emits one object per frame and finishes
   with a `watch_end` summary.
 
-`axilio sessions start --export` emits shell text for `eval`, not JSON. Progress,
+`axilio sessions start --phone-id <id> --export` emits shell text for `eval`,
+not JSON. Progress,
 notes, and prompts go to standard error so standard output remains usable by
 scripts.
 
@@ -107,3 +111,14 @@ The CLI is open source at
 [github.com/axilioai/cli](https://github.com/axilioai/cli). Homebrew packages
 are published through
 [axilioai/homebrew-tap](https://github.com/axilioai/homebrew-tap).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Explore a task" icon="magnifying-glass" href="/guides/search-x-with-the-interactive-cli">
+    Search X one action at a time with semantic phone commands.
+  </Card>
+  <Card title="Control reference" icon="hand-pointer" href="/driver/reference">
+    Compare CLI commands with the Python and Go driver methods.
+  </Card>
+</CardGroup>

@@ -1,33 +1,76 @@
 ---
 title: "Type"
 sidebarTitle: "Type"
-description: "Type text into a field on the screen."
+description: "Type text into the focused field on a phone."
 ---
 
-Type into whatever you [found](/driver/find). [`type_into`](/driver/element#element-type_into) taps the field first,
-then types:
+Focus a field, then type into it. SDK element helpers combine those two steps.
 
-```python
-driver.find_text("Search").type_into("axilio")
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone tap --query "the Search field"
+    axilio phone type "agentic infrastructure"
+    ```
+  </Tab>
 
-## Type into the current field
+  <Tab title="Python SDK">
+    ```python
+    field = driver.wait_for_text("Search")
+    field.type_into("agentic infrastructure")
+    ```
+  </Tab>
 
-If a field is already selected, type straight into it:
+  <Tab title="Go SDK">
+    ```go
+    field, err := driver.WaitForText("Search", 10*time.Second, false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := field.TypeInto("agentic infrastructure"); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
-```python
-driver.type_text("hello")
-```
+If the field is already focused, type directly:
 
-<Note>
-  This types text. To press Enter (submit / search), use [Keys](/driver/buttons).
-</Note>
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone type "hello"
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.type_text("hello")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    if err := driver.TypeText("hello"); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Text uses a US-layout keyboard, and one request is limited to 4,096 UTF-8
+bytes. The phone types printable ASCII. It skips unsupported characters,
+including emoji, when the request is otherwise within the limit. To submit a
+form or trigger the keyboard's **Go** or **Search** action, press
+[Enter](/driver/buttons) after typing.
+
+Typing uses DCP `Keyboard.typeText`; it is not a REST operation.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
-    Tap things on the screen.
+  <Card title="Keys" icon="keyboard" href="/driver/buttons">
+    Press Enter after typing.
   </Card>
   <Card title="Find" icon="magnifying-glass" href="/driver/find">
     Find the field to type into.

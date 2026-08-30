@@ -7,15 +7,15 @@ description: "Save phone-driving code as a workflow, then queue one or more runs
 A **workflow** is Python phone-driving code saved in Axilio. Axilio stores the
 code in numbered revisions and runs it unchanged.
 
-A **run** is one execution of that workflow. Each run gets its own run ID and,
-after it claims a phone, a different session ID.
+A **run** is one execution of that workflow. Its run ID is also used as the
+session ID when Axilio claims a phone.
 
 ## Lifecycle
 
 1. Create a workflow and save its first code revision.
 2. Pull, edit, push, and restore code as new revisions.
 3. Queue one or more runs immediately.
-4. Axilio assigns a shared phone or the dedicated phone you pinned.
+4. Axilio starts the run on the dedicated phone you selected.
 5. Inspect the run, its phone session, Telemetry, recording, and captured files.
 
 Runs do not currently accept a future start time or recurring schedule.
@@ -26,8 +26,8 @@ Runs do not currently accept a future start time or recurring schedule.
 Workflow-level settings become defaults for every run:
 
 - `recording` controls video and rolling thumbnails.
-- `telemetry` controls whether Axilio persists the archived Telemetry trace.
-  Live Telemetry remains available while the run is active.
+- `telemetry` controls whether Axilio produces live or archived Telemetry. Set
+  it to `false` when the run must produce no Telemetry trace.
 - `capture` controls whether media produced on the phone enters the
   organization's [Files](/files/overview) library.
 - `platform` selects the target mobile platform.

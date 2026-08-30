@@ -32,6 +32,17 @@ screen, execution timeline, logs, and recording together.
   </Card>
 </CardGroup>
 
+## Follow one session from live to archived
+
+1. Open **Live view** while the phone is active to watch the screen.
+2. Follow **Live Telemetry** to see operations and logs as they arrive.
+3. After the session ends, use **Frames** as the retained execution record.
+4. When recording was enabled and its status is `ready`, replay the screen
+   beside the timeline.
+
+Live capability URLs expire with the session. Archived frames and recordings
+follow the organization's retention policy and can become unavailable later.
+
 ## Supported interfaces
 
 | Interface | Current observability surface |
@@ -45,14 +56,12 @@ screen, execution timeline, logs, and recording together.
 ## Data controls
 
 Recording and Telemetry are on by default, but they are independent controls.
-Their Telemetry behavior differs between a direct allocation and a workflow:
+The same Telemetry rule applies to direct allocations and workflow runs:
 
 - `recording: false` prevents the screen recording and rolling thumbnail from
   being written.
-- On a direct phone allocation, `telemetry: false` prevents both live and
-  archived Telemetry frames.
-- On a workflow, `telemetry: false` skips the archived trace. Live Telemetry
-  remains available while the run is active.
+- On a direct phone allocation or workflow run, `telemetry: false` prevents
+  both live and archived Telemetry frames.
 
 Your organization's data-retention policy can also prevent these records from
 being created or can make an older recording or trace unavailable. See
