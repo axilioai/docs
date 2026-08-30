@@ -128,6 +128,26 @@
         ],
         "type": "object"
       },
+      "BillingHistoryInvoiceDownloadResponse": {
+        "additionalProperties": false,
+        "description": "Response containing a temporary invoice download URL.",
+        "properties": {
+          "download_url": {
+            "description": "Direct download URL for the invoice PDF.",
+            "type": "string"
+          },
+          "expires_at": {
+            "description": "Timestamp when the download URL expires.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "download_url",
+          "expires_at"
+        ],
+        "type": "object"
+      },
       "BillingHistoryItem": {
         "additionalProperties": false,
         "description": "Single invoice record in the billing history.",
@@ -347,7 +367,7 @@
             "type": "string"
           },
           "file_id": {
-            "description": "Library file to deliver; accepts an upload or a download id.",
+            "description": "Library file to deliver; accepts any file id regardless of source.",
             "format": "uuid",
             "type": "string"
           }
@@ -448,147 +468,6 @@
         ],
         "type": "object"
       },
-      "FileDownloadListResponse": {
-        "additionalProperties": false,
-        "description": "One page of the org's captured downloads.",
-        "properties": {
-          "downloads": {
-            "description": "Captured files, newest first.",
-            "items": {
-              "$ref": "#/components/schemas/FileDownloadSummary"
-            },
-            "type": [
-              "array",
-              "null"
-            ]
-          },
-          "total": {
-            "description": "Total downloads matching the query.",
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "downloads",
-          "total"
-        ],
-        "type": "object"
-      },
-      "FileDownloadSummary": {
-        "additionalProperties": false,
-        "description": "One file captured off a phone during a session.",
-        "properties": {
-          "attachment_url": {
-            "description": "Short-lived signed URL that downloads the file as an attachment under its name. Present only for ready captures.",
-            "type": "string"
-          },
-          "bytes_transferred": {
-            "description": "Bytes moved so far for an in-flight phone transfer. Absent until the phone reports progress.",
-            "format": "int64",
-            "type": "integer"
-          },
-          "capture_error": {
-            "description": "Reason the capture failed, when it did.",
-            "type": "string"
-          },
-          "capture_state": {
-            "description": "Capture lifecycle: detected/uploading while in flight, ready when usable, or a terminal skip/failure with its reason recorded.",
-            "enum": [
-              "detected",
-              "uploading",
-              "ready",
-              "skipped_size",
-              "skipped_quota",
-              "skipped_type",
-              "dropped_teardown",
-              "failed"
-            ],
-            "type": "string"
-          },
-          "checksum": {
-            "description": "SHA-256 of the file's bytes, computed on the phone during upload.",
-            "type": "string"
-          },
-          "created_at": {
-            "description": "When the capture was detected and registered.",
-            "format": "date-time",
-            "type": "string"
-          },
-          "download_url": {
-            "description": "Short-lived signed URL to read the file's bytes. Present only for ready captures; re-list to refresh an expired one.",
-            "type": "string"
-          },
-          "duration_seconds": {
-            "description": "Video duration in seconds.",
-            "format": "int64",
-            "type": "integer"
-          },
-          "filename": {
-            "description": "Filename as it appeared on the phone.",
-            "type": "string"
-          },
-          "height": {
-            "description": "Intrinsic pixel height of the source.",
-            "format": "int64",
-            "type": "integer"
-          },
-          "id": {
-            "description": "File identifier. Unique across uploads and downloads; deliverable either way.",
-            "type": "string"
-          },
-          "mime_type": {
-            "description": "Media type reported by the phone.",
-            "type": "string"
-          },
-          "on_phone_count": {
-            "description": "Distinct phones currently holding or receiving a copy. Deleting the file recalls these.",
-            "format": "int64",
-            "type": "integer"
-          },
-          "preview_state": {
-            "description": "Whether the preview exists, is still being generated, or will never be available for this format.",
-            "enum": [
-              "processing",
-              "ready",
-              "unavailable"
-            ],
-            "type": "string"
-          },
-          "reel_url": {
-            "description": "Short-lived signed URL for the animated hover preview. Videos only; absent until generated.",
-            "type": "string"
-          },
-          "session_id": {
-            "description": "Session that produced the file.",
-            "type": "string"
-          },
-          "size_bytes": {
-            "description": "Size in bytes, as reported at detection.",
-            "format": "int64",
-            "type": "integer"
-          },
-          "thumbnail_url": {
-            "description": "Short-lived signed URL for the generated preview image. Absent while generation is pending, and permanently absent for formats without a preview.",
-            "type": "string"
-          },
-          "width": {
-            "description": "Intrinsic pixel width of the source.",
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "filename",
-          "mime_type",
-          "size_bytes",
-          "capture_state",
-          "created_at",
-          "on_phone_count",
-          "preview_state"
-        ],
-        "type": "object"
-      },
       "FileListResponse": {
         "additionalProperties": false,
         "description": "One page of the org's file library.",
@@ -663,8 +542,30 @@
             "format": "int64",
             "type": "integer"
           },
+          "capture_error": {
+            "description": "Reason the capture failed, when it did. Present only for captures.",
+            "type": "string"
+          },
+          "capture_state": {
+            "description": "Capture lifecycle: detected/uploading while in flight, ready when usable, or a terminal skip/failure with its reason. Present only for captures.",
+            "enum": [
+              "detected",
+              "uploading",
+              "ready",
+              "skipped_size",
+              "skipped_quota",
+              "skipped_type",
+              "dropped_teardown",
+              "failed"
+            ],
+            "type": "string"
+          },
+          "checksum": {
+            "description": "SHA-256 of the bytes, computed on the phone during a capture upload. Present only for captures.",
+            "type": "string"
+          },
           "created_at": {
-            "description": "When the upload was registered.",
+            "description": "When the file was registered: upload registration, or capture detection.",
             "format": "date-time",
             "type": "string"
           },
@@ -687,7 +588,7 @@
             "type": "integer"
           },
           "id": {
-            "description": "File identifier. Unique across uploads and downloads.",
+            "description": "File identifier. Unique across the whole library; deliverable to a phone regardless of source.",
             "type": "string"
           },
           "mime_type": {
@@ -712,16 +613,35 @@
             "description": "Short-lived signed URL for the animated hover preview. Videos only; absent until generated.",
             "type": "string"
           },
+          "session_id": {
+            "description": "Session that produced the file. Present only for captures.",
+            "type": "string"
+          },
           "size_bytes": {
             "description": "Declared size in bytes, pinned by the presigned upload.",
             "format": "int64",
             "type": "integer"
           },
+          "source": {
+            "description": "How the file entered the library: upload (put in directly) or capture (lifted off a session).",
+            "enum": [
+              "upload",
+              "capture"
+            ],
+            "type": "string"
+          },
           "status": {
-            "description": "uploading until the object is verified in storage, then ready. Complete an upload to move it to ready.",
+            "description": "uploading until the object is verified in storage, then ready. For a capture, read capture_state for the fuller lifecycle.",
             "enum": [
               "uploading",
               "ready"
+            ],
+            "type": "string"
+          },
+          "surface": {
+            "description": "Which surface a capture came off (phone today). Absent for a direct upload.",
+            "enum": [
+              "phone"
             ],
             "type": "string"
           },
@@ -737,6 +657,7 @@
         },
         "required": [
           "id",
+          "source",
           "filename",
           "mime_type",
           "size_bytes",
@@ -816,6 +737,112 @@
         },
         "required": [
           "message"
+        ],
+        "type": "object"
+      },
+      "OrganizationDescriptorResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "plan_name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "type": "object"
+      },
+      "OrganizationInvitationSummaryListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "invitations": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationInvitationSummaryResponse"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "invitations"
+        ],
+        "type": "object"
+      },
+      "OrganizationInvitationSummaryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "invited_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "invited_by_name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ],
+        "type": "object"
+      },
+      "OrganizationMemberSummaryListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMemberSummaryResponse"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "members"
+        ],
+        "type": "object"
+      },
+      "OrganizationMemberSummaryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "joined_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "role"
         ],
         "type": "object"
       },
@@ -988,7 +1015,7 @@
             "type": "object"
           },
           "telemetry": {
-            "description": "Persist this session's telemetry spans (default true). false skips the durable trace store; the live telemetry stream still works while the session runs.",
+            "description": "Emit this session's telemetry (default true). false suppresses telemetry entirely - no live trace stream and no durable trace store; the session dashboard shows a 'telemetry disabled' state.",
             "type": "boolean"
           },
           "ttl": {
@@ -1170,6 +1197,25 @@
         ],
         "type": "object"
       },
+      "PhoneAvailabilityResponse": {
+        "additionalProperties": false,
+        "description": "Phone availability summary: shared-pool capacity plus the caller org's dedicated idle counts. An advisory snapshot - allocation is the authority and can still refuse.",
+        "properties": {
+          "dedicated": {
+            "$ref": "#/components/schemas/PhoneDedicatedAvailability",
+            "description": "The caller org's dedicated phones."
+          },
+          "shared": {
+            "$ref": "#/components/schemas/PhoneSharedAvailability",
+            "description": "Shared-pool availability, fleet-wide."
+          }
+        },
+        "required": [
+          "shared",
+          "dedicated"
+        ],
+        "type": "object"
+      },
       "PhoneDeallocateResponse": {
         "additionalProperties": false,
         "description": "Returned after a device has been successfully deallocated.",
@@ -1199,6 +1245,64 @@
         ],
         "type": "object"
       },
+      "PhoneDedicatedAvailability": {
+        "additionalProperties": false,
+        "description": "The caller org's dedicated-phone availability summary.",
+        "properties": {
+          "by_type": {
+            "description": "Counts per phone type.",
+            "items": {
+              "$ref": "#/components/schemas/PhoneDedicatedTypeAvailabilityEntry"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "idle": {
+            "description": "Dedicated phones claimable right now.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Active dedicated phones with a usable rental.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "idle",
+          "total",
+          "by_type"
+        ],
+        "type": "object"
+      },
+      "PhoneDedicatedTypeAvailabilityEntry": {
+        "additionalProperties": false,
+        "description": "The caller org's dedicated phones for one phone type.",
+        "properties": {
+          "idle": {
+            "description": "Phones claimable right now: active, unallocated, rental still usable.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "phone_type": {
+            "description": "Phone platform (android/iphone).",
+            "type": "string"
+          },
+          "total": {
+            "description": "Active dedicated phones of this type with a usable rental.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "phone_type",
+          "idle",
+          "total"
+        ],
+        "type": "object"
+      },
       "PhoneLiveViewOptions": {
         "additionalProperties": false,
         "description": "Per-session options for the hosted live view.",
@@ -1220,6 +1324,81 @@
             "type": "boolean"
           }
         },
+        "type": "object"
+      },
+      "PhoneLiveViewTokenResponse": {
+        "additionalProperties": false,
+        "description": "Live-view token mint response.",
+        "properties": {
+          "live_view_url": {
+            "description": "Hosted live-view page URL embedding this token (live screen + interaction, iframe-embeddable). Bearer capability; treat as a secret. Dies with the session.",
+            "type": "string"
+          },
+          "phone_id": {
+            "description": "The session's phone.",
+            "type": "string"
+          },
+          "session_id": {
+            "description": "Session the token is scoped to.",
+            "type": "string"
+          },
+          "token": {
+            "description": "Allocation-scoped live-view token.",
+            "type": "string"
+          },
+          "view_only": {
+            "description": "Whether the session's live view is watch-only.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "token",
+          "phone_id",
+          "session_id",
+          "view_only",
+          "live_view_url"
+        ],
+        "type": "object"
+      },
+      "PhoneLocationAvailabilityEntry": {
+        "additionalProperties": false,
+        "description": "Shared-pool availability at a single location.",
+        "properties": {
+          "available": {
+            "description": "Phones free to allocate at this location right now.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "city": {
+            "description": "City name for this location.",
+            "type": "string"
+          },
+          "location": {
+            "description": "Location slug identifier.",
+            "type": "string"
+          },
+          "region": {
+            "description": "Broader geographic region label.",
+            "type": "string"
+          },
+          "state": {
+            "description": "State or region name for this location.",
+            "type": "string"
+          },
+          "total": {
+            "description": "Active shared phones at this location.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "location",
+          "city",
+          "state",
+          "region",
+          "available",
+          "total"
+        ],
         "type": "object"
       },
       "PhonePreviewResponse": {
@@ -1618,6 +1797,10 @@
             "description": "Optional key->value labels attached to the session.",
             "type": "object"
           },
+          "telemetry_disabled": {
+            "description": "Whether session telemetry was disabled at allocation. When true the session has no live or archived trace by policy.",
+            "type": "boolean"
+          },
           "workflow_id": {
             "description": "Workflow the session executed, when source is 'workflow'.",
             "type": "string"
@@ -1636,7 +1819,8 @@
           "allocated_at",
           "is_dedicated_phone",
           "recording_status",
-          "capture_enabled"
+          "capture_enabled",
+          "telemetry_disabled"
         ],
         "type": "object"
       },
@@ -1853,6 +2037,49 @@
         ],
         "type": "object"
       },
+      "PhoneSharedAvailability": {
+        "additionalProperties": false,
+        "description": "Shared-pool availability summary.",
+        "properties": {
+          "available": {
+            "description": "Shared phones free to allocate right now, across every type and location in the response.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "by_location": {
+            "description": "Counts per active location; locations with zero shared phones still appear.",
+            "items": {
+              "$ref": "#/components/schemas/PhoneLocationAvailabilityEntry"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "by_type": {
+            "description": "Counts per phone type.",
+            "items": {
+              "$ref": "#/components/schemas/PhoneTypeAvailabilityEntry"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total": {
+            "description": "Active shared phones, across every type and location in the response.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "available",
+          "total",
+          "by_type",
+          "by_location"
+        ],
+        "type": "object"
+      },
       "PhoneSuccessResponse": {
         "additionalProperties": false,
         "description": "Generic success message response.",
@@ -2035,6 +2262,51 @@
         ],
         "type": "object"
       },
+      "PhoneTelemetryTokenResponse": {
+        "additionalProperties": false,
+        "description": "Telemetry-token mint response.",
+        "properties": {
+          "session_id": {
+            "description": "Session the URL is scoped to.",
+            "type": "string"
+          },
+          "telemetry_url": {
+            "description": "WebSocket URL for the session's live telemetry stream (trace spans + output logs, read-only). Dies with the session.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "telemetry_url"
+        ],
+        "type": "object"
+      },
+      "PhoneTypeAvailabilityEntry": {
+        "additionalProperties": false,
+        "description": "Shared-pool availability for one phone type.",
+        "properties": {
+          "available": {
+            "description": "Phones free to allocate right now.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "phone_type": {
+            "description": "Phone platform (android/iphone).",
+            "type": "string"
+          },
+          "total": {
+            "description": "Active phones of this type in the shared pool.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "phone_type",
+          "available",
+          "total"
+        ],
+        "type": "object"
+      },
       "PhoneUpdateNicknameRequest": {
         "additionalProperties": false,
         "description": "Request body for setting a device's display nickname.",
@@ -2135,92 +2407,22 @@
         ],
         "type": "object"
       },
-      "RunEventSummary": {
+      "RunFrameStatus": {
         "additionalProperties": false,
-        "description": "A single event recorded during a run.",
+        "description": "Span outcome.",
         "properties": {
-          "body": {
-            "description": "Event payload; shape depends on type."
-          },
-          "session_id": {
-            "description": "Session the event belongs to.",
+          "code": {
+            "description": "\"ok\" or \"error\".",
             "type": "string"
           },
-          "timestamp": {
-            "description": "When the event occurred.",
-            "format": "date-time",
-            "type": "string"
-          },
-          "type": {
-            "description": "Event type (e.g. RUN_STARTED, OUTPUT_LOG).",
+          "message": {
+            "description": "Human-readable failure message; empty on success.",
             "type": "string"
           }
         },
         "required": [
-          "type",
-          "timestamp",
-          "session_id"
-        ],
-        "type": "object"
-      },
-      "RunEventsResponse": {
-        "additionalProperties": false,
-        "description": "Paginated list of run events.",
-        "properties": {
-          "events": {
-            "description": "Page of run event records.",
-            "items": {
-              "$ref": "#/components/schemas/RunEventSummary"
-            },
-            "type": [
-              "array",
-              "null"
-            ]
-          },
-          "inference_costs": {
-            "additionalProperties": {
-              "format": "int64",
-              "type": "integer"
-            },
-            "description": "Billed microdollars per inference_id.",
-            "type": "object"
-          },
-          "limit": {
-            "description": "Page size used for this response.",
-            "format": "int64",
-            "type": "integer"
-          },
-          "offset": {
-            "description": "Pagination offset used for this response.",
-            "format": "int64",
-            "type": "integer"
-          },
-          "retention_expired": {
-            "description": "True when the trace is past the org's retention window. Events are withheld from this point on, and the underlying data is physically deleted by a daily sweep; deletion may lag this flag by up to a day, after which the data is unrecoverable.",
-            "type": "boolean"
-          },
-          "sdk_call_costs": {
-            "additionalProperties": {
-              "format": "int64",
-              "type": "integer"
-            },
-            "description": "Billed microdollars per SDK-call span_id.",
-            "type": "object"
-          },
-          "total": {
-            "description": "Total number of events matching the query.",
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "events",
-          "total",
-          "limit",
-          "offset",
-          "retention_expired",
-          "sdk_call_costs",
-          "inference_costs"
+          "code",
+          "message"
         ],
         "type": "object"
       },
@@ -2392,6 +2594,58 @@
         ],
         "type": "object"
       },
+      "RunLogFrame": {
+        "additionalProperties": false,
+        "description": "One point-in-time telemetry log event in the canonical frame envelope.",
+        "properties": {
+          "attributes": {
+            "additionalProperties": {},
+            "description": "Every attribute the producer stamped (axilio.* vocabulary), verbatim.",
+            "type": "object"
+          },
+          "body": {
+            "description": "The log's human-readable text.",
+            "type": "string"
+          },
+          "kind": {
+            "description": "Frame kind discriminator; always \"log\" for log frames.",
+            "enum": [
+              "log"
+            ],
+            "type": "string"
+          },
+          "log_type": {
+            "description": "Product log type, e.g. output_log, output_error, kernel_status, transfer_progress. Unknown values MUST be rendered generically, never rejected.",
+            "type": "string"
+          },
+          "severity": {
+            "description": "Log severity (INFO / ERROR).",
+            "type": "string"
+          },
+          "span_id": {
+            "description": "Span the log occurred under; omitted for session-level logs.",
+            "type": "string"
+          },
+          "time_unix_nano": {
+            "description": "Event time, nanoseconds since the Unix epoch.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "trace_id": {
+            "description": "OTel trace id (32 lowercase hex chars) of the session the log belongs to.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "log_type",
+          "trace_id",
+          "time_unix_nano",
+          "severity",
+          "body"
+        ],
+        "type": "object"
+      },
       "RunResponse": {
         "additionalProperties": false,
         "description": "Full run record returned by run endpoints.",
@@ -2418,10 +2672,6 @@
           "id": {
             "description": "Run identifier.",
             "format": "uuid",
-            "type": "string"
-          },
-          "logs": {
-            "description": "Run's execution log output.",
             "type": "string"
           },
           "phone_id": {
@@ -2517,6 +2767,148 @@
         ],
         "type": "object"
       },
+      "RunSessionFramesResponse": {
+        "additionalProperties": false,
+        "description": "Paginated list of telemetry frames for a session.",
+        "properties": {
+          "frames": {
+            "description": "Page of frames, ordered by span start / log time.",
+            "items": {
+              "description": "One telemetry frame: a completed span or a log event, discriminated on kind. Tolerant reader (unified frame contract): consumers MUST ignore frames with an unknown kind, unknown fields within known kinds, and unknown span_type/log_type values (render generically, never error). Generated SDK types surface an unrecognized frame as an explicit UnknownFrame variant carrying the raw JSON, never a silent drop. A live-stream message MAY carry a JSON array of frame objects; consumers MUST accept a single object or an array.",
+              "discriminator": {
+                "mapping": {
+                  "log": "#/components/schemas/RunLogFrame",
+                  "span": "#/components/schemas/RunSpanFrame"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/RunSpanFrame"
+                },
+                {
+                  "$ref": "#/components/schemas/RunLogFrame"
+                }
+              ]
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "inference_costs": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "description": "Billed microdollars per inference_id, the per-inference detail behind sdk_call_costs.",
+            "type": "object"
+          },
+          "limit": {
+            "description": "Page size used for this response.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Pagination offset used for this response.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "retention_expired": {
+            "description": "True when the trace is past the org's retention window; frames are withheld and the underlying data is deleted by a daily sweep.",
+            "type": "boolean"
+          },
+          "sdk_call_costs": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "description": "Billed microdollars per sdk_call span_id (post-markup, what the invoice charges). Response-level by design: billed cost is a read-time billing join, never a frame attribute.",
+            "type": "object"
+          },
+          "total": {
+            "description": "Total number of frames for the session.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "frames",
+          "total",
+          "limit",
+          "offset",
+          "retention_expired",
+          "sdk_call_costs",
+          "inference_costs"
+        ],
+        "type": "object"
+      },
+      "RunSpanFrame": {
+        "additionalProperties": false,
+        "description": "One completed telemetry span in the canonical frame envelope.",
+        "properties": {
+          "attributes": {
+            "additionalProperties": {},
+            "description": "Every attribute the producer stamped (axilio.* vocabulary), verbatim. Attributes are the contract's extension seam: new keys appear here without a version bump.",
+            "type": "object"
+          },
+          "end_time_unix_nano": {
+            "description": "Span end, nanoseconds since the Unix epoch. Always set in the archive; omitted on the live stream's \"start\" phase, where the span is still in flight.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "kind": {
+            "description": "Frame kind discriminator; always \"span\" for span frames.",
+            "enum": [
+              "span"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "Span name (for sdk_call spans, the SDK operation, e.g. Screen.observe).",
+            "type": "string"
+          },
+          "parent_span_id": {
+            "description": "Parent span id; omitted on root spans.",
+            "type": "string"
+          },
+          "phase": {
+            "description": "Span phase. The archive returns completed spans only (\"end\"); \"start\" phases exist only on the live stream.",
+            "type": "string"
+          },
+          "span_id": {
+            "description": "OTel span id (16 lowercase hex chars). Upsert key: the live copy of this span carries the same id.",
+            "type": "string"
+          },
+          "span_type": {
+            "description": "Product span role: session (the session root), run, sdk_call, inference, file_push, media_capture. Spans stored before the 2026-08-21 vocabulary cutover carry the retired phone_session value for the session root. Unknown values MUST be rendered generically, never rejected.",
+            "type": "string"
+          },
+          "start_time_unix_nano": {
+            "description": "Span start, nanoseconds since the Unix epoch.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunFrameStatus",
+            "description": "Span outcome. Always set in the archive; omitted on the live stream's \"start\" phase, where the span has no outcome yet."
+          },
+          "trace_id": {
+            "description": "OTel trace id (32 lowercase hex chars), derived from the session id: one session is one trace.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "phase",
+          "span_type",
+          "trace_id",
+          "span_id",
+          "name",
+          "start_time_unix_nano"
+        ],
+        "type": "object"
+      },
       "RunStatsResponse": {
         "additionalProperties": false,
         "description": "RunStatsResponse summarizes run statistics for a workflow or organization.",
@@ -2574,6 +2966,32 @@
         ],
         "type": "object"
       },
+      "SubscriptionAutoRechargeSettings": {
+        "additionalProperties": false,
+        "description": "Auto-recharge configuration: top up the balance automatically when it drops below a threshold.",
+        "properties": {
+          "enabled": {
+            "description": "Whether auto-recharge is active.",
+            "type": "boolean"
+          },
+          "target_cents": {
+            "description": "Balance the recharge restores to, in cents (minimum 500 = $5.00). The charge is target minus current balance.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "threshold_cents": {
+            "description": "Recharge when the balance drops below this amount, in cents.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enabled",
+          "threshold_cents",
+          "target_cents"
+        ],
+        "type": "object"
+      },
       "SubscriptionAutoRechargeSettingsResponse": {
         "additionalProperties": false,
         "description": "The org's auto-recharge configuration and status.",
@@ -2609,7 +3027,7 @@
       },
       "SubscriptionBalanceResponse": {
         "additionalProperties": false,
-        "description": "The current account balance.",
+        "description": "The current account balance and its source breakdown.",
         "properties": {
           "balance_display": {
             "description": "Formatted balance string (e.g., '$12.50').",
@@ -2619,11 +3037,28 @@
             "description": "Current balance in microdollars (1_000_000 = $1.00).",
             "format": "int64",
             "type": "integer"
+          },
+          "included_microdollars": {
+            "description": "Remaining plan-included credit in microdollars. Spent first; resets to the plan allowance at each renewal.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "purchased_microdollars": {
+            "description": "Remaining purchased credit in microdollars. Spent after included credit; each purchase expires one year after Stripe settled it.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "purchased_next_expiry": {
+            "description": "When the soonest-expiring purchased credit stops being usable.",
+            "format": "date-time",
+            "type": "string"
           }
         },
         "required": [
           "balance_microdollars",
-          "balance_display"
+          "balance_display",
+          "included_microdollars",
+          "purchased_microdollars"
         ],
         "type": "object"
       },
@@ -2755,6 +3190,26 @@
           "price_per_second_microdollars",
           "included_balance_microdollars",
           "included_balance_display"
+        ],
+        "type": "object"
+      },
+      "SubscriptionUsageAlertSettings": {
+        "additionalProperties": false,
+        "description": "Usage-alert configuration: warn when the balance runs low.",
+        "properties": {
+          "enabled": {
+            "description": "Whether low-balance alerts are active. Negative-balance alerts are always on.",
+            "type": "boolean"
+          },
+          "threshold_cents": {
+            "description": "Alert while the balance sits below this amount, in cents. Must be positive.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enabled",
+          "threshold_cents"
         ],
         "type": "object"
       },
@@ -3091,6 +3546,125 @@
           "period_start",
           "period_end",
           "granularity"
+        ],
+        "type": "object"
+      },
+      "UsageSession": {
+        "additionalProperties": false,
+        "description": "Single phone-session record from the usage sessions endpoint.",
+        "properties": {
+          "allocated_at": {
+            "description": "ISO 8601 timestamp when the phone was allocated.",
+            "type": "string"
+          },
+          "allocated_by": {
+            "description": "AllocatedBy identifies what triggered the session's allocation.",
+            "type": "string"
+          },
+          "billing_plan_id": {
+            "description": "Billing plan active during the session.",
+            "type": "string"
+          },
+          "cost_microdollars": {
+            "description": "Phone-time cost charged for this session in microdollars.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "deallocated_at": {
+            "description": "ISO 8601 timestamp when the phone was released.",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "description": "Session duration in seconds.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "inference_cost_microdollars": {
+            "description": "Inference spend attributable to this session (sum of the argus calls made under it).",
+            "format": "int64",
+            "type": "integer"
+          },
+          "is_dedicated_phone": {
+            "description": "Whether the session used a dedicated pre-paid phone.",
+            "type": "boolean"
+          },
+          "phone_id": {
+            "description": "Phone claimed by the session.",
+            "type": "string"
+          },
+          "processed_status": {
+            "description": "Billing processing status (e.g., 'billed').",
+            "type": "string"
+          },
+          "session_id": {
+            "description": "Unique session identifier.",
+            "type": "string"
+          },
+          "session_metadata": {
+            "additionalProperties": {},
+            "description": "Arbitrary metadata attached to the session.",
+            "type": "object"
+          },
+          "session_status": {
+            "description": "Session lifecycle status (e.g., 'completed').",
+            "type": "string"
+          },
+          "total_cost_microdollars": {
+            "description": "Session's all-in cost: phone time + inference.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "workflow_id": {
+            "description": "Associated workflow identifier.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "workflow_id",
+          "phone_id",
+          "cost_microdollars",
+          "inference_cost_microdollars",
+          "total_cost_microdollars",
+          "is_dedicated_phone"
+        ],
+        "type": "object"
+      },
+      "UsageSessionsResponse": {
+        "additionalProperties": false,
+        "description": "Paginated list of phone sessions.",
+        "properties": {
+          "limit": {
+            "description": "Page size used for this response.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Pagination offset used for this response.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "sessions": {
+            "description": "Page of session records.",
+            "items": {
+              "$ref": "#/components/schemas/UsageSession"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "total": {
+            "description": "Total number of sessions matching the query.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessions",
+          "total",
+          "limit",
+          "offset"
         ],
         "type": "object"
       },
@@ -3838,7 +4412,7 @@
   "info": {
     "description": "Axilio backend HTTP API.",
     "title": "Axilio API",
-    "version": "0.72.0"
+    "version": "0.83.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -4054,6 +4628,55 @@
         "x-mint": {
           "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
         }
+      },
+      "put": {
+        "description": "Configures automatic balance top-up: when the balance drops below the threshold, a one-off invoice charges the saved payment method to restore it to the target. Requires an admin-role caller: an API key carries its creator's organization role, so the key must belong to an org admin. This only tunes when the saved payment method is charged \u2014 adding funds or payment methods stays in the dashboard.",
+        "operationId": "billing_update_auto_recharge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionAutoRechargeSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionAutoRechargeSettingsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Update auto-recharge settings",
+        "tags": [
+          "Billing"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
       }
     },
     "/billing/balance": {
@@ -4257,6 +4880,59 @@
         }
       }
     },
+    "/billing/history/{invoice_id}/pdf": {
+      "get": {
+        "description": "Returns a temporary PDF download URL for an invoice the caller's org owns. The URL expires; re-request it rather than storing it.",
+        "operationId": "billing_download_invoice",
+        "parameters": [
+          {
+            "description": "Billing history item ID to download.",
+            "in": "path",
+            "name": "invoice_id",
+            "required": true,
+            "schema": {
+              "description": "Billing history item ID to download.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingHistoryInvoiceDownloadResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get an invoice PDF URL",
+        "tags": [
+          "Billing"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
     "/billing/phone-rental-subscriptions": {
       "get": {
         "description": "Returns every phone rental subscription owned by the caller's organization, in any lifecycle state (active or canceled) - canceled rentals are included so past rentals stay visible. Each item's status field tells them apart. The summary block (active_count, combined monthly cost) counts only active rentals.",
@@ -4378,81 +5054,62 @@
         "x-mint": {
           "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
         }
+      },
+      "put": {
+        "description": "Configures the low-balance alert: while enabled and the balance sits below the threshold, an alert stays open and surfaces in the dashboard. Negative-balance alerts are always on. Requires an admin-role caller: an API key carries its creator's organization role, so the key must belong to an org admin.",
+        "operationId": "billing_update_usage_alerts",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionUsageAlertSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionUsageAlertSettingsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Update usage-alert settings",
+        "tags": [
+          "Billing"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
       }
     },
-    "/downloads": {
+    "/files": {
       "get": {
-        "description": "Returns one page of the files captured off phones during sessions (AXI-1449), newest first. Each row carries its capture state: a skipped or failed capture is a visible entry with a reason, not an absence. Downloads share the library and its storage quota with uploads, and a ready download can be delivered to a phone by its id like any upload.",
-        "operationId": "downloads_list",
+        "description": "Returns one page of the org's file library, newest first, with the org's standing usage against its storage quota. Every file carries its source (upload or capture) and, for a capture, its surface and capture state. Filter with source, surface and session_id. Files persist until deleted and any ready file can be delivered to a phone the org holds.",
+        "operationId": "files_list",
         "parameters": [
-          {
-            "description": "filter by filename, case-insensitive substring match",
-            "explode": false,
-            "in": "query",
-            "name": "q",
-            "schema": {
-              "description": "filter by filename, case-insensitive substring match",
-              "type": "string"
-            }
-          },
-          {
-            "description": "only downloads of exactly this media type",
-            "explode": false,
-            "in": "query",
-            "name": "mime_type",
-            "schema": {
-              "description": "only downloads of exactly this media type",
-              "type": "string"
-            }
-          },
-          {
-            "description": "only downloads at least this many bytes (0 = no bound)",
-            "explode": false,
-            "in": "query",
-            "name": "min_size_bytes",
-            "schema": {
-              "default": 0,
-              "description": "only downloads at least this many bytes (0 = no bound)",
-              "format": "int64",
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "only downloads at most this many bytes (0 = no bound)",
-            "explode": false,
-            "in": "query",
-            "name": "max_size_bytes",
-            "schema": {
-              "default": 0,
-              "description": "only downloads at most this many bytes (0 = no bound)",
-              "format": "int64",
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "only downloads registered at or after this time (RFC 3339)",
-            "explode": false,
-            "in": "query",
-            "name": "created_after",
-            "schema": {
-              "description": "only downloads registered at or after this time (RFC 3339)",
-              "format": "date-time",
-              "type": "string"
-            }
-          },
-          {
-            "description": "only downloads registered at or before this time (RFC 3339)",
-            "explode": false,
-            "in": "query",
-            "name": "created_before",
-            "schema": {
-              "description": "only downloads registered at or before this time (RFC 3339)",
-              "format": "date-time",
-              "type": "string"
-            }
-          },
           {
             "description": "max items per page",
             "explode": false,
@@ -4481,28 +5138,124 @@
             }
           },
           {
-            "description": "only downloads captured by this session",
+            "description": "filter by filename, case-insensitive substring match",
+            "explode": false,
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "description": "filter by filename, case-insensitive substring match",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only files of this source",
+            "explode": false,
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "description": "only files of this source",
+              "enum": [
+                "upload",
+                "capture"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "only captures off this surface",
+            "explode": false,
+            "in": "query",
+            "name": "surface",
+            "schema": {
+              "description": "only captures off this surface",
+              "enum": [
+                "phone"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "only files captured by this session",
             "explode": false,
             "in": "query",
             "name": "session_id",
             "schema": {
-              "description": "only downloads captured by this session",
+              "description": "only files captured by this session",
               "format": "uuid",
               "type": "string"
             }
           },
           {
-            "description": "field to sort by",
+            "description": "only files of exactly this media type",
+            "explode": false,
+            "in": "query",
+            "name": "mime_type",
+            "schema": {
+              "description": "only files of exactly this media type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only files at least this many bytes (0 = no bound)",
+            "explode": false,
+            "in": "query",
+            "name": "min_size_bytes",
+            "schema": {
+              "default": 0,
+              "description": "only files at least this many bytes (0 = no bound)",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "only files at most this many bytes (0 = no bound)",
+            "explode": false,
+            "in": "query",
+            "name": "max_size_bytes",
+            "schema": {
+              "default": 0,
+              "description": "only files at most this many bytes (0 = no bound)",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "only files registered at or after this time (RFC 3339)",
+            "explode": false,
+            "in": "query",
+            "name": "created_after",
+            "schema": {
+              "description": "only files registered at or after this time (RFC 3339)",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only files registered at or before this time (RFC 3339)",
+            "explode": false,
+            "in": "query",
+            "name": "created_before",
+            "schema": {
+              "description": "only files registered at or before this time (RFC 3339)",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "field to sort by; source groups uploads and captures",
             "explode": false,
             "in": "query",
             "name": "sort",
             "schema": {
               "default": "created_at",
-              "description": "field to sort by",
+              "description": "field to sort by; source groups uploads and captures",
               "enum": [
                 "created_at",
                 "filename",
-                "size_bytes"
+                "size_bytes",
+                "source"
               ],
               "type": "string"
             }
@@ -4528,7 +5281,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileDownloadListResponse"
+                  "$ref": "#/components/schemas/FileListResponse"
                 }
               }
             },
@@ -4550,28 +5303,77 @@
             "apiKeyAuth": []
           }
         ],
-        "summary": "List the org's captured downloads",
+        "summary": "List the org's files",
         "tags": [
-          "Downloads"
+          "Files"
         ],
         "x-required-role": "viewer",
         "x-mint": {
           "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
         }
+      },
+      "post": {
+        "description": "Registers an image or video in the org's file library and returns a presigned S3 URL to upload the bytes to. PUT the raw file to upload_url with the declared Content-Type and Content-Length headers before the URL expires, then call the complete endpoint to make it ready. The registered file has source=upload. Uploads are capped per file and per org by total size.",
+        "operationId": "files_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FileCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileUploadResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Register a file upload",
+        "tags": [
+          "Files"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
       }
     },
-    "/downloads/{download_id}": {
+    "/files/{file_id}": {
       "delete": {
-        "description": "Removes a captured file from the org's library and everywhere it was delivered: the stored object and the library entry go immediately, and every phone the file was pushed to is scheduled to remove its copy (removal is confirmed per phone and retried until it lands), the same recall an upload's delete runs. The response reports how many phones that recall reaches. The source phone's own copy from the capture session is outside the recall: it belongs to the session, not the library.",
-        "operationId": "downloads_delete",
+        "description": "Removes a file from the org's library and everywhere it was delivered: the stored object and the library entry go immediately, and every phone holding a copy is scheduled to remove it (removal is confirmed per phone and retried until it lands). The response reports how many phones that recall reaches. This runs the same for an uploaded or a captured file; a capture's source phone keeps its own session copy, which belongs to the session, not the library.",
+        "operationId": "files_delete",
         "parameters": [
           {
-            "description": "download identifier to delete",
+            "description": "file identifier to delete",
             "in": "path",
-            "name": "download_id",
+            "name": "file_id",
             "required": true,
             "schema": {
-              "description": "download identifier to delete",
+              "description": "file identifier to delete",
               "format": "uuid",
               "type": "string"
             }
@@ -4604,13 +5406,252 @@
             "apiKeyAuth": []
           }
         ],
-        "summary": "Delete a download",
+        "summary": "Delete a file",
         "tags": [
-          "Downloads"
+          "Files"
         ],
         "x-required-role": "member",
         "x-mint": {
           "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      },
+      "patch": {
+        "description": "Updates the file's display name. Metadata only: storage is keyed by id, so the object never moves and existing URLs keep working, and past deliveries keep the name they were sent under. Only an uploaded file can be renamed; a captured file's name is part of its provenance, so renaming one is rejected.",
+        "operationId": "files_rename",
+        "parameters": [
+          {
+            "description": "file identifier to rename",
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "description": "file identifier to rename",
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FileRenameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenameFileOutputBody"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Rename a file",
+        "tags": [
+          "Files"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/files/{file_id}/complete": {
+      "post": {
+        "description": "Call after PUTting the bytes to the upload URL. Verifies the object landed at the declared size and type, checks the content really is the media it claims to be, and moves the file to ready so it can be delivered. Idempotent: completing an already-ready file just returns it. Applies to source=upload files; a captured file finalizes on its own from the phone's report.",
+        "operationId": "files_complete",
+        "parameters": [
+          {
+            "description": "file identifier to finalize",
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "description": "file identifier to finalize",
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteFileOutputBody"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Mark an upload complete",
+        "tags": [
+          "Files"
+        ],
+        "x-required-role": "member",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
+        }
+      }
+    },
+    "/organization": {
+      "get": {
+        "description": "Returns a descriptor of the organization the API key belongs to: name, slug, id, active plan name. Organization management (rename, members, invitations) is deliberately not part of the public API: it is dashboard-only so an API key can never modify the organization that issued it.",
+        "operationId": "organization_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDescriptorResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get the caller's organization",
+        "tags": [
+          "Organization"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/organization/invitations": {
+      "get": {
+        "description": "Returns every outstanding invitation for the caller's organization. Requires the admin role, matching the dashboard. Organization management (rename, members, invitations) is deliberately not part of the public API: it is dashboard-only so an API key can never modify the organization that issued it.",
+        "operationId": "organization_list_invitations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationInvitationSummaryListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List pending invitations",
+        "tags": [
+          "Organization"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/organization/members": {
+      "get": {
+        "description": "Returns every member of the caller's organization with email, role, and join date. Organization management (rename, members, invitations) is deliberately not part of the public API: it is dashboard-only so an API key can never modify the organization that issued it.",
+        "operationId": "organization_list_members",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationMemberSummaryListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List the organization's members",
+        "tags": [
+          "Organization"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
         }
       }
     },
@@ -4860,6 +5901,73 @@
           }
         ],
         "summary": "List supported apps",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/availability": {
+      "get": {
+        "description": "Returns a capacity snapshot to check before POST /phones:allocate: shared-pool availability broken down by phone type and by location, plus the caller org's dedicated phones with how many are idle (claimable right now). Optional phone_type and location filters narrow every count. Advisory only - availability can change between this read and an allocate, so allocation remains the authority and can still refuse.",
+        "operationId": "phones_availability",
+        "parameters": [
+          {
+            "description": "Only count phones of this platform.",
+            "explode": false,
+            "in": "query",
+            "name": "phone_type",
+            "schema": {
+              "description": "Only count phones of this platform.",
+              "enum": [
+                "android",
+                "iphone"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only count phones at this location slug.",
+            "explode": false,
+            "in": "query",
+            "name": "location",
+            "schema": {
+              "description": "Only count phones at this location slug.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneAvailabilityResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Phone availability summary",
         "tags": [
           "Phones"
         ],
@@ -5211,79 +6319,11 @@
         }
       }
     },
-    "/phones/sessions/{session_id}/downloads": {
+    "/phones/sessions/{session_id}/files": {
       "get": {
-        "description": "Returns the files this session captured off its phone, newest first \u2014 the direct answer to \"what did this session download\". Rows appear at detection, before the bytes finish moving, so a caller waiting on a file watches its capture state progress rather than an empty list.",
-        "operationId": "phones_session_downloads",
+        "description": "Returns the files this session captured off its phone, newest first \u2014 the direct answer to \"what did this session capture\". Every row is source=capture. Rows appear at detection, before the bytes finish moving, so a caller waiting on a file watches its capture state progress rather than an empty list.",
+        "operationId": "phones_session_files",
         "parameters": [
-          {
-            "description": "filter by filename, case-insensitive substring match",
-            "explode": false,
-            "in": "query",
-            "name": "q",
-            "schema": {
-              "description": "filter by filename, case-insensitive substring match",
-              "type": "string"
-            }
-          },
-          {
-            "description": "only downloads of exactly this media type",
-            "explode": false,
-            "in": "query",
-            "name": "mime_type",
-            "schema": {
-              "description": "only downloads of exactly this media type",
-              "type": "string"
-            }
-          },
-          {
-            "description": "only downloads at least this many bytes (0 = no bound)",
-            "explode": false,
-            "in": "query",
-            "name": "min_size_bytes",
-            "schema": {
-              "default": 0,
-              "description": "only downloads at least this many bytes (0 = no bound)",
-              "format": "int64",
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "only downloads at most this many bytes (0 = no bound)",
-            "explode": false,
-            "in": "query",
-            "name": "max_size_bytes",
-            "schema": {
-              "default": 0,
-              "description": "only downloads at most this many bytes (0 = no bound)",
-              "format": "int64",
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "only downloads registered at or after this time (RFC 3339)",
-            "explode": false,
-            "in": "query",
-            "name": "created_after",
-            "schema": {
-              "description": "only downloads registered at or after this time (RFC 3339)",
-              "format": "date-time",
-              "type": "string"
-            }
-          },
-          {
-            "description": "only downloads registered at or before this time (RFC 3339)",
-            "explode": false,
-            "in": "query",
-            "name": "created_before",
-            "schema": {
-              "description": "only downloads registered at or before this time (RFC 3339)",
-              "format": "date-time",
-              "type": "string"
-            }
-          },
           {
             "description": "session whose captures to list",
             "in": "path",
@@ -5321,6 +6361,74 @@
               "minimum": 0,
               "type": "integer"
             }
+          },
+          {
+            "description": "filter by filename, case-insensitive substring match",
+            "explode": false,
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "description": "filter by filename, case-insensitive substring match",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only files of exactly this media type",
+            "explode": false,
+            "in": "query",
+            "name": "mime_type",
+            "schema": {
+              "description": "only files of exactly this media type",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only files at least this many bytes (0 = no bound)",
+            "explode": false,
+            "in": "query",
+            "name": "min_size_bytes",
+            "schema": {
+              "default": 0,
+              "description": "only files at least this many bytes (0 = no bound)",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "only files at most this many bytes (0 = no bound)",
+            "explode": false,
+            "in": "query",
+            "name": "max_size_bytes",
+            "schema": {
+              "default": 0,
+              "description": "only files at most this many bytes (0 = no bound)",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "only files registered at or after this time (RFC 3339)",
+            "explode": false,
+            "in": "query",
+            "name": "created_after",
+            "schema": {
+              "description": "only files registered at or after this time (RFC 3339)",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "only files registered at or before this time (RFC 3339)",
+            "explode": false,
+            "in": "query",
+            "name": "created_before",
+            "schema": {
+              "description": "only files registered at or before this time (RFC 3339)",
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5328,7 +6436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileDownloadListResponse"
+                  "$ref": "#/components/schemas/FileListResponse"
                 }
               }
             },
@@ -5350,9 +6458,9 @@
             "apiKeyAuth": []
           }
         ],
-        "summary": "List a session's captured downloads",
+        "summary": "List a session's captured files",
         "tags": [
-          "Downloads"
+          "Files"
         ],
         "x-required-role": "viewer",
         "x-mint": {
@@ -5360,46 +6468,30 @@
         }
       }
     },
-    "/phones/sessions/{session_id}/events": {
+    "/phones/sessions/{session_id}/frames": {
       "get": {
-        "description": "Returns the paginated event trace for a session (workflow runs and workflow-less interactive leases alike). Org-scoped: another org's session reads as not found.",
-        "operationId": "sessions_list_events",
+        "description": "Returns the paginated telemetry frames for a session in the canonical frame envelope: one completed span frame per durable span (operations that never completed appear via their synthesized failed closures) plus log frames, ordered by span start / log time, with response-level billed-cost maps. This is the same envelope the live telemetry WebSocket streams; live and archive differ only in cardinality (start+end frames live, one completed frame here). Org-scoped: another org's session reads as not found. A trace past the organization's telemetry retention window returns an empty list with retention_expired=true; when the retention policy itself cannot be resolved the request fails with a 500 rather than serving frames whose retention state is unknown. Tolerant reader (unified frame contract): consumers MUST ignore frames with an unknown kind, unknown fields within known kinds, and unknown span_type/log_type values (render generically, never error). Generated SDK types surface an unrecognized frame as an explicit UnknownFrame variant carrying the raw JSON, never a silent drop. A live-stream message MAY carry a JSON array of frame objects; consumers MUST accept a single object or an array.",
+        "operationId": "sessions_list_frames",
         "parameters": [
           {
-            "description": "Session whose events to return.",
+            "description": "Session whose frames to return.",
             "in": "path",
             "name": "session_id",
             "required": true,
             "schema": {
-              "description": "Session whose events to return.",
+              "description": "Session whose frames to return.",
               "minLength": 1,
               "type": "string"
             }
           },
           {
-            "description": "Restrict results to specific event type codes (RUN_STARTED / OUTPUT_LOG / SDK_CALL_COMPLETED / etc.).",
-            "explode": false,
-            "in": "query",
-            "name": "event_types",
-            "schema": {
-              "description": "Restrict results to specific event type codes (RUN_STARTED / OUTPUT_LOG / SDK_CALL_COMPLETED / etc.).",
-              "items": {
-                "type": "string"
-              },
-              "type": [
-                "array",
-                "null"
-              ]
-            }
-          },
-          {
-            "description": "Maximum number of events to return (1-1000).",
+            "description": "Maximum number of frames to return (1-1000).",
             "explode": false,
             "in": "query",
             "name": "limit",
             "schema": {
               "default": 100,
-              "description": "Maximum number of events to return (1-1000).",
+              "description": "Maximum number of frames to return (1-1000).",
               "format": "int64",
               "maximum": 1000,
               "minimum": 1,
@@ -5425,7 +6517,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RunEventsResponse"
+                  "$ref": "#/components/schemas/RunSessionFramesResponse"
                 }
               }
             },
@@ -5447,9 +6539,63 @@
             "apiKeyAuth": []
           }
         ],
-        "summary": "List a session's events",
+        "summary": "List a session's telemetry frames",
         "tags": [
           "Runs"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/sessions/{session_id}/live-view-token": {
+      "post": {
+        "description": "Mints a fresh live-view token (and hosted viewer URL) for an active session, per the session's allocate-time live_view settings: token-mode sessions re-issue the bearer link allocate returned once, org-mode sessions exchange the caller's identity. Refused for sessions allocated with live_view.disabled, for inactive sessions, and for sessions outside the caller's organization (reads as not found). Sharp edge: the returned URL embeds the token and is a bearer capability \u2014 whoever holds it can watch (and, unless the session was allocated view-only, drive) the phone until the session ends, at which point both stop working.",
+        "operationId": "phones_session_live_view_token",
+        "parameters": [
+          {
+            "description": "Phone session identifier",
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "description": "Phone session identifier",
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneLiveViewTokenResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Mint a live-view token",
+        "tags": [
+          "Phones"
         ],
         "x-required-role": "viewer",
         "x-mint": {
@@ -5502,6 +6648,60 @@
           }
         ],
         "summary": "Get a session recording",
+        "tags": [
+          "Phones"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/phones/sessions/{session_id}/telemetry-token": {
+      "post": {
+        "description": "Mints a fresh telemetry_url for an active session \u2014 the same read-only WebSocket URL POST /phones:allocate returns once (live trace spans + output logs for exactly this session, 3h token). This is the telemetry/frames leg, distinct from the live-view (video) token: it can only watch the trace, never the screen, and never drive the phone. The stream's end frame is the session-end signal. Refused for inactive sessions \u2014 an ended session's telemetry is served by GET /phones/sessions/{session_id}/frames \u2014 and for sessions outside the caller's organization (reads as not found).",
+        "operationId": "phones_session_telemetry_token",
+        "parameters": [
+          {
+            "description": "Phone session identifier",
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "description": "Phone session identifier",
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneTelemetryTokenResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Mint a telemetry stream URL",
         "tags": [
           "Phones"
         ],
@@ -5698,7 +6898,7 @@
         }
       },
       "post": {
-        "description": "Sends a library file to a phone the caller's org holds: the phone downloads it over its own connection and inserts it into the media gallery, where app pickers can select it. Accepts either an upload or a download by id, and the file must already be ready - finish an upload with POST /uploads/{upload_id}/complete before delivering it. Returns 202 with the delivery record once the phone acknowledges the download started; watch GET /phones/{phone_id}/deliveries or the live preview for completion. Optionally choose the target collection (DCIM / Pictures / Movies).",
+        "description": "Sends a library file to a phone the caller's org holds: the phone downloads it over its own connection and inserts it into the media gallery, where app pickers can select it. Accepts any file by id regardless of source (uploaded or captured), and the file must already be ready - finish an uploaded file with POST /files/{file_id}/complete before delivering it. Returns 202 with the delivery record once the phone acknowledges the download started; watch GET /phones/{phone_id}/deliveries or the live preview for completion. Optionally choose the target collection (DCIM / Pictures / Movies).",
         "operationId": "phones_create_delivery",
         "parameters": [
           {
@@ -6098,7 +7298,7 @@
     },
     "/runs": {
       "get": {
-        "description": "Returns paginated recent (non-archived) runs the caller started - scoped to their own user within the org, not every member's runs. Filters: workflow_id, search (run ID substring), status_filter, trigger_filter. Order with order_by ('<field> <asc|desc>'), field one of status, started_at, completed_at, created_at.",
+        "description": "Returns paginated recent (non-archived) runs the caller started - scoped to their own user within the org, not every member's runs. Filters: workflow_id, search (run ID substring), status_filter, trigger_filter. Order with order_by ('&lt;field&gt; &lt;asc|desc&gt;'), field one of status, started_at, completed_at, created_at.",
         "operationId": "runs_list",
         "parameters": [
           {
@@ -6194,12 +7394,12 @@
             }
           },
           {
-            "description": "Sort expression '<field> <asc|desc>'; field is one of status, started_at, completed_at, created_at. Defaults to created_at desc.",
+            "description": "Sort expression '&lt;field&gt; &lt;asc|desc&gt;'; field is one of status, started_at, completed_at, created_at. Defaults to created_at desc.",
             "explode": false,
             "in": "query",
             "name": "order_by",
             "schema": {
-              "description": "Sort expression '<field> <asc|desc>'; field is one of status, started_at, completed_at, created_at. Defaults to created_at desc.",
+              "description": "Sort expression '&lt;field&gt; &lt;asc|desc&gt;'; field is one of status, started_at, completed_at, created_at. Defaults to created_at desc.",
               "type": "string"
             }
           }
@@ -6605,339 +7805,9 @@
         ]
       }
     },
-    "/uploads": {
-      "get": {
-        "description": "Returns one page of the files the org uploaded, newest first, with the org's standing usage against its storage quota. Uploads persist until deleted and can be delivered to any phone the org holds.",
-        "operationId": "uploads_list",
-        "parameters": [
-          {
-            "description": "max items per page",
-            "explode": false,
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "default": 50,
-              "description": "max items per page",
-              "format": "int64",
-              "maximum": 100,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "pagination offset",
-            "explode": false,
-            "in": "query",
-            "name": "offset",
-            "schema": {
-              "default": 0,
-              "description": "pagination offset",
-              "format": "int64",
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "filter by filename, case-insensitive substring match",
-            "explode": false,
-            "in": "query",
-            "name": "q",
-            "schema": {
-              "description": "filter by filename, case-insensitive substring match",
-              "type": "string"
-            }
-          },
-          {
-            "description": "field to sort by",
-            "explode": false,
-            "in": "query",
-            "name": "sort",
-            "schema": {
-              "default": "created_at",
-              "description": "field to sort by",
-              "enum": [
-                "created_at",
-                "filename",
-                "size_bytes"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "description": "sort direction",
-            "explode": false,
-            "in": "query",
-            "name": "order",
-            "schema": {
-              "default": "desc",
-              "description": "sort direction",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FileListResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V2ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "summary": "List the org's uploads",
-        "tags": [
-          "Uploads"
-        ],
-        "x-required-role": "viewer",
-        "x-mint": {
-          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
-        }
-      },
-      "post": {
-        "description": "Registers an image or video in the org's file library and returns a presigned S3 URL to upload the bytes to. PUT the raw file to upload_url with the declared Content-Type and Content-Length headers before the URL expires, then call the complete endpoint to make it ready. Uploads are capped per file and per org by total size.",
-        "operationId": "uploads_create",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileCreateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FileUploadResponse"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V2ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "summary": "Register a file upload",
-        "tags": [
-          "Uploads"
-        ],
-        "x-required-role": "member",
-        "x-mint": {
-          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
-        }
-      }
-    },
-    "/uploads/{upload_id}": {
-      "delete": {
-        "description": "Removes a file from the org's library and everywhere it was delivered: the stored object and the library entry go immediately, and every phone holding a copy is scheduled to remove it (removal is confirmed per phone and retried until it lands). The response reports how many phones that recall reaches. Deleting a download runs the same recall.",
-        "operationId": "uploads_delete",
-        "parameters": [
-          {
-            "description": "upload identifier to delete",
-            "in": "path",
-            "name": "upload_id",
-            "required": true,
-            "schema": {
-              "description": "upload identifier to delete",
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteFileOutputBody"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V2ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "summary": "Delete an upload",
-        "tags": [
-          "Uploads"
-        ],
-        "x-required-role": "member",
-        "x-mint": {
-          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
-        }
-      },
-      "patch": {
-        "description": "Updates the file's display name. Metadata only: storage is keyed by id, so the object never moves and existing URLs keep working, and past deliveries keep the name they were sent under. Downloads cannot be renamed \u2014 a captured file's name is part of its provenance.",
-        "operationId": "uploads_rename",
-        "parameters": [
-          {
-            "description": "upload identifier to rename",
-            "in": "path",
-            "name": "upload_id",
-            "required": true,
-            "schema": {
-              "description": "upload identifier to rename",
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileRenameRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RenameFileOutputBody"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V2ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "summary": "Rename an upload",
-        "tags": [
-          "Uploads"
-        ],
-        "x-required-role": "member",
-        "x-mint": {
-          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
-        }
-      }
-    },
-    "/uploads/{upload_id}/complete": {
-      "post": {
-        "description": "Call after PUTting the bytes to the upload URL. Verifies the object landed at the declared size and type, checks the content really is the media it claims to be, and moves the file to ready so it can be delivered. Idempotent: completing an already-ready file just returns it.",
-        "operationId": "uploads_complete",
-        "parameters": [
-          {
-            "description": "upload identifier to finalize",
-            "in": "path",
-            "name": "upload_id",
-            "required": true,
-            "schema": {
-              "description": "upload identifier to finalize",
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompleteFileOutputBody"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V2ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "summary": "Mark an upload complete",
-        "tags": [
-          "Uploads"
-        ],
-        "x-required-role": "member",
-        "x-mint": {
-          "content": "<span class=\"api-role api-role-member\" title=\"Members and admins can call this; viewers cannot.\">Minimum role required: Member</span>"
-        }
-      }
-    },
     "/usage/inferences": {
       "get": {
-        "description": "Paginated, filterable list of inference calls (detect + locate) the caller's user was billed for over a required time window (start_date/end_date). Filters: endpoint, model, session, free-text search. Order with order_by ('<field> <asc|desc>').",
+        "description": "Paginated, filterable list of inference calls (detect + locate) the caller's user was billed for over a required time window (start_date/end_date). Filters: endpoint, model, session, free-text search. Order with order_by ('&lt;field&gt; &lt;asc|desc&gt;').",
         "operationId": "usage_list_inferences",
         "parameters": [
           {
@@ -7038,12 +7908,12 @@
             }
           },
           {
-            "description": "Sort expression '<field> <asc|desc>'; field one of created_at, cost_microdollars, latency_ms, endpoint, model, inference_id. Defaults to created_at desc.",
+            "description": "Sort expression '&lt;field&gt; &lt;asc|desc&gt;'; field one of created_at, cost_microdollars, latency_ms, endpoint, model, inference_id. Defaults to created_at desc.",
             "explode": false,
             "in": "query",
             "name": "order_by",
             "schema": {
-              "description": "Sort expression '<field> <asc|desc>'; field one of created_at, cost_microdollars, latency_ms, endpoint, model, inference_id. Defaults to created_at desc.",
+              "description": "Sort expression '&lt;field&gt; &lt;asc|desc&gt;'; field one of created_at, cost_microdollars, latency_ms, endpoint, model, inference_id. Defaults to created_at desc.",
               "type": "string"
             }
           }
@@ -7169,6 +8039,178 @@
           }
         ],
         "summary": "Get usage metrics",
+        "tags": [
+          "Usage"
+        ],
+        "x-required-role": "viewer",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/usage/sessions": {
+      "get": {
+        "description": "Paginated, filterable list of the caller's phone sessions over a required time window (start_date/end_date), each row carrying billing detail: phone-time cost, inference cost, and combined total in microdollars, billing processing status, and allocation source. Filters: session status, billing processing status, workflow, allocation source, free-text search. Order with order_by ('&lt;field&gt; &lt;asc|desc&gt;').",
+        "operationId": "usage_list_sessions",
+        "parameters": [
+          {
+            "description": "Beginning of the sessions query window (RFC 3339).",
+            "explode": false,
+            "in": "query",
+            "name": "start_date",
+            "required": true,
+            "schema": {
+              "description": "Beginning of the sessions query window (RFC 3339).",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "End of the sessions query window (RFC 3339).",
+            "explode": false,
+            "in": "query",
+            "name": "end_date",
+            "required": true,
+            "schema": {
+              "description": "End of the sessions query window (RFC 3339).",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of sessions per page (1-100).",
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "description": "Number of sessions per page (1-100).",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Pagination offset.",
+            "explode": false,
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "description": "Pagination offset.",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Restrict results to the given session lifecycle statuses.",
+            "explode": false,
+            "in": "query",
+            "name": "session_status_filter",
+            "schema": {
+              "description": "Restrict results to the given session lifecycle statuses.",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "Restrict results to the given billing processing statuses.",
+            "explode": false,
+            "in": "query",
+            "name": "processed_status_filter",
+            "schema": {
+              "description": "Restrict results to the given billing processing statuses.",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "Restrict results to sessions of a single workflow.",
+            "explode": false,
+            "in": "query",
+            "name": "workflow_id",
+            "schema": {
+              "description": "Restrict results to sessions of a single workflow.",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Restrict results to the given allocation sources.",
+            "explode": false,
+            "in": "query",
+            "name": "allocated_by",
+            "schema": {
+              "description": "Restrict results to the given allocation sources.",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "Filter by session, workflow, or phone id substring.",
+            "explode": false,
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "description": "Filter by session, workflow, or phone id substring.",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Sort expression '&lt;field&gt; &lt;asc|desc&gt;'; field one of allocated_at, deallocated_at, duration, cost_microdollars, session_status, processed_status, allocated_by, session_id, workflow_id. Defaults to allocated_at desc.",
+            "explode": false,
+            "in": "query",
+            "name": "order_by",
+            "schema": {
+              "description": "Sort expression '&lt;field&gt; &lt;asc|desc&gt;'; field one of allocated_at, deallocated_at, duration, cost_microdollars, session_status, processed_status, allocated_by, session_id, workflow_id. Defaults to allocated_at desc.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageSessionsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List phone sessions with cost",
         "tags": [
           "Usage"
         ],
@@ -8036,7 +9078,10 @@
       "name": "Billing"
     },
     {
-      "name": "Downloads"
+      "name": "Files"
+    },
+    {
+      "name": "Organization"
     },
     {
       "name": "Phones"
@@ -8046,9 +9091,6 @@
     },
     {
       "name": "Skill"
-    },
-    {
-      "name": "Uploads"
     },
     {
       "name": "Usage"

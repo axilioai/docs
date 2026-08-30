@@ -1,49 +1,147 @@
 ---
-title: "Live telemetry"
-sidebarTitle: "Live telemetry"
-description: "Stream a session's events over a WebSocket as they happen."
+title: "Live Telemetry"
+sidebarTitle: "Live Telemetry"
+description: "Follow a session's spans and logs live with the CLI, SDKs, or its read-only WebSocket."
 ---
 
-When you allocate a phone, the response includes a `telemetry_url`: a
-WebSocket that streams the session's events live — driver calls, vision
-inference, and output logs, as structured JSON, the moment they happen.
+Telemetry is the structured execution record for a phone session. Its frames
+include completed and in-flight operations, inference work, file activity, and
+output logs. The live stream and the retained [frame archive](/observability/frames)
+use the same envelope.
 
-It's how you watch a session from your own code, pipeline, or UI without
-opening the dashboard:
+When Telemetry is enabled, allocating a phone returns a read-only
+`telemetry_url` for that session.
 
-```python
-import asyncio
-import json
+## Follow with the CLI
 
-import websockets
+Follow an active session after printing its archived prefix:
 
-device = client.phones.allocate(phone_type="ANDROID")
-
-async def watch():
-    async with websockets.connect(device.telemetry_url) as ws:
-        async for frame in ws:
-            print(json.loads(frame))
-
-asyncio.run(watch())
+```bash
+axilio sessions trace <session-id> --follow
 ```
 
-A few things to know:
+Follow a run from queueing through its final outcome:
 
-- **The URL is self-contained.** Its credential is embedded; connect with any
-  WebSocket client, no headers needed.
-- **Read-only.** Anything you send on the socket is ignored.
-- **Late joiners catch up.** Connecting mid-session replays the recent event
-  window, then follows live.
-- **It ends with the session.** The URL stops working at deallocation. For
-  events after a session ends, use the [events API](/observability/events).
+```bash
+axilio runs watch <run-id>
+```
+
+Both commands reconnect through the frame archive if the live connection is
+unavailable. With `-o json`, they emit newline-delimited JSON: one frame per
+line followed by a final summary object.
+
+## Follow with Python
+
+The Python helper reconnects automatically, resumes from its last cursor, and
+deduplicates replayed frames:
+
+```python
+from axilio.platform import Client
+
+client = Client()
+allocation = client.phones.allocate(phone_type="android")
+
+telemetry = client.telemetry(
+    allocation.session_id,
+    allocation.telemetry_url,
+)
+
+for frame in telemetry.tail():
+    print(frame)
+```
+
+The loop ends after it yields the session's terminal frame. Use
+`telemetry.logs(live=True)` when you only need log frames.
+
+## Follow with Go
+
+The Go helper reconnects and resumes from its latest cursor:
+
+```go
+view := telemetry.NewSession(
+    api,
+    allocation.SessionID,
+    telemetry.WithTelemetryURL(*allocation.TelemetryURL),
+)
+
+stream, err := view.Tail(ctx)
+if err != nil {
+    return err
+}
+defer stream.Close()
+
+for {
+    frame, err := stream.Next(ctx)
+    if errors.Is(err, io.EOF) {
+        break
+    }
+    if err != nil {
+        return err
+    }
+    fmt.Printf("%+v\n", frame)
+}
+
+if stream.Gapped() {
+    fmt.Println("The live replay window expired; refetch the archived trace")
+}
+```
+
+Import the helper as
+`github.com/axilioai/platform-go/drivers/telemetry`. Check that
+`allocation.TelemetryURL` is non-nil before dereferencing it. Delivery is at
+least once, so deduplicate replayed frames if your Go consumer requires
+exactly-once presentation. When `stream.Gapped()` is true, call `view.Trace`
+to rebuild the authoritative trace from the archive.
+
+## Attach to an existing active session
+
+An orchestrated run does not return its allocation response to your process.
+Mint a fresh URL for an active session, then attach the same helper:
+
+```python
+grant = client.phones.session_telemetry_token(session_id)
+telemetry = client.telemetry(session_id, grant.telemetry_url)
+
+for frame in telemetry.tail():
+    print(frame)
+```
+
+The token operation is org-scoped and read-only. It refuses inactive sessions.
+For an ended session, read [archived frames](/observability/frames) instead.
+
+## Stream behavior
+
+- **Treat the URL as a secret.** Its session-scoped credential is embedded, so
+  a WebSocket client connects without additional headers.
+- **The stream is read-only.** Messages a viewer sends are ignored.
+- **Late joiners receive the recent retained window**, then follow new frames.
+- **A message can contain one frame or an array of frames.** Readers must
+  support both forms.
+- **Unknown frame kinds and fields are additive.** Preserve or render them
+  generically instead of failing the stream.
+- **The URL dies with the session.** The retained archive remains available
+  only for your organization's Telemetry-retention window.
+
+<Note>
+  Both helpers reconnect, resume from cursor checkpoints, and handle a clean
+  session end. Python also deduplicates replayed frames. A Go consumer should
+  tolerate duplicates and check `Gapped()`. If you open the WebSocket
+  yourself, implement the [reconnect and resume contract](/api-reference/dcp/reconnect).
+</Note>
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Events" icon="list-check" href="/observability/events">
-    The same step-by-step, after the session ends.
+  <Card title="Telemetry frames" icon="list-check" href="/observability/frames">
+    Read the retained trace and its cost maps.
   </Card>
-  <Card title="Embed live view" icon="window" href="/observability/embed-live-view">
-    Watch the screen itself, embedded in your app.
+  <Card title="Reconnect and resume" icon="rotate" href="/api-reference/dcp/reconnect">
+    Build a reconnect-correct raw WebSocket client.
+  </Card>
+  <Card title="Live view" icon="window" href="/observability/live-view">
+    Watch or embed the phone screen.
+  </Card>
+  <Card title="Recordings" icon="video" href="/observability/recordings">
+    Replay the screen after the session ends.
   </Card>
 </CardGroup>

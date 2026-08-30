@@ -1,69 +1,48 @@
 ---
-title: "Cost"
+title: "Session cost"
 sidebarTitle: "Cost"
-description: "See exactly where your money goes: per session, per vision call, and over time."
+description: "Understand per-call cost in a session trace and review account-wide totals under Usage."
 ---
 
-Axilio itemizes every cost, so you always know where your money is going. No
-surprises.
+Cost is available in two places with different scopes:
 
-Costs come back in **microdollars**, a millionth of a dollar. Divide by 1,000,000
-for dollars.
+- A session's [Telemetry frames](/observability/frames) join billed cost to
+  SDK-call and inference spans.
+- [Usage](/usage/overview) reports session and inference totals across a time
+  range.
 
-## Per session
+Telemetry cost maps and usage row fields whose names end in `_microdollars`
+use millionths of a dollar. Divide those values by 1,000,000 to display
+dollars. Aggregate Usage `cost_by_product` values are already in dollars.
 
-Each session's cost is split into device time and vision calls:
-
-```python
-from datetime import datetime, timedelta
-
-usage = client.usage.list_sessions(
-    start_date=datetime.now() - timedelta(days=7),
-    end_date=datetime.now(),
-)
-
-for s in usage.sessions:
-    print(s.session_id, s.total_cost_microdollars)
-    print("  device:", s.cost_microdollars)
-    print("  vision:", s.inference_cost_microdollars)
-```
-
-## Per vision call
-
-Every `find(query=...)` and other vision call is itemized:
+## Cost in a Telemetry trace
 
 ```python
-inferences = client.usage.list_inferences(
-    start_date=datetime.now() - timedelta(days=7),
-    end_date=datetime.now(),
-)
+telemetry = client.telemetry(session_id)
+trace = telemetry.trace()
 
-for i in inferences.inferences:
-    print(i.endpoint, i.model, i.cost_microdollars, f"{i.latency_ms}ms")
+for item in trace.spans:
+    if item.billed_cost_microdollars is not None:
+        print(item.frame.name, item.billed_cost_microdollars)
 ```
 
-## Totals over time
+The frame archive returns `sdk_call_costs` and `inference_costs` as
+response-level maps. Billed cost is not written into the frame itself. The SDK
+helpers perform this join for you.
 
-`get_metrics` rolls everything up, with a breakdown of where the money went:
+## Account-wide usage
 
-```python
-metrics = client.usage.get_metrics(
-    start_date=datetime.now() - timedelta(days=30),
-    end_date=datetime.now(),
-    granularity="daily",
-)
-
-print(metrics.compute_minutes)
-print(metrics.cost_by_product)
-```
+Use [Usage](/usage/overview) for per-session totals, individual inference
+charges, charts, and CLI/API examples. Billing pages cover the account balance,
+plan, invoices, and payment settings rather than duplicating usage data.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Billing" icon="credit-card" href="/billing/overview">
-    Add funds and manage your plan.
+  <Card title="Usage" icon="chart-line" href="/usage/overview">
+    Review session and inference totals over time.
   </Card>
-  <Card title="Recordings" icon="video" href="/observability/recordings">
-    See what each session did.
+  <Card title="Telemetry frames" icon="list-check" href="/observability/frames">
+    Join billed cost to work inside one session.
   </Card>
 </CardGroup>

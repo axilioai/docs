@@ -1,15 +1,16 @@
 ---
 title: "API Reference"
 sidebarTitle: "Overview"
-description: "The Axilio REST API: base URLs, authentication, and how to read these pages."
+description: "Use the Axilio REST API for phones, workflows, Files, Telemetry, usage, billing, and organization resources."
 ---
 
-These pages are generated from Axilio's OpenAPI specs, so they stay in sync with
-the live API. Each endpoint shows its parameters, an example request, the
-response, and a **Try it** panel.
+The REST reference is generated from Axilio's public OpenAPI contract. It covers
+the customer-facing operations available through `api.axilio.ai`. Each endpoint
+shows its parameters, request and response schemas, and a **Try it** panel.
 
-Most people use the [Python SDK](/quickstart) instead of calling the API directly.
-Reach for the REST API when you're not working in Python.
+Use the [Python SDK](/quickstart#python), [Go SDK](/quickstart#go), or [CLI](/cli) when you want a typed or
+interactive interface. Use the REST API from another runtime or when you need
+direct control over HTTP requests.
 
 ## Base URLs
 
@@ -23,40 +24,55 @@ Reach for the REST API when you're not working in Python.
 Send your API key in the `X-Axilio-Api-Key` header:
 
 ```bash
-curl https://api.axilio.ai/api/v1/phones/available \
+curl https://api.axilio.ai/api/v1/phones/availability \
   -H "X-Axilio-Api-Key: axl_your_key_here"
 ```
 
-Get a key from the [dashboard](https://axilio.ai/dashboard). See
+Get a key from the [dashboard](https://app.axilio.ai/dashboard). See
 [Authentication](/authentication) for the SDK equivalent.
+
+## REST resources
+
+| Resource | What you can do | Reference |
+|---|---|---|
+| **Phones and sessions** | Check availability, allocate and release phones, inspect sessions, manage phones, and mint live-view or Telemetry stream URLs. | [List phones](/api-reference/rest/phones/list-the-orgs-phones) · [Check availability](/api-reference/rest/phones/phone-availability-summary) |
+| **Workflows and runs** | Create and revise workflows, start runs immediately, inspect run history and statistics, and cancel runs. | [List workflows](/api-reference/rest/workflows/list-workflows) · [List runs](/api-reference/rest/runs/list-runs) |
+| **Files** | Upload and manage organization library files, deliver a file to a phone, and list files captured during a session. | [List files](/api-reference/rest/files/list-the-orgs-files) · [List session files](/api-reference/rest/files/list-a-sessions-captured-files) |
+| **Telemetry** | Read a session's Telemetry frames or mint a URL for its live Telemetry stream. | [List frames](/api-reference/rest/runs/list-a-sessions-telemetry-frames) · [Mint a stream URL](/api-reference/rest/phones/mint-a-telemetry-stream-url) |
+| **Usage and billing** | Read phone-session and inference usage, account balance, invoices, plan details, and billing preferences. Admins can update auto-recharge and usage-alert settings. | [List session usage](/api-reference/rest/usage/list-phone-sessions-with-cost) · [Get balance](/api-reference/rest/billing/get-account-balance) |
+| **Organization and API keys** | Read organization and member details. Admins can view pending invitations and create, list, or delete API keys. | [Get organization](/api-reference/rest/organization/get-the-callers-organization) · [List API keys](/api-reference/rest/api-keys/list-api-keys) |
+
+<Note>
+  **Files** is the resource name. Upload, download, and delivery are actions on
+  files. Session execution data is exposed as **Telemetry frames**, not events.
+</Note>
 
 ## Roles & permissions
 
-Everyone in an organization has one of three roles, and they build on each other —
-each role can do everything the ones below it can:
+Everyone in an organization has one of three roles. The roles are hierarchical,
+so each role includes the permissions of the roles below it:
 
 | Role | Can do |
 |---|---|
-| **Viewer** | Read-only: list and view phones, sessions, runs, workflows, usage, billing. |
-| **Member** | Everything a viewer can, **plus** act: allocate phones, run workflows, edit workflows. |
-| **Admin** | Everything a member can, **plus** manage the org: API keys, members, and billing. |
+| **Viewer** | Read organization, phone, session, workflow, run, file, Telemetry, usage, and billing resources. |
+| **Member** | Everything a viewer can do, plus allocate and manage phones, start or cancel runs, edit workflows, and manage or deliver files. |
+| **Admin** | Everything a member can do, plus manage API keys, view pending invitations, and update auto-recharge or usage-alert settings. |
 
-Each endpoint shows a **minimum role required** badge — the lowest role that can
-call it, not an exclusive one. *Minimum role required: Viewer* means any role can
-call it (viewer, member, or admin); *Minimum role required: Member* means member
-or admin; *Minimum role required: Admin* means admin only. So a member can call
-every Viewer and Member endpoint.
+Authenticated operations declare an `x-required-role` value in the OpenAPI
+contract. This value is the minimum role, not an exclusive role. `viewer` allows
+viewers, members, and admins. `member` allows members and admins. `admin` allows
+admins only.
 
-Not sure what you are? Check your role in the [dashboard](https://axilio.ai/dashboard)
+Not sure what you are? Check your role in the [dashboard](https://app.axilio.ai/dashboard)
 under **Organization → Members**.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Use the Python SDK instead.
+  <Card title="SDK quickstart" icon="rocket" href="/quickstart">
+    Allocate and control your first phone with the Python SDK.
   </Card>
-  <Card title="Models" icon="layer-group" href="/drivers/models">
-    The models behind Argus, and their pricing.
+  <Card title="Device Control Protocol" icon="plug" href="/api-reference/dcp/overview">
+    Drive an allocated phone over its WebSocket protocol.
   </Card>
 </CardGroup>

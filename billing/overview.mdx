@@ -1,31 +1,52 @@
 ---
-title: "How billing works"
+title: "Billing"
 sidebarTitle: "Overview"
-description: "You pay by the second for the time you use a phone, from a prepaid balance."
+description: "Understand shared phone time, dedicated rentals, inference usage, balance, and invoices."
 ---
 
-Axilio is **pay as you go**. You have a balance, and you spend from it as you use
-phones.
+Billing and usage are related but separate:
 
-- **Device time** is billed **per second**, from when you get a phone to when you
-  return it.
-- **Vision calls** (`find(query=...)`) cost a little extra, billed per call.
-- Everything is itemized, so you always know
-  [where your money went](/observability/cost).
+- [Usage](/usage/overview) shows phone sessions, aggregate spend, and individual
+  inference charges.
+- **Balance and invoices** show available credit, purchases, and payment
+  records.
+- **Plans** set included balance, concurrency, and usage rates.
+- **Dedicated rentals** reserve one phone at a flat daily, weekly, or monthly
+  price.
 
-Add funds and they're drawn down as you go. A plan can include a monthly balance
-and set limits like how many runs you can do at once.
+## What is billed
+
+| Product | Billing model |
+| --- | --- |
+| Shared phone session | Metered while your organization holds the phone |
+| Dedicated phone | Flat rental; its sessions add no phone-time charge |
+| Vision inference | Metered per call according to the selected model |
+
+Your subscription can add included credit each billing period. Purchased credit
+is tracked separately. The balance endpoint reports both components and the
+combined total.
+
+## Where actions are available
+
+| Action | Dashboard | CLI | Python / Go / REST |
+| --- | --- | --- | --- |
+| Read balance and plan | Yes | Yes | Yes |
+| Read usage | Yes | Metrics and inferences | Yes |
+| List invoices and download PDFs | Yes | No | Yes |
+| Configure auto-recharge and balance alerts | Yes | No | Yes |
+| Add funds or add a payment method | Yes | No | No |
+| Change plan or manage rental checkout/cancellation | Yes | No | Read-only rental/subscription APIs |
 
 ## Next steps
 
 <CardGroup cols={3}>
-  <Card title="Balance & invoices" icon="wallet" href="/billing/balance-and-invoices">
-    Check your balance and add funds.
+  <Card title="Usage" icon="chart-line" href="/usage/overview">
+    Review sessions, aggregate spend, and inference rows.
   </Card>
-  <Card title="Plans" icon="layer-group" href="/billing/plans">
-    See and change your plan.
+  <Card title="Balance and invoices" icon="wallet" href="/billing/balance-and-invoices">
+    Read credit, add funds in the dashboard, and download invoices.
   </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
-    Where your money goes.
+  <Card title="Plans and rentals" icon="layer-group" href="/billing/plans">
+    Inspect the active plan and dedicated-phone subscriptions.
   </Card>
 </CardGroup>

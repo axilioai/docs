@@ -1,40 +1,106 @@
 ---
-title: "Devices and sessions"
+title: "Phones and sessions"
 sidebarTitle: "Overview"
-description: "A device is a real phone in the cloud. A session is a phone you've borrowed to use."
+description: "Choose a shared or dedicated phone, start a session, and release it when you finish."
 ---
 
-A **device** is a real Android phone in Axilio's cloud. A **session** is a phone
-you've borrowed to use.
+A **phone** is a real mobile device in Axilio's cloud. A **session** is the
+period when your organization controls one phone.
 
-You don't keep phones. You borrow one, do your thing, and give it back. You only
-pay for the time you hold it.
+You can start an interactive session and drive the phone yourself, or let a
+[workflow run](/workflows/overview) create the session. A run and its session
+have different IDs.
 
-```python
-from axilio.platform import Client
+## Choose a phone
 
-client = Client()
+| Phone source | When to use it | Billing |
+| --- | --- | --- |
+| Shared pool | You need any available Android phone. | Phone time is metered while the session is active. |
+| Dedicated inventory | You need the same rented phone, its installed apps, or its saved state. | The phone is covered by its flat rental; its sessions add no phone-time charge. |
 
-with client.session("android") as driver:
-    ...   # the phone is yours inside this block
-# it's returned automatically here
-```
+Availability is a snapshot. Another session can claim a free phone before your
+allocation request reaches the service, so the allocation result is always the
+authority.
 
-## The basics
+## Start a session
 
-<CardGroup cols={3}>
-  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone.
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Sessions**](https://app.axilio.ai/dashboard), choose your
+    organization, and click **Allocate A Phone**. Select the shared pool, any
+    available dedicated phone, or one exact dedicated phone.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio sessions start
+    axilio sessions start --phone-id ph_123
+    ```
+
+    The first command uses the shared pool. The second pins a dedicated phone
+    returned by `axilio phones mine`.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+
+    with client.session("android") as driver:
+        screen = driver.observe()
+    # The phone is released when the block exits.
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+        PhoneID: allocation.PhoneID,
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    Start a session with `POST /api/v1/phones:allocate`. Release it with
+    `POST /api/v1/phones/{phone_id}:deallocate`.
+
+    See the [REST API reference](/api-reference/overview) for request and
+    response schemas.
+  </Tab>
+</Tabs>
+
+## What a session gives you
+
+An allocation returns a `phone_id` and `session_id`. Depending on the options
+you enabled, it can also return:
+
+- `control_url` for the Device Control Protocol
+- `telemetry_url` for the live Telemetry stream
+- `live_view_url` for the hosted interactive viewer
+
+Treat every returned URL as a credential. It is scoped to the session and stops
+accepting new connections after the session ends.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Allocate a phone" icon="square-plus" href="/devices/allocate">
+    Start and release a session through each supported interface.
   </Card>
-  <Card title="See devices" icon="list" href="/devices/discover">
-    What's free, and which phones are yours.
+  <Card title="Discover phones" icon="list" href="/devices/discover">
+    Check shared capacity and your dedicated inventory.
   </Card>
-  <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How borrowing works, and how long you hold a phone.
+  <Card title="Session lifecycle" icon="clock" href="/devices/timeouts">
+    Inspect sessions and understand idle and connection timeouts.
+  </Card>
+  <Card title="Control a phone" icon="hand-pointer" href="/driver/overview">
+    Use the mobile driver after allocation.
   </Card>
 </CardGroup>
-
-## How it fits with the driver
-
-The Platform gives you the phone. The [driver](/driver/overview) controls it.
-`session()` does both: it borrows a phone and hands you a driver to drive it.

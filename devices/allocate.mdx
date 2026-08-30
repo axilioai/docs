@@ -1,78 +1,143 @@
 ---
-title: "Get a device"
-sidebarTitle: "Get a device"
-description: "Borrow a phone with a session, or get and release one yourself."
+title: "Allocate a phone"
+sidebarTitle: "Allocate"
+description: "Start a shared or dedicated phone session and release it safely."
 ---
 
-The easy way to get a phone is a **session**. It borrows one, hands you a
-[driver](/driver/overview), and gives the phone back when you're done:
+Allocate from the shared pool when any available Android phone works. Pass a
+`phone_id` when you need one exact [dedicated phone](/devices/dedicated).
 
-```python
-from axilio.platform import Client
+## Start and release
 
-client = Client()
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard) and choose your organization.
+    2. Click **Allocate A Phone**.
+    3. Choose the shared pool, any available dedicated phone, or one exact dedicated phone.
+    4. Optionally add a session name, tags, or an idle timeout.
+    5. Click **Allocate**.
+    6. Click **Deallocate** when you finish.
+  </Tab>
 
-with client.session("android") as driver:
-    driver.find(query="the Settings icon").tap()
-```
+  <Tab title="CLI">
+    ```bash
+    # Use the shared pool.
+    axilio sessions start
 
-## Pick a specific phone
+    # Or pin one dedicated phone.
+    axilio sessions start --phone-id ph_123
 
-By default you get any free phone. To use one specific phone, like a
-[dedicated one you rented](/billing/plans), pass its `phone_id`:
+    # Release by session ID or phone ID.
+    axilio sessions stop sess_123 --yes
+    ```
 
-```python
-mine = client.phones.mine()
-phone = mine.phones[0]
+    Use `eval "$(axilio sessions start --export)"` when one shell must pin the
+    new session through `AXILIO_SESSION`.
+  </Tab>
 
-with client.session("ANDROID", phone_id=phone.phone_id) as driver:
-    ...
-```
+  <Tab title="Python SDK">
+    Prefer the context manager because it releases the phone on every exit path:
 
-## Get and release it yourself
+    ```python
+    from axilio.platform import Client
 
-If you need to hold a phone outside a `with` block, get and release it by hand:
+    client = Client()
 
-```python
-device = client.phones.allocate(phone_type="ANDROID")
-print(device.phone_id, device.session_id)
+    with client.session("android", phone_id="ph_123") as driver:
+        print(driver.observe())
+    ```
 
-# ... use the phone ...
+    Manage the lifetime directly only when it must outlive a `with` block:
 
-client.phones.deallocate(phone_id=device.phone_id)
-```
+    ```python
+    allocation = client.phones.allocate(
+        phone_type="android",
+        phone_id="ph_123",
+    )
+    try:
+        print(allocation.phone_id, allocation.session_id)
+        # Connect to allocation.control_url and drive the phone.
+    finally:
+        client.phones.deallocate(allocation.phone_id)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        PhoneID:   platformgo.String("ph_123"), // omit for the shared pool
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer func() {
+        if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+            PhoneID: allocation.PhoneID,
+        }); err != nil {
+            log.Printf("release phone: %v", err)
+        }
+    }()
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    ALLOCATION=$(curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"phone_type":"android"}')
+
+    PHONE_ID=$(printf '%s' "$ALLOCATION" | jq -r '.phone_id')
+    printf '%s\n' "$ALLOCATION" | jq
+
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    Add `"phone_id":"ph_123"` to pin a dedicated phone.
+  </Tab>
+</Tabs>
 
 <Warning>
-  If you get a phone this way, you have to give it back with `deallocate`. Until
-  you do, the phone stays yours and keeps costing you. A `session()` does this for
-  you, so prefer it unless you have a reason not to.
+  Direct allocation is a lease. Release the phone when you finish. Shared phone
+  time remains billable until release or automatic session expiry.
 </Warning>
 
-## What you get back
+## Allocation options
 
-Besides `phone_id` and `session_id`, an allocation returns three ready-to-use
-connection URLs. Each is scoped to this one session and stops working when the
-session ends:
+The public API can also set:
 
-| Field | What it's for |
-| --- | --- |
-| `control_url` | Drive the phone programmatically. The SDK uses this for you. |
-| `telemetry_url` | A WebSocket streaming the session's [events live](/observability/telemetry). |
-| `live_view_url` | A hosted page with the phone's live, interactive screen — [embeddable in your app](/observability/embed-live-view). Treat it as a secret. |
+- `name` and `tags` to organize sessions
+- `recording` to enable or disable video
+- `telemetry` to enable or suppress both live and archived Telemetry for this
+  directly allocated session
+- `capture` to add media produced on the phone to [Files](/files/overview)
+- `live_view` to configure the hosted viewer
+- `ttl.idle_timeout_seconds` to release an unattended phone
+- `workflow_id` to associate an explicitly allocated session with a workflow
+
+The Python `client.session()` helper intentionally exposes the common
+interactive path. Use `client.phones.allocate()` when you need the full option
+set.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="See devices" icon="list" href="/devices/discover">
-    Find a phone to use.
+  <Card title="Discover phones" icon="list" href="/devices/discover">
+    Check shared availability or find a dedicated phone ID.
   </Card>
-  <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How long you can hold a phone.
+  <Card title="Session lifecycle" icon="clock" href="/devices/timeouts">
+    Configure idle timeout and inspect active or completed sessions.
   </Card>
-  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
-    Drive the phone you got.
+  <Card title="Live view" icon="video" href="/observability/live-view">
+    Watch or interact with an active phone.
   </Card>
-  <Card title="Embed live view" icon="window" href="/observability/embed-live-view">
-    Put the phone's screen in your own app.
+  <Card title="Telemetry" icon="chart-line" href="/observability/telemetry">
+    Follow an active session and read its archived trace.
   </Card>
 </CardGroup>

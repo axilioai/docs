@@ -1,57 +1,86 @@
 ---
-title: "Your plan"
-sidebarTitle: "Plans"
-description: "See your current plan and change it."
+title: "Plans and rentals"
+sidebarTitle: "Plans and rentals"
+description: "Inspect your subscription, compare usage pricing, and manage dedicated-phone rentals."
 ---
 
-A plan sets your monthly included balance, how many runs you can do at once, and
-your rates.
+A plan sets the included balance, concurrent-run limit, and usage rates for your
+organization.
 
 <div id="axilio-plans" />
 
-These prices are pulled live from Axilio. See the
-[pricing page](https://axilio.ai) for full details.
+The dashboard is the authority for the plans currently available to your
+organization.
+
+## Read the active plan
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard) and choose your
+    organization. The plan card shows the active plan and renewal period.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio billing plan
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    subscription = client.billing.get_subscription()
+
+    print(subscription.plan_name)
+    print(subscription.included_balance_display)
+    print(subscription.max_concurrent_runs)
+    print(subscription.current_period_end)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    subscription, err := api.Billing.GetSubscription(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(subscription.PlanName, subscription.MaxConcurrentRuns)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    Use `GET /api/v1/billing/subscription`.
+  </Tab>
+</Tabs>
+
+## Change the plan
+
+Plan upgrades, downgrades, and checkout are dashboard-only actions. Open
+**Billing**, click the plan-management action, and complete the prompted flow.
+
+The CLI, SDKs, and public REST API do not create checkout or customer-portal
+sessions.
 
 ## Vision model pricing
 
-`find(query=...)` and other vision calls use one of these models, billed per token
-on top of your device time.
+`find(query=...)` and other vision calls can use a metered model:
 
 <div id="axilio-models" />
 
-Prices are per million tokens, pulled live. See [Cost](/observability/cost) to
-track what you actually spend.
+Use [Usage](/usage/overview) to review actual inference rows and aggregate spend.
 
-## Your current plan
+## Dedicated-phone rentals
 
-```python
-sub = client.billing.get_subscription()
+Dedicated phones use separate flat daily, weekly, or monthly subscriptions:
 
-print(sub.plan_name)
-print(sub.included_balance_display)   # balance included each month
-print(sub.max_concurrent_runs)        # how many runs at once
-print(sub.current_period_end)
-```
+<div id="axilio-rental-plans" />
 
-## Change your plan
-
-Start a checkout for a new plan, then open the link to finish:
+Start, renew, or cancel a rental in the dashboard. SDKs and REST can read the
+organization's subscriptions:
 
 ```python
-checkout = client.billing.create_checkout(plan_id="plan_pro", billing_cycle="monthly")
-print(checkout.checkout_url)
+rentals = client.billing.get_rental_subscriptions()
+for rental in rentals.subscriptions or []:
+    print(rental.phone_id, rental.status, rental.current_period_end)
 ```
 
-Find plan IDs and prices on the [pricing page](https://axilio.ai) or in your
-[dashboard](https://axilio.ai/dashboard).
-
-## Next steps
-
-<CardGroup cols={2}>
-  <Card title="Balance & invoices" icon="wallet" href="/billing/balance-and-invoices">
-    Check your balance and add funds.
-  </Card>
-  <Card title="How billing works" icon="circle-info" href="/billing/overview">
-    Per-second billing, explained.
-  </Card>
-</CardGroup>
+See [Dedicated phones](/devices/dedicated) for allocation behavior.

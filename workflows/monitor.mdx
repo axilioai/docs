@@ -1,29 +1,162 @@
 ---
-title: "Check a run"
+title: "Monitor runs"
 sidebarTitle: "Monitor"
-description: "Check whether a run is still going, and whether it succeeded."
+description: "List, inspect, watch, cancel, and summarize workflow runs."
 ---
 
-Check on a run with its run id:
+Use the run ID returned at creation time. A run's `session_id` appears after a
+phone starts it; the two IDs are intentionally different.
 
-```python
-run = client.runs.get(run_id)
+## List and inspect runs
 
-print(run.status)         # e.g. running, completed
-print(run.success)        # True or False once it's done
-print(run.error_message)  # why it failed, if it did
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Runs**](https://app.axilio.ai/dashboard), choose your organization,
+    and filter by workflow, trigger, or status. Open a run to inspect its
+    session, phone, recording, and Telemetry.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs list --workflow wf_123
+    axilio runs get run_123
+    ```
+
+    Add `-o json` for the complete machine-readable result.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    runs = client.runs.list(workflow_id="wf_123", limit=20)
+    run = client.runs.get("run_123")
+
+    print(run.status, run.success, run.error_message)
+    print("session:", run.session_id)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    runs, err := api.Runs.List(ctx, &platformgo.RunsListRequest{
+        WorkflowID: platformgo.String("wf_123"),
+        Limit:      platformgo.Int64(20),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    run, err := api.Runs.Get(ctx, &platformgo.RunsGetRequest{
+        RunID: "run_123",
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    Use `GET /api/v1/runs` to list recent runs and
+    `GET /api/v1/runs/{run_id}` for one run.
+  </Tab>
+</Tabs>
+
+## Watch a run
+
+`runs watch` streams the run's session Telemetry until the terminal status. It
+replays archived frames first when necessary, then resumes the live stream:
+
+```bash
+axilio runs watch run_123
 ```
 
-To watch a run as it happens, replay it as a video, or see its step-by-step
-events, see [Observability](/observability/overview).
+In JSON mode, output is newline-delimited JSON: one object per frame followed
+by a final `watch_end` summary. It is not one JSON document.
 
-## Next steps
+You can also follow a session directly:
 
-<CardGroup cols={2}>
-  <Card title="Observability" icon="video" href="/observability/overview">
-    Recordings, events, and cost.
-  </Card>
-  <Card title="Run" icon="play" href="/workflows/run">
-    Start another run.
-  </Card>
-</CardGroup>
+```bash
+axilio sessions trace sess_123 --follow
+```
+
+See [Telemetry](/observability/telemetry) for SDK helpers and archive behavior.
+
+## Cancel a queued or running run
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open the run and click **Cancel**. A completed, failed, or already canceled
+    run is already terminal.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs cancel run_123 --yes
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    canceled = client.runs.cancel("run_123")
+    print(canceled.status)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    canceled, err := api.Runs.Cancel(ctx, &platformgo.RunsCancelRequest{
+        RunID: "run_123",
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    Send `POST /api/v1/runs/{run_id}:cancel`.
+  </Tab>
+</Tabs>
+
+## Read history and statistics
+
+Recent runs and historical reporting are separate queries. Use history for a
+bounded time window and statistics for a workflow's total and success rate.
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio runs history --from 2026-08-01 --to 2026-08-28 --workflow wf_123
+    axilio runs stats wf_123
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from datetime import datetime, timezone
+
+    history = client.runs.list_historic(
+        start_date=datetime(2026, 8, 1, tzinfo=timezone.utc),
+        end_date=datetime(2026, 8, 28, tzinfo=timezone.utc),
+        workflow_id="wf_123",
+    )
+    stats = client.runs.stats("wf_123")
+    print(stats.total_runs, stats.success_rate)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    history, err := api.Runs.ListHistoric(ctx, &platformgo.RunsListHistoricRequest{
+        StartDate:  platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
+        EndDate:    platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
+        WorkflowID: platformgo.String("wf_123"),
+    })
+
+    stats, err := api.Runs.Stats(ctx, &platformgo.RunsStatsRequest{
+        WorkflowID: "wf_123",
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    Use `GET /api/v1/runs/history` for a reporting window and
+    `GET /api/v1/runs/stats/{workflow_id}` for workflow statistics.
+  </Tab>
+</Tabs>
+
+`success_rate` is a fraction from 0 to 1. Its denominator is completed plus
+failed runs. `total_runs` counts every lifecycle state.

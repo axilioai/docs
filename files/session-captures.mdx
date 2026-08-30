@@ -1,0 +1,133 @@
+---
+title: "Session captures"
+sidebarTitle: "Session captures"
+description: "Find media captured from a phone session, interpret capture states, and download or reuse ready files."
+---
+
+When capture is enabled, Axilio collects supported media that a session
+produces on its phone and stores it in the organization's Files library.
+Capture is enabled by default for sessions and workflow runs. A session or
+workflow can disable it explicitly.
+
+Each captured file has:
+
+- `source=capture`
+- `surface=phone`
+- the `session_id` that produced it
+- a `capture_state` and optional `capture_error`
+
+Rows appear as soon as the phone detects media. You can therefore observe an
+in-progress capture instead of polling an empty list until the transfer ends.
+
+## Capture states
+
+| State | Meaning |
+|---|---|
+| `detected` | The phone reported the file. Transfer has not started yet. |
+| `uploading` | Bytes are moving into the organization library. |
+| `ready` | The bytes are verified and the file can be downloaded or pushed. |
+| `skipped_size` | The file exceeded the capture size policy. |
+| `skipped_quota` | The organization did not have enough remaining file quota. |
+| `skipped_type` | The media type is not supported. |
+| `dropped_teardown` | The session ended before Axilio could finish the capture. |
+| `failed` | Capture failed. Read `capture_error` for the reason. |
+
+Use `capture_state` for captured files. The general `status` field describes
+only whether bytes are still uploading or ready in storage.
+
+## Find a session's captures
+
+<Tabs>
+  <Tab title="Dashboard">
+    Open the active session's **Files** tool and select **Downloads** to watch
+    files from that session arrive. You can also open your organization's
+    **Files** page, filter to captures, and follow the session link on a file.
+  </Tab>
+  <Tab title="CLI">
+    List captures for one session:
+
+    ```bash
+    axilio sessions files <session-id>
+    ```
+
+    Or apply the same session filter to the organization library:
+
+    ```bash
+    axilio files list \
+      --source capture \
+      --surface phone \
+      --session <session-id>
+    ```
+
+    Download a ready capture with `axilio files download <file-id>`.
+  </Tab>
+  <Tab title="Python">
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    page = client.files.phones_session_files(
+        "<session-id>",
+        limit=50,
+    )
+
+    for file in page.files or []:
+        print(file.id, file.filename, file.capture_state, file.capture_error)
+    ```
+
+    Re-run the listing to refresh in-progress state and expired download URLs.
+  </Tab>
+  <Tab title="Go">
+    ```go
+    limit := int64(50)
+    page, err := c.Files.PhonesSessionFiles(
+        ctx,
+        &platformgo.PhonesSessionFilesRequest{
+            SessionID: "<session-id>",
+            Limit:     &limit,
+        },
+    )
+    if err != nil {
+        return err
+    }
+
+    for _, file := range page.Files {
+        state := ""
+        if file.CaptureState != nil {
+            state = string(*file.CaptureState)
+        }
+        fmt.Println(file.ID, file.Filename, state)
+    }
+    ```
+  </Tab>
+  <Tab title="REST">
+    ```bash
+    curl "https://api.axilio.ai/api/v1/phones/sessions/$SESSION_ID/files?limit=50" \
+      -H "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    `GET /api/v1/phones/sessions/{session_id}/files` returns captured files
+    newest first. The endpoint also supports filename, MIME type, size, time,
+    limit, and offset filters.
+  </Tab>
+</Tabs>
+
+## Use a ready capture
+
+A ready capture behaves like any other library file:
+
+- Download it locally from its short-lived `download_url`.
+- Push it to any phone your organization holds by using its file ID.
+- Delete it from the library to free quota.
+
+Captured filenames cannot be renamed. Deleting the library entry does not
+delete the original media from the source phone.
+
+<CardGroup cols={2}>
+  <Card title="Move files" icon="arrow-right-arrow-left" href="/files/move-files">
+    Download, push, or delete a ready capture.
+  </Card>
+  <Card title="Files overview" icon="folder-open" href="/files/overview">
+    Review provenance, filters, quotas, and delivery concepts.
+  </Card>
+</CardGroup>

@@ -34,7 +34,7 @@ with client.session("android", default_ocr_engine="premium") as driver:
     driver.find_text("Sign in")   # Pro, no kwarg needed
 ```
 
-The ids below are what you'll see on your [usage rows](/observability/cost)
+The ids below are what you'll see on your [usage rows](/usage/overview)
 and in the pricing list:
 
 | Model id | What it is | How you get it |
@@ -70,7 +70,7 @@ Vision-language calls are billed per token:
 
 <div id="axilio-models" />
 
-Prices are pulled live, so they're never stale. See [Cost](/observability/cost)
+Prices are pulled live, so they're never stale. See [Usage](/usage/overview)
 to track what you actually spend.
 
 ## Calling Argus directly
@@ -79,7 +79,7 @@ The driver runs Argus for you on the live screen. If you have your own image to
 analyze, call it directly with [`client.argus`](/driver/client#client-argus) —
 the same models, on any image. See the [`Client` reference](/driver/client#client-argus)
 for the SDK methods (`locate`, `detect`, `list_models`), or the
-[Vision API reference](/api-reference/vision/inference/run-locate) for the REST
+[Vision API reference](/api-reference/vision/vision/run-locate) for the REST
 endpoints.
 
 ## Next steps
@@ -88,7 +88,7 @@ endpoints.
   <Card title="Find" icon="magnifying-glass" href="/driver/find">
     Where the engine and model options plug in.
   </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
+  <Card title="Usage" icon="coins" href="/usage/overview">
     See what your vision calls cost.
   </Card>
 </CardGroup>

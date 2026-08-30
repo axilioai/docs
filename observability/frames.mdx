@@ -1,0 +1,183 @@
+---
+title: "Telemetry frames"
+sidebarTitle: "Frames"
+description: "Read a session's retained spans and logs through the CLI, Python, Go, or REST."
+---
+
+Frames are the canonical record of what happened during a phone session. The
+archive contains completed spans and point-in-time logs ordered by their start
+or log time. It works for workflow runs and interactive sessions because the
+lookup is keyed by `session_id`.
+
+## Read frames with the CLI
+
+```bash
+axilio sessions trace <session-id>
+```
+
+The table shows time, frame kind, name, duration, outcome, and billed cost when
+available. Use JSON output to get the complete response:
+
+```bash
+axilio sessions trace <session-id> -o json
+```
+
+Use `--follow` to print the archive and then attach to
+[Live Telemetry](/observability/telemetry).
+
+## Read frames with Python
+
+The high-level helper pages through the archive and reconstructs the same trace
+view as the dashboard:
+
+```python
+from axilio.platform import Client
+
+client = Client()
+telemetry = client.telemetry(session_id)
+trace = telemetry.trace()
+
+if trace.retention_expired:
+    print("The trace is outside the retention window")
+
+for item in trace.spans:
+    print(
+        item.frame.span_type,
+        item.frame.name,
+        item.duration_ms,
+        item.billed_cost_microdollars,
+    )
+
+for log in trace.logs:
+    print(log.severity, log.body)
+```
+
+Use `telemetry.summary()` for total time, SDK-call time, unobserved time, call
+counts, and billed SDK-call cost. Use `telemetry.logs()` when you only need
+archived logs.
+
+The generated operation is also available as
+`client.raw.runs.sessions_list_frames(session_id, limit=..., offset=...)`.
+
+## Read frames with Go
+
+```go
+view := telemetry.NewSession(api, sessionID)
+
+trace, err := view.Trace(ctx)
+if err != nil {
+    return err
+}
+if trace.RetentionExpired {
+    fmt.Println("The trace is outside the retention window")
+}
+
+for _, item := range trace.Spans {
+    fmt.Println(
+        item.Span.SpanType,
+        item.Span.Name,
+        item.Duration(),
+        item.BilledMicrodollars,
+    )
+}
+```
+
+Import the helper as
+`github.com/axilioai/platform-go/drivers/telemetry`. The generated operation is
+`api.Runs.SessionsListFrames(...)` when you need to page the raw response.
+
+## Read frames with REST
+
+Request a page with:
+
+```http
+GET /api/v1/phones/sessions/{session_id}/frames?limit=100&offset=0
+```
+
+The response contains:
+
+| Field | Meaning |
+| --- | --- |
+| `frames` | This page of span and log frames. |
+| `total`, `limit`, `offset` | Pagination state. The maximum page size is 1,000. |
+| `sdk_call_costs` | Billed microdollars keyed by SDK-call `span_id`. |
+| `inference_costs` | Billed microdollars keyed by inference ID. |
+| `retention_expired` | `true` when the trace is outside the organization's retention window and frames are withheld. |
+
+Cost maps belong to the response, not to individual frames. Join an SDK-call
+span through its `span_id`. Inference spans carry their inference ID in their
+attributes.
+
+## Frame envelope
+
+A completed span looks like this:
+
+```json
+{
+  "kind": "span",
+  "trace_id": "<trace-id>",
+  "span_id": "<span-id>",
+  "parent_span_id": "<parent-span-id>",
+  "span_type": "sdk_call",
+  "name": "Screen.observe",
+  "phase": "end",
+  "start_time_unix_nano": 0,
+  "end_time_unix_nano": 0,
+  "status": { "code": "ok", "message": "" },
+  "attributes": {}
+}
+```
+
+A log looks like this:
+
+```json
+{
+  "kind": "log",
+  "trace_id": "<trace-id>",
+  "span_id": "<span-id>",
+  "log_type": "output_log",
+  "severity": "INFO",
+  "body": "hello",
+  "time_unix_nano": 0,
+  "attributes": {}
+}
+```
+
+Common span roles include `session`, `run`, `sdk_call`, `inference`,
+`file_push`, and `media_capture`. Common log roles include `output_log`,
+`output_error`, `kernel_status`, and `transfer_progress`. These vocabularies
+are additive: render an unfamiliar value generically.
+
+The live stream emits a span's `start` and `end` phases. The archive collapses
+each span into one completed `end` frame. Logs have the same shape in both
+places.
+
+## Tolerant readers
+
+Telemetry evolves without requiring all readers to update together. A reader
+must:
+
+- accept unknown fields on a known frame;
+- preserve or render unknown `kind`, `span_type`, and `log_type` values;
+- accept one frame object or an array from the live stream; and
+- avoid treating a new value as a broken trace.
+
+The Python and Go helpers expose unknown frame kinds instead of silently
+dropping them.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Live Telemetry" icon="signal-stream" href="/observability/telemetry">
+    Follow frames while the session is active.
+  </Card>
+  <Card title="Recordings" icon="video" href="/observability/recordings">
+    Replay the screen beside the execution timeline.
+  </Card>
+  <Card title="Usage" icon="chart-line" href="/usage/overview">
+    Review account-wide session and inference cost.
+  </Card>
+  <Card title="Reconnect and resume" icon="rotate" href="/api-reference/dcp/reconnect">
+    Handle a dropped raw WebSocket without gaps or double input.
+  </Card>
+</CardGroup>

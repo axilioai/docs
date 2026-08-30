@@ -15,6 +15,8 @@ renames; it just does the few things Mintlify needs that the spec can't express:
                  (and collapse to one tag per op) for a clean sidebar.
   4. role badge - lift `x-required-role` (viewer/member/admin) into an x-mint
                  badge rendered above each endpoint (AXI-1123).
+  5. MDX placeholders - escape angle-bracket sort placeholders so Mintlify does
+                 not interpret them as JSX tags on generated endpoint pages.
 
 DROP is retained only as a thin safety net: the backend's openapi_guard_test now
 locks the surface at the source, but if a management/destructive route ever
@@ -47,6 +49,32 @@ def strip_schema(node):
     elif isinstance(node, list):
         for v in node:
             strip_schema(v)
+
+
+_MDX_PLACEHOLDERS = {
+    "<field>": "&lt;field&gt;",
+    "<asc|desc>": "&lt;asc|desc&gt;",
+}
+
+
+def escape_mdx_placeholders(node):
+    """Escape known prose placeholders that Mintlify otherwise parses as JSX."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if isinstance(value, str):
+                for placeholder, escaped in _MDX_PLACEHOLDERS.items():
+                    value = value.replace(placeholder, escaped)
+                node[key] = value
+            else:
+                escape_mdx_placeholders(value)
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            if isinstance(value, str):
+                for placeholder, escaped in _MDX_PLACEHOLDERS.items():
+                    value = value.replace(placeholder, escaped)
+                node[index] = value
+            else:
+                escape_mdx_placeholders(value)
 
 
 # Safety net only. The backend curates the public surface at the source
@@ -136,6 +164,7 @@ def build(url: str, server: str, out: str):
     spec = fetch(url)
     spec["servers"] = [{"url": server, "description": "Production"}]
     strip_schema(spec)
+    escape_mdx_placeholders(spec)
     drop_internal(spec)   # safety net only; backend curates at the source
     titlecase_tags(spec)
     badge_roles(spec)

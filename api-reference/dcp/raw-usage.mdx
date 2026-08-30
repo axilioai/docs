@@ -13,7 +13,7 @@ Any WebSocket client works.
 
 ## Before you start
 
-- **An API key** — create one in the [dashboard](https://axilio.ai/dashboard).
+- **An API key** — create one in the [dashboard](https://app.axilio.ai/dashboard).
   See [Authentication](/authentication).
 - **A WebSocket client.** For the examples: `pip install axilio websockets`.
 
@@ -27,7 +27,7 @@ from axilio.platform import Client
 
 client = Client()
 
-device = client.phones.allocate(phone_type="ANDROID")
+device = client.phones.allocate(phone_type="android")
 print(device.control_url)
 ```
 
@@ -73,7 +73,11 @@ Commands are `{ "id", "method", "params" }`; the phone replies with
 await ws.send(json.dumps({
     "id": 2,
     "method": "Touch.tap",
-    "params": {"x": 540, "y": 1180},
+    "params": {
+        "x": 540,
+        "y": 1180,
+        "idempotencyKey": "<unique-logical-command-id>",
+    },
 }))
 reply = json.loads(await ws.recv())
 if "error" in reply:
@@ -96,10 +100,15 @@ for item in screen["texts"]:
 ## Correlating replies
 
 Responses can arrive in any order, so match a reply to its command by `id`
-rather than assuming the next frame is the answer. A frame with no `id` is an
-event, not a response. A small pattern: keep an outstanding-id map, increment a
-counter per command, and resolve each reply against it. The
+instead of assuming the next frame is the answer. A frame with no `id` is a
+notification, not a response. A small pattern: keep an outstanding-id map,
+increment a counter per command, and resolve each reply against it. The
 [SDK](/driver/overview) does exactly this for you.
+
+The `idempotencyKey` is separate from the request `id`. Generate one UUID per
+logical `Touch.*` or `Keyboard.*` command. Reuse that key only if you must
+resend the same command after a dropped connection. See
+[Reconnect and resume](/api-reference/dcp/reconnect).
 
 ## Next steps
 
@@ -107,11 +116,11 @@ counter per command, and resolve each reply against it. The
   <Card title="Message reference" icon="list" href="/api-reference/dcp/reference">
     Every method, its params, its result, and the error shape.
   </Card>
-  <Card title="Protocol overview" icon="plug" href="/api-reference/dcp/overview">
-    How the wire is framed and why.
+  <Card title="Reconnect and resume" icon="rotate" href="/api-reference/dcp/reconnect">
+    Handle close codes, cursors, replay, and safe resends.
   </Card>
   <Card title="Live telemetry" icon="signal-stream" href="/observability/telemetry">
-    Stream the session's events on a second socket.
+    Stream the session's Telemetry frames on a second socket.
   </Card>
   <Card title="Use the SDK instead" icon="hand-pointer" href="/driver/overview">
     Selectors, waiting, and retries over DCP.

@@ -1,51 +1,156 @@
 ---
 title: "Balance and invoices"
-sidebarTitle: "Balance & invoices"
-description: "Check your balance, add funds, and get your invoices."
+sidebarTitle: "Balance and invoices"
+description: "Read your balance, add funds in the dashboard, configure alerts, and download invoice PDFs."
 ---
 
-## Check your balance
+## Check the balance
 
-```python
-balance = client.billing.get_balance()
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard) after choosing your
+    organization. The balance card separates included and purchased credit.
+  </Tab>
 
-print(balance.balance_display)        # e.g. $12.34
-print(balance.balance_microdollars)   # the exact amount
-```
+  <Tab title="CLI">
+    ```bash
+    axilio billing balance
+    axilio billing balance -o json
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    balance = client.billing.get_balance()
+
+    print(balance.balance_display)
+    print(balance.included_microdollars)
+    print(balance.purchased_microdollars)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    balance, err := api.Billing.GetBalance(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(balance.BalanceDisplay)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/balance \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
 
 ## Add funds
 
+Adding funds and managing payment methods are dashboard-only actions:
+
+1. Open **Billing**.
+2. Click **Add Funds**.
+3. Choose an amount and complete checkout.
+
+The CLI, SDKs, and public REST API do not create an add-funds checkout or
+customer-portal session.
+
+## List and download invoices
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open **Billing**, select **Invoices**, filter the list, then click **PDF**
+    on the invoice you need.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    history = client.billing.get_history(limit=20, offset=0)
+
+    for invoice in history.items or []:
+        print(invoice.id, invoice.invoice_number, invoice.status)
+
+    pdf = client.billing.download_invoice("inv_123")
+    print(pdf.download_url, pdf.expires_at)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    history, err := api.Billing.GetHistory(ctx, &platformgo.BillingGetHistoryRequest{
+        Limit:  platformgo.Int64(20),
+        Offset: platformgo.Int64(0),
+    })
+
+    pdf, err := api.Billing.DownloadInvoice(ctx, &platformgo.BillingDownloadInvoiceRequest{
+        InvoiceID: "inv_123",
+    })
+    fmt.Println(pdf.DownloadURL, pdf.ExpiresAt)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    Use `GET /api/v1/billing/history` to list invoices and
+    `GET /api/v1/billing/history/{invoice_id}/pdf` to mint a temporary PDF URL.
+  </Tab>
+</Tabs>
+
+The CLI does not currently list or download invoices. A PDF URL is temporary;
+request a fresh one instead of storing it.
+
+## Configure automatic recharge
+
+Automatic recharge charges the saved payment method when the balance falls
+below a threshold, restoring it to a target amount. Adding the payment method
+itself remains a dashboard action.
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    settings = client.billing.get_auto_recharge()
+
+    updated = client.billing.update_auto_recharge(
+        enabled=True,
+        threshold_cents=500,
+        target_cents=2500,
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    settings, err := api.Billing.GetAutoRecharge(ctx)
+
+    updated, err := api.Billing.UpdateAutoRecharge(
+        ctx,
+        &platformgo.SubscriptionAutoRechargeSettings{
+            Enabled:        true,
+            ThresholdCents: 500,
+            TargetCents:    2500,
+        },
+    )
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    Use `GET` and `PUT /api/v1/billing/auto-recharge`.
+  </Tab>
+</Tabs>
+
+## Configure low-balance alerts
+
+`get_usage_alerts()` reads the low- and negative-balance alert state.
+`update_usage_alerts()` configures the low-balance threshold. Negative-balance
+alerts remain enabled.
+
 ```python
-client.billing.add_funds(amount_cents=2000)   # add $20.00
+alerts = client.billing.get_usage_alerts()
+client.billing.update_usage_alerts(enabled=True, threshold_cents=1000)
 ```
 
-## Invoices
-
-List your billing history:
-
-```python
-history = client.billing.get_history(limit=20, offset=0)
-for item in history.items:
-    print(item)
-```
-
-Get an invoice as a PDF, or open the full billing portal:
-
-```python
-invoice = client.billing.download_invoice(invoice_id="inv_123")
-print(invoice.download_url)
-
-portal = client.billing.customer_portal()
-print(portal.portal_url)
-```
-
-## Next steps
-
-<CardGroup cols={2}>
-  <Card title="How billing works" icon="circle-info" href="/billing/overview">
-    Per-second billing, explained.
-  </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
-    See where your money goes.
-  </Card>
-</CardGroup>
+Updating auto-recharge or alerts requires an organization admin. An API key
+inherits its creator's organization role.

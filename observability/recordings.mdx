@@ -1,51 +1,116 @@
 ---
 title: "Recordings"
 sidebarTitle: "Recordings"
-description: "Every session is recorded. Replay it in the dashboard, or download the MP4 from the SDK."
+description: "Configure screen recording, understand its states, and replay or download a completed session."
 ---
 
-Every session is recorded as a video. Replay it in the
-[dashboard](https://axilio.ai/dashboard), or get the file from the SDK.
+Screen recording is on by default, but it is configurable per phone allocation
+and per workflow. When recording is enabled, Axilio writes a video of the phone
+screen and makes it available after the session ends and processing completes.
 
-## A run's recording
+In the [dashboard](https://app.axilio.ai/dashboard), open **Sessions** and
+select a session. The session inspector places the video beside its execution
+timeline and logs, so you can seek from a frame to the matching point in the
+recording.
 
-A finished run has a `video_url`:
+## Configure recording
+
+Disable recording for one directly allocated phone:
 
 ```python
-run = client.runs.get(run_id)
-print(run.video_url)
+allocation = client.phones.allocate(
+    phone_type="android",
+    recording=False,
+)
 ```
 
-## A session's recording
+Disable recording for future runs of a workflow:
 
-For any session, ask for its recording by session id:
+```python
+client.workflows.update(
+    workflow_id,
+    recording=False,
+)
+```
+
+When recording is disabled, Axilio does not write a recording or rolling
+thumbnail for that session. Your organization's data-retention policy can also
+prevent recordings from being created or make older recordings unavailable.
+
+## Look up a recording with Python
+
+Recordings are keyed by `session_id`, so the same operation works for workflow
+runs and directly allocated sessions:
 
 ```python
 recording = client.phones.session_recording(session_id)
 
-print(recording.status)   # ready, processing, ...
-print(recording.url)      # a downloadable MP4
+if recording.status == "ready":
+    print(recording.url)
+elif recording.status == "pending":
+    print("The recording is not ready")
+elif recording.status == "expired":
+    print("The recording is outside the retention window")
 ```
 
-## Download the MP4
+The current statuses are:
 
-The `url` is a plain link to an MP4. Save it like any file:
+| Status | Meaning |
+| --- | --- |
+| `ready` | `url` contains a time-limited playback link. |
+| `pending` | No recording object is available. The session may still be active, its upload may still be processing, or recording may have been disabled. |
+| `expired` | The recording is outside the organization's retention window. |
+
+Only `ready` includes a URL. If you know recording was enabled and the session
+has completed, fetch the lookup again while its upload processes. `pending`
+alone does not promise that a recording will appear.
+
+## Look up a recording with Go
+
+```go
+recording, err := api.Phones.SessionRecording(
+    ctx,
+    &platformgo.PhonesSessionRecordingRequest{SessionID: sessionID},
+)
+if err != nil {
+    return err
+}
+
+if recording.Status == platformgo.PhoneSessionRecordingResponseStatusReady &&
+    recording.URL != nil {
+    fmt.Println(*recording.URL)
+}
+```
+
+## Download the MP4 with Python
+
+The `ready` URL points to the MP4 for a limited time. Look it up again instead
+of persisting an expired URL.
 
 ```python
 import httpx
 
 recording = client.phones.session_recording(session_id)
-data = httpx.get(recording.url).content
+if recording.status != "ready" or not recording.url:
+    raise RuntimeError(f"recording is {recording.status}")
 
-with open("session.mp4", "wb") as f:
-    f.write(data)
+with httpx.stream("GET", recording.url) as response:
+    response.raise_for_status()
+    with open("session.mp4", "wb") as output:
+        for chunk in response.iter_bytes():
+            output.write(chunk)
 ```
+
+<Note>
+  The CLI does not currently have a recording lookup or download command. Use
+  the dashboard, Python or Go SDK, or the REST recording operation.
+</Note>
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Events" icon="list-check" href="/observability/events">
-    The step-by-step of a run.
+  <Card title="Telemetry frames" icon="list-check" href="/observability/frames">
+    Inspect the execution timeline beside the video.
   </Card>
   <Card title="Live view" icon="tower-broadcast" href="/observability/live-view">
     Watch a session as it happens.

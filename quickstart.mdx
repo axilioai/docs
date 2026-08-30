@@ -1,72 +1,201 @@
 ---
-title: "Quickstart"
-sidebarTitle: "Quickstart"
-description: "Get a real Android phone and control it — screenshot, find something, tap it — in five minutes."
+title: "SDK quickstart"
+sidebarTitle: "SDK quickstart"
+description: "Use the Python or Go SDK to authenticate, allocate a real Android phone, and inspect its screen."
 ---
 
-In five minutes you'll get a real Android phone, read its screen, and tap
-something on it.
+Use the Python or Go SDK to allocate a real Android phone, inspect its screen,
+and save a screenshot. Choose a language once and every code group on this page
+will follow your selection.
 
 ## Before you start
 
-- **Python 3.10 or newer**
-- **An API key** — create one in the [dashboard](https://axilio.ai/dashboard).
-  See [Authentication](/authentication).
+- **An Axilio API key:** open the [Dashboard](https://app.axilio.ai/dashboard),
+  select your organization, and choose **API Keys**. See
+  [Authentication](/authentication) for details.
 
-## 1. Install
+<Tabs>
+  <Tab title="Python" id="python">
+    Install **Python 3.10 or newer**.
+  </Tab>
+  <Tab title="Go" id="go">
+    Install **Go 1.23 or newer**.
+  </Tab>
+</Tabs>
+
+## 1. Install the SDK
+
+<Tabs>
+  <Tab title="Python" id="python-install">
 
 ```bash
 pip install axilio
 ```
 
-Prefer the terminal? The same platform is on the [CLI](/cli):
-`brew install axilioai/tap/axilio`.
+  </Tab>
+  <Tab title="Go" id="go-install">
 
-## 2. Add your API key
+```bash
+mkdir axilio-quickstart
+cd axilio-quickstart
+go mod init example.com/axilio-quickstart
+go get github.com/axilioai/platform-go@latest
+```
+
+  </Tab>
+</Tabs>
+
+## 2. Set your API key
 
 ```bash
 export AXILIO_API_KEY=axl_your_key_here
 ```
 
-## 3. Control a phone
+Keep the key out of source control. Use your platform's secret manager in CI
+and deployed services.
+
+## 3. Inspect a phone
+
+<Tabs>
+  <Tab title="Python" id="python-example">
+
+Save this as `quickstart.py`:
 
 ```python
+from pathlib import Path
+
 from axilio.platform import Client
 
 client = Client()
 
-# Borrow a phone. It's returned automatically when the block ends.
+# The context manager allocates a phone and releases it on every exit path.
 with client.session("android") as driver:
-    # Save a picture of the screen.
-    with open("screen.png", "wb") as f:
-        f.write(driver.screenshot())
+    screen = driver.observe()
+    print(f"Found {len(screen.texts)} text regions and {len(screen.icons)} icons")
 
-    # Find something on the screen and tap it.
-    driver.find(query="the Settings icon").tap()
+    Path("screen.png").write_bytes(driver.screenshot())
+    print("Saved screen.png")
 ```
 
-Run it:
+  </Tab>
+  <Tab title="Go" id="go-example">
+
+Save this as `main.go`:
+
+```go
+package main
+
+import (
+    "context"
+    "errors"
+    "fmt"
+    "log"
+    "os"
+
+    platformgo "github.com/axilioai/platform-go"
+    "github.com/axilioai/platform-go/client"
+    "github.com/axilioai/platform-go/drivers/mobile"
+    "github.com/axilioai/platform-go/option"
+)
+
+func main() {
+    if err := run(); err != nil {
+        log.Fatal(err)
+    }
+}
+
+func run() error {
+    apiKey := os.Getenv("AXILIO_API_KEY")
+    if apiKey == "" {
+        return errors.New("AXILIO_API_KEY is not set")
+    }
+
+    ctx := context.Background()
+    c := client.NewClient(option.WithAPIKey(apiKey))
+
+    session, err := c.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+    })
+    if err != nil {
+        return fmt.Errorf("allocate phone: %w", err)
+    }
+    defer func() {
+        if _, err := c.Phones.Deallocate(context.Background(), &platformgo.PhonesDeallocateRequest{
+            PhoneID: session.PhoneID,
+        }); err != nil {
+            log.Printf("release phone: %v", err)
+        }
+    }()
+
+    if session.ControlURL == nil {
+        return errors.New("allocation returned no control URL")
+    }
+
+    driver := mobile.ConnectRemote(*session.ControlURL)
+    defer func() { _ = driver.Close() }()
+
+    screen, err := driver.Observe()
+    if err != nil {
+        return fmt.Errorf("observe screen: %w", err)
+    }
+    fmt.Printf("Found %d text regions and %d icons\n", len(screen.Texts), len(screen.Icons))
+
+    png, err := driver.Screenshot()
+    if err != nil {
+        return fmt.Errorf("capture screenshot: %w", err)
+    }
+    if err := os.WriteFile("screen.png", png, 0o600); err != nil {
+        return fmt.Errorf("save screenshot: %w", err)
+    }
+    fmt.Println("Saved screen.png")
+    return nil
+}
+```
+
+  </Tab>
+</Tabs>
+
+## 4. Run it
+
+<Tabs>
+  <Tab title="Python" id="python-run">
 
 ```bash
 python quickstart.py
 ```
 
-That's it — you borrowed a real phone, looked at its screen, and tapped something
-on it.
+  </Tab>
+  <Tab title="Go" id="go-run">
+
+```bash
+go run .
+```
+
+  </Tab>
+</Tabs>
+
+You now have a complete allocation lifecycle: authenticate, reserve a phone,
+connect a mobile driver, observe the screen, save a screenshot, and release the
+phone on normal and error exits.
+
+<Tip>
+  Prefer a terminal workflow? Follow the separate [CLI guide](/cli#homebrew).
+  The CLI can allocate and drive a phone without an SDK project.
+</Tip>
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
-    Every way to find things and act on them.
+  <Card title="Control a phone" icon="hand-pointer" href="/driver/overview">
+    Find screen elements and tap, type, swipe, or wait for them.
   </Card>
-  <Card title="Find in plain English" icon="eye" href="/driver/find">
-    Describe what you want and let Axilio find it.
+  <Card title="Phones and Sessions" icon="mobile" href="/devices/overview">
+    Choose phones and understand allocation behavior.
   </Card>
-  <Card title="Devices" icon="mobile" href="/devices/overview">
-    Pick a specific phone and manage the ones you have.
+  <Card title="Python SDK on GitHub" icon="code-branch" href="https://github.com/axilioai/platform-python">
+    Browse the Python client, mobile driver, and examples.
   </Card>
-  <Card title="Workflows & runs" icon="diagram-project" href="/workflows/overview">
-    Save your script and run it on demand.
+  <Card title="Go SDK on GitHub" icon="code-branch" href="https://github.com/axilioai/platform-go">
+    Browse the Go client, mobile driver, and package reference.
   </Card>
 </CardGroup>

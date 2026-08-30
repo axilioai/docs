@@ -1,26 +1,85 @@
 ---
 title: "Organizations"
 sidebarTitle: "Overview"
-description: "Your organization is your account: its members, API keys, devices, and billing all belong to it."
+description: "Understand organization scope, select an organization in the CLI, and read its public descriptor."
 ---
 
-An **organization** is your account on Axilio. Your members, API keys, devices,
-runs, and billing all belong to it.
+An **organization** owns its phones, sessions, workflows, runs, files, API keys,
+usage, and billing.
 
-Each [API key](/platform/api-keys) is tied to one organization, so everything you
-do with that key counts against that org's balance and shows up in its history. If
-you're in more than one organization, use the key for the one you mean to work in.
+An API key is bound to one organization. OAuth CLI sessions can switch among
+the organizations your user belongs to.
+
+## Select an organization
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Use the organization switcher in
+    [the dashboard](https://app.axilio.ai/dashboard). Dashboard URLs include the
+    selected organization's slug.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio orgs list
+    axilio orgs use example-org
+
+    # Override the selection for one command.
+    axilio --org another-org workflows list
+    ```
+
+    Organization switching requires an OAuth login. API-key logins stay bound
+    to the key's organization.
+  </Tab>
+</Tabs>
+
+## Read the organization descriptor
+
+The public organization API is read-only:
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    organization = client.raw.organization.get()
+
+    print(organization.id, organization.slug, organization.name)
+    print(organization.plan_name)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    organization, err := api.Organization.Get(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(organization.ID, organization.Slug, organization.Name)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/organization \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+Renaming an organization and changing its members or invitations are
+dashboard-only actions. The public API can read member and invitation summaries
+but cannot mutate them.
 
 ## Next steps
 
 <CardGroup cols={3}>
   <Card title="Members" icon="users" href="/org/members">
-    Invite and manage teammates.
+    Manage members in the dashboard or read summaries through the API.
   </Card>
   <Card title="API keys" icon="key" href="/platform/api-keys">
-    Keys for the organization.
+    Create, list, replace, and delete organization credentials.
   </Card>
   <Card title="Billing" icon="credit-card" href="/billing/overview">
-    The organization's balance and plan.
+    Read the organization's usage, balance, invoices, and plan.
   </Card>
 </CardGroup>

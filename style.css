@@ -178,3 +178,250 @@ html.light .api-role {
   color: #666;
   background: rgba(0, 0, 0, 0.03);
 }
+
+/* ── Homepage interface chooser — four purpose-built, independently linked
+   launch cards. The large surface owns the destination; SDK and CLI source
+   links remain smaller, explicit secondary actions. ─────────────────────── */
+.ax-interface-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.1rem 0 1.5rem;
+}
+
+.ax-interface-card {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0a0a0a;
+  overflow: hidden;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.ax-interface-card:hover {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.035);
+}
+
+.ax-interface-card__main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  padding: 1.25rem;
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.ax-interface-card--with-repo .ax-interface-card__main {
+  padding-right: 1.25rem;
+}
+
+.ax-interface-card__mark {
+  display: inline-flex;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  color: #34d399;
+  background: transparent;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.ax-interface-card:hover .ax-interface-card__mark {
+  color: #ecfdf5;
+  background: transparent;
+  transform: translateY(-2px);
+}
+
+.ax-interface-card__mark svg {
+  width: 6.25rem;
+  height: 6.25rem;
+  overflow: visible;
+}
+
+.ax-interface-card__mark > svg:not(.filled) {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ax-interface-card__prompt {
+  font: 700 3.25rem/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: -0.08em;
+}
+
+.ax-interface-card__globe svg {
+  width: 6.25rem;
+  height: 6.25rem;
+  stroke-width: 4;
+}
+
+.ax-globe-icon__rim {
+  fill: rgba(16, 185, 129, 0.1);
+}
+
+.ax-interface-card__python svg {
+  width: 6.25rem;
+  height: 6.25rem;
+  stroke: none !important;
+  filter: drop-shadow(0 4px 8px rgba(5, 150, 105, 0.2));
+}
+
+.ax-python-top {
+  fill: #10b981;
+}
+
+.ax-python-bottom {
+  fill: #6ee7b7;
+}
+
+.ax-interface-card__go {
+  width: 100%;
+}
+
+.ax-interface-card__go img {
+  width: 4.75rem;
+  height: 6.6rem;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(5, 150, 105, 0.22));
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.ax-interface-card:hover .ax-python-top {
+  fill: #34d399;
+}
+
+.ax-interface-card:hover .ax-python-bottom {
+  fill: #d1fae5;
+}
+
+.ax-interface-card:hover .ax-interface-card__go img {
+  filter: drop-shadow(0 6px 10px rgba(16, 185, 129, 0.35));
+  transform: translateY(-1px);
+}
+
+.ax-interface-card__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+.ax-interface-card__eyebrow {
+  margin: 0 0 0.45rem;
+  color: #34d399;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.ax-interface-card__title {
+  color: #fafafa;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.ax-interface-card__repo {
+  position: absolute;
+  z-index: 3;
+  bottom: 1rem;
+  left: 1rem;
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.08);
+  pointer-events: auto;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.ax-interface-card__repo:hover {
+  border-color: #10b981;
+  color: #ecfdf5 !important;
+  background: rgba(16, 185, 129, 0.16);
+}
+
+.ax-interface-card__repo svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+}
+
+.ax-interface-card :is(a:focus-visible) {
+  outline: 2px solid #34d399;
+  outline-offset: -3px;
+}
+
+html.light .ax-interface-card {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+}
+
+html.light .ax-interface-card__title {
+  color: #111827;
+}
+
+html.light .ax-interface-card__repo {
+  border-color: rgba(5, 150, 105, 0.38);
+  color: #059669 !important;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+@media (max-width: 1040px) {
+  .ax-interface-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .ax-interface-card__main {
+    padding: 1rem;
+  }
+
+  .ax-interface-card--with-repo .ax-interface-card__main {
+    padding-right: 1rem;
+  }
+
+  .ax-interface-card__mark {
+    width: 100%;
+  }
+
+  .ax-interface-card__mark svg,
+  .ax-interface-card__globe svg,
+  .ax-interface-card__python svg {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .ax-interface-card__prompt {
+    font-size: 2.4rem;
+  }
+
+  .ax-interface-card__go img {
+    width: 3.25rem;
+    height: 4.5rem;
+  }
+
+  .ax-interface-card__repo {
+    bottom: 0.75rem;
+    left: 0.75rem;
+    width: 2rem;
+    height: 2rem;
+  }
+}

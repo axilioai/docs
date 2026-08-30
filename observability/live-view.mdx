@@ -1,34 +1,144 @@
 ---
 title: "Live view"
 sidebarTitle: "Live view"
-description: "Watch a phone in real time while your agent drives it."
+description: "Watch a phone in real time, share a session-scoped viewer, or embed the interactive screen in your app."
 ---
 
 Live view streams a phone's screen to your
 [dashboard](https://app.axilio.ai/dashboard) in real time, so you can watch your
-agent work as it happens.
+agent work as it happens. Open **Sessions**, select an active session, and open
+its observability view.
 
-Open any active session in the dashboard to see its live view. It's the fastest
-way to see what your agent is doing right now, and to catch a problem while it's
-still happening.
+The same hosted viewer works outside the dashboard. A phone allocation returns
+`live_view_url` unless live view was disabled:
 
-The live view also exists outside the dashboard: every allocation returns a
-`live_view_url` you can open directly or
-[embed in your own app](/observability/embed-live-view) as an iframe.
+```python
+from axilio.platform import Client
+
+client = Client()
+allocation = client.phones.allocate(phone_type="android")
+
+print(allocation.live_view_url)
+```
+
+The default URL is interactive: pointer and keyboard input reach the phone.
 
 To review a session after it ends, use a [recording](/observability/recordings)
 instead.
 
+## Mint a fresh viewer URL
+
+If you no longer have the allocation response, mint a fresh viewer URL for an
+active session:
+
+```python
+grant = client.phones.session_live_view_token(session_id)
+print(grant.live_view_url)
+```
+
+The operation preserves the session's allocation-time `view_only` and
+`disabled` settings. It refuses inactive sessions, sessions outside your
+organization, and sessions whose live view was disabled. Its response is a
+bearer viewer URL even when the allocation originally used org authentication.
+Minting a new URL does not revoke an older one.
+
+## Choose authentication and input behavior
+
+```python
+from axilio import PhoneLiveViewOptions
+
+allocation = client.phones.allocate(
+    phone_type="android",
+    live_view=PhoneLiveViewOptions(
+        auth="token",
+        view_only=True,
+    ),
+)
+```
+
+| Option | Effect |
+| --- | --- |
+| `auth="token"` | Default. The allocation URL contains a bearer credential and opens without an Axilio sign-in. |
+| `auth="org"` | The allocation URL is tokenless. A viewer must sign in and belong to the session's organization. |
+| `view_only=True` | Watch-only. Input is blocked on the server. |
+| `disabled=True` | No hosted live view exists, and allocation omits `live_view_url`. |
+
+Use `auth="org"` for links shared inside your team. Third-party iframe cookie
+policies can prevent signed-in org mode from working inside your product, so
+use token mode for end-user embeds.
+
+## Embed the viewer
+
+The hosted page is chrome-less and iframe-embeddable:
+
+```html
+<iframe
+  src="{live_view_url}"
+  allow="autoplay; clipboard-read; clipboard-write"
+  style="width: 100%; height: 100%; border: 0;"
+></iframe>
+```
+
+The stream starts muted so it can render under browser autoplay policies.
+
+If your app sets a `Content-Security-Policy`, allow the hosted page and its
+realtime connection:
+
+```text
+frame-src https://app.axilio.ai;
+connect-src https://connect.axilio.ai wss://connect.axilio.ai;
+```
+
+### Keyboard focus
+
+Browsers deliver keystrokes to an iframe only while it has focus. Safari
+requires a user action before it focuses a cross-origin iframe. Focus it from a
+click handler:
+
+```js
+iframe.addEventListener("click", () => iframe.focus())
+```
+
+Pointer input does not require this step.
+
+### Appearance
+
+The default is the bare phone screen on a transparent background. Query
+parameters customize the surround:
+
+| Parameter | Values | Default |
+| --- | --- | --- |
+| `bg` | `transparent`, `dark`, `light`, or a 3- or 6-digit hex color | `transparent` |
+| `frame` | `device` to add a phone frame | Bare screen |
+
+```html
+<iframe src="{live_view_url}?bg=dark"></iframe>
+<iframe src="{live_view_url}?frame=device&bg=1e293b"></iframe>
+```
+
+## Protect capability URLs
+
+Anyone with a bearer `live_view_url` can watch the phone and—unless the session
+is view-only—interact with it until the session ends. This includes the
+allocation URL in token mode and every URL returned by
+`session_live_view_token(...)`.
+
+- Do not log the URL or send it to analytics.
+- Prefer `view_only=True` for audiences that should not control the phone.
+- Prefer `auth="org"` for internal sharing that should require membership.
+- End the session if a token-mode URL is exposed. The URL stops working when
+  the session ends.
+
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Embed live view" icon="window" href="/observability/embed-live-view">
-    The same live screen, in your own app.
+  <Card title="Live Telemetry" icon="signal-stream" href="/observability/telemetry">
+    Follow what the session is doing while you watch.
   </Card>
   <Card title="Recordings" icon="video" href="/observability/recordings">
     Replay a session after it ends.
   </Card>
-  <Card title="Events" icon="list-check" href="/observability/events">
-    See the step-by-step of a run.
+  <Card title="Telemetry frames" icon="list-check" href="/observability/frames">
+    Inspect its retained timeline and logs.
   </Card>
 </CardGroup>

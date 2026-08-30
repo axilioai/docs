@@ -17,7 +17,8 @@ method rather than assuming the whole surface.
 
 ### `Protocol.handshake`
 Negotiate the protocol and discover what the phone supports. Send it once, right
-after you open the socket.
+after you open the socket, and repeat it after every reconnect before sending
+more work.
 
 ```json
 { "id": 1, "method": "Protocol.handshake", "params": {} }
@@ -73,6 +74,7 @@ Tap a pixel.
 | --- | --- | --- | --- |
 | `x` | integer | Yes | X coordinate in pixels. |
 | `y` | integer | Yes | Y coordinate in pixels. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -88,6 +90,7 @@ Press and hold a pixel.
 | `x` | integer | Yes | X coordinate in pixels. |
 | `y` | integer | Yes | Y coordinate in pixels. |
 | `duration_ms` | integer | No | Hold duration in milliseconds. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -103,6 +106,7 @@ Swipe from one pixel to another.
 | `x1`, `y1` | integer | Yes | Start pixel. |
 | `x2`, `y2` | integer | Yes | End pixel. |
 | `duration_ms` | integer | No | Swipe duration in milliseconds. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -118,6 +122,7 @@ Type a string into the focused field.
 | Param | Type | Required | Description |
 | --- | --- | --- | --- |
 | `text` | string | Yes | The text to type. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -131,6 +136,7 @@ Press a named key or a single printable character.
 | Param | Type | Required | Description |
 | --- | --- | --- | --- |
 | `key` | string | Yes | A named key (`"enter"`, `"tab"`, `"backspace"`, ...) or a single character. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -189,7 +195,9 @@ Find one element by describing it in plain English.
 | --- | --- | --- |
 | `found` | object \| null | The match (`bbox`, `confidence`, `text`), or `null` on a miss. A miss is a result, not an error. |
 | `model_name` | string | The vision model that answered. |
-| `model_cost_microdollars` | integer | The cost of this call, in millionths of a dollar. |
+
+Customer-billed cost is available from the session's
+[Telemetry frame response](/observability/frames), not from the DCP result.
 
 ## Errors
 
@@ -230,6 +238,9 @@ whether retrying the same command could succeed:
   </Card>
   <Card title="Protocol overview" icon="plug" href="/api-reference/dcp/overview">
     How the wire is framed and why.
+  </Card>
+  <Card title="Reconnect and resume" icon="rotate" href="/api-reference/dcp/reconnect">
+    Close classes, cursor replay, resync, and idempotency keys.
   </Card>
   <Card title="Use the SDK instead" icon="hand-pointer" href="/driver/reference">
     The ergonomic driver over these methods.

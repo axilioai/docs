@@ -1,40 +1,113 @@
 ---
-title: "See available devices"
-sidebarTitle: "See devices"
-description: "Check what phones are free, and which ones are yours."
+title: "Discover phones"
+sidebarTitle: "Discover"
+description: "Check shared-pool capacity and list every phone your organization rents."
 ---
 
-## What's free
+The availability endpoint answers two different questions:
 
-`available` shows how many phones are free to borrow right now:
+- How many shared phones are free now?
+- How many of your organization's dedicated phones are idle now?
 
-```python
-free = client.phones.available()
-print(free.android_count, "Android phones free")
-```
+Use the dedicated inventory endpoint when you need IDs, nicknames, status, or
+the current session for every phone you rent.
 
-## Your phones
+## Check availability
 
-`mine` lists the phones tied to your account, like
-[dedicated ones you rented](/billing/plans):
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Sessions**](https://app.axilio.ai/dashboard) and click
+    **Allocate A Phone**. The picker shows the shared option and the dedicated
+    phones that can be claimed.
+  </Tab>
 
-```python
-mine = client.phones.mine()
+  <Tab title="Python SDK">
+    ```python
+    capacity = client.phones.availability(phone_type="android")
 
-for phone in mine.phones:
-    print(phone.phone_id, phone.nickname, phone.status)
-```
+    print("shared free:", capacity.shared.available)
+    print("dedicated idle:", capacity.dedicated.idle)
+    ```
+  </Tab>
 
-Pass a phone's `phone_id` to [`session`](/devices/allocate) to use that exact
-phone.
+  <Tab title="Go SDK">
+    ```go
+    phoneType := platformgo.PhonesAvailabilityRequestPhoneTypeAndroid
+    capacity, err := api.Phones.Availability(ctx, &platformgo.PhonesAvailabilityRequest{
+        PhoneType: &phoneType,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(capacity.Shared.Available, capacity.Dedicated.Idle)
+    ```
+  </Tab>
 
-## Next steps
+  <Tab title="REST API">
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/phones/availability?phone_type=android" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
 
-<CardGroup cols={2}>
-  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone.
-  </Card>
-  <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How borrowing works.
-  </Card>
-</CardGroup>
+Availability is advisory. Allocate the phone and handle a conflict if another
+request claims it first.
+
+The CLI does not expose a shared-capacity count. Run `axilio sessions start`
+without `--phone-id` to claim an available shared phone.
+
+## List dedicated inventory
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Phones**](https://app.axilio.ai/dashboard), then search or filter the
+    organization's dedicated inventory.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    # Dedicated phones that are free now.
+    axilio phones list
+
+    # Your complete dedicated inventory.
+    axilio phones mine
+    axilio phones mine -o json
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    inventory = client.phones.list(ownership="dedicated")
+
+    for phone in inventory.phones or []:
+        print(phone.phone_id, phone.nickname, phone.status, phone.current_session_id)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    inventory, err := api.Phones.List(ctx, &platformgo.PhonesListRequest{
+        Ownership: platformgo.PhonesListRequestOwnershipDedicated,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, phone := range inventory.Phones {
+        fmt.Println(phone.PhoneID, phone.Status)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+Pass a returned `phone_id` to [Allocate a phone](/devices/allocate) when you
+need that exact phone.

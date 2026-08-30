@@ -1,33 +1,66 @@
 ---
 title: "Observability"
 sidebarTitle: "Overview"
-description: "See everything your agents do, and exactly what it costs: live view, recordings, events, and cost, on the dashboard and in the SDK."
+description: "Watch a session live, inspect its Telemetry frames, and replay its recording when recording is enabled."
 ---
 
-Axilio shows you everything: what your agents did, and what it cost. Every session
-is recorded, every step is logged, and every cost is itemized. No black box.
+Axilio gives each phone session three complementary views:
+
+- **Live view** shows the phone screen while the session is active.
+- **Telemetry** explains what ran through spans and logs, live or from the
+  retained frame archive.
+- **Recordings** replay the screen after a recorded session finishes processing.
+
+Open **Sessions** in the
+[dashboard](https://app.axilio.ai/dashboard) and select a session to see its
+screen, execution timeline, logs, and recording together.
 
 ## What you can see
 
 <CardGroup cols={2}>
   <Card title="Live view" icon="tower-broadcast" href="/observability/live-view">
-    Watch a phone in real time.
+    Watch or embed a phone's interactive screen.
+  </Card>
+  <Card title="Telemetry" icon="signal-stream" href="/observability/telemetry">
+    Follow frames and logs while a session runs.
+  </Card>
+  <Card title="Frames" icon="list-check" href="/observability/frames">
+    Read the retained execution trace for a session.
   </Card>
   <Card title="Recordings" icon="video" href="/observability/recordings">
-    Replay any session as a video.
-  </Card>
-  <Card title="Events" icon="list-check" href="/observability/events">
-    The step-by-step of a run.
-  </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
-    Exactly where your money goes.
+    Replay a recorded session after processing completes.
   </Card>
 </CardGroup>
 
-## Where to see it
+## Supported interfaces
 
-- **Dashboard**: live view, replays, and charts in your
-  [dashboard](https://axilio.ai/dashboard).
-- **SDK**: pull recordings, events, and costs from code.
-- **Locally too**: even when you drive a phone from your own machine, the session
-  is recorded and shows up the same way.
+| Interface | Current observability surface |
+| --- | --- |
+| **Dashboard** | Live screen, execution timeline, logs, recording playback, and per-call cost. |
+| **CLI** | `axilio sessions trace`, `axilio sessions trace --follow`, and `axilio runs watch`. The CLI does not retrieve recordings. |
+| **Python** | `client.telemetry(...).tail()`, `.trace()`, `.summary()`, and `.logs()`, plus `client.phones.session_recording(...)`. |
+| **Go** | The `drivers/telemetry` package, plus `client.Phones.SessionRecording(...)`. |
+| **REST** | Session frames, Telemetry-token, live-view-token, and recording operations. |
+
+## Data controls
+
+Recording and Telemetry are on by default, but they are independent controls.
+Their Telemetry behavior differs between a direct allocation and a workflow:
+
+- `recording: false` prevents the screen recording and rolling thumbnail from
+  being written.
+- On a direct phone allocation, `telemetry: false` prevents both live and
+  archived Telemetry frames.
+- On a workflow, `telemetry: false` skips the archived trace. Live Telemetry
+  remains available while the run is active.
+
+Your organization's data-retention policy can also prevent these records from
+being created or can make an older recording or trace unavailable. See
+[Recordings](/observability/recordings) and [Frames](/observability/frames) for
+the states each interface returns.
+
+## Usage and cost
+
+Telemetry can join billed cost to individual calls. Account-wide session and
+inference totals live under [Usage](/usage/overview), separate from billing and
+invoices.

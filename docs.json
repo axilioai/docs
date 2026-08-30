@@ -56,7 +56,7 @@
             ]
           },
           {
-            "group": "Devices & Sessions",
+            "group": "Phones and Sessions",
             "icon": "mobile",
             "pages": [
               "devices/overview",
@@ -67,7 +67,7 @@
             ]
           },
           {
-            "group": "Workflows & Runs",
+            "group": "Workflows and Runs",
             "icon": "diagram-project",
             "pages": [
               "workflows/overview",
@@ -77,20 +77,34 @@
             ]
           },
           {
+            "group": "Files",
+            "icon": "folder-open",
+            "pages": [
+              "files/overview",
+              "files/move-files",
+              "files/session-captures"
+            ]
+          },
+          {
             "group": "Observability",
             "icon": "video",
             "pages": [
               "observability/overview",
               "observability/live-view",
-              "observability/embed-live-view",
               "observability/telemetry",
               "observability/recordings",
-              "observability/events",
-              "observability/cost"
+              "observability/frames"
             ]
           },
           {
-            "group": "Account & Billing",
+            "group": "Usage",
+            "icon": "chart-line",
+            "pages": [
+              "usage/overview"
+            ]
+          },
+          {
+            "group": "Account and Billing",
             "icon": "credit-card",
             "pages": [
               {
@@ -188,6 +202,7 @@
             "pages": [
               "api-reference/dcp/overview",
               "api-reference/dcp/raw-usage",
+              "api-reference/dcp/reconnect",
               "api-reference/dcp/reference"
             ]
           },
@@ -215,11 +230,15 @@
       },
       {
         "tab": "Dashboard ↗",
-        "href": "https://axilio.ai/dashboard"
+        "href": "https://app.axilio.ai/dashboard"
       }
     ]
   },
   "redirects": [
+    {
+      "source": "/go-quickstart",
+      "destination": "/quickstart"
+    },
     {
       "source": "/concepts/devices",
       "destination": "/devices/overview"
@@ -278,15 +297,23 @@
     },
     {
       "source": "/platform/usage",
-      "destination": "/observability/cost"
+      "destination": "/usage/overview"
     },
     {
       "source": "/usage/metrics",
-      "destination": "/observability/cost"
+      "destination": "/usage/overview"
     },
     {
       "source": "/usage/sessions",
-      "destination": "/observability/cost"
+      "destination": "/usage/overview"
+    },
+    {
+      "source": "/billing/usage-and-cost",
+      "destination": "/usage/overview"
+    },
+    {
+      "source": "/observability/events",
+      "destination": "/observability/frames"
     },
     {
       "source": "/platform/organizations",
