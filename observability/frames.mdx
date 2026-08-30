@@ -1,107 +1,151 @@
 ---
 title: "Telemetry frames"
 sidebarTitle: "Frames"
-description: "Read a session's retained spans and logs through the CLI, Python, Go, or REST."
+description: "Read a session's retained spans and logs in the Dashboard, CLI, Python, Go, or REST."
 ---
 
 Frames are the canonical record of what happened during a phone session. The
-archive contains completed spans and point-in-time logs ordered by their start
-or log time. It works for workflow runs and interactive sessions because the
-lookup is keyed by `session_id`.
+archive contains completed spans and point-in-time logs ordered by span start
+or log time. It works for workflow runs and interactive sessions because every
+lookup uses `session_id`.
 
-## Read frames with the CLI
+## Read the retained trace
 
-```bash
-axilio sessions trace <session-id>
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+    2. Select a completed session, or select an active session and click
+       **Observability**.
+    3. Inspect completed operations in **Timeline** and output or error logs in
+       **Console**.
+    4. Select a timeline bar to view its status, duration, attributes, and
+       billed cost when available.
 
-The table shows time, frame kind, name, duration, outcome, and billed cost when
-available. Use JSON output to get the complete response:
+    The Dashboard joins the archive's response-level cost maps to their spans.
+    For a completed session with a recording, the timeline and console also
+    follow the video playhead.
+  </Tab>
 
-```bash
-axilio sessions trace <session-id> -o json
-```
+  <Tab title="CLI">
+    ```bash
+    axilio sessions trace sess_123
+    ```
 
-Use `--follow` to print the archive and then attach to
-[Live Telemetry](/observability/telemetry).
+    The table shows time, frame kind, name, duration, outcome, and billed cost
+    when available. Use JSON output for the complete, all-pages response:
 
-## Read frames with Python
+    ```bash
+    axilio sessions trace sess_123 -o json
+    ```
 
-The high-level helper pages through the archive and reconstructs the same trace
-view as the dashboard:
+    Add `--follow` to print the archive and then attach to
+    [Live Telemetry](/observability/telemetry).
+  </Tab>
 
-```python
-from axilio.platform import Client
+  <Tab title="Python SDK">
+    The high-level helper pages through the archive and joins billed costs:
 
-client = Client()
-telemetry = client.telemetry(session_id)
-trace = telemetry.trace()
+    ```python
+    from axilio.platform import Client
 
-if trace.retention_expired:
-    print("The trace is outside the retention window")
+    client = Client()
+    telemetry = client.telemetry("sess_123")
+    trace = telemetry.trace()
 
-for item in trace.spans:
-    print(
-        item.frame.span_type,
-        item.frame.name,
-        item.duration_ms,
-        item.billed_cost_microdollars,
+    if trace.retention_expired:
+        print("The trace is outside the retention window")
+
+    for item in trace.spans:
+        print(
+            item.frame.span_type,
+            item.frame.name,
+            item.duration_ms,
+            item.billed_cost_microdollars,
+        )
+
+    for log in trace.logs:
+        print(log.severity, log.body)
+    ```
+
+    Use `telemetry.summary()` for total time, SDK-call time, unobserved time,
+    call counts, and billed SDK-call cost. Use `telemetry.logs()` when you only
+    need archived logs.
+
+    The generated paginated operation is
+    `client.raw.runs.sessions_list_frames(...)`.
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+        "os"
+
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/drivers/telemetry"
+        "github.com/axilioai/platform-go/option"
     )
 
-for log in trace.logs:
-    print(log.severity, log.body)
-```
+    func main() {
+        ctx := context.Background()
+        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        view := telemetry.NewSession(api, "sess_123")
 
-Use `telemetry.summary()` for total time, SDK-call time, unobserved time, call
-counts, and billed SDK-call cost. Use `telemetry.logs()` when you only need
-archived logs.
+        trace, err := view.Trace(ctx)
+        if err != nil {
+            log.Fatal(err)
+        }
+        if trace.RetentionExpired {
+            fmt.Println("The trace is outside the retention window")
+        }
 
-The generated operation is also available as
-`client.raw.runs.sessions_list_frames(session_id, limit=..., offset=...)`.
+        for _, item := range trace.Spans {
+            fmt.Println(
+                item.Span.SpanType,
+                item.Span.Name,
+                item.Duration(),
+                item.BilledMicrodollars,
+            )
+        }
+        for _, entry := range trace.Logs {
+            fmt.Println(entry.Severity, entry.Body)
+        }
+    }
+    ```
 
-## Read frames with Go
+    Import the helper from
+    `github.com/axilioai/platform-go/drivers/telemetry`. The generated
+    paginated operation is `api.Runs.SessionsListFrames(...)`.
+  </Tab>
 
-```go
-view := telemetry.NewSession(api, sessionID)
+  <Tab title="REST API">
+    Request one page at a time:
 
-trace, err := view.Trace(ctx)
-if err != nil {
-    return err
-}
-if trace.RetentionExpired {
-    fmt.Println("The trace is outside the retention window")
-}
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request GET \
+      --url 'https://api.axilio.ai/api/v1/phones/sessions/sess_123/frames?limit=1000&offset=0' \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      | jq
+    ```
 
-for _, item := range trace.Spans {
-    fmt.Println(
-        item.Span.SpanType,
-        item.Span.Name,
-        item.Duration(),
-        item.BilledMicrodollars,
-    )
-}
-```
+    Continue with `offset += frames.length` until the offset reaches `total`
+    or a page contains no frames. The maximum page size is 1,000.
 
-Import the helper as
-`github.com/axilioai/platform-go/drivers/telemetry`. The generated operation is
-`api.Runs.SessionsListFrames(...)` when you need to page the raw response.
+    [REST reference: List a session's Telemetry frames](/api-reference/rest/runs/list-a-sessions-telemetry-frames)
+  </Tab>
+</Tabs>
 
-## Read frames with REST
-
-Request a page with:
-
-```http
-GET /api/v1/phones/sessions/{session_id}/frames?limit=100&offset=0
-```
-
-[REST reference: List a session's Telemetry frames](/api-reference/rest/runs/list-a-sessions-telemetry-frames)
-
-The response contains:
+## Interpret a page
 
 | Field | Meaning |
 | --- | --- |
 | `frames` | This page of span and log frames. |
-| `total`, `limit`, `offset` | Pagination state. The maximum page size is 1,000. |
+| `total`, `limit`, `offset` | Pagination state. |
 | `sdk_call_costs` | Billed microdollars keyed by SDK-call `span_id`. |
 | `inference_costs` | Billed microdollars keyed by inference ID. |
 | `retention_expired` | `true` when the trace is outside the organization's retention window and frames are withheld. |
@@ -147,14 +191,17 @@ A log looks like this:
 
 Common span roles include `session`, `run`, `sdk_call`, `inference`,
 `file_push`, and `media_capture`. Common log roles include `output_log`,
-`output_error`, `kernel_status`, and `transfer_progress`. These vocabularies
-are additive: render an unfamiliar value generically.
+`output_error`, `kernel_status`, and `transfer_progress`. These
+vocabularies are additive: render an unfamiliar value generically.
 
-The live stream emits a span's `start` and `end` phases. The archive collapses
-each span into one completed `end` frame. Logs have the same shape in both
-places.
+An older retained trace can use `phone_session` for its session-root span.
+Treat it as `session`.
 
-## Tolerant readers
+The live stream emits a span's `start` and `end` phases. The archive
+collapses each span into one completed `end` frame. Logs have the same shape
+in both places.
+
+## Build tolerant readers
 
 Telemetry evolves without requiring all readers to update together. A reader
 must:

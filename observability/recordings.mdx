@@ -4,57 +4,292 @@ sidebarTitle: "Recordings"
 description: "Configure screen recording, understand its states, and replay or download a completed session."
 ---
 
-Screen recording is on by default, but it is configurable per phone allocation
-and per workflow. When recording is enabled, Axilio writes a video of the phone
-screen and makes it available after the session ends and processing completes.
+Screen recording is on by default. When enabled, Axilio records the phone's
+screen and makes the MP4 available after the session ends and its upload
+finishes.
 
-In [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions),
-select a session. The session inspector places the video beside its execution
-timeline and logs, so you can seek from a frame to the matching point in the
-recording.
+Recordings are keyed by `session_id`, so the same lookup works for workflow
+runs and directly allocated sessions.
 
 ## Configure recording
 
-Disable recording for one directly allocated phone:
+Recording is an allocation-time setting. Changing a workflow affects its future
+runs, not sessions that already started.
 
-```python
-allocation = client.phones.allocate(
-    phone_type="android",
-    phone_id="ph_123",
-    recording=False,
-)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Configure one directly allocated session:
 
-Disable recording for future runs of a workflow:
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+    2. Click **Allocate A Phone**.
+    3. Expand **advanced configuration**.
+    4. Turn **recording** off if you do not want Axilio to capture the screen.
+    5. Click **Allocate**.
 
-```python
-client.workflows.update(
-    workflow_id,
-    recording=False,
-)
-```
+    The Dashboard does not currently expose the workflow-level recording
+    setting. Use the CLI when creating a workflow, or use an SDK or REST to
+    update one.
+  </Tab>
+
+  <Tab title="CLI">
+    Disable recording when you create a workflow:
+
+    ```bash
+    axilio workflows create checkout-flow --recording=false
+    ```
+
+    Confirm its current setting with `axilio workflows get <workflow-id>`.
+    The CLI does not expose a recording flag on `sessions start` or an update
+    command for an existing workflow.
+  </Tab>
+
+  <Tab title="Python SDK">
+    Disable recording for one direct allocation:
+
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    allocation = client.phones.allocate(
+        phone_type="android",
+        phone_id="ph_123",
+        recording=False,
+    )
+    ```
+
+    Disable recording for future runs of an existing workflow:
+
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    client.workflows.update(
+        "wf_123",
+        recording=False,
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    package main
+
+    import (
+        "context"
+        "log"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        recordingOff := false
+
+        allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+            PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+            PhoneID:   platformgo.String("ph_123"),
+            Recording: &recordingOff,
+        })
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer func() {
+            if _, err := api.Phones.Deallocate(
+                context.Background(),
+                &platformgo.PhonesDeallocateRequest{PhoneID: allocation.PhoneID},
+            ); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
+
+        if _, err := api.Workflows.Update(ctx, &platformgo.WorkflowUpdateRequest{
+            WorkflowID: "wf_123",
+            Recording:  &recordingOff,
+        }); err != nil {
+            log.Fatal(err)
+        }
+    }
+    ```
+
+    The allocation setting applies only to `allocation.SessionID`. The
+    workflow update applies to future runs.
+  </Tab>
+
+  <Tab title="REST API">
+    Disable recording for one direct allocation:
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123",
+        "recording": false
+      }'
+    ```
+
+    Disable recording for future runs of an existing workflow:
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request PATCH \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"recording":false}'
+    ```
+  </Tab>
+</Tabs>
 
 When recording is disabled, Axilio does not write a recording or rolling
 thumbnail for that session. Your organization's data-retention policy can also
 prevent recordings from being created or make older recordings unavailable.
 
-## Look up a recording with Python
+## Replay or download a recording
 
-Recordings are keyed by `session_id`, so the same operation works for workflow
-runs and directly allocated sessions:
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+    2. Change the status filter if the completed session is not visible.
+    3. Select the session.
+    4. Play the recording on the left side of the **SESSION VIEWER**.
 
-```python
-recording = client.phones.session_recording(session_id)
+    The **Timeline** and **Console** stay synchronized with playback. Select a
+    timeline bar or console entry to seek to that point. The viewer shows a
+    processing, expired, or unavailable state when no playable URL exists.
+  </Tab>
 
-if recording.status == "ready":
-    print(recording.url)
-elif recording.status == "pending":
-    print("The recording is not ready")
-elif recording.status == "expired":
-    print("The recording is outside the retention window")
-```
+  <Tab title="CLI">
+    `sessions get` returns the recording status and a time-limited URL when it
+    is ready:
 
-The current statuses are:
+    ```bash
+    SESSION=$(axilio sessions get sess_123 -o json)
+    STATUS=$(printf '%s' "$SESSION" | jq -r '.recording_status')
+
+    if [ "$STATUS" != "ready" ]; then
+      printf 'recording is %s\n' "$STATUS" >&2
+      exit 1
+    fi
+
+    RECORDING_URL=$(printf '%s' "$SESSION" | jq -r '.recording_url')
+    curl --silent --show-error --fail --location \
+      "$RECORDING_URL" \
+      --output session.mp4
+    ```
+
+    The CLI does not have a dedicated recording download command. Run
+    `sessions get` again instead of persisting an expired URL.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from pathlib import Path
+
+    import httpx
+
+    from axilio.platform import Client
+
+    client = Client()
+    recording = client.phones.session_recording("sess_123")
+
+    if recording.status != "ready" or not recording.url:
+        raise RuntimeError(f"recording is {recording.status}")
+
+    with httpx.stream("GET", recording.url, follow_redirects=True) as response:
+        response.raise_for_status()
+        with Path("session.mp4").open("wb") as output:
+            for chunk in response.iter_bytes():
+                output.write(chunk)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    package main
+
+    import (
+        "context"
+        "errors"
+        "io"
+        "log"
+        "net/http"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        recording, err := api.Phones.SessionRecording(
+            ctx,
+            &platformgo.PhonesSessionRecordingRequest{SessionID: "sess_123"},
+        )
+        if err != nil {
+            log.Fatal(err)
+        }
+        if recording.Status != platformgo.PhoneSessionRecordingResponseStatusReady ||
+            recording.URL == nil {
+            log.Fatal(errors.New("recording is not ready"))
+        }
+
+        response, err := http.Get(*recording.URL)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer response.Body.Close()
+        if response.StatusCode < 200 || response.StatusCode >= 300 {
+            log.Fatalf("download recording: %s", response.Status)
+        }
+
+        output, err := os.Create("session.mp4")
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer output.Close()
+
+        if _, err := io.Copy(output, response.Body); err != nil {
+            log.Fatal(err)
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    ```bash
+    RECORDING=$(curl --silent --show-error --fail-with-body \
+      --request GET \
+      --url https://api.axilio.ai/api/v1/phones/sessions/sess_123/recording \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY")
+
+    STATUS=$(printf '%s' "$RECORDING" | jq -r '.status')
+    if [ "$STATUS" != "ready" ]; then
+      printf 'recording is %s\n' "$STATUS" >&2
+      exit 1
+    fi
+
+    RECORDING_URL=$(printf '%s' "$RECORDING" | jq -r '.url')
+    curl --silent --show-error --fail --location \
+      "$RECORDING_URL" \
+      --output session.mp4
+    ```
+
+    [REST reference: Get a session recording](/api-reference/rest/phones/get-a-session-recording)
+  </Tab>
+</Tabs>
+
+## Recording states
 
 | Status | Meaning |
 | --- | --- |
@@ -65,49 +300,6 @@ The current statuses are:
 Only `ready` includes a URL. If you know recording was enabled and the session
 has completed, fetch the lookup again while its upload processes. `pending`
 alone does not promise that a recording will appear.
-
-## Look up a recording with Go
-
-```go
-recording, err := api.Phones.SessionRecording(
-    ctx,
-    &platformgo.PhonesSessionRecordingRequest{SessionID: sessionID},
-)
-if err != nil {
-    return err
-}
-
-if recording.Status == platformgo.PhoneSessionRecordingResponseStatusReady &&
-    recording.URL != nil {
-    fmt.Println(*recording.URL)
-}
-```
-
-## Download the MP4 with Python
-
-The `ready` URL points to the MP4 for a limited time. Look it up again instead
-of persisting an expired URL.
-
-```python
-import httpx
-
-recording = client.phones.session_recording(session_id)
-if recording.status != "ready" or not recording.url:
-    raise RuntimeError(f"recording is {recording.status}")
-
-with httpx.stream("GET", recording.url) as response:
-    response.raise_for_status()
-    with open("session.mp4", "wb") as output:
-        for chunk in response.iter_bytes():
-            output.write(chunk)
-```
-
-<Note>
-  The CLI does not currently have a recording lookup or download command. Use
-  the dashboard, Python or Go SDK, or the REST recording operation.
-</Note>
-
-[REST reference: Get a session recording](/api-reference/rest/phones/get-a-session-recording)
 
 ## Next steps
 

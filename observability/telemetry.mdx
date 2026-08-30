@@ -1,115 +1,164 @@
 ---
 title: "Live Telemetry"
 sidebarTitle: "Live Telemetry"
-description: "Follow a session's spans and logs live with the CLI, SDKs, or its read-only WebSocket."
+description: "Follow a session's spans and logs live in the Dashboard, CLI, SDKs, or its read-only WebSocket."
 ---
 
 Telemetry is the structured execution record for a phone session. Its frames
-include completed and in-flight operations, inference work, file activity, and
-output logs. The live stream and the retained [frame archive](/observability/frames)
-use the same envelope.
+include in-flight and completed operations, inference work, file activity, and
+output logs. The live stream and the retained
+[frame archive](/observability/frames) use the same envelope.
 
-When Telemetry is enabled, allocating a phone returns a read-only
-`telemetry_url` for that session.
+Use live Telemetry while a session is active. Use the frame archive after it
+ends or whenever you need the authoritative retained trace.
 
-## Follow with the CLI
+## Follow a live session
 
-Follow an active session after printing its archived prefix:
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+    2. Select an active session.
+    3. Click **Observability**.
 
-```bash
-axilio sessions trace <session-id> --follow
-```
+    The **Timeline** updates with spans while **Console** shows output and error
+    logs. Select a timeline bar to inspect its details. The live phone remains
+    visible on the left.
 
-Follow a run from queueing through its final outcome:
+    If the session ends while the page is open, the Dashboard refreshes the
+    subject and replaces the live feed with its retained trace. A session
+    started with Telemetry off shows **Telemetry disabled for this session**.
+  </Tab>
 
-```bash
-axilio runs watch <run-id>
-```
+  <Tab title="CLI">
+    Print the retained prefix, then follow new frames until the session ends:
 
-Both commands reconnect through the frame archive if the live connection is
-unavailable. With `-o json`, they emit newline-delimited JSON: one frame per
-line followed by a final summary object.
+    ```bash
+    axilio sessions trace sess_123 --follow
+    ```
 
-## Follow with Python
+    Follow a workflow run from its queue state through its final outcome:
 
-The Python helper reconnects automatically, resumes from its last cursor, and
-deduplicates replayed frames:
+    ```bash
+    axilio runs watch run_123
+    ```
 
-```python
-from axilio.platform import Client
+    Both commands reconnect through the archive if the live connection is
+    unavailable. With `-o json`, they emit newline-delimited JSON: one frame
+    per line followed by a final `trace_end` or `watch_end` object.
+  </Tab>
 
-client = Client()
-allocation = client.phones.allocate(phone_type="android", phone_id="ph_123")
+  <Tab title="Python SDK">
+    Mint a fresh URL for any active session in your organization, then attach
+    the high-level helper:
 
-telemetry = client.telemetry(
-    allocation.session_id,
-    allocation.telemetry_url,
-)
+    ```python
+    from axilio.platform import Client
 
-for frame in telemetry.tail():
-    print(frame)
-```
+    client = Client()
+    session_id = "sess_123"
 
-The loop ends after it yields the session's terminal frame. Use
-`telemetry.logs(live=True)` when you only need log frames.
+    grant = client.phones.session_telemetry_token(session_id)
+    telemetry = client.telemetry(session_id, grant.telemetry_url)
 
-## Follow with Go
+    for frame in telemetry.tail():
+        print(frame)
+    ```
 
-The Go helper reconnects and resumes from its latest cursor:
+    The helper reconnects automatically, resumes from its last cursor, and
+    deduplicates replayed frames. The loop ends after it yields the session's
+    terminal frame. Use `telemetry.logs(live=True)` when you only need logs.
 
-```go
-view := telemetry.NewSession(
-    api,
-    allocation.SessionID,
-    telemetry.WithTelemetryURL(*allocation.TelemetryURL),
-)
+    If your process allocated the phone, you can pass
+    `allocation.telemetry_url` instead of minting another URL.
+  </Tab>
 
-stream, err := view.Tail(ctx)
-if err != nil {
-    return err
-}
-defer stream.Close()
+  <Tab title="Go SDK">
+    ```go
+    package main
 
-for {
-    frame, err := stream.Next(ctx)
-    if errors.Is(err, io.EOF) {
-        break
+    import (
+        "context"
+        "errors"
+        "fmt"
+        "io"
+        "log"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/drivers/telemetry"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        sessionID := "sess_123"
+
+        grant, err := api.Phones.SessionTelemetryToken(
+            ctx,
+            &platformgo.PhonesSessionTelemetryTokenRequest{SessionID: sessionID},
+        )
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        view := telemetry.NewSession(
+            api,
+            sessionID,
+            telemetry.WithTelemetryURL(grant.TelemetryURL),
+        )
+        stream, err := view.Tail(ctx)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer stream.Close()
+
+        for {
+            frame, err := stream.Next(ctx)
+            if errors.Is(err, io.EOF) {
+                break
+            }
+            if err != nil {
+                log.Fatal(err)
+            }
+            fmt.Printf("%+v\n", frame)
+        }
+
+        if stream.Gapped() {
+            fmt.Println("Live replay gap detected; refetch the archived trace")
+        }
     }
-    if err != nil {
-        return err
-    }
-    fmt.Printf("%+v\n", frame)
-}
+    ```
 
-if stream.Gapped() {
-    fmt.Println("The live replay window expired; refetch the archived trace")
-}
-```
+    Import the helper from
+    `github.com/axilioai/platform-go/drivers/telemetry`. It reconnects and
+    resumes from its latest cursor. Delivery is at least once, so deduplicate
+    replayed frames if your consumer requires exactly-once presentation. When
+    `stream.Gapped()` is true, call `view.Trace` to rebuild from the archive.
+  </Tab>
 
-Import the helper as
-`github.com/axilioai/platform-go/drivers/telemetry`. Check that
-`allocation.TelemetryURL` is non-nil before dereferencing it. Delivery is at
-least once, so deduplicate replayed frames if your Go consumer requires
-exactly-once presentation. When `stream.Gapped()` is true, call `view.Trace`
-to rebuild the authoritative trace from the archive.
+  <Tab title="REST API">
+    Mint a read-only WebSocket URL, then attach a WebSocket client. This example
+    uses `websocat`:
 
-## Attach to an existing active session
+    ```bash
+    TELEMETRY_URL=$(curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones/sessions/sess_123/telemetry-token \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      | jq -r '.telemetry_url')
 
-An orchestrated run does not return its allocation response to your process.
-Mint a fresh URL for an active session, then attach the same helper:
+    websocat "$TELEMETRY_URL"
+    ```
 
-```python
-grant = client.phones.session_telemetry_token(session_id)
-telemetry = client.telemetry(session_id, grant.telemetry_url)
+    The token operation is organization-scoped and refuses inactive sessions.
+    A raw client must implement the
+    [reconnect and resume contract](/api-reference/dcp/reconnect).
 
-for frame in telemetry.tail():
-    print(frame)
-```
-
-The token operation is org-scoped and read-only. It refuses inactive sessions.
-For an ended session, read [archived frames](/observability/frames) instead.
-
-[REST reference: Mint a Telemetry stream URL](/api-reference/rest/phones/mint-a-telemetry-stream-url)
+    [REST reference: Mint a Telemetry stream URL](/api-reference/rest/phones/mint-a-telemetry-stream-url)
+  </Tab>
+</Tabs>
 
 ## Stream behavior
 
@@ -119,16 +168,16 @@ For an ended session, read [archived frames](/observability/frames) instead.
 - **Late joiners receive the recent retained window**, then follow new frames.
 - **A message can contain one frame or an array of frames.** Readers must
   support both forms.
+- **Delivery is at least once.** A reconnect can replay frames.
 - **Unknown frame kinds and fields are additive.** Preserve or render them
   generically instead of failing the stream.
 - **The URL dies with the session.** The retained archive remains available
   only for your organization's Telemetry-retention window.
 
 <Note>
-  Both helpers reconnect, resume from cursor checkpoints, and handle a clean
-  session end. Python also deduplicates replayed frames. A Go consumer should
-  tolerate duplicates and check `Gapped()`. If you open the WebSocket
-  yourself, implement the [reconnect and resume contract](/api-reference/dcp/reconnect).
+  The Python helper deduplicates replayed frames. The Go helper resumes but
+  exposes possible duplicates and reports an expired replay window through
+  `Gapped()`. The CLI reconciles the archive and live stream for you.
 </Note>
 
 ## Next steps
