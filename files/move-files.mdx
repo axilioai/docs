@@ -199,9 +199,75 @@ Axilio authentication header.
     ```
   </Tab>
   <Tab title="Go">
-    List through `files.List` or `c.Files.List`, then read the selected ready
-    entry's `DownloadURL` with an HTTP client. Re-list before retrying an
-    expired URL.
+    List the file to receive a fresh signed URL, then stream it locally:
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "io"
+        "log"
+        "net/http"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        client "github.com/axilioai/platform-go/client"
+        files "github.com/axilioai/platform-go/drivers/files"
+        option "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        page, err := files.List(ctx, c, &platformgo.FilesListRequest{
+            Q: platformgo.String("photo.jpg"),
+        })
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        var selected *platformgo.FileSummary
+        for _, item := range page.Files {
+            if item.Status == platformgo.FileSummaryStatusReady && item.DownloadURL != nil {
+                selected = item
+                break
+            }
+        }
+        if selected == nil {
+            log.Fatal("no ready file found")
+        }
+
+        request, err := http.NewRequestWithContext(
+            ctx, http.MethodGet, *selected.DownloadURL, nil,
+        )
+        if err != nil {
+            log.Fatal(err)
+        }
+        response, err := http.DefaultClient.Do(request)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer response.Body.Close()
+        if response.StatusCode < 200 || response.StatusCode >= 300 {
+            log.Fatalf("download failed: %s", response.Status)
+        }
+
+        output, err := os.Create(selected.Filename)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer output.Close()
+        if _, err := io.Copy(output, response.Body); err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println("saved", selected.Filename)
+    }
+    ```
+
+    Re-list before retrying an expired URL.
   </Tab>
   <Tab title="REST">
     ```bash
@@ -243,10 +309,32 @@ name they used at push time.
   </Tab>
   <Tab title="Go">
     ```go
-    renamed, err := c.Files.Rename(ctx, &platformgo.FileRenameRequest{
-        FileID:   "<file-id>",
-        Filename: "launch-photo.jpg",
-    })
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        client "github.com/axilioai/platform-go/client"
+        option "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        renamed, err := c.Files.Rename(ctx, &platformgo.FileRenameRequest{
+            FileID:   "<file-id>",
+            Filename: "launch-photo.jpg",
+        })
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println(renamed.File.Filename)
+    }
     ```
   </Tab>
   <Tab title="REST">
@@ -292,8 +380,25 @@ schedules removal from phones that hold or are receiving a delivered copy.
   </Tab>
   <Tab title="Go">
     ```go
-    if err := files.Delete(ctx, c, "<file-id>"); err != nil {
-        return err
+    package main
+
+    import (
+        "context"
+        "log"
+        "os"
+
+        client "github.com/axilioai/platform-go/client"
+        files "github.com/axilioai/platform-go/drivers/files"
+        option "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        if err := files.Delete(ctx, c, "<file-id>"); err != nil {
+            log.Fatal(err)
+        }
     }
     ```
   </Tab>
