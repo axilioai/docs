@@ -53,6 +53,11 @@ the phone; the ID does not change.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List runs**](/api-reference/rest/runs/list-runs): `GET /runs`
+    - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/runs?workflow_id=wf_123&limit=20" \
@@ -62,8 +67,6 @@ the phone; the ID does not change.
       --url https://api.axilio.ai/api/v1/runs/run_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    REST references: [List runs](/api-reference/rest/runs/list-runs) · [Get a run](/api-reference/rest/runs/get-a-run)
   </Tab>
 </Tabs>
 
@@ -91,8 +94,9 @@ See [Telemetry](/observability/telemetry) for SDK helpers and archive behavior.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Open the run and click **Cancel**. A completed, failed, or already canceled
-    run is already terminal.
+    Open [**Runs**](https://app.axilio.ai/dashboard/axilio/runs), select the run,
+    and click **Cancel**. A completed, failed, or already canceled run is already
+    terminal.
   </Tab>
 
   <Tab title="CLI">
@@ -117,14 +121,16 @@ See [Telemetry](/observability/telemetry) for SDK helpers and archive behavior.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Cancel a run**](/api-reference/rest/runs/cancel-a-run): `POST /runs/{run_id}:cancel`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
       --url https://api.axilio.ai/api/v1/runs/run_123:cancel \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: Cancel a run](/api-reference/rest/runs/cancel-a-run)
   </Tab>
 </Tabs>
 
@@ -170,6 +176,11 @@ bounded time window and statistics for a workflow's total and success rate.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List run history**](/api-reference/rest/runs/list-run-history): `GET /runs/history`
+    - [**Get workflow stats**](/api-reference/rest/runs/get-workflow-stats): `GET /runs/stats/{workflow_id}`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/runs/history?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&workflow_id=wf_123&limit=50&offset=0" \
@@ -179,9 +190,6 @@ bounded time window and statistics for a workflow's total and success rate.
       --url https://api.axilio.ai/api/v1/runs/stats/wf_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    REST references: [List run history](/api-reference/rest/runs/list-run-history) ·
-    [Get workflow stats](/api-reference/rest/runs/get-workflow-stats)
   </Tab>
 </Tabs>
 

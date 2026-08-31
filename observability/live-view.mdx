@@ -103,6 +103,10 @@ phone. Use a [recording](/observability/recordings) after the session ends.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+
     ```bash
     ALLOCATION=$(curl --silent --show-error --fail-with-body \
       --request POST \
@@ -116,8 +120,6 @@ phone. Use a [recording](/observability/recordings) after the session ends.
 
     Retain the returned `phone_id` and [release the phone](/devices/allocate)
     when you finish.
-
-    [REST reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
   </Tab>
 </Tabs>
 
@@ -169,6 +171,10 @@ expose this operation.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Mint a live-view token**](/api-reference/rest/phones/mint-a-live-view-token): `POST /phones/sessions/{session_id}/live-view-token`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -176,8 +182,6 @@ expose this operation.
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
       | jq -r '.live_view_url'
     ```
-
-    [REST reference: Mint a live-view token](/api-reference/rest/phones/mint-a-live-view-token)
   </Tab>
 </Tabs>
 
@@ -246,6 +250,10 @@ expose these allocation options. Configure them with an SDK or REST:
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \

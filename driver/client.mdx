@@ -80,6 +80,10 @@ direct own-image Argus command.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Run locate**](/api-reference/vision/vision/run-locate): `POST /api/v1/vision/locate`
+
     ```bash
     jq -n \
       --arg image "$IMAGE_B64" \
@@ -92,8 +96,6 @@ direct own-image Argus command.
         --header "Content-Type: application/json" \
         --data-binary @-
     ```
-
-    [REST reference: Run locate](/api-reference/vision/vision/run-locate)
   </Tab>
 </Tabs>
 
@@ -128,6 +130,10 @@ The Go request exposes the corresponding `Model` and `Texts` fields.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Run inference**](/api-reference/vision/vision/run-inference): `POST /api/v1/vision/detect`
+
     ```bash
     jq -n --arg image "$IMAGE_B64" \
       '{image: $image, inference_type: "combined", ocr_engine: "free"}' |
@@ -138,8 +144,6 @@ The Go request exposes the corresponding `Model` and `Texts` fields.
         --header "Content-Type: application/json" \
         --data-binary @-
     ```
-
-    [REST reference: Run inference](/api-reference/vision/vision/run-inference)
   </Tab>
 </Tabs>
 
@@ -169,12 +173,14 @@ Detection also accepts `confidence_threshold` and `nms_iou_threshold`.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List models**](/api-reference/vision/vision/list-models): `GET /api/v1/vision/models`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://argus.axilio.ai/api/v1/vision/models
     ```
-
-    [REST reference: List models](/api-reference/vision/vision/list-models)
   </Tab>
 </Tabs>
 

@@ -22,8 +22,9 @@ The public usage surface has three views:
     Open [**Usage → Sessions**](https://app.axilio.ai/dashboard/axilio/usage/sessions)
     or [**Usage → Inferences**](https://app.axilio.ai/dashboard/axilio/usage/inferences)
     after choosing your organization. Each view combines an aggregate chart
-    with the rows for its selected date range. **Billing** shows total usage
-    spend.
+    with the rows for its selected date range.
+    [**Billing**](https://app.axilio.ai/dashboard/axilio/billing) shows total
+    usage spend.
   </Tab>
 
   <Tab title="CLI">
@@ -71,13 +72,15 @@ The public usage surface has three views:
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Get usage metrics**](/api-reference/rest/usage/get-usage-metrics): `GET /usage/metrics`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/usage/metrics?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&granularity=daily" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: Get usage metrics](/api-reference/rest/usage/get-usage-metrics)
   </Tab>
 </Tabs>
 
@@ -88,8 +91,10 @@ and billing processing state for each phone session.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Open **Usage → Sessions**, then filter by session status, billing state,
-    allocation source, or date. Search can match a session or workflow ID.
+    Open
+    [**Usage → Sessions**](https://app.axilio.ai/dashboard/axilio/usage/sessions),
+    then filter by session status, billing state, allocation source, or date.
+    Search can match a session or workflow ID.
   </Tab>
 
   <Tab title="Python SDK">
@@ -115,13 +120,15 @@ and billing processing state for each phone session.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List phone sessions with cost**](/api-reference/rest/usage/list-phone-sessions-with-cost): `GET /usage/sessions`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/usage/sessions?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&limit=50" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: List phone sessions with cost](/api-reference/rest/usage/list-phone-sessions-with-cost)
   </Tab>
 </Tabs>
 
@@ -132,8 +139,9 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Open **Usage → Inferences**. Filter by endpoint, model, or date, and use
-    search to find an ID.
+    Open
+    [**Usage → Inferences**](https://app.axilio.ai/dashboard/axilio/usage/inferences).
+    Filter by endpoint, model, or date, and use search to find an ID.
   </Tab>
 
   <Tab title="CLI">
@@ -174,13 +182,15 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List inference calls**](/api-reference/rest/usage/list-inference-calls): `GET /usage/inferences`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/usage/inferences?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&endpoint_filter=locate&limit=50" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: List inference calls](/api-reference/rest/usage/list-inference-calls)
   </Tab>
 </Tabs>
 

@@ -139,6 +139,10 @@ ends or whenever you need the authoritative retained trace.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Mint a Telemetry stream URL**](/api-reference/rest/phones/mint-a-telemetry-stream-url): `POST /phones/sessions/{session_id}/telemetry-token`
+
     Mint a read-only WebSocket URL, then attach a WebSocket client. This example
     uses `websocat`:
 
@@ -155,8 +159,6 @@ ends or whenever you need the authoritative retained trace.
     The token operation is organization-scoped and refuses inactive sessions.
     A raw client must implement the
     [reconnect and resume contract](/api-reference/dcp/reconnect).
-
-    [REST reference: Mint a Telemetry stream URL](/api-reference/rest/phones/mint-a-telemetry-stream-url)
   </Tab>
 </Tabs>
 

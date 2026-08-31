@@ -58,6 +58,10 @@ session ID when the phone starts it.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -69,8 +73,6 @@ session ID when the phone starts it.
         "start_timeout_seconds": 300
       }'
     ```
-
-    [REST reference: Start a run](/api-reference/rest/runs/start-a-run)
   </Tab>
 </Tabs>
 
@@ -82,8 +84,9 @@ The dashboard sends its visible 30-minute queue timeout unless you change it.
 
 <Warning>
   Runs queue immediately. The current public request contract has no future
-  start time or recurring schedule. In the dashboard, choose **Run Now**;
-  do not rely on the visible **Schedule** option.
+  start time or recurring schedule. In
+  [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows), choose
+  **Run Now**; do not rely on the visible **Schedule** option.
 </Warning>
 
 ## Run in parallel
@@ -121,6 +124,10 @@ Create one run entry per execution:
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -137,8 +144,6 @@ Create one run entry per execution:
     ```
 
     The endpoint accepts 1–1,000 entries per request.
-
-    [REST reference: Start a run](/api-reference/rest/runs/start-a-run)
   </Tab>
 </Tabs>
 
@@ -202,6 +207,10 @@ phone:
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -215,8 +224,6 @@ phone:
         ]
       }'
     ```
-
-    [REST reference: Start a run](/api-reference/rest/runs/start-a-run)
   </Tab>
 </Tabs>
 

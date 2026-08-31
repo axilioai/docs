@@ -40,13 +40,15 @@ description: "Read your balance, add funds in the dashboard, configure alerts, a
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Get account balance**](/api-reference/rest/billing/get-account-balance): `GET /billing/balance`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/billing/balance \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: Get account balance](/api-reference/rest/billing/get-account-balance)
   </Tab>
 </Tabs>
 
@@ -54,7 +56,7 @@ description: "Read your balance, add funds in the dashboard, configure alerts, a
 
 Adding funds and managing payment methods are dashboard-only actions:
 
-1. Open **Billing**.
+1. Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing).
 2. Click **Add Funds**.
 3. Choose an amount and complete checkout.
 
@@ -65,8 +67,8 @@ customer-portal session.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Open **Billing**, select **Invoices**, filter the list, then click **PDF**
-    on the invoice you need.
+    Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), select
+    **Invoices**, filter the list, then click **PDF** on the invoice you need.
   </Tab>
 
   <Tab title="Python SDK">
@@ -96,6 +98,11 @@ customer-portal session.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List billing history**](/api-reference/rest/billing/list-billing-history): `GET /billing/history`
+    - [**Get an invoice PDF URL**](/api-reference/rest/billing/get-an-invoice-pdf-url): `GET /billing/history/{invoice_id}/pdf`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/billing/history?limit=20&offset=0" \
@@ -105,10 +112,6 @@ customer-portal session.
       --url https://api.axilio.ai/api/v1/billing/history/inv_123/pdf \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    REST references:
-    [List billing history](/api-reference/rest/billing/list-billing-history) ·
-    [Get an invoice PDF URL](/api-reference/rest/billing/get-an-invoice-pdf-url)
   </Tab>
 </Tabs>
 
@@ -150,6 +153,11 @@ itself remains a dashboard action.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Get auto-recharge settings**](/api-reference/rest/billing/get-auto-recharge-settings): `GET /billing/auto-recharge`
+    - [**Update auto-recharge settings**](/api-reference/rest/billing/update-auto-recharge-settings): `PUT /billing/auto-recharge`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/billing/auto-recharge \
@@ -166,10 +174,6 @@ itself remains a dashboard action.
         "target_cents": 2500
       }'
     ```
-
-    REST references:
-    [Get auto-recharge settings](/api-reference/rest/billing/get-auto-recharge-settings) ·
-    [Update auto-recharge settings](/api-reference/rest/billing/update-auto-recharge-settings)
   </Tab>
 </Tabs>
 

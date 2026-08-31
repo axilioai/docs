@@ -57,6 +57,10 @@ a session and phones whose status is `inactive`, `maintenance`, or `suspended`.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List the organization's phones**](/api-reference/rest/phones/list-the-orgs-phones): `GET /phones`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
@@ -66,8 +70,6 @@ a session and phones whose status is `inactive`, `maintenance`, or `suspended`.
     This endpoint returns the full rented inventory. Require `status=active`
     and an empty `current_session_id`, then handle an allocation
     conflict in case another session claims it first.
-
-    [REST reference: List the organization's phones](/api-reference/rest/phones/list-the-orgs-phones)
   </Tab>
 </Tabs>
 

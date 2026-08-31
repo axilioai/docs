@@ -39,9 +39,11 @@ only whether bytes are still uploading or ready in storage.
 
 <Tabs>
   <Tab title="Dashboard">
-    Open the active session's **Files** tool and select **Downloads** to watch
-    files from that session arrive. You can also open your organization's
-    **Files** page, filter to captures, and follow the session link on a file.
+    Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions), select
+    the active session, open its **Files** tool, and select **Downloads** to watch
+    files from that session arrive. You can also open
+    [**Files**](https://app.axilio.ai/dashboard/axilio/files), filter to captures,
+    and follow the session link on a file.
   </Tab>
   <Tab title="CLI">
     List captures for one session:
@@ -61,7 +63,7 @@ only whether bytes are still uploading or ready in storage.
 
     Download a ready capture with `axilio files download <file-id>`.
   </Tab>
-  <Tab title="Python">
+  <Tab title="Python SDK">
     ```python
     from axilio.platform import Client
 
@@ -77,7 +79,7 @@ only whether bytes are still uploading or ready in storage.
 
     Re-run the listing to refresh in-progress state and expired download URLs.
   </Tab>
-  <Tab title="Go">
+  <Tab title="Go SDK">
     ```go
     limit := int64(50)
     page, err := c.Files.PhonesSessionFiles(
@@ -100,7 +102,11 @@ only whether bytes are still uploading or ready in storage.
     }
     ```
   </Tab>
-  <Tab title="REST">
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List a session's captured files**](/api-reference/rest/files/list-a-sessions-captured-files): `GET /phones/sessions/{session_id}/files`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/phones/sessions/sess_123/files?limit=50" \
@@ -110,8 +116,6 @@ only whether bytes are still uploading or ready in storage.
     `GET /api/v1/phones/sessions/{session_id}/files` returns captured files
     newest first. The endpoint also supports filename, MIME type, size, time,
     limit, and offset filters.
-
-    [REST reference: List a session's captured files](/api-reference/rest/files/list-a-sessions-captured-files)
   </Tab>
 </Tabs>
 

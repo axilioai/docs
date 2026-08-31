@@ -25,7 +25,26 @@ with `axl_`.
 ## Authenticate an interface
 
 <Tabs>
-  <Tab title="Python">
+  <Tab title="CLI">
+    For interactive use, sign in through your browser and verify the session:
+
+    ```bash
+    axilio login
+    axilio status
+    ```
+
+    For non-interactive use, expose an API key through the environment:
+
+    ```bash
+    export AXILIO_API_KEY=axl_your_key_here
+    axilio status
+    ```
+
+    A browser session can switch organizations with `axilio orgs use
+    <organization-slug>`. An API key remains scoped to the organization that
+    created it.
+  </Tab>
+  <Tab title="Python SDK">
     Set the environment variable before starting your process:
 
     ```bash
@@ -46,26 +65,7 @@ with `axl_`.
     client = Client(api_key=secret_value)
     ```
   </Tab>
-  <Tab title="CLI">
-    For interactive use, sign in through your browser and verify the session:
-
-    ```bash
-    axilio login
-    axilio status
-    ```
-
-    For non-interactive use, expose an API key through the environment:
-
-    ```bash
-    export AXILIO_API_KEY=axl_your_key_here
-    axilio status
-    ```
-
-    A browser session can switch organizations with `axilio orgs use
-    <organization-slug>`. An API key remains scoped to the organization that
-    created it.
-  </Tab>
-  <Tab title="Go">
+  <Tab title="Go SDK">
     Read the secret from your environment or secret provider and pass it to
     the generated client:
 
@@ -82,7 +82,11 @@ with `axl_`.
     )
     ```
   </Tab>
-  <Tab title="REST">
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
+
     Send the key in the `X-Axilio-Api-Key` header:
 
     ```bash

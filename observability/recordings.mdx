@@ -120,6 +120,11 @@ runs, not sessions that already started.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+    - [**Update a workflow**](/api-reference/rest/workflows/update-a-workflow): `PATCH /workflows/{workflow_id}`
+
     Disable recording for one direct allocation:
 
     ```bash
@@ -267,6 +272,10 @@ prevent recordings from being created or make older recordings unavailable.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Get a session recording**](/api-reference/rest/phones/get-a-session-recording): `GET /phones/sessions/{session_id}/recording`
+
     ```bash
     RECORDING=$(curl --silent --show-error --fail-with-body \
       --request GET \
@@ -284,8 +293,6 @@ prevent recordings from being created or make older recordings unavailable.
       "$RECORDING_URL" \
       --output session.mp4
     ```
-
-    [REST reference: Get a session recording](/api-reference/rest/phones/get-a-session-recording)
   </Tab>
 </Tabs>
 

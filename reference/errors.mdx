@@ -24,7 +24,7 @@ detail. Validation responses can also include field-specific errors.
 | --- | --- | --- |
 | `400 Bad Request` | A business rule or input check failed. | Read the detail, correct the request, and do not retry it unchanged. |
 | `401 Unauthorized` | The credential is missing, invalid, or expired. | Run `axilio login` or supply a valid organization-scoped API key. |
-| `402 Payment Required` | Balance, plan, or quota state blocks the operation. | Read the detail, then correct the account requirement in the Dashboard. |
+| `402 Payment Required` | Balance, plan, or quota state blocks the operation. | Read the detail, then correct the account requirement in [**Billing**](https://app.axilio.ai/dashboard/axilio/billing). |
 | `403 Forbidden` | The caller lacks the required organization permission. | Select the correct organization or ask an administrator for access. |
 | `404 Not Found` | The resource does not exist or is not visible to the organization. | Verify the ID and organization. |
 | `408 Request Timeout` | The request exceeded a server or gateway deadline. | Retry with backoff only when the operation is safe to repeat. |
@@ -88,13 +88,15 @@ detail. Validation responses can also include field-specific errors.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
+
     ```bash
     curl --silent --show-error --fail-with-body --include \
       --url https://api.axilio.ai/api/v1/runs/run_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: Get a run](/api-reference/rest/runs/get-a-run)
   </Tab>
 </Tabs>
 
@@ -232,13 +234,15 @@ executing workflow code. A successful fetch of a failed run still returns HTTP
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/runs/run_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: Get a run](/api-reference/rest/runs/get-a-run)
   </Tab>
 </Tabs>
 

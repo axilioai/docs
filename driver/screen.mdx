@@ -9,6 +9,13 @@ dimensions, hash, and capture time. Local screen queries do not make another
 device or inference request.
 
 <Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone observe -o json > screen.json
+    jq '.texts[] | select(.text | contains("Sign in"))' screen.json
+    ```
+  </Tab>
+
   <Tab title="Python SDK">
     ```python
     screen = driver.observe()
@@ -35,12 +42,6 @@ device or inference request.
     ```
   </Tab>
 
-  <Tab title="CLI JSON">
-    ```bash
-    axilio phone observe -o json > screen.json
-    jq '.texts[] | select(.text | contains("Sign in"))' screen.json
-    ```
-  </Tab>
 </Tabs>
 
 ## Find one text element

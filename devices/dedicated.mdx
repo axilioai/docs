@@ -19,8 +19,8 @@ Rentals are dashboard actions:
 1. Open [**Phones**](https://app.axilio.ai/dashboard/axilio/phones).
 2. Click **Rent A Phone**.
 3. Choose a rental period and complete checkout.
-4. Open **Settings → Billing**, then choose **Dedicated Phones** to inspect or
-   cancel a renewal.
+4. Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), then
+   choose **Dedicated Phones** to inspect or cancel a renewal.
 
 The public API, SDKs, and CLI do not start checkout, renew, or cancel a rental.
 
@@ -53,13 +53,15 @@ The public API, SDKs, and CLI do not start checkout, renew, or cancel a rental.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List phone rentals**](/api-reference/rest/billing/list-phone-rentals): `GET /billing/phone-rental-subscriptions`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/billing/phone-rental-subscriptions \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: List phone rentals](/api-reference/rest/billing/list-phone-rentals)
   </Tab>
 </Tabs>
 

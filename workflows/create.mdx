@@ -85,6 +85,10 @@ be unique inside the organization.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Create a workflow**](/api-reference/rest/workflows/create-a-workflow): `POST /workflows`
+
     ```bash
     cat > workflow.py <<'PY'
     driver.find(query="the search box").type_into("axilio")
@@ -100,8 +104,6 @@ be unique inside the organization.
         --header "Content-Type: application/json" \
         --data-binary @-
     ```
-
-    [REST reference: Create a workflow](/api-reference/rest/workflows/create-a-workflow)
   </Tab>
 </Tabs>
 
@@ -165,6 +167,11 @@ run.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Get current workflow code**](/api-reference/rest/workflows/get-current-workflow-code): `GET /workflows/{workflow_id}/code`
+    - [**Save workflow code**](/api-reference/rest/workflows/save-workflow-code): `POST /workflows/{workflow_id}/code`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/workflows/wf_123/code \
@@ -180,10 +187,6 @@ run.
         --header "Content-Type: application/json" \
         --data-binary @-
     ```
-
-    REST references:
-    [Get current workflow code](/api-reference/rest/workflows/get-current-workflow-code) ·
-    [Save workflow code](/api-reference/rest/workflows/save-workflow-code)
   </Tab>
 </Tabs>
 
@@ -242,6 +245,11 @@ revision so the action remains auditable.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List workflow revisions**](/api-reference/rest/workflows/list-workflow-revisions): `GET /workflows/{workflow_id}/revisions`
+    - [**Restore a workflow revision**](/api-reference/rest/workflows/restore-a-workflow-revision): `POST /workflows/{workflow_id}/code/restore`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/workflows/wf_123/revisions?limit=20" \
@@ -254,10 +262,6 @@ revision so the action remains auditable.
       --header "Content-Type: application/json" \
       --data '{"revision_id":"rev_456"}'
     ```
-
-    REST references:
-    [List workflow revisions](/api-reference/rest/workflows/list-workflow-revisions) ·
-    [Restore a workflow revision](/api-reference/rest/workflows/restore-a-workflow-revision)
   </Tab>
 </Tabs>
 

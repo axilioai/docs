@@ -23,9 +23,9 @@ steps separately.
 
 <Tabs>
   <Tab title="Dashboard">
-    Open your organization's **Files** page and choose **Upload Files**, drag
-    files onto the page, or upload from the **Files** tool during a workflow or
-    session.
+    Open [**Files**](https://app.axilio.ai/dashboard/axilio/files) for your
+    organization and choose **Upload Files**, drag files onto the page, or upload
+    from the **Files** tool during a workflow or session.
 
     During an active session, open the **Files** tool, select a library file,
     and choose **Send**. The delivery reports progress and reaches `delivered`
@@ -46,7 +46,7 @@ steps separately.
     Use `axilio phone send ./photo.jpg` when the selected session should upload
     and deliver the file in one command.
   </Tab>
-  <Tab title="Python">
+  <Tab title="Python SDK">
     ```python
     from axilio.platform import Client
 
@@ -66,7 +66,7 @@ steps separately.
     upload and push. A waited delivery can still return at its timeout, so
     inspect `delivery.status`.
   </Tab>
-  <Tab title="Go">
+  <Tab title="Go SDK">
     ```go
     package main
 
@@ -102,7 +102,13 @@ steps separately.
 
     `files.Send` combines the upload and push.
   </Tab>
-  <Tab title="REST">
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Register a file upload**](/api-reference/rest/files/register-a-file-upload): `POST /files`
+    - [**Mark an upload complete**](/api-reference/rest/files/mark-an-upload-complete): `POST /files/{file_id}/complete`
+    - [**Deliver a library file to a phone**](/api-reference/rest/phones/deliver-a-library-file-to-a-phone): `POST /phones/{phone_id}/deliveries`
+
     Register the upload. Use the exact byte count and media type for the file:
 
     ```bash
@@ -146,11 +152,6 @@ steps separately.
       --header "Content-Type: application/json" \
       --data "{\"file_id\":\"$FILE_ID\"}"
     ```
-
-    REST references:
-    [Register a file upload](/api-reference/rest/files/register-a-file-upload) ·
-    [Mark an upload complete](/api-reference/rest/files/mark-an-upload-complete) ·
-    [Deliver a library file to a phone](/api-reference/rest/phones/deliver-a-library-file-to-a-phone)
   </Tab>
 </Tabs>
 
@@ -165,8 +166,9 @@ Axilio authentication header.
 
 <Tabs>
   <Tab title="Dashboard">
-    On the **Files** page, choose the download action on a ready file. Selecting
-    a preview opens the original in a new tab.
+    On [**Files**](https://app.axilio.ai/dashboard/axilio/files), choose the
+    download action on a ready file. Selecting a preview opens the original in a
+    new tab.
   </Tab>
   <Tab title="CLI">
     ```bash
@@ -177,7 +179,7 @@ Axilio authentication header.
     The command refuses to overwrite an existing destination unless you add
     `--force`.
   </Tab>
-  <Tab title="Python">
+  <Tab title="Python SDK">
     List the file to receive a fresh signed URL, then stream it locally:
 
     ```python
@@ -198,7 +200,7 @@ Axilio authentication header.
                 output.write(chunk)
     ```
   </Tab>
-  <Tab title="Go">
+  <Tab title="Go SDK">
     List the file to receive a fresh signed URL, then stream it locally:
 
     ```go
@@ -269,7 +271,11 @@ Axilio authentication header.
 
     Re-list before retrying an expired URL.
   </Tab>
-  <Tab title="REST">
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
+
     ```bash
     DOWNLOAD_URL=$(curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/files?limit=50" \
@@ -282,8 +288,6 @@ Axilio authentication header.
       --url "$DOWNLOAD_URL" \
       --output photo.jpg
     ```
-
-    [REST reference: List the organization's files](/api-reference/rest/files/list-the-orgs-files)
   </Tab>
 </Tabs>
 
@@ -296,10 +300,11 @@ name they used at push time.
 
 <Tabs>
   <Tab title="Dashboard">
-    On the **Files** page, use the rename action beside an uploaded filename.
-    Captured filenames have no rename action.
+    On [**Files**](https://app.axilio.ai/dashboard/axilio/files), use the rename
+    action beside an uploaded filename. Captured filenames have no rename
+    action.
   </Tab>
-  <Tab title="Python">
+  <Tab title="Python SDK">
     ```python
     renamed = client.files.rename(
         "<file-id>",
@@ -307,7 +312,7 @@ name they used at push time.
     )
     ```
   </Tab>
-  <Tab title="Go">
+  <Tab title="Go SDK">
     ```go
     package main
 
@@ -337,7 +342,11 @@ name they used at push time.
     }
     ```
   </Tab>
-  <Tab title="REST">
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Rename a file**](/api-reference/rest/files/rename-a-file): `PATCH /files/{file_id}`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request PATCH \
@@ -346,8 +355,6 @@ name they used at push time.
       --header "Content-Type: application/json" \
       --data '{"filename":"launch-photo.jpg"}'
     ```
-
-    [REST reference: Rename a file](/api-reference/rest/files/rename-a-file)
   </Tab>
 </Tabs>
 
@@ -362,8 +369,9 @@ schedules removal from phones that hold or are receiving a delivered copy.
 
 <Tabs>
   <Tab title="Dashboard">
-    Choose the delete action on the file and review how many phones currently
-    hold or are receiving a copy before confirming.
+    Open [**Files**](https://app.axilio.ai/dashboard/axilio/files), choose the
+    delete action on the file, and review how many phones currently hold or are
+    receiving a copy before confirming.
   </Tab>
   <Tab title="CLI">
     ```bash
@@ -373,12 +381,12 @@ schedules removal from phones that hold or are receiving a delivered copy.
     Interactive table mode asks for confirmation. Non-interactive, JSON, and
     quiet execution require `--yes`.
   </Tab>
-  <Tab title="Python">
+  <Tab title="Python SDK">
     ```python
     client.files.delete("<file-id>")
     ```
   </Tab>
-  <Tab title="Go">
+  <Tab title="Go SDK">
     ```go
     package main
 
@@ -402,7 +410,11 @@ schedules removal from phones that hold or are receiving a delivered copy.
     }
     ```
   </Tab>
-  <Tab title="REST">
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Delete a file**](/api-reference/rest/files/delete-a-file): `DELETE /files/{file_id}`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request DELETE \
@@ -411,8 +423,6 @@ schedules removal from phones that hold or are receiving a delivered copy.
     ```
 
     The response includes `phones_pending_removal`.
-
-    [REST reference: Delete a file](/api-reference/rest/files/delete-a-file)
   </Tab>
 </Tabs>
 

@@ -75,6 +75,11 @@ always the authority.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+    - [**Release a phone**](/api-reference/rest/phones/release-a-phone): `POST /phones/{phone_id}:deallocate`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -95,9 +100,6 @@ always the authority.
 
     See [Allocate a phone](/devices/allocate) for a complete request and
     cleanup sequence.
-
-    REST references: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone) ·
-    [Release a phone](/api-reference/rest/phones/release-a-phone)
   </Tab>
 </Tabs>
 

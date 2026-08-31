@@ -55,6 +55,11 @@ becomes unavailable.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List sessions**](/api-reference/rest/phones/list-sessions): `GET /phones/sessions`
+    - [**Get a session**](/api-reference/rest/phones/get-a-session): `GET /phones/sessions/{session_id}`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/phones/sessions?limit=20" \
@@ -64,9 +69,6 @@ becomes unavailable.
       --url https://api.axilio.ai/api/v1/phones/sessions/sess_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    REST references: [List sessions](/api-reference/rest/phones/list-sessions) ·
-    [Get a session](/api-reference/rest/phones/get-a-session)
   </Tab>
 </Tabs>
 
@@ -83,7 +85,8 @@ ends at the one-hour platform cap.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Enter **idle timeout (seconds)** when you allocate the phone. Leave it blank
+    Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions), click
+    **Allocate A Phone**, and enter **idle timeout (seconds)**. Leave it blank
     for no idle timeout.
   </Tab>
 
@@ -122,6 +125,10 @@ ends at the one-hour platform cap.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -137,8 +144,6 @@ ends at the one-hour platform cap.
         }
       }'
     ```
-
-    [REST reference: Allocate a phone](/api-reference/rest/phones/allocate-a-phone)
   </Tab>
 </Tabs>
 

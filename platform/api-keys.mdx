@@ -47,6 +47,10 @@ Listing, creating, and deleting API keys requires an organization admin.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Create an API key**](/api-reference/rest/api-keys/create-an-api-key): `POST /api-keys`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -55,8 +59,6 @@ Listing, creating, and deleting API keys requires an organization admin.
       --header "Content-Type: application/json" \
       --data '{"name":"ci-bot"}'
     ```
-
-    [REST reference: Create an API key](/api-reference/rest/api-keys/create-an-api-key)
   </Tab>
 </Tabs>
 
@@ -69,8 +71,8 @@ Listing, creating, and deleting API keys requires an organization admin.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Open **API Keys** to search by name or preview and inspect creator,
-    last-used time, and creation time.
+    Open [**API Keys**](https://app.axilio.ai/dashboard/axilio/api-keys) to search
+    by name or preview and inspect creator, last-used time, and creation time.
   </Tab>
 
   <Tab title="CLI">
@@ -97,13 +99,15 @@ Listing, creating, and deleting API keys requires an organization admin.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List API keys**](/api-reference/rest/api-keys/list-api-keys): `GET /api-keys`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/api-keys?limit=50" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    [REST reference: List API keys](/api-reference/rest/api-keys/list-api-keys)
   </Tab>
 </Tabs>
 
@@ -114,7 +118,8 @@ every consumer, then delete the old key.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    1. Create and save the replacement key.
+    1. Open [**API Keys**](https://app.axilio.ai/dashboard/axilio/api-keys), then
+       create and save the replacement key.
     2. Update every consumer and verify it can authenticate.
     3. Select the old key, click **Delete**, and confirm.
   </Tab>
@@ -153,6 +158,11 @@ every consumer, then delete the old key.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Create an API key**](/api-reference/rest/api-keys/create-an-api-key): `POST /api-keys`
+    - [**Delete an API key**](/api-reference/rest/api-keys/delete-an-api-key): `DELETE /api-keys/{key_id}`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -168,9 +178,6 @@ every consumer, then delete the old key.
       --url https://api.axilio.ai/api/v1/api-keys/key_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    REST references: [Create an API key](/api-reference/rest/api-keys/create-an-api-key) ·
-    [Delete an API key](/api-reference/rest/api-keys/delete-an-api-key)
   </Tab>
 </Tabs>
 

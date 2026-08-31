@@ -88,6 +88,11 @@ exact device.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+    - [**Release a phone**](/api-reference/rest/phones/release-a-phone): `POST /phones/{phone_id}:deallocate`
+
     ```bash
     ALLOCATION=$(curl --silent --show-error --fail-with-body \
       --request POST \
@@ -104,9 +109,6 @@ exact device.
       --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
-
-    REST references: [Allocate a phone](/api-reference/rest/phones/allocate-a-phone) ·
-    [Release a phone](/api-reference/rest/phones/release-a-phone)
   </Tab>
 </Tabs>
 

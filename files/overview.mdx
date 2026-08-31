@@ -60,7 +60,7 @@ sort by creation time, filename, size, or source.
     The table includes source, state, session, and quota usage. Use `-o json`
     for the complete response.
   </Tab>
-  <Tab title="Python">
+  <Tab title="Python SDK">
     ```python
     from axilio.platform import Client
 
@@ -73,7 +73,7 @@ sort by creation time, filename, size, or source.
     print(page.usage.file_count, page.usage.file_limit)
     ```
   </Tab>
-  <Tab title="Go">
+  <Tab title="Go SDK">
     ```go
     page, err := files.List(ctx, c, &platformgo.FilesListRequest{})
     if err != nil {
@@ -88,7 +88,11 @@ sort by creation time, filename, size, or source.
     This example uses `github.com/axilioai/platform-go/drivers/files` for
     `files.List` and `github.com/axilioai/platform-go` for the request type.
   </Tab>
-  <Tab title="REST">
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/files?limit=50" \
@@ -96,8 +100,6 @@ sort by creation time, filename, size, or source.
     ```
 
     `GET /api/v1/files` returns `files`, `total`, and `usage`.
-
-    [REST reference: List the organization's files](/api-reference/rest/files/list-the-orgs-files)
   </Tab>
 </Tabs>
 

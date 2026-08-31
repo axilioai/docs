@@ -123,6 +123,10 @@ lookup uses `session_id`.
   </Tab>
 
   <Tab title="REST API">
+    REST API References:
+
+    - [**List a session's Telemetry frames**](/api-reference/rest/runs/list-a-sessions-telemetry-frames): `GET /phones/sessions/{session_id}/frames`
+
     Request one page at a time:
 
     ```bash
@@ -135,8 +139,6 @@ lookup uses `session_id`.
 
     Continue with `offset += frames.length` until the offset reaches `total`
     or a page contains no frames. The maximum page size is 1,000.
-
-    [REST reference: List a session's Telemetry frames](/api-reference/rest/runs/list-a-sessions-telemetry-frames)
   </Tab>
 </Tabs>
 
