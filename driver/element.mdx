@@ -40,12 +40,25 @@ resource.
 
 ## Methods
 
-| Action | Python | Go | Duration |
-| --- | --- | --- | --- |
-| Tap the center | `element.tap()` | `element.Tap()` | — |
-| Tap, then type | `element.type_into(text)` | `element.TypeInto(text)` | — |
-| Press and hold | `element.long_press(duration_ms=...)` | `element.LongPress(durationMs)` | Python defaults to 800 ms; Go requires a value. |
-| Swipe to another element | `element.swipe_to(other, duration_ms=...)` | `element.SwipeTo(other, durationMs)` | Python defaults to 300 ms; Go requires a value. |
+### Tap the center {#element-tap}
+
+`element.tap()` and `element.Tap()` tap the element's center.
+
+### Tap, then type {#element-type_into}
+
+`element.type_into(text)` and `element.TypeInto(text)` tap the element, then
+type `text`.
+
+### Press and hold {#element-long_press}
+
+`element.long_press(duration_ms=...)` and `element.LongPress(durationMs)` press
+and hold the element. Python defaults to 800 ms; Go requires a duration.
+
+### Swipe to another element {#element-swipe_to}
+
+`element.swipe_to(other, duration_ms=...)` and
+`element.SwipeTo(other, durationMs)` swipe from one element to another. Python
+defaults to 300 ms; Go requires a duration.
 
 Guard an OCR lookup before calling an element method:
 
