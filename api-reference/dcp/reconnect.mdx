@@ -64,21 +64,16 @@ recent retained window before following live.
 
 ## Present the cursor on reconnect
 
-Reconnect to the original URL with both `resume=1` and the last completed
-cursor. Treat the cursor as a query-parameter value: percent-encode it instead
-of concatenating the opaque string into the URL. Parse the original URL, set or
-replace `resume` and `cursor`, and then serialize the URL again. This preserves
-the existing credential and session query parameters:
+Reconnect to the original URL. Parse it with a standard URL query API, preserve
+its existing parameters, and set or replace `resume=1` and `cursor` with the
+last completed checkpoint. Pass the opaque cursor unchanged as the parameter
+value so the API encodes only that value. Never concatenate it into the URL or
+encode the complete URL:
 
 ```text
 wss://connect.axilio.ai/api/v1/realtime/ws/control?token=...&resume=1&cursor=...
 wss://connect.axilio.ai/api/v1/realtime/ws/telemetry?session_id=...&token=...&resume=1&cursor=...
 ```
-
-Use your language's URL query API, such as JavaScript's `URL.searchParams`,
-Python's `urllib.parse`, or Go's `net/url`. Pass the unmodified cursor to that
-API and let it encode the query-parameter value. Do not encode the complete
-URL. The server decodes the cursor back to the exact opaque string it issued.
 
 Delivery continues strictly after that checkpoint. Resume is **at least once**:
 frames delivered after your last completed checkpoint can arrive again. Your
@@ -177,9 +172,7 @@ answer them automatically, so you do not need an application-level DCP ping.
 
 ## Raw client checklist
 
-1. Build each connection URL with a URL query API. Preserve its existing
-   parameters, set `resume=1`, and set the cursor as a parameter value on
-   reconnect.
+1. Reconnect to the original session URL with the last completed cursor.
 2. Process cursor notifications and persist only completed checkpoints.
 3. On `1001`, `1011`, `1013`, or abrupt loss, retry with bounded jittered
    backoff and the last cursor.

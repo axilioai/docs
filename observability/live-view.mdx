@@ -73,27 +73,17 @@ phone. Use a [recording](/observability/recordings) after the session ends.
 
     import (
         "context"
-        "errors"
         "fmt"
         "log"
         "os"
-        "os/signal"
-        "syscall"
-        "time"
 
         platformgo "github.com/axilioai/platform-go"
         "github.com/axilioai/platform-go/client"
         "github.com/axilioai/platform-go/option"
     )
 
-    func run() error {
-        ctx, stop := signal.NotifyContext(
-            context.Background(),
-            os.Interrupt,
-            syscall.SIGTERM,
-        )
-        defer stop()
-
+    func main() {
+        ctx := context.Background()
         api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
 
         allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
@@ -101,37 +91,24 @@ phone. Use a [recording](/observability/recordings) after the session ends.
             PhoneID:   platformgo.String("ph_123"),
         })
         if err != nil {
-            return err
+            log.Fatal(err)
         }
-        defer func() {
-            cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-            defer cancel()
-
-            if _, err := api.Phones.Deallocate(cleanupCtx, &platformgo.PhonesDeallocateRequest{
-                PhoneID: allocation.PhoneID,
-            }); err != nil {
-                log.Printf("release phone: %v", err)
-            }
-        }()
+        defer api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+            PhoneID: allocation.PhoneID,
+        })
 
         if allocation.LiveViewURL == nil {
-            return errors.New("live view is disabled")
+            log.Print("live view is disabled")
+            return
         }
 
         fmt.Println(*allocation.LiveViewURL)
-        fmt.Println("Press Ctrl+C to release the phone...")
-        <-ctx.Done()
-        return nil
-    }
-
-    func main() {
-        if err := run(); err != nil {
-            log.Fatal(err)
-        }
+        fmt.Println("Press Enter to release the phone...")
+        fmt.Scanln()
     }
     ```
 
-    Keep the program running while you use the URL. Press Ctrl+C to release the
+    Keep the program running while you use the URL. Press Enter to release the
     phone and end the session.
   </Tab>
 
@@ -142,8 +119,6 @@ phone. Use a [recording](/observability/recordings) after the session ends.
     - [**Release a phone**](/api-reference/rest/phones/release-a-phone): `POST /phones/{phone_id}:deallocate`
 
     ```bash
-    set -euo pipefail
-
     ALLOCATION=$(curl --silent --show-error --fail-with-body \
       --request POST \
       --url https://api.axilio.ai/api/v1/phones:allocate \
@@ -151,35 +126,18 @@ phone. Use a [recording](/observability/recordings) after the session ends.
       --header "Content-Type: application/json" \
       --data '{"phone_type":"android","phone_id":"ph_123"}')
 
-    PHONE_ID=$(printf '%s\n' "$ALLOCATION" | jq -er \
-      '.phone_id | select(type == "string" and length > 0)')
-
-    cleanup() {
-      if [[ -n "${PHONE_ID:-}" ]]; then
-        if curl --silent --show-error --fail-with-body \
-          --request POST \
-          --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
-          --header "X-Axilio-Api-Key: $AXILIO_API_KEY"; then
-          PHONE_ID=""
-        else
-          printf 'Failed to release phone %s\n' "$PHONE_ID" >&2
-          return 1
-        fi
-      fi
-    }
-    trap cleanup EXIT
-    trap 'exit 1' HUP INT TERM
-
-    LIVE_VIEW_URL=$(printf '%s\n' "$ALLOCATION" | jq -er \
-      '.live_view_url | select(type == "string" and length > 0)')
-    printf '%s\n' "$LIVE_VIEW_URL"
+    PHONE_ID=$(printf '%s\n' "$ALLOCATION" | jq -r '.phone_id')
+    printf '%s\n' "$ALLOCATION" | jq -r '.live_view_url'
     read -r -p "Press Enter to release the phone..." _
-    cleanup
-    trap - EXIT HUP INT TERM
+
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
-    Keep the command running while you use the URL. It releases the phone when
-    you press Enter, interrupt the command, or a later command fails.
+    Keep the command running while you use the URL. Press Enter to release the
+    phone and end the session.
   </Tab>
 </Tabs>
 
