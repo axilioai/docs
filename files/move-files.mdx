@@ -165,6 +165,14 @@ Only a ready file has a `download_url`. The URL is short-lived and needs no
 Axilio authentication header. Use the file ID returned by an upload or file
 listing because filenames are not unique.
 
+The API currently exposes file lookup through a mutable, offset-paginated
+listing. The SDK and REST examples fix `created_before` to the newest observed
+file, then scan from the last page back to the first. Later creations fall
+outside that window, and deletions move surviving files toward pages that have
+not been scanned yet. Each example downloads to a temporary file beside an
+output path you choose, then publishes it atomically without overwriting an
+existing destination.
+
 <Tabs>
   <Tab title="Dashboard">
     On [**Files**](https://app.axilio.ai/dashboard/axilio/files), choose the
@@ -181,54 +189,106 @@ listing because filenames are not unique.
     `--force`.
   </Tab>
   <Tab title="Python SDK">
-    Find the file by its unique ID to receive a fresh signed URL, then stream it
-    locally:
+    Find the file by its unique ID to receive a fresh signed URL:
 
     ```python
+    import os
+    import tempfile
     from pathlib import Path
 
     import httpx
 
-    file_id = "<file-id>"
-    limit = 100
-    offset = 0
-    item = None
+    def find_file(file_id):
+        limit = 100
+        order = {"sort": "created_at", "order": "desc"}
 
-    while item is None:
-        page = client.files.list(limit=limit, offset=offset)
-        files = page.files or []
-        item = next((file for file in files if file.id == file_id), None)
-        if item is not None:
-            break
-
-        offset += len(files)
-        if not files or offset >= page.total:
+        newest_page = client.files.list(limit=1, offset=0, **order)
+        newest = newest_page.files or []
+        if not newest:
             raise RuntimeError(f"file not found: {file_id}")
 
+        cutoff = newest[0].created_at
+        first_page = client.files.list(
+            limit=1,
+            offset=0,
+            created_before=cutoff,
+            **order,
+        )
+        if first_page.total == 0:
+            raise RuntimeError(f"file not found: {file_id}")
+
+        offset = ((first_page.total - 1) // limit) * limit
+        while offset >= 0:
+            page = client.files.list(
+                limit=limit,
+                offset=offset,
+                created_before=cutoff,
+                **order,
+            )
+            entries = page.files or []
+            item = next((file for file in entries if file.id == file_id), None)
+            if item is not None:
+                return item
+            offset -= limit
+
+        raise RuntimeError(f"file not found: {file_id}")
+
+
+    file_id = "<file-id>"
+    item = find_file(file_id)
     if item.download_url is None:
         raise RuntimeError(f"file is not ready: {file_id}")
 
-    with httpx.stream("GET", item.download_url, follow_redirects=True) as response:
-        response.raise_for_status()
-        with Path(item.filename).open("xb") as output:
-            for chunk in response.iter_bytes():
-                output.write(chunk)
+    output_path = Path("./captures/photo.jpg")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            dir=output_path.parent,
+            prefix=f".{output_path.name}.",
+            suffix=".part",
+            delete=False,
+        ) as output:
+            temporary_path = Path(output.name)
+            with httpx.stream(
+                "GET", item.download_url, follow_redirects=True
+            ) as response:
+                response.raise_for_status()
+                for chunk in response.iter_bytes():
+                    output.write(chunk)
+            output.flush()
+            os.fsync(output.fileno())
+
+        try:
+            os.link(temporary_path, output_path)
+        except FileExistsError as error:
+            raise RuntimeError(
+                f"destination already exists: {output_path}"
+            ) from error
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+    print(f"saved {output_path}")
     ```
   </Tab>
   <Tab title="Go SDK">
-    Find the file by its unique ID to receive a fresh signed URL, then stream it
-    locally:
+    Find the file by its unique ID to receive a fresh signed URL:
 
     ```go
     package main
 
     import (
         "context"
+        "errors"
         "fmt"
         "io"
         "log"
         "net/http"
         "os"
+        "path/filepath"
 
         platformgo "github.com/axilioai/platform-go"
         client "github.com/axilioai/platform-go/client"
@@ -236,124 +296,259 @@ listing because filenames are not unique.
         option "github.com/axilioai/platform-go/option"
     )
 
-    func main() {
-        ctx := context.Background()
-        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
-
-        fileID := "<file-id>"
+    func findFile(
+        ctx context.Context, c *client.Client, fileID string,
+    ) (*platformgo.FileSummary, error) {
         limit := int64(100)
-        var selected *platformgo.FileSummary
-        for offset := int64(0); ; {
+        countLimit := int64(1)
+        firstOffset := int64(0)
+        sort := platformgo.FilesListRequestSortCreatedAt
+        order := platformgo.FilesListRequestOrderDesc
+
+        newestPage, err := files.List(ctx, c, &platformgo.FilesListRequest{
+            Limit:  &countLimit,
+            Offset: &firstOffset,
+            Sort:   &sort,
+            Order:  &order,
+        })
+        if err != nil {
+            return nil, err
+        }
+        if len(newestPage.Files) == 0 || newestPage.Files[0] == nil {
+            return nil, fmt.Errorf("file not found: %s", fileID)
+        }
+        cutoff := newestPage.Files[0].CreatedAt
+
+        firstPage, err := files.List(ctx, c, &platformgo.FilesListRequest{
+            Limit:         &countLimit,
+            Offset:        &firstOffset,
+            CreatedBefore: &cutoff,
+            Sort:          &sort,
+            Order:         &order,
+        })
+        if err != nil {
+            return nil, err
+        }
+        if firstPage.Total == 0 {
+            return nil, fmt.Errorf("file not found: %s", fileID)
+        }
+
+        for offset := ((firstPage.Total - 1) / limit) * limit; ; offset -= limit {
             page, err := files.List(ctx, c, &platformgo.FilesListRequest{
-                Limit:  &limit,
-                Offset: &offset,
+                Limit:         &limit,
+                Offset:        &offset,
+                CreatedBefore: &cutoff,
+                Sort:          &sort,
+                Order:         &order,
             })
             if err != nil {
-                log.Fatal(err)
+                return nil, err
             }
 
             for _, item := range page.Files {
                 if item != nil && item.ID == fileID {
-                    selected = item
-                    break
+                    return item, nil
                 }
             }
-            if selected != nil {
+
+            if offset == 0 {
                 break
             }
+        }
 
-            offset += int64(len(page.Files))
-            if len(page.Files) == 0 || offset >= page.Total {
-                log.Fatalf("file not found: %s", fileID)
-            }
+        return nil, fmt.Errorf("file not found: %s", fileID)
+    }
+
+    func run() error {
+        ctx := context.Background()
+        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        fileID := "<file-id>"
+        selected, err := findFile(ctx, c, fileID)
+        if err != nil {
+            return err
         }
         if selected.DownloadURL == nil {
-            log.Fatalf("file is not ready: %s", fileID)
+            return fmt.Errorf("file is not ready: %s", fileID)
         }
 
         request, err := http.NewRequestWithContext(
             ctx, http.MethodGet, *selected.DownloadURL, nil,
         )
         if err != nil {
-            log.Fatal(err)
+            return err
         }
         response, err := http.DefaultClient.Do(request)
         if err != nil {
-            log.Fatal(err)
+            return err
         }
         defer response.Body.Close()
         if response.StatusCode < 200 || response.StatusCode >= 300 {
-            log.Fatalf("download failed: %s", response.Status)
+            return fmt.Errorf("download failed: %s", response.Status)
         }
 
-        output, err := os.OpenFile(
-            selected.Filename,
-            os.O_WRONLY|os.O_CREATE|os.O_EXCL,
-            0o644,
+        outputPath := "./captures/photo.jpg"
+        outputDir := filepath.Dir(outputPath)
+        if err := os.MkdirAll(outputDir, 0o755); err != nil {
+            return err
+        }
+
+        output, err := os.CreateTemp(
+            outputDir, "."+filepath.Base(outputPath)+".*.part",
         )
         if err != nil {
-            log.Fatal(err)
+            return err
         }
+        temporaryPath := output.Name()
+        defer os.Remove(temporaryPath)
         defer output.Close()
+
         if _, err := io.Copy(output, response.Body); err != nil {
+            return err
+        }
+        if err := output.Sync(); err != nil {
+            return err
+        }
+        if err := output.Close(); err != nil {
+            return err
+        }
+
+        if err := os.Link(temporaryPath, outputPath); err != nil {
+            if errors.Is(err, os.ErrExist) {
+                return fmt.Errorf("destination already exists: %s", outputPath)
+            }
+            return fmt.Errorf("publish download: %w", err)
+        }
+
+        fmt.Println("saved", outputPath)
+        return nil
+    }
+
+    func main() {
+        if err := run(); err != nil {
             log.Fatal(err)
         }
-        fmt.Println("saved", selected.Filename)
     }
     ```
 
     Re-list before retrying an expired URL.
   </Tab>
   <Tab title="REST API">
-    Find the file by its unique ID to receive a fresh signed URL, then stream it
-    locally:
-
     REST API References:
 
     - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
+
+    Find the file by its unique ID to receive a fresh signed URL:
 
     ```bash
     set -euo pipefail
 
     FILE_ID="<file-id>"
     LIMIT=100
-    OFFSET=0
 
-    while true; do
-      PAGE=$(curl --silent --show-error --fail-with-body \
-        --url "https://api.axilio.ai/api/v1/files?limit=$LIMIT&offset=$OFFSET" \
-        --header "X-Axilio-Api-Key: $AXILIO_API_KEY")
+    scan_for_file() {
+      local cutoff="$1"
+      local total="$2"
+      local offset=$((((total - 1) / LIMIT) * LIMIT))
+      local page
 
-      ITEM=$(jq -c --arg file_id "$FILE_ID" \
-        '.files[]? | select(.id == $file_id)' <<<"$PAGE")
-      if [[ -n "$ITEM" ]]; then
-        break
-      fi
+      ITEM=""
+      while ((offset >= 0)); do
+        page=$(curl --silent --show-error --fail-with-body \
+          --get \
+          --url https://api.axilio.ai/api/v1/files \
+          --data-urlencode "limit=$LIMIT" \
+          --data-urlencode "offset=$offset" \
+          --data-urlencode "created_before=$cutoff" \
+          --data-urlencode "sort=created_at" \
+          --data-urlencode "order=desc" \
+          --header "X-Axilio-Api-Key: $AXILIO_API_KEY")
 
-      PAGE_COUNT=$(jq -r '(.files // []) | length' <<<"$PAGE")
-      TOTAL=$(jq -r '.total' <<<"$PAGE")
-      OFFSET=$((OFFSET + PAGE_COUNT))
-      if ((PAGE_COUNT == 0 || OFFSET >= TOTAL)); then
-        echo "file not found: $FILE_ID" >&2
-        exit 1
-      fi
-    done
+        ITEM=$(jq -c --arg file_id "$FILE_ID" \
+          'first((.files // [])[] | select(.id == $file_id)) // empty' \
+          <<<"$page")
+        if [[ -n "$ITEM" ]]; then
+          return
+        fi
+
+        if ((offset == 0)); then
+          return
+        fi
+        offset=$((offset - LIMIT))
+      done
+    }
+
+    NEWEST_PAGE=$(curl --silent --show-error --fail-with-body \
+      --get \
+      --url https://api.axilio.ai/api/v1/files \
+      --data-urlencode "limit=1" \
+      --data-urlencode "offset=0" \
+      --data-urlencode "sort=created_at" \
+      --data-urlencode "order=desc" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY")
+    CUTOFF=$(jq -r '.files[0].created_at // empty' <<<"$NEWEST_PAGE")
+    if [[ -z "$CUTOFF" ]]; then
+      echo "file not found: $FILE_ID" >&2
+      exit 1
+    fi
+
+    FIRST_PAGE=$(curl --silent --show-error --fail-with-body \
+      --get \
+      --url https://api.axilio.ai/api/v1/files \
+      --data-urlencode "limit=1" \
+      --data-urlencode "offset=0" \
+      --data-urlencode "created_before=$CUTOFF" \
+      --data-urlencode "sort=created_at" \
+      --data-urlencode "order=desc" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY")
+    TOTAL=$(jq -r '.total' <<<"$FIRST_PAGE")
+    ITEM=""
+    if ((TOTAL > 0)); then
+      scan_for_file "$CUTOFF" "$TOTAL"
+    fi
+    if [[ -z "$ITEM" ]]; then
+      echo "file not found: $FILE_ID" >&2
+      exit 1
+    fi
 
     DOWNLOAD_URL=$(jq -r '.download_url // empty' <<<"$ITEM")
-    FILENAME=$(jq -r '.filename' <<<"$ITEM")
     if [[ -z "$DOWNLOAD_URL" ]]; then
       echo "file is not ready: $FILE_ID" >&2
       exit 1
     fi
-    if [[ -e "$FILENAME" ]]; then
-      echo "destination already exists: $FILENAME" >&2
-      exit 1
-    fi
+
+    OUTPUT_PATH="./captures/photo.jpg"
+    OUTPUT_DIR=$(dirname "$OUTPUT_PATH")
+    OUTPUT_NAME=$(basename "$OUTPUT_PATH")
+    mkdir -p "$OUTPUT_DIR"
+
+    TEMPORARY_PATH=$(mktemp "$OUTPUT_DIR/.${OUTPUT_NAME}.part.XXXXXX")
+    cleanup() {
+      if [[ -n "${TEMPORARY_PATH:-}" ]]; then
+        rm -f -- "$TEMPORARY_PATH"
+      fi
+    }
+    trap cleanup EXIT
+    trap 'exit 1' HUP INT TERM
 
     curl --silent --show-error --fail-with-body \
       --location \
       --url "$DOWNLOAD_URL" \
-      --output "$FILENAME"
+      --output "$TEMPORARY_PATH"
+
+    if ! link "$TEMPORARY_PATH" "$OUTPUT_PATH"; then
+      if [[ -e "$OUTPUT_PATH" || -L "$OUTPUT_PATH" ]]; then
+        echo "destination already exists: $OUTPUT_PATH" >&2
+      else
+        echo "could not publish download: $OUTPUT_PATH" >&2
+      fi
+      exit 1
+    fi
+
+    rm -f -- "$TEMPORARY_PATH"
+    TEMPORARY_PATH=""
+    trap - EXIT HUP INT TERM
+    echo "saved $OUTPUT_PATH"
     ```
   </Tab>
 </Tabs>
