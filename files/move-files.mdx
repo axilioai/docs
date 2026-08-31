@@ -162,7 +162,8 @@ in progress.
 ## Download a file
 
 Only a ready file has a `download_url`. The URL is short-lived and needs no
-Axilio authentication header.
+Axilio authentication header. Use the file ID returned by an upload or file
+listing because filenames are not unique.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -180,28 +181,43 @@ Axilio authentication header.
     `--force`.
   </Tab>
   <Tab title="Python SDK">
-    List the file to receive a fresh signed URL, then stream it locally:
+    Find the file by its unique ID to receive a fresh signed URL, then stream it
+    locally:
 
     ```python
     from pathlib import Path
 
     import httpx
 
-    page = client.files.list(q="photo.jpg")
-    item = next(file for file in page.files or [] if file.download_url)
-    download_url = item.download_url
-    if download_url is None:
-        raise RuntimeError("file is not ready")
+    file_id = "<file-id>"
+    limit = 100
+    offset = 0
+    item = None
 
-    with httpx.stream("GET", download_url) as response:
+    while item is None:
+        page = client.files.list(limit=limit, offset=offset)
+        files = page.files or []
+        item = next((file for file in files if file.id == file_id), None)
+        if item is not None:
+            break
+
+        offset += len(files)
+        if not files or offset >= page.total:
+            raise RuntimeError(f"file not found: {file_id}")
+
+    if item.download_url is None:
+        raise RuntimeError(f"file is not ready: {file_id}")
+
+    with httpx.stream("GET", item.download_url, follow_redirects=True) as response:
         response.raise_for_status()
-        with Path(item.filename).open("wb") as output:
+        with Path(item.filename).open("xb") as output:
             for chunk in response.iter_bytes():
                 output.write(chunk)
     ```
   </Tab>
   <Tab title="Go SDK">
-    List the file to receive a fresh signed URL, then stream it locally:
+    Find the file by its unique ID to receive a fresh signed URL, then stream it
+    locally:
 
     ```go
     package main
@@ -224,22 +240,35 @@ Axilio authentication header.
         ctx := context.Background()
         c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
 
-        page, err := files.List(ctx, c, &platformgo.FilesListRequest{
-            Q: platformgo.String("photo.jpg"),
-        })
-        if err != nil {
-            log.Fatal(err)
-        }
-
+        fileID := "<file-id>"
+        limit := int64(100)
         var selected *platformgo.FileSummary
-        for _, item := range page.Files {
-            if item.Status == platformgo.FileSummaryStatusReady && item.DownloadURL != nil {
-                selected = item
+        for offset := int64(0); ; {
+            page, err := files.List(ctx, c, &platformgo.FilesListRequest{
+                Limit:  &limit,
+                Offset: &offset,
+            })
+            if err != nil {
+                log.Fatal(err)
+            }
+
+            for _, item := range page.Files {
+                if item != nil && item.ID == fileID {
+                    selected = item
+                    break
+                }
+            }
+            if selected != nil {
                 break
             }
+
+            offset += int64(len(page.Files))
+            if len(page.Files) == 0 || offset >= page.Total {
+                log.Fatalf("file not found: %s", fileID)
+            }
         }
-        if selected == nil {
-            log.Fatal("no ready file found")
+        if selected.DownloadURL == nil {
+            log.Fatalf("file is not ready: %s", fileID)
         }
 
         request, err := http.NewRequestWithContext(
@@ -257,7 +286,11 @@ Axilio authentication header.
             log.Fatalf("download failed: %s", response.Status)
         }
 
-        output, err := os.Create(selected.Filename)
+        output, err := os.OpenFile(
+            selected.Filename,
+            os.O_WRONLY|os.O_CREATE|os.O_EXCL,
+            0o644,
+        )
         if err != nil {
             log.Fatal(err)
         }
@@ -272,21 +305,55 @@ Axilio authentication header.
     Re-list before retrying an expired URL.
   </Tab>
   <Tab title="REST API">
+    Find the file by its unique ID to receive a fresh signed URL, then stream it
+    locally:
+
     REST API References:
 
     - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
 
     ```bash
-    DOWNLOAD_URL=$(curl --silent --show-error --fail-with-body \
-      --url "https://api.axilio.ai/api/v1/files?limit=50" \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" |
-      jq -r '.files[] | select(.filename == "photo.jpg" and .status == "ready") | .download_url' |
-      head -n 1)
+    set -euo pipefail
+
+    FILE_ID="<file-id>"
+    LIMIT=100
+    OFFSET=0
+
+    while true; do
+      PAGE=$(curl --silent --show-error --fail-with-body \
+        --url "https://api.axilio.ai/api/v1/files?limit=$LIMIT&offset=$OFFSET" \
+        --header "X-Axilio-Api-Key: $AXILIO_API_KEY")
+
+      ITEM=$(jq -c --arg file_id "$FILE_ID" \
+        '.files[]? | select(.id == $file_id)' <<<"$PAGE")
+      if [[ -n "$ITEM" ]]; then
+        break
+      fi
+
+      PAGE_COUNT=$(jq -r '(.files // []) | length' <<<"$PAGE")
+      TOTAL=$(jq -r '.total' <<<"$PAGE")
+      OFFSET=$((OFFSET + PAGE_COUNT))
+      if ((PAGE_COUNT == 0 || OFFSET >= TOTAL)); then
+        echo "file not found: $FILE_ID" >&2
+        exit 1
+      fi
+    done
+
+    DOWNLOAD_URL=$(jq -r '.download_url // empty' <<<"$ITEM")
+    FILENAME=$(jq -r '.filename' <<<"$ITEM")
+    if [[ -z "$DOWNLOAD_URL" ]]; then
+      echo "file is not ready: $FILE_ID" >&2
+      exit 1
+    fi
+    if [[ -e "$FILENAME" ]]; then
+      echo "destination already exists: $FILENAME" >&2
+      exit 1
+    fi
 
     curl --silent --show-error --fail-with-body \
       --location \
       --url "$DOWNLOAD_URL" \
-      --output photo.jpg
+      --output "$FILENAME"
     ```
   </Tab>
 </Tabs>

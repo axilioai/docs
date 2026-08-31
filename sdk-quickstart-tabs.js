@@ -3,22 +3,22 @@
 // syncs explicit tab clicks, but resolving a Tab id from the URL selects only
 // the group that owns that id.
 (function () {
-  function languageFromLocation() {
+  function languageIdFromLocation() {
     if (window.location.pathname !== "/quickstart") return null;
     var hash = window.location.hash.toLowerCase();
-    if (hash === "#python") return "Python";
-    if (hash === "#go") return "Go";
+    if (hash === "#python") return "python";
+    if (hash === "#go") return "go";
     return null;
   }
 
   function selectLanguageFromHash() {
-    var language = languageFromLocation();
-    if (!language) return;
+    var languageId = languageIdFromLocation();
+    if (!languageId) return;
 
     var tabs = Array.prototype.filter.call(
       document.querySelectorAll('main [role="tab"]'),
       function (tab) {
-        return tab.textContent.trim() === language;
+        return tab.id === languageId || tab.id.indexOf(languageId + "-") === 0;
       }
     );
     var unselected = tabs.find(function (tab) {
