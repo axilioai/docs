@@ -35,8 +35,8 @@ control_url = device.control_url
 ```
 
 <Note>
-  The `control_url` is self-contained: its credential is embedded, so you
-  connect with no extra headers. Pass it directly to your WebSocket client.
+  The `control_url` is self-contained and embeds its credential, so you can
+  connect without extra headers. Pass it directly to your WebSocket client.
   Never put it in logs, shell history, tickets, or chat, and do not cache it
   across sessions. It stops working when the session ends.
 </Note>

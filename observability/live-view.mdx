@@ -53,14 +53,18 @@ phone. Use a [recording](/observability/recordings) after the session ends.
         phone_id="ph_123",
     )
 
-    if not allocation.live_view_url:
-        raise RuntimeError("live view is disabled")
+    try:
+        if not allocation.live_view_url:
+            raise RuntimeError("live view is disabled")
 
-    print(allocation.live_view_url)
+        print(allocation.live_view_url)
+        input("Press Enter to release the phone...")
+    finally:
+        client.phones.deallocate(allocation.phone_id)
     ```
 
-    Release `allocation.phone_id` when you finish. The URL stops working when
-    the session ends.
+    Keep the program running while you use the URL. Press Enter to release the
+    phone and end the session.
   </Tab>
 
   <Tab title="Go SDK">
@@ -73,14 +77,23 @@ phone. Use a [recording](/observability/recordings) after the session ends.
         "fmt"
         "log"
         "os"
+        "os/signal"
+        "syscall"
+        "time"
 
         platformgo "github.com/axilioai/platform-go"
         "github.com/axilioai/platform-go/client"
         "github.com/axilioai/platform-go/option"
     )
 
-    func main() {
-        ctx := context.Background()
+    func run() error {
+        ctx, stop := signal.NotifyContext(
+            context.Background(),
+            os.Interrupt,
+            syscall.SIGTERM,
+        )
+        defer stop()
+
         api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
 
         allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
@@ -88,26 +101,49 @@ phone. Use a [recording](/observability/recordings) after the session ends.
             PhoneID:   platformgo.String("ph_123"),
         })
         if err != nil {
-            log.Fatal(err)
+            return err
         }
+        defer func() {
+            cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+            defer cancel()
+
+            if _, err := api.Phones.Deallocate(cleanupCtx, &platformgo.PhonesDeallocateRequest{
+                PhoneID: allocation.PhoneID,
+            }); err != nil {
+                log.Printf("release phone: %v", err)
+            }
+        }()
+
         if allocation.LiveViewURL == nil {
-            log.Fatal(errors.New("live view is disabled"))
+            return errors.New("live view is disabled")
         }
 
         fmt.Println(*allocation.LiveViewURL)
+        fmt.Println("Press Ctrl+C to release the phone...")
+        <-ctx.Done()
+        return nil
+    }
+
+    func main() {
+        if err := run(); err != nil {
+            log.Fatal(err)
+        }
     }
     ```
 
-    Release `allocation.PhoneID` when you finish. The URL stops working when
-    the session ends.
+    Keep the program running while you use the URL. Press Ctrl+C to release the
+    phone and end the session.
   </Tab>
 
   <Tab title="REST API">
     REST API References:
 
     - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+    - [**Release a phone**](/api-reference/rest/phones/release-a-phone): `POST /phones/{phone_id}:deallocate`
 
     ```bash
+    set -euo pipefail
+
     ALLOCATION=$(curl --silent --show-error --fail-with-body \
       --request POST \
       --url https://api.axilio.ai/api/v1/phones:allocate \
@@ -115,11 +151,35 @@ phone. Use a [recording](/observability/recordings) after the session ends.
       --header "Content-Type: application/json" \
       --data '{"phone_type":"android","phone_id":"ph_123"}')
 
-    printf '%s\n' "$ALLOCATION" | jq -r '.live_view_url'
+    PHONE_ID=$(printf '%s\n' "$ALLOCATION" | jq -er \
+      '.phone_id | select(type == "string" and length > 0)')
+
+    cleanup() {
+      if [[ -n "${PHONE_ID:-}" ]]; then
+        if curl --silent --show-error --fail-with-body \
+          --request POST \
+          --url "https://api.axilio.ai/api/v1/phones/$PHONE_ID:deallocate" \
+          --header "X-Axilio-Api-Key: $AXILIO_API_KEY"; then
+          PHONE_ID=""
+        else
+          printf 'Failed to release phone %s\n' "$PHONE_ID" >&2
+          return 1
+        fi
+      fi
+    }
+    trap cleanup EXIT
+    trap 'exit 1' HUP INT TERM
+
+    LIVE_VIEW_URL=$(printf '%s\n' "$ALLOCATION" | jq -er \
+      '.live_view_url | select(type == "string" and length > 0)')
+    printf '%s\n' "$LIVE_VIEW_URL"
+    read -r -p "Press Enter to release the phone..." _
+    cleanup
+    trap - EXIT HUP INT TERM
     ```
 
-    Retain the returned `phone_id` and [release the phone](/devices/allocate)
-    when you finish.
+    Keep the command running while you use the URL. It releases the phone when
+    you press Enter, interrupt the command, or a later command fails.
   </Tab>
 </Tabs>
 
@@ -272,8 +332,8 @@ expose these allocation options. Configure them with an SDK or REST:
 | Option | Effect |
 | --- | --- |
 | `auth="token"` | Default. The allocation URL contains a bearer credential and opens without an Axilio sign-in. |
-| `auth="org"` | The allocation URL is tokenless. A viewer must sign in and belong to the session's organization. |
-| `view_only=True` | Watch-only. Input is blocked on the server. |
+| `auth="org"` | The allocation URL is tokenless. You must sign in and belong to the session's organization. |
+| `view_only=True` | Watch-only. The server blocks input. |
 | `disabled=True` | No hosted live view exists, and allocation omits `live_view_url`. |
 
 Use organization authentication for links shared inside your team. Third-party
@@ -338,7 +398,7 @@ allocation URL in token mode and every URL returned by the token operation.
 - Do not log the URL or send it to analytics.
 - Prefer `view_only=True` for audiences that should not control the phone.
 - Prefer `auth="org"` for internal sharing that should require membership.
-- End the session if a token-mode URL is exposed. The URL stops working when
+- If you expose a token-mode URL, end the session. The URL stops working when
   the session ends.
 
 Release directly allocated phones when you finish. Closing the viewer does not

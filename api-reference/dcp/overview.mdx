@@ -49,9 +49,9 @@ so you discover its capabilities instead of assuming them.
 ## Connection lifetime
 
 The phone session outlives an individual WebSocket. The Python and Go mobile
-drivers reconnect automatically. A raw client must classify socket closes,
-resume with the opaque cursor the server provides, repeat the handshake, and
-reuse idempotency keys when it resends an ambiguous input command.
+drivers reconnect automatically. If you manage a raw client, classify socket
+closes, resume with the opaque cursor the server provides, repeat the handshake,
+and reuse idempotency keys when you resend an ambiguous input command.
 
 See [Reconnect and resume](/api-reference/dcp/reconnect) for the complete raw
 client contract.

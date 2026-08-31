@@ -225,7 +225,8 @@ itself remains a dashboard action.
 <Tabs sync={false}>
   <Tab title="Dashboard">
     Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), select
-    **Preferences**, then find **Auto-recharge**. An organization admin can:
+    **Preferences**, then find **Auto-recharge**. If you are an organization
+    admin, you can:
 
     1. Add or update the saved card through **Manage payment method**.
     2. Set **Threshold** to the balance that triggers a recharge.
@@ -236,8 +237,8 @@ itself remains a dashboard action.
     amount without toggling it off.
 
     The recharge target must be at least $5 and greater than the threshold.
-    Organization members who are not admins can view the current state but
-    cannot change it.
+    If you are not an administrator, you can view the current state but cannot
+    change it.
   </Tab>
 
   <Tab title="Python SDK">
@@ -303,13 +304,15 @@ Negative-balance alerts are separate, always enabled, and cannot be turned off.
 <Tabs sync={false}>
   <Tab title="Dashboard">
     Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), select
-    **Preferences**, then find **Usage alerts**. An organization admin can:
+    **Preferences**, then find **Usage alerts**. If you are an organization
+    admin, you can:
 
     1. Set **Alert threshold** to a positive dollar amount.
     2. Turn on **Low-balance alert**. Enabling it saves the threshold shown.
 
     If the alert is already on, select **Save** after changing the threshold.
-    Other organization members can view its current state but cannot change it.
+    If you are not an administrator, you can view its current state but cannot
+    change it.
   </Tab>
 
   <Tab title="CLI">

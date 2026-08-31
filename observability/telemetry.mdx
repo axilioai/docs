@@ -157,19 +157,19 @@ ends or whenever you need the authoritative retained trace.
     ```
 
     The token operation is organization-scoped and refuses inactive sessions.
-    A raw client must implement the
+    If you use a raw client, implement the
     [reconnect and resume contract](/api-reference/dcp/reconnect).
   </Tab>
 </Tabs>
 
 ## Stream behavior
 
-- **Treat the URL as a secret.** Its session-scoped credential is embedded, so
-  a WebSocket client connects without additional headers.
-- **The stream is read-only.** Messages a viewer sends are ignored.
-- **Late joiners receive the recent retained window**, then follow new frames.
-- **A message can contain one frame or an array of frames.** Readers must
-  support both forms.
+- **Treat the URL as a secret.** The URL embeds a session-scoped credential, so
+  you can connect without additional headers.
+- **The stream is read-only.** The stream ignores any messages you send.
+- **If you join late, you receive the recent retained window** before following
+  new frames.
+- **A message can contain one frame or an array of frames.** Support both forms.
 - **Delivery is at least once.** A reconnect can replay frames.
 - **Unknown frame kinds and fields are additive.** Preserve or render them
   generically instead of failing the stream.

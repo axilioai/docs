@@ -137,7 +137,7 @@ and SDKs expose Enter as their customer-facing named key. Use
 
 | Param | Type | Required | Description |
 | --- | --- | --- | --- |
-| `key` | string | Yes | `"enter"` or `"capslock"`. Other values are rejected. |
+| `key` | string | Yes | `"enter"` or `"capslock"`. The server rejects other values. |
 | `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
