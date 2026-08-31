@@ -4,91 +4,117 @@ sidebarTitle: "Configuration"
 description: "Configure the CLI, Python SDK, and Go SDK, including precedence, environment variables, retries, and local state."
 ---
 
-Axilio reads configuration from command-line flags, environment variables,
-saved CLI state, and SDK client options. More specific values win.
-
-## CLI configuration
-
-### Inspect the effective state
-
-```bash
-axilio config
-axilio status
-axilio doctor
-```
-
-- `axilio config` prints the effective API host, authentication source, active
-  organization, config path, and sessions directory without making a request.
-- `axilio status` verifies the effective credential against the API.
-- `axilio doctor` checks authentication, connectivity, account state, the CLI
-  version, configuration paths, and the selected session.
-
-### Save or clear values
-
-| Value | Set it | Clear it |
-| --- | --- | --- |
-| Browser OAuth session | `axilio login` | `axilio logout` |
-| API key | Pipe the key to `axilio login` on standard input | `axilio logout` |
-| API host | `axilio config set base-url https://api.axilio.ai` | `axilio config unset base-url` |
-| Active organization | `axilio orgs use <slug-or-id>` | `axilio orgs clear` |
-
-For a non-interactive API-key login, keep the value out of command history:
-
-```bash
-printf '%s\n' "$AXILIO_API_KEY" | axilio login
-```
-
-Pass an API origin without `/api/v1` to the CLI. Authentication and
-organization selection use their dedicated commands.
-
-### Resolution precedence
-
-The first non-empty value wins:
-
-| Setting | Precedence |
-| --- | --- |
-| Credentials | `--api-key` → `AXILIO_API_KEY` → saved API key → saved OAuth session |
-| API host | `--base-url` → `AXILIO_BASE_URL` → saved `base-url` → `https://api.axilio.ai` |
-| Organization | `--org` → `AXILIO_ORG` → saved organization → OAuth default |
-| Phone session | `--session` → `AXILIO_SESSION` → only locally saved session → most recently started session → ambiguity error |
-
-An API key belongs to one organization. Organization selection applies to a
-browser OAuth session, not to an API key from a different organization.
-
-### Global flags
-
-| Flag | What it does |
-| --- | --- |
-| `--api-key <key>` | Use an API key for one command without saving it. Prefer the environment variable to keep secrets out of shell history. |
-| `--base-url <url>` | Override the API origin for one command. |
-| `--org <slug-or-id>` | Select an organization for one OAuth-backed command. |
-| `-o, --output <table\|json>` | Choose table or JSON output. |
-| `-q, --quiet` | Suppress acknowledgments, notes, progress, and prompts while retaining result data, warnings, and errors. |
-| `--no-color` | Disable ANSI color in human output. |
-
-Phone commands also accept `--session <session-id>`. Run
-`axilio <command> --help` for command-specific flags.
-
-## Environment variables
-
-| Variable | Used by | What it does |
-| --- | --- | --- |
-| `AXILIO_API_KEY` | CLI, Python | Authenticates API requests. Go programs can read it and pass `option.WithAPIKey`. |
-| `AXILIO_BASE_URL` | CLI, Python | Overrides the API origin without `/api/v1`. |
-| `AXILIO_ARGUS_BASE_URL` | Python | Overrides the Argus origin. |
-| `AXILIO_ORG` | CLI | Selects an OAuth organization by slug or ID. |
-| `AXILIO_SESSION` | CLI | Selects a locally saved session for `axilio phone` commands. |
-| `AXILIO_DASHBOARD_URL` | CLI | Overrides the Dashboard origin used for browser OAuth. |
-| `XDG_CONFIG_HOME` | CLI | Moves the Axilio configuration directory. |
-| `NO_COLOR`, `CLICOLOR`, `CLICOLOR_FORCE`, `TERM` | CLI help | Control ANSI color using the conventional terminal rules. |
-
-Hosted workflow sandboxes inject their own runtime configuration. Do not set or
-depend on internal sandbox variables in local or CI configuration.
-
-## SDK clients
-
 <Tabs sync={false}>
+  <Tab title="CLI">
+    Axilio reads CLI configuration from command-line flags, environment
+    variables, and saved local state. More specific values win.
+
+    ## Inspect the effective state
+
+    ```bash
+    axilio config
+    axilio status
+    axilio doctor
+    ```
+
+    - `axilio config` prints the effective API host, authentication source,
+      active organization, config path, and sessions directory without making
+      a request.
+    - `axilio status` verifies the effective credential against the API.
+    - `axilio doctor` checks authentication, connectivity, account state, the
+      CLI version, configuration paths, and the selected session.
+
+    ## Save or clear values
+
+    | Value | Set it | Clear it |
+    | --- | --- | --- |
+    | Browser OAuth session | `axilio login` | `axilio logout` |
+    | API key | Pipe the key to `axilio login` on standard input | `axilio logout` |
+    | API host | `axilio config set base-url https://api.axilio.ai` | `axilio config unset base-url` |
+    | Active organization | `axilio orgs use <slug-or-id>` | `axilio orgs clear` |
+
+    For a non-interactive API-key login, keep the value out of command history:
+
+    ```bash
+    printf '%s\n' "$AXILIO_API_KEY" | axilio login
+    ```
+
+    Pass an API origin without `/api/v1` to the CLI. Authentication and
+    organization selection use their dedicated commands.
+
+    ## Resolution precedence
+
+    The first non-empty value wins:
+
+    | Setting | Precedence |
+    | --- | --- |
+    | Credentials | `--api-key` → `AXILIO_API_KEY` → saved API key → saved OAuth session |
+    | API host | `--base-url` → `AXILIO_BASE_URL` → saved `base-url` → `https://api.axilio.ai` |
+    | Organization | `--org` → `AXILIO_ORG` → saved organization → OAuth default |
+    | Phone session | `--session` → `AXILIO_SESSION` → only locally saved session → most recently started session → ambiguity error |
+
+    An API key belongs to one organization. Organization selection applies to
+    a browser OAuth session, not to an API key from a different organization.
+
+    ## Global flags
+
+    | Flag | What it does |
+    | --- | --- |
+    | `--api-key <key>` | Use an API key for one command without saving it. Prefer the environment variable to keep secrets out of shell history. |
+    | `--base-url <url>` | Override the API origin for one command. |
+    | `--org <slug-or-id>` | Select an organization for one OAuth-backed command. |
+    | `-o, --output <table\|json>` | Choose table or JSON output. |
+    | `-q, --quiet` | Suppress acknowledgments, notes, progress, and prompts while retaining result data, warnings, and errors. |
+    | `--no-color` | Disable ANSI color in human output. |
+
+    Phone commands also accept `--session <session-id>`. Run
+    `axilio <command> --help` for command-specific flags.
+
+    ## Environment variables
+
+    | Variable | What it does |
+    | --- | --- |
+    | `AXILIO_API_KEY` | Authenticates API requests. |
+    | `AXILIO_BASE_URL` | Overrides the API origin without `/api/v1`. |
+    | `AXILIO_ORG` | Selects an OAuth organization by slug or ID. |
+    | `AXILIO_SESSION` | Selects a locally saved session for `axilio phone` commands. |
+    | `AXILIO_DASHBOARD_URL` | Overrides the Dashboard origin used for browser OAuth. |
+    | `XDG_CONFIG_HOME` | Moves the Axilio configuration directory. |
+    | `NO_COLOR`, `CLICOLOR`, `CLICOLOR_FORCE`, `TERM` | Control ANSI color in CLI help using the conventional terminal rules. |
+
+    ## Per-command overrides
+
+    The CLI exposes API-key, base-URL, and organization overrides as global
+    flags. It does not expose per-request HTTP retry or deadline options.
+
+    ## Local state
+
+    Unless `XDG_CONFIG_HOME` is set, CLI state lives under
+    `~/.config/axilio`.
+
+    | Location | Contents |
+    | --- | --- |
+    | `config.json` | Saved API host, API-key state, and active organization. |
+    | OS keychain | Preferred storage for browser OAuth under service `axilio-cli`. |
+    | `oauth.json` | Mode-`0600` OAuth fallback when the OS keychain is unavailable. |
+    | `sessions/<session-id>.json` | Saved connection details used by `axilio phone`. |
+    | `current-session` | Most recently started local session. |
+    | `update-check.json` | Daily CLI release-check cache. |
+
+    Deleting local state does not release a remote phone. Stop the session
+    first:
+
+    ```bash
+    axilio sessions stop <session-or-phone-id> --yes
+    ```
+  </Tab>
+
   <Tab title="Python SDK">
+    The Python `Client` reads its defaults from environment variables. Explicit
+    client options take precedence.
+
+    ## Configure a client
+
     ```python
     from axilio.platform import Client
 
@@ -132,10 +158,46 @@ depend on internal sandbox variables in local or CI configuration.
     streaming endpoints. `AsyncAxilioApi` takes an `httpx.AsyncClient`; the
     synchronous client takes an `httpx.Client`. An explicit `base_url` wins
     over `environment`.
+
+    ## Environment variables
+
+    | Variable | What it does |
+    | --- | --- |
+    | `AXILIO_API_KEY` | Authenticates Platform and Argus requests. |
+    | `AXILIO_BASE_URL` | Overrides the Platform API origin without `/api/v1`. |
+    | `AXILIO_ARGUS_BASE_URL` | Overrides the Argus origin. |
+
+    Hosted workflow sandboxes inject their own runtime configuration. Do not
+    set or depend on internal sandbox variables in local or CI configuration.
+
+    ## Per-request overrides
+
+    Generated resource methods accept `request_options`:
+
+    ```python
+    phones = client.phones.list(
+        ownership="dedicated",
+        request_options={
+            "timeout_in_seconds": 10,
+            "max_retries": 1,
+        },
+    )
+    ```
+
+    Current request keys include `timeout_in_seconds`, `max_retries`,
+    `additional_headers`, `additional_query_parameters`,
+    `additional_body_parameters`, `chunk_size`,
+    `stream_reconnection_enabled`, and `max_stream_reconnection_attempts`.
+    The last two apply only to resumable streaming endpoints. Request values
+    override client defaults for that call.
   </Tab>
 
   <Tab title="Go SDK">
-    The Go SDK does not read Axilio environment variables automatically:
+    The Go SDK does not read Axilio environment variables automatically. Read
+    configuration using your application's preferred method and pass it to the
+    client:
+
+    ## Configure a client
 
     ```go
     api := client.NewClient(
@@ -159,34 +221,15 @@ depend on internal sandbox variables in local or CI configuration.
     | `option.WithoutRetries` | Disables automatic retries. |
     | `option.WithBodyProperties` | Adds generated request-body properties. |
     | `option.WithQueryParameters` | Adds generated query parameters. |
-  </Tab>
-</Tabs>
 
-## Per-request overrides
+    If you choose to read `AXILIO_API_KEY` in your Go program, pass its value
+    to `option.WithAPIKey` as shown above.
 
-<Tabs sync={false}>
-  <Tab title="Python SDK">
-    Generated resource methods accept `request_options`:
+    Hosted workflow sandboxes inject their own runtime configuration. Do not
+    set or depend on internal sandbox variables in local or CI configuration.
 
-    ```python
-    phones = client.phones.list(
-        ownership="dedicated",
-        request_options={
-            "timeout_in_seconds": 10,
-            "max_retries": 1,
-        },
-    )
-    ```
+    ## Per-request overrides
 
-    Current request keys include `timeout_in_seconds`, `max_retries`,
-    `additional_headers`, `additional_query_parameters`,
-    `additional_body_parameters`, `chunk_size`,
-    `stream_reconnection_enabled`, and `max_stream_reconnection_attempts`.
-    The last two apply only to resumable streaming endpoints. Request values
-    override client defaults for that call.
-  </Tab>
-
-  <Tab title="Go SDK">
     Use a context for the deadline and pass request options after the request:
 
     ```go
@@ -207,28 +250,6 @@ depend on internal sandbox variables in local or CI configuration.
     ```
   </Tab>
 </Tabs>
-
-The CLI exposes API-key, base-URL, and organization overrides as global flags.
-It does not expose per-request HTTP retry or deadline options.
-
-## Local CLI state
-
-Unless `XDG_CONFIG_HOME` is set, CLI state lives under `~/.config/axilio`.
-
-| Location | Contents |
-| --- | --- |
-| `config.json` | Saved API host, API-key state, and active organization. |
-| OS keychain | Preferred storage for browser OAuth under service `axilio-cli`. |
-| `oauth.json` | Mode-`0600` OAuth fallback when the OS keychain is unavailable. |
-| `sessions/<session-id>.json` | Saved connection details used by `axilio phone`. |
-| `current-session` | Most recently started local session. |
-| `update-check.json` | Daily CLI release-check cache. |
-
-Deleting local state does not release a remote phone. Stop the session first:
-
-```bash
-axilio sessions stop <session-or-phone-id> --yes
-```
 
 ## Next steps
 

@@ -49,6 +49,27 @@ axilio status
 For CI or another non-interactive environment, supply an organization-scoped
 API key through `AXILIO_API_KEY`. See [Authentication](/authentication).
 
+## Inspect a phone from the terminal
+
+List the dedicated phones available to allocate, start a session, inspect the
+screen, and save a screenshot:
+
+```bash
+axilio phones list
+eval "$(axilio sessions start --phone-id ph_123 --export)"
+
+axilio phone observe
+axilio phone screenshot --out screen.png
+
+axilio sessions stop "$AXILIO_SESSION" --yes
+unset AXILIO_SESSION
+```
+
+Replace `ph_123` with an ID returned by `axilio phones list`. The exported
+`AXILIO_SESSION` selects the session for subsequent `axilio phone` commands.
+Unlike an SDK context manager, the CLI session remains active until you stop
+it, so always release the phone when you finish.
+
 ## Explore a read-only task
 
 Work out a mobile task one action at a time before turning it into an SDK

@@ -19,9 +19,20 @@ organization that issued its key.
 The CLI, Python SDK, Go SDK, and public REST API cannot invite, change, or remove
 members.
 
+The CLI also has no commands for listing members or invitations. Use the
+dashboard or the read-only public API for those operations.
+
 ## List members
 
 <Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Settings → Members**](https://app.axilio.ai/dashboard/axilio/settings/members)
+    after selecting the organization. Accepted members appear as active rows
+    with their name, email address, role, and join date.
+
+    The dashboard page is available to organization admins.
+  </Tab>
+
   <Tab title="Python SDK">
     ```python
     members = client.raw.organization.list_members()
@@ -59,6 +70,14 @@ members.
 ## List outstanding invitations
 
 <Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Settings → Members**](https://app.axilio.ai/dashboard/axilio/settings/members)
+    after selecting the organization. Pending invitations appear in the same
+    table as accepted members, with their requested role and invitation date.
+
+    The dashboard page is available to organization admins.
+  </Tab>
+
   <Tab title="Python SDK">
     ```python
     invitations = client.raw.organization.list_invitations()
@@ -90,4 +109,6 @@ members.
   </Tab>
 </Tabs>
 
-Reading invitations requires an organization admin, matching the dashboard.
+The public members endpoint requires the viewer role or higher. The public
+invitations endpoint requires an organization admin. The dashboard page is
+admin-only for both lists.

@@ -31,39 +31,17 @@ network.
 | **File** | An item in your organization's library. It either entered by upload or was captured from a session. |
 | **Telemetry** | The customer-facing frames, traces, logs, and summaries that explain an execution. |
 
-## A phone session in Python
-
-`Client` authenticates requests and exposes the platform's resource groups.
-`client.session()` allocates a phone, connects a driver, and releases the phone
-when the block exits.
-
-```python
-from axilio.platform import Client
-
-client = Client()  # reads AXILIO_API_KEY from the environment
-
-with client.session("android", phone_id="ph_123") as driver:
-    screen = driver.observe()
-    print(f"Found {len(screen.texts)} text regions")
-    png = driver.screenshot()
-```
-
-Use the resource groups on the same client to manage phones, workflows, runs,
-files, usage, billing, organizations, and API keys. Use the [CLI](/cli) for the
-same operational tasks from a terminal, or use the [REST API](/api-reference/overview)
-when you need direct HTTP access.
-
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="CLI" icon="terminal" href="/cli">
+    Work with phones and platform resources from your terminal.
+  </Card>
   <Card title="SDK quickstart" icon="rocket" href="/quickstart">
     Install the Python SDK and inspect your first phone.
   </Card>
   <Card title="Authentication" icon="key" href="/authentication">
     Create an API key and configure each interface safely.
-  </Card>
-  <Card title="CLI" icon="terminal" href="/cli">
-    Work with phones and platform resources from your terminal.
   </Card>
   <Card title="Files" icon="folder-open" href="/files/overview">
     Move media into, out of, and between phone sessions.

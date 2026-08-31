@@ -103,6 +103,16 @@ html.dark #content-area .callout :is(p, li, span, strong, em) {
   margin-top: 0;
   margin-bottom: 0.9rem;
 }
+/* Accordion titles are paragraphs inside a vertically centered summary row.
+   Exclude them from the prose paragraph margin so the caret and title share
+   the same visual center. */
+#content-area [data-component-part="accordion-title"] {
+  margin: 0 !important;
+}
+#credit-bucket-diagram-accordion-title::before {
+  content: "Diagram: ";
+  font-weight: 700;
+}
 #content-area :is(li) {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
@@ -227,6 +237,142 @@ html.light .axilio-copy-prompt-button {
   border-color: rgba(5, 150, 105, 0.38);
   color: #047857;
   background: rgba(16, 185, 129, 0.08);
+}
+
+/* ── Live dedicated-phone pricing cards ─────────────────────────────────── */
+.axilio-rental-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border: 1px solid #262626;
+  border-radius: 0.75rem;
+  background: #262626;
+}
+
+.axilio-rental-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 1.5rem;
+  background: #0a0a0a;
+}
+
+.axilio-rental-card.is-popular {
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.8);
+}
+
+.axilio-rental-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.3rem 0.65rem;
+  border-bottom-left-radius: 0.5rem;
+  background: #10b981;
+  color: #02130d;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.axilio-rental-eyebrow,
+.axilio-rental-per-phone {
+  color: #737373;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.axilio-rental-card h3 {
+  margin: 0.55rem 0 1rem;
+  color: #fafafa;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+}
+
+.axilio-rental-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  color: #a3a3a3;
+}
+
+.axilio-rental-price strong {
+  color: #34d399;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.axilio-rental-per-phone {
+  margin: 0.65rem 0 1.15rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #262626;
+}
+
+.axilio-rental-card ul {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.axilio-rental-card li {
+  display: flex;
+  gap: 0.55rem;
+  margin: 0;
+  color: #a3a3a3;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.axilio-rental-card li::before {
+  display: none !important;
+  content: none !important;
+}
+
+.axilio-rental-card li span {
+  flex: none;
+  color: #10b981;
+  font-weight: 800;
+}
+
+html.light .axilio-rental-grid {
+  border-color: #d4d4d4;
+  background: #d4d4d4;
+}
+
+html.light .axilio-rental-card {
+  background: #ffffff;
+}
+
+html.light .axilio-rental-card h3 {
+  color: #171717;
+}
+
+html.light .axilio-rental-price,
+html.light .axilio-rental-card li {
+  color: #525252;
+}
+
+html.light .axilio-rental-price strong,
+html.light .axilio-rental-card li span {
+  color: #047857;
+}
+
+html.light .axilio-rental-per-phone {
+  border-color: #e5e5e5;
+}
+
+@media (max-width: 900px) {
+  .axilio-rental-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Homepage interface chooser — four purpose-built, independently linked

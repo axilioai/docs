@@ -1,7 +1,7 @@
 ---
-title: "Balance and invoices"
-sidebarTitle: "Balance and invoices"
-description: "Read your balance, add funds in the dashboard, configure alerts, and download invoice PDFs."
+title: "Balance, credits, and invoices"
+sidebarTitle: "Balance, credits, and invoices"
+description: "Understand credit priority and expiration, add funds, configure alerts, and download invoice PDFs."
 ---
 
 ## Check the balance
@@ -26,6 +26,7 @@ description: "Read your balance, add funds in the dashboard, configure alerts, a
     print(balance.balance_display)
     print(balance.included_microdollars)
     print(balance.purchased_microdollars)
+    print(balance.purchased_next_expiry)
     ```
   </Tab>
 
@@ -51,6 +52,103 @@ description: "Read your balance, add funds in the dashboard, configure alerts, a
     ```
   </Tab>
 </Tabs>
+
+## How credits work
+
+Axilio applies credits and charges using these rules:
+
+1. **Included credit is spent first.** Axilio spends your current period's free
+   allowance before using any purchased credit. This ensures any purchases of
+   additional credit are never wasted.
+2. **Included credit resets instead of accumulating.** At renewal, any unused
+   included credit lapses. The new period begins with exactly the new
+   allowance.
+3. **Purchased credits are only spent after any included credits are spent.**
+   Top-ups and automatic recharges create separate purchased lots. When more
+   than one lot remains, Axilio spends the lot with the soonest expiration
+   first (FIFO) to minimize expired credits.
+4. **Each purchased lot expires one year after settlement.** The one-year
+   clock begins when Stripe settles that purchase. Unused credit in that lot is
+   removed at expiration.
+5. **Automatic recharge restores your balance to the amount you configure.**
+   It is not a separate credit bucket. When your total balance falls below the
+   configured **Threshold**, Axilio purchases enough credit to reach the
+   configured **Recharge to** amount. That purchase then follows the same
+   debt-first and expiration rules.
+6. **New credit repays debt first.** If your balance is negative, a grant or
+   purchase first reduces that deficit. Only the remainder becomes spendable
+   credit. For example, a `$10` top-up against a `-$1` balance leaves `$9`
+   available.
+
+The balance shown in the dashboard is the combined amount available after
+these rules are applied. The `GET /billing/balance` response exposes the same
+result as separate fields:
+
+- `balance_microdollars` is the combined balance. It can be negative when
+  charges exceed the available credit.
+- `included_microdollars` is the unused included credit in the current period.
+- `purchased_microdollars` is the total remaining purchased credit across all
+  unexpired lots.
+- `purchased_next_expiry` is the expiration time of the purchased lot that
+  expires next. It is empty when no purchased credit remains.
+
+When `balance_microdollars` is negative, both live-credit fields are zero. The
+next grant or purchase repays that deficit before adding spendable credit.
+
+Dedicated-phone rental charges are separate from these credit buckets. A
+dedicated session does not consume phone-time credit, but metered vision calls
+during that session can consume the balance. See
+[Dedicated phone pricing](/billing/plans) for rental periods and
+[Models and pricing](/drivers/models) for metered inference pricing.
+
+Axilio does not provide a routine self-service refund path. Contact support if
+you believe a purchase or charge requires review.
+
+<Accordion
+  title="See how credit moves through each bucket"
+  id="credit-bucket-diagram"
+  defaultOpen={false}
+>
+  ```mermaid
+  %%{init: {'flowchart': {'defaultRenderer': 'elk', 'curve': 'basis'}}}%%
+  flowchart TB
+      renewal["Account renewal<br/>when included credit applies"]
+      topup["Top-up or automatic recharge<br/>after Stripe settles"]
+      deficit{"Existing negative balance?"}
+      repay["Repay the deficit first"]
+
+      included[("Included credit<br/>maximum = current allowance")]
+      purchased[("Purchased credit lots<br/>each has its own expiry")]
+
+      charge["Metered usage charge"]
+      negative["Negative balance<br/>after all live credit is spent"]
+      lapse["Unused included credit lapses"]
+      expiry["Unused purchased lot expires"]
+
+      renewal -->|"reset to the new allowance"| included
+      included -.->|"at the next renewal"| lapse
+
+      topup --> deficit
+      deficit -->|"yes"| repay
+      repay -->|"credit left after repayment"| purchased
+      deficit -->|"no"| purchased
+
+      included -->|"1 · spend first"| charge
+      purchased -->|"2 · soonest expiry first"| charge
+      charge -->|"3 · no credit remains"| negative
+      negative -.->|"the next credit returns here"| deficit
+      purchased -.->|"one year after settlement"| expiry
+
+      classDef source fill:#052e24,stroke:#10b981,color:#ecfdf5,stroke-width:2px;
+      classDef bucket fill:#0f172a,stroke:#34d399,color:#f8fafc,stroke-width:2px;
+      classDef terminal fill:#2a1111,stroke:#f87171,color:#fff1f2,stroke-width:2px;
+      classDef exit fill:#262626,stroke:#737373,color:#f5f5f5;
+      class renewal,topup,repay source;
+      class included,purchased bucket;
+      class negative terminal;
+      class lapse,expiry exit;
+  ```
+</Accordion>
 
 ## Add funds
 
@@ -125,6 +223,23 @@ below a threshold, restoring it to a target amount. Adding the payment method
 itself remains a dashboard action.
 
 <Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), select
+    **Preferences**, then find **Auto-recharge**. An organization admin can:
+
+    1. Add or update the saved card through **Manage payment method**.
+    2. Set **Threshold** to the balance that triggers a recharge.
+    3. Set **Recharge to** to the balance Axilio should restore.
+    4. Turn on **Automatically top up**. Enabling it saves the amounts shown.
+
+    If auto-recharge is already on, select **Save** after changing either
+    amount without toggling it off.
+
+    The recharge target must be at least $5 and greater than the threshold.
+    Organization members who are not admins can view the current state but
+    cannot change it.
+  </Tab>
+
   <Tab title="Python SDK">
     ```python
     settings = client.billing.get_auto_recharge()
@@ -177,16 +292,88 @@ itself remains a dashboard action.
   </Tab>
 </Tabs>
 
+The CLI does not configure automatic recharge; its billing commands are
+read-only.
+
 ## Configure low-balance alerts
 
-`get_usage_alerts()` reads the low- and negative-balance alert state.
-`update_usage_alerts()` configures the low-balance threshold. Negative-balance
-alerts remain enabled.
+Low-balance alerts warn you before insufficient funds can block a session.
+Negative-balance alerts are separate, always enabled, and cannot be turned off.
 
-```python
-alerts = client.billing.get_usage_alerts()
-client.billing.update_usage_alerts(enabled=True, threshold_cents=1000)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), select
+    **Preferences**, then find **Usage alerts**. An organization admin can:
+
+    1. Set **Alert threshold** to a positive dollar amount.
+    2. Turn on **Low-balance alert**. Enabling it saves the threshold shown.
+
+    If the alert is already on, select **Save** after changing the threshold.
+    Other organization members can view its current state but cannot change it.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently read or configure low-balance alerts. Its
+    relevant command is `axilio billing balance`.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    alerts = client.billing.get_usage_alerts()
+    print(alerts.enabled, alerts.threshold_cents)
+
+    updated = client.billing.update_usage_alerts(
+        enabled=True,
+        threshold_cents=1000,
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    alerts, err := api.Billing.GetUsageAlerts(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(alerts.Enabled, alerts.ThresholdCents)
+
+    updated, err := api.Billing.UpdateUsageAlerts(
+        ctx,
+        &platformgo.SubscriptionUsageAlertSettings{
+            Enabled:        true,
+            ThresholdCents: 1000,
+        },
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(updated.Enabled, updated.ThresholdCents)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get usage-alert settings**](/api-reference/rest/billing/get-usage-alert-settings): `GET /billing/usage-alerts`
+    - [**Update usage-alert settings**](/api-reference/rest/billing/update-usage-alert-settings): `PUT /billing/usage-alerts`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/usage-alerts \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --request PUT \
+      --url https://api.axilio.ai/api/v1/billing/usage-alerts \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "enabled": true,
+        "threshold_cents": 1000
+      }'
+    ```
+  </Tab>
+</Tabs>
 
 Updating auto-recharge or alerts requires an organization admin. An API key
 inherits its creator's organization role.
