@@ -73,7 +73,7 @@ the phone; the ID does not change.
 ## Watch a run
 
 `runs watch` streams the run's session Telemetry until the terminal status. It
-replays archived frames first when necessary, then resumes the live stream:
+replays retained frames first when necessary, then resumes the live stream:
 
 ```bash
 axilio runs watch run_123
@@ -88,7 +88,8 @@ You can also follow a session directly:
 axilio sessions trace sess_123 --follow
 ```
 
-See [Telemetry](/observability/telemetry) for SDK helpers and archive behavior.
+See [Get started with Telemetry](/telemetry/get-started) for SDK helpers and
+retained-data behavior.
 
 ## Cancel a queued or running run
 

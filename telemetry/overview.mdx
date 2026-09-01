@@ -1,0 +1,99 @@
+---
+title: "Telemetry"
+sidebarTitle: "Overview"
+description: "Understand Axilio's session-scoped execution record and choose how to inspect it live or after a session ends."
+---
+
+Telemetry is the structured execution record for an Axilio phone session. It
+connects operations, inference work, file and media activity, output, and
+errors to the session where they happened.
+
+Use Telemetry to answer questions such as:
+
+- What did this session run?
+- Which operation took time or failed?
+- What did the run write to its console?
+- How did an SDK call relate to inference, file, or media work?
+- What billed-cost context is currently available for an operation?
+
+Customers use Axilio Telemetry through the Dashboard, CLI, SDK helpers, and
+Axilio JSON API described in this section.
+
+## One record from live to retained
+
+A phone session is the correlation boundary for Telemetry. You address its
+record by `session_id`.
+
+While a session is active, you can follow new spans and logs through the
+Dashboard, CLI, SDK helpers, or a read-only WebSocket. If you join late, the
+live service can replay a bounded recent window before it sends new data.
+
+When the session ends, the live URL stops working. You can then read the
+available retained record through the Dashboard, CLI, SDK helpers, or
+`GET /phones/sessions/{session_id}/frames` during its access window. First-party
+interfaces provide a path from live monitoring to retained reconciliation.
+
+Both access paths use the same tolerant JSON **frame** envelope. A frame is a
+wire representation of a span or log. Live spans can arrive in `start` and
+`end` phases, while the retained record represents each completed span as one
+completed frame.
+
+<Note>
+  Telemetry delivery is best effort. A live consumer must tolerate replayed
+  frames and possible gaps. Reconcile with retained Telemetry after a gap, and
+  do not treat either path as an exactly-once or lossless audit log.
+</Note>
+
+## Choose an interface
+
+| Interface | Best for |
+| --- | --- |
+| **Dashboard** | Visually inspect a session in **Timeline** and **Console**, then correlate the trace with a recording when one exists. |
+| **CLI** | Inspect a trace from a terminal with `axilio sessions trace`, or follow it with `--follow`. |
+| **Python SDK** | Retrieve, summarize, filter, or tail Telemetry with `client.telemetry(session_id)`. |
+| **Go SDK** | Retrieve or stream Telemetry with `drivers/telemetry` and context-aware iteration. |
+| **REST API** | Page through retained frames and join response-level cost maps in a custom integration. |
+| **WebSocket** | Consume the raw, read-only live stream with your own reconnect and resume logic. |
+
+Start with [Get started](/telemetry/get-started) for one end-to-end session.
+Use the raw interfaces only when you need a custom reader or integration.
+
+## How Telemetry differs from related features
+
+| Feature | What it tells you |
+| --- | --- |
+| **Telemetry** | The structured execution record: operations, relationships, timing, output, errors, and available per-operation cost context. |
+| [**Live view**](/observability/live-view) | What is currently visible on the phone screen. |
+| [**Recordings**](/observability/recordings) | A visual replay of the screen when recording was enabled and processing completed. |
+| [**Device Control Protocol**](/api-reference/dcp/reference) | How a client sends commands to and receives responses from an active phone. |
+| [**Usage**](/usage/overview) | Organization-level session and inference usage for reconciliation and reporting. |
+
+Telemetry and recording are independent controls. Disabling recording does
+not disable Telemetry. Starting a direct session or workflow run with
+`telemetry=false` disables both live and retained Telemetry for that session.
+
+## Explore Telemetry
+
+<CardGroup cols={2}>
+  <Card title="Get started" icon="play" href="/telemetry/get-started">
+    Follow one session from its first live frames to its retained trace.
+  </Card>
+  <Card title="Telemetry dashboard" icon="diagram-project" href="/telemetry/understand-a-trace">
+    Interpret operations, relationships, timing, output, errors, and cost context.
+  </Card>
+  <Card title="Follow live Telemetry" icon="signal-stream" href="/telemetry/live">
+    Attach to an active session through a first-party interface or WebSocket.
+  </Card>
+  <Card title="Retrieve Telemetry" icon="download" href="/telemetry/retrieve">
+    Read and page through the available record by session ID.
+  </Card>
+  <Card title="Frame reference" icon="brackets-curly" href="/telemetry/frames">
+    Parse spans, logs, identifiers, timestamps, attributes, and additive values.
+  </Card>
+  <Card title="Data controls" icon="shield-halved" href="/telemetry/data-controls">
+    Understand capture, retention, capability URLs, and sensitive-data boundaries.
+  </Card>
+  <Card title="Reliability and troubleshooting" icon="life-ring" href="/telemetry/reliability">
+    Recover from gaps and diagnose disabled, empty, expired, or incompatible data.
+  </Card>
+</CardGroup>

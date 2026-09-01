@@ -2774,7 +2774,7 @@
           "frames": {
             "description": "Page of frames, ordered by span start / log time.",
             "items": {
-              "description": "One telemetry frame: a completed span or a log event, discriminated on kind. Tolerant reader (unified frame contract): consumers MUST ignore frames with an unknown kind, unknown fields within known kinds, and unknown span_type/log_type values (render generically, never error). Generated SDK types surface an unrecognized frame as an explicit UnknownFrame variant carrying the raw JSON, never a silent drop. A live-stream message MAY carry a JSON array of frame objects; consumers MUST accept a single object or an array.",
+              "description": "One telemetry frame: a completed span or a log event, discriminated on kind. Forward-compatible raw JSON consumers should accept unknown fields within known kinds and treat unknown span_type/log_type values generically. Top-level unknown-kind handling varies by interface and SDK version; do not assume every generated SDK exposes an UnknownFrame variant. Live readers should accept either a single frame object or an array for forward compatibility; current first-party forwarding normally sends one frame object per message.",
               "discriminator": {
                 "mapping": {
                   "log": "#/components/schemas/RunLogFrame",
@@ -2815,7 +2815,7 @@
             "type": "integer"
           },
           "retention_expired": {
-            "description": "True when the trace is past the org's retention window; frames are withheld and the underlying data is deleted by a daily sweep.",
+            "description": "True when the trace is past the organization's telemetry access window; frames are not returned.",
             "type": "boolean"
           },
           "sdk_call_costs": {
@@ -3141,7 +3141,7 @@
             "type": "string"
           },
           "plan_name": {
-            "description": "Customer-facing plan name (Hobby, Pro, Scale, Enterprise).",
+            "description": "Customer-facing plan name.",
             "type": "string"
           },
           "price_per_second_microdollars": {
@@ -4319,7 +4319,7 @@
             "type": "string"
           },
           "telemetry": {
-            "description": "Whether this workflow's runs persist telemetry spans (default true).",
+            "description": "Whether this workflow's runs emit live and retained telemetry (default true).",
             "type": "boolean"
           },
           "updated_at": {
@@ -6470,7 +6470,7 @@
     },
     "/phones/sessions/{session_id}/frames": {
       "get": {
-        "description": "Returns the paginated telemetry frames for a session in the canonical frame envelope: one completed span frame per durable span (operations that never completed appear via their synthesized failed closures) plus log frames, ordered by span start / log time, with response-level billed-cost maps. This is the same envelope the live telemetry WebSocket streams; live and archive differ only in cardinality (start+end frames live, one completed frame here). Org-scoped: another org's session reads as not found. A trace past the organization's telemetry retention window returns an empty list with retention_expired=true; when the retention policy itself cannot be resolved the request fails with a 500 rather than serving frames whose retention state is unknown. Tolerant reader (unified frame contract): consumers MUST ignore frames with an unknown kind, unknown fields within known kinds, and unknown span_type/log_type values (render generically, never error). Generated SDK types surface an unrecognized frame as an explicit UnknownFrame variant carrying the raw JSON, never a silent drop. A live-stream message MAY carry a JSON array of frame objects; consumers MUST accept a single object or an array.",
+        "description": "Returns the paginated telemetry frames for a session in the canonical frame envelope: one completed span frame per durable span (operations that never completed appear via their synthesized failed closures) plus log frames, ordered by span start / log time, with response-level billed-cost maps. This is the same envelope the live telemetry WebSocket streams; live and archive differ only in cardinality (start+end frames live, one completed frame here). Org-scoped: another org's session reads as not found. A trace past the organization's telemetry retention window returns an empty list with retention_expired=true; when the retention policy itself cannot be resolved the request fails with a 500 rather than serving frames whose retention state is unknown. Forward-compatible raw JSON consumers should accept unknown fields within known kinds and treat unknown span_type/log_type values generically. Top-level unknown-kind handling varies by interface and SDK version; do not assume every generated SDK exposes an UnknownFrame variant. Live readers should accept either a single frame object or an array for forward compatibility; current first-party forwarding normally sends one frame object per message.",
         "operationId": "sessions_list_frames",
         "parameters": [
           {
@@ -6659,7 +6659,7 @@
     },
     "/phones/sessions/{session_id}/telemetry-token": {
       "post": {
-        "description": "Mints a fresh telemetry_url for an active session \u2014 the same read-only WebSocket URL POST /phones:allocate returns once (live trace spans + output logs for exactly this session, 3h token). This is the telemetry/frames leg, distinct from the live-view (video) token: it can only watch the trace, never the screen, and never drive the phone. The stream's end frame is the session-end signal. Refused for inactive sessions \u2014 an ended session's telemetry is served by GET /phones/sessions/{session_id}/frames \u2014 and for sessions outside the caller's organization (reads as not found).",
+        "description": "Mints a fresh telemetry_url for an active session \u2014 the same read-only WebSocket URL POST /phones:allocate returns once (live trace spans + output logs for exactly this session). This is the telemetry/frames leg, distinct from the live-view (video) token: it can only watch the trace, never the screen, and never drive the phone. The stream's end frame is the session-end signal. Refused for inactive sessions \u2014 an ended session's telemetry is served by GET /phones/sessions/{session_id}/frames \u2014 and for sessions outside the caller's organization (reads as not found).",
         "operationId": "phones_session_telemetry_token",
         "parameters": [
           {

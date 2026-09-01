@@ -1,0 +1,254 @@
+---
+title: "Retrieve telemetry"
+sidebarTitle: "Retained telemetry"
+description: "Retrieve the available retained spans and logs for a session through the Dashboard, CLI, SDKs, or REST API."
+---
+
+Retained telemetry is the session record available for post-session review and
+live-gap reconciliation. It contains completed span frames and point-in-time
+log frames, addressed by `session_id`.
+
+The retained path is best-effort. Treat it as the available record, not an
+exactly-once audit ledger or a promise that every live frame was stored.
+
+## Retrieve a session trace
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+    2. Select an active or completed session.
+    3. Click **Observability**.
+    4. Use **Timeline** for operations and **Console** for output and errors.
+
+    The Dashboard reconciles live telemetry with retained history when a
+    session completes. It currently loads at most the first 1,000 retained
+    frames. Use the CLI, an SDK, or paginated REST when you need every
+    available page from a large trace.
+  </Tab>
+
+  <Tab title="CLI">
+    Read the complete available trace in a table:
+
+    ```bash
+    axilio sessions trace sess_123
+    ```
+
+    Return one merged JSON response after the CLI follows every retained page:
+
+    ```bash
+    axilio sessions trace sess_123 -o json
+    ```
+
+    Add `--follow` when the session is still active. Follow mode emits a
+    retained prefix, attaches to [live telemetry](/telemetry/live), and
+    reconciles the two paths.
+  </Tab>
+
+  <Tab title="Python SDK">
+    The high-level helper retrieves all pages and joins the response-level cost
+    maps to spans:
+
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    telemetry = client.telemetry("sess_123")
+    trace = telemetry.trace()
+
+    for item in trace.spans:
+        print(
+            item.frame.span_type,
+            item.frame.name,
+            item.duration_ms,
+            item.billed_cost_microdollars,
+        )
+
+    for entry in trace.logs:
+        print(entry.severity, entry.body)
+    ```
+
+    Use `telemetry.summary()` for a derived summary and `telemetry.logs()` for
+    retained logs only. The generated sync and async clients also expose
+    `sessions_list_frames(session_id, limit=..., offset=...)` for raw pages.
+
+    <Warning>
+      Python SDK `v0.19.0` can reject a retention-expired response because the
+      runtime returns null cost maps. Use the raw REST response or another
+      compatible reader when you need to inspect that state. Recheck this note
+      when you update the SDK.
+    </Warning>
+
+    Archive HTTP failures surface the generated `ApiError`. A malformed
+    successful body can surface `ParsingError`. Configure per-request REST
+    timeout or retry behavior through `request_options` or client
+    configuration rather than the high-level Telemetry helper.
+  </Tab>
+
+  <Tab title="Go SDK">
+    `Trace` retrieves all pages and builds a high-level trace:
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+        "os"
+
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/drivers/telemetry"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        view := telemetry.NewSession(api, "sess_123")
+
+        trace, err := view.Trace(ctx)
+        if err != nil {
+            log.Fatal(err)
+        }
+        if trace.RetentionExpired {
+            fmt.Println("The retained trace is outside the access window")
+        }
+
+        for _, item := range trace.Spans {
+            fmt.Println(
+                item.Span.SpanType,
+                item.Span.Name,
+                item.Duration(),
+                item.BilledMicrodollars,
+            )
+        }
+        for _, entry := range trace.Logs {
+            fmt.Println(entry.Severity, entry.Body)
+        }
+    }
+    ```
+
+    Import the helper from
+    `github.com/axilioai/platform-go/drivers/telemetry`. Use the generated
+    `api.Runs.SessionsListFrames(...)` operation when you need raw pages. Use
+    `view.Summary(ctx)` for a derived summary and `view.Logs(ctx, false)` for
+    retained logs; pass `true` to tail live logs. Use `view.Tail(ctx)` to follow
+    every live frame kind and inspect `stream.Gapped()` during
+    [gap recovery](/telemetry/reliability#recover-after-a-replay-gap).
+  </Tab>
+
+  <Tab title="REST API">
+    Request one page from the canonical retained endpoint:
+
+    REST API reference:
+
+    - [**List a session's telemetry frames**](/api-reference/rest/runs/list-a-sessions-telemetry-frames): `GET /phones/sessions/{session_id}/frames`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request GET \
+      --url 'https://api.axilio.ai/api/v1/phones/sessions/sess_123/frames?limit=1000&offset=0' \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      | jq
+    ```
+
+    The endpoint accepts `limit` from 1 through 1,000 and a nonnegative
+    `offset`. If omitted, `limit` defaults to 100 and `offset` defaults to 0.
+    Use a customer API key with viewer access to the session's organization.
+  </Tab>
+</Tabs>
+
+<Note>
+  Use `/frames` for current integrations. The retired `/events` route and its
+  older event shapes are not a compatibility interface.
+</Note>
+
+## Paginate the complete available result
+
+Read `total`, `limit`, and `offset` from every response. After processing a
+page, add the number of returned frames to your offset. Stop when the new
+offset reaches `total` or when a page returns no frames.
+
+Do not stop only because a page contains fewer items than the requested limit.
+The CLI and high-level Python and Go helpers handle pagination for you.
+
+Frames are ordered by ascending timeline time: `start_time_unix_nano` for a
+span and `time_unix_nano` for a log. Do not rely on a particular order between
+span and log frames with exactly equal timestamps.
+
+There is no server-side frame-kind or telemetry-type filter. Retrieve pages,
+then filter by `kind`, `span_type`, or `log_type` in your application.
+
+## Interpret the response
+
+The response contains these seven top-level properties:
+
+| Field | Meaning |
+| --- | --- |
+| `frames` | This page of span and log frames. The current runtime returns an array. |
+| `total` | Total frame count available for the session. |
+| `limit` | Page size applied to this response. |
+| `offset` | Starting offset applied to this response. |
+| `sdk_call_costs` | Point-in-time billed microdollars keyed by SDK-call `span_id`. |
+| `inference_costs` | Point-in-time billed microdollars keyed by inference ID. |
+| `retention_expired` | Whether the access window has expired and frames were withheld. |
+
+The published schema also permits `frames` to be null even though the current
+runtime returns arrays. If your generated client exposes that possibility,
+normalize null to an empty collection before iteration and use
+`retention_expired` to interpret the result.
+
+### Distinguish empty and expired results
+
+| Result | `retention_expired` | Current raw frame and cost-map shape | Interpretation |
+| --- | --- | --- | --- |
+| Available but empty | `false` | `frames: []`; cost maps are objects | No retained frames were returned. Check whether telemetry was disabled or no data was produced. |
+| Access expired | `true` | `frames: []`; both cost maps are `null` | Retained telemetry is outside the configured access window. |
+| Request fails | No successful response | An error response, not an empty trace | Fix authorization or input, or retry a transient failure. Do not convert an error into an empty or expired result. |
+
+`retention_expired` is an access decision. It does not prove that every
+physical copy was deleted at that instant. See
+[Data controls](/telemetry/data-controls) for retention and deletion
+boundaries.
+
+### Interpret cost maps
+
+Cost maps belong to the response, not to individual immutable frames. Join an
+SDK-call cost through its `span_id`. Join an inference cost through the
+`axilio.inference.id` attribute on the inference span.
+
+`1,000,000` microdollars (`µ$`) equals `$1.00`. Cost joins are point-in-time
+and best-effort. A missing key, an empty or null map, and a present numeric zero
+have different possible causes. Do not interpret zero alone as proof that an
+operation was free or that billing is final. Use [Usage](/usage/overview) and
+your finalized billing records for organization-wide reconciliation.
+
+## Recover after a live gap
+
+When a raw reader receives `RESYNC_REQUIRED`, or an SDK reports a gap:
+
+1. Retrieve every available `/frames` page for the session.
+2. Rebuild or reconcile your local trace by frame identity and timeline time.
+3. If the session is still active, reconnect to [live telemetry](/telemetry/live)
+   using a current opaque cursor.
+4. Continue to tolerate replayed frames after reconnect.
+
+A live reconnect does not fill missing retained history automatically. The
+available retained record is the recovery source.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Frame reference" icon="brackets-curly" href="/telemetry/frames">
+    Interpret frame fields, types, relationships, and attributes.
+  </Card>
+  <Card title="Live telemetry" icon="signal-stream" href="/telemetry/live">
+    Follow an active session and resume from an opaque cursor.
+  </Card>
+  <Card title="Telemetry dashboard" icon="timeline" href="/telemetry/understand-a-trace">
+    Diagnose timing, output, failures, and cost annotations.
+  </Card>
+  <Card title="Reliability and troubleshooting" icon="life-ring" href="/telemetry/reliability">
+    Diagnose empty, interrupted, incompatible, or expired telemetry.
+  </Card>
+</CardGroup>

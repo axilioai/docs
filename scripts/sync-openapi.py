@@ -106,7 +106,49 @@ _DESCRIPTION_CORRECTIONS = {
         "Telemetry trace ID (32 lowercase hex characters), derived from the "
         "session ID; one session produces one trace."
     ),
+    (
+        "True when the trace is past the org's retention window; frames are "
+        "withheld and the underlying data is deleted by a daily sweep."
+    ): (
+        "True when the trace is past the organization's telemetry access "
+        "window; frames are not returned."
+    ),
+    "Customer-facing plan name (Hobby, Pro, Scale, Enterprise).": (
+        "Customer-facing plan name."
+    ),
+    "Whether this workflow's runs persist telemetry spans (default true).": (
+        "Whether this workflow's runs emit live and retained telemetry (default true)."
+    ),
 }
+
+
+_DESCRIPTION_FRAGMENT_CORRECTIONS = {
+    (
+        "Tolerant reader (unified frame contract): consumers MUST ignore frames "
+        "with an unknown kind, unknown fields within known kinds, and unknown "
+        "span_type/log_type values (render generically, never error). Generated "
+        "SDK types surface an unrecognized frame as an explicit UnknownFrame "
+        "variant carrying the raw JSON, never a silent drop. A live-stream "
+        "message MAY carry a JSON array of frame objects; consumers MUST accept "
+        "a single object or an array."
+    ): (
+        "Forward-compatible raw JSON consumers should accept unknown fields "
+        "within known kinds and treat unknown span_type/log_type values "
+        "generically. Top-level unknown-kind handling varies by interface and "
+        "SDK version; do not assume every generated SDK exposes an UnknownFrame "
+        "variant. Live readers should accept either a single frame object or an "
+        "array for forward compatibility; current first-party forwarding "
+        "normally sends one frame object per message."
+    ),
+    ", 3h token": "",
+}
+
+
+def _correct_description(value: str) -> str:
+    value = _DESCRIPTION_CORRECTIONS.get(value, value)
+    for stale, corrected in _DESCRIPTION_FRAGMENT_CORRECTIONS.items():
+        value = value.replace(stale, corrected)
+    return value
 
 
 def correct_known_description_drift(node):
@@ -114,13 +156,13 @@ def correct_known_description_drift(node):
     if isinstance(node, dict):
         for key, value in node.items():
             if isinstance(value, str):
-                node[key] = _DESCRIPTION_CORRECTIONS.get(value, value)
+                node[key] = _correct_description(value)
             else:
                 correct_known_description_drift(value)
     elif isinstance(node, list):
         for index, value in enumerate(node):
             if isinstance(value, str):
-                node[index] = _DESCRIPTION_CORRECTIONS.get(value, value)
+                node[index] = _correct_description(value)
             else:
                 correct_known_description_drift(value)
 

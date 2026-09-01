@@ -91,9 +91,21 @@
             "pages": [
               "observability/overview",
               "observability/live-view",
-              "observability/telemetry",
-              "observability/recordings",
-              "observability/frames"
+              "observability/recordings"
+            ]
+          },
+          {
+            "group": "Telemetry",
+            "icon": "signal-stream",
+            "pages": [
+              "telemetry/overview",
+              "telemetry/get-started",
+              "telemetry/understand-a-trace",
+              "telemetry/live",
+              "telemetry/retrieve",
+              "telemetry/frames",
+              "telemetry/data-controls",
+              "telemetry/reliability"
             ]
           },
           {
@@ -314,7 +326,19 @@
     },
     {
       "source": "/observability/events",
-      "destination": "/observability/frames"
+      "destination": "/telemetry/retrieve"
+    },
+    {
+      "source": "/observability/telemetry",
+      "destination": "/telemetry/live"
+    },
+    {
+      "source": "/observability/frames",
+      "destination": "/telemetry/retrieve"
+    },
+    {
+      "source": "/observability/cost",
+      "destination": "/telemetry/understand-a-trace"
     },
     {
       "source": "/platform/organizations",

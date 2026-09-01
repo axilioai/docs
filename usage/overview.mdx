@@ -132,6 +132,40 @@ and billing processing state for each phone session.
   </Tab>
 </Tabs>
 
+### Filter, order, and page session usage
+
+`start_date` and `end_date` are required RFC 3339 timestamps. A session-usage
+request also supports:
+
+- `session_status_filter`;
+- `processed_status_filter`;
+- `workflow_id`;
+- `allocated_by`;
+- `search`;
+- `limit` from 1 through 100, defaulting to 50; and
+- a nonnegative `offset`, defaulting to 0.
+
+Use `order_by` with one of `allocated_at`, `deallocated_at`, `duration`,
+`cost_microdollars`, `session_status`, `processed_status`, `allocated_by`,
+`session_id`, or `workflow_id`, followed optionally by `asc` or `desc`. The
+default is `allocated_at desc`.
+
+The response contains `sessions`, `total`, `limit`, and `offset`. Continue
+requesting pages until you have consumed `total`.
+
+Each row identifies the session, workflow, and phone and reports session,
+inference, and total microdollar cost. It can also include allocation and
+deallocation time, duration, session and processing status, billing plan,
+allocation source, and session metadata. An interactive pending session can
+use an empty `workflow_id` because it was not created by a workflow.
+
+<Warning>
+  Read `processed_status` before interpreting cost. A numeric zero on a
+  pending row is not proof that the finalized session was free. Inference-cost
+  lookup is also best effort, so a point-in-time total can temporarily omit an
+  inference component.
+</Warning>
+
 The CLI currently exposes aggregate metrics and inference rows, but not the
 session-usage table. Use the dashboard, an SDK, or REST for this view.
 
@@ -201,6 +235,9 @@ equals 1,000,000 microdollars.
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Telemetry dashboard" icon="diagram-project" href="/telemetry/understand-a-trace">
+    Relate point-in-time operation costs to one session's execution.
+  </Card>
   <Card title="Billing" icon="credit-card" href="/billing/overview">
     Understand dedicated rentals, balance, and payment actions.
   </Card>

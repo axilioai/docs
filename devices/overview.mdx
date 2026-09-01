@@ -110,8 +110,8 @@ An allocation returns a `phone_id`, `session_id`, `control_url`, and
 live view:
 
 - `control_url` connects to the Device Control Protocol.
-- `telemetry_url` connects to the live Telemetry stream. The URL is still
-  present when `telemetry=false`, but that session emits no frames.
+- `telemetry_url` connects to [live Telemetry](/telemetry/live). The URL is
+  still present when `telemetry=false`, but that session emits no frames.
 - `live_view_url` opens the hosted interactive viewer when live view is
   enabled.
 
@@ -134,5 +134,8 @@ requires Axilio sign-in and membership in the session's organization.
   </Card>
   <Card title="Control a phone" icon="hand-pointer" href="/driver/overview">
     Use the mobile driver after allocation.
+  </Card>
+  <Card title="Get started with Telemetry" icon="signal-stream" href="/telemetry/get-started">
+    Follow the session's execution record live and after completion.
   </Card>
 </CardGroup>

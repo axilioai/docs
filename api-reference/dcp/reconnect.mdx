@@ -1,21 +1,20 @@
 ---
 title: "Reconnect and resume"
 sidebarTitle: "Reconnect & resume"
-description: "Recover a raw DCP or Telemetry WebSocket with close classification, cursor resume, replay tolerance, resync, and idempotent command resends."
+description: "Recover a raw DCP WebSocket with close classification, cursor resume, replay tolerance, resync, and idempotent command resends."
 ---
 
 A phone session outlives its individual WebSocket connections. A network path
 can change, a service can restart, or a laptop can switch networks while the
-same allocation remains active. Reconnect to the same `control_url` or
-`telemetry_url` and continue the session.
+same allocation remains active. Reconnect to the same `control_url` and
+continue the session.
 
 <Note>
   The Python and Go mobile drivers implement control reconnect, cursor resume,
-  handshake replay, and idempotent input resends. Their Telemetry helpers also
-  reconnect and resume from cursor checkpoints. Python's Telemetry tail
-  deduplicates replayed frames; Go can surface duplicates and reports an
-  expired replay window through `Stream.Gapped()`. Follow this page when you
-  manage a raw WebSocket yourself.
+  handshake replay, and idempotent input resends. Follow this page when you
+  manage a raw control WebSocket yourself. See
+  [Telemetry reliability](/telemetry/reliability) for the separate read-only
+  stream.
 </Note>
 
 ## Classify the close
@@ -36,8 +35,8 @@ Use exponential backoff with jitter and a bounded attempt budget. On a refused
 WebSocket upgrade, `401` means the credential is invalid and `403` means the
 session is no longer active. Both are terminal for that URL.
 
-The session-scoped URLs remain valid for reconnects while their allocation is
-active. Do not mint a different control URL during a retry.
+The session-scoped control URL remains valid for reconnects while its
+allocation is active. Do not mint a different control URL during a retry.
 
 ## Opt in to cursor checkpoints
 
@@ -48,19 +47,12 @@ opaque checkpoint after each delivered batch:
 { "method": "Axilio.cursor", "params": { "cursor": "<opaque-cursor>" } }
 ```
 
-The Telemetry socket uses a type-tagged transport frame instead:
-
-```json
-{ "type": "CURSOR", "cursor": "<opaque-cursor>" }
-```
-
 Treat a cursor as an opaque string. Store the latest checkpoint only after your
-client has processed all frames that came before it. Never parse or construct a
-cursor.
+client has processed all DCP frames that came before it. Never parse or
+construct a cursor.
 
 Without `resume=1`, the server sends no cursor checkpoints. A fresh control
-connection starts at the live tail. A fresh Telemetry connection replays its
-recent retained window before following live.
+connection starts at the live tail.
 
 ## Present the cursor on reconnect
 
@@ -72,28 +64,16 @@ encode the complete URL:
 
 ```text
 wss://connect.axilio.ai/api/v1/realtime/ws/control?token=...&resume=1&cursor=...
-wss://connect.axilio.ai/api/v1/realtime/ws/telemetry?session_id=...&token=...&resume=1&cursor=...
 ```
 
 Delivery continues strictly after that checkpoint. Resume is **at least once**:
 frames delivered after your last completed checkpoint can arrive again. Your
 client must tolerate duplicates.
 
-For Telemetry, a useful deduplication identity is:
-
-- spans: `(trace_id, span_id, phase)`;
-- logs: the stable session/span/time/body fields; and
-- unknown frames: their complete normalized JSON.
-
-Python's Telemetry helper performs this deduplication for you. Go's Telemetry
-stream can surface duplicates, so apply the same identities in your consumer
-when exactly-once presentation matters.
-
 ## Handle an expired replay window
 
-The replay windows are bounded. The control stream retains roughly two minutes
-and about 100 frames. The Telemetry stream retains roughly ten minutes and about
-2,000 frames.
+The control replay window is bounded. It retains roughly two minutes and about
+100 frames.
 
 When the cursor predates the retained window, the server sends a resync signal
 as the first stream-facing frame and then continues from the live tail:
@@ -108,17 +88,8 @@ as the first stream-facing frame and then continues from the live tail:
 }
 ```
 
-Telemetry uses:
-
-```json
-{ "type": "RESYNC_REQUIRED" }
-```
-
 After a control resync, treat your device view as stale and call
-`Screen.observe` again before deciding the next action. After a Telemetry
-resync, fetch the retained [frame archive](/observability/frames) to fill the
-gap, deduplicate it against frames you already processed, and then continue the
-live tail.
+`Screen.observe` again before deciding the next action.
 
 ## Resend input exactly once
 
@@ -177,12 +148,11 @@ answer them automatically, so you do not need an application-level DCP ping.
 3. On `1001`, `1011`, `1013`, or abrupt loss, retry with bounded jittered
    backoff and the last cursor.
 4. Stop on a terminal close or a `401`/`403` upgrade refusal.
-5. If the server requests a resync, rebuild device state or backfill the frame
-   archive.
+5. If the server requests a resync, rebuild device state.
 6. Keep DCP request IDs monotonic across sockets.
 7. Repeat `Protocol.handshake` after each reconnect.
 8. Reuse the same idempotency key only when resending the same ambiguous input.
-9. Deduplicate frames because cursor replay is at least once.
+9. Tolerate replayed DCP frames because cursor resume is at least once.
 
 ## Next steps
 
@@ -193,10 +163,7 @@ answer them automatically, so you do not need an application-level DCP ping.
   <Card title="DCP message reference" icon="list" href="/api-reference/dcp/reference">
     Review methods, parameters, results, and errors.
   </Card>
-  <Card title="Live Telemetry" icon="signal-stream" href="/observability/telemetry">
-    Use the read-only Telemetry socket and SDK helpers.
-  </Card>
-  <Card title="Telemetry frames" icon="list-check" href="/observability/frames">
-    Backfill a live gap from the retained archive.
+  <Card title="Telemetry reliability" icon="signal-stream" href="/telemetry/reliability">
+    Resume the read-only stream and refill a Telemetry gap.
   </Card>
 </CardGroup>
