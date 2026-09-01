@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AXI-1982 Telemetry compatibility baseline</title>
+<title>AXI-1982 telemetry compatibility baseline</title>
 <style>
   :root {
     --bg: #161618; --surface: #1e1e22; --text: #e6e6e8; --muted: #969aa2;
@@ -66,68 +66,56 @@
 <nav class="toc">
   <h2>Contents</h2>
   <ol>
-    <li><a href="#summary">Executive Summary</a></li>
-    <li><a href="#state">Current State</a></li>
-    <li><a href="#contract">Target Contract</a></li>
-    <li><a href="#approach">Implementation Approach</a></li>
-    <li><a href="#phases">The Phases</a></li>
-    <li><a href="#release">Release Sequence</a></li>
-    <li><a href="#risks">Risks and Trade-offs</a></li>
-    <li><a href="#verify">Verification</a></li>
-    <li><a href="#postdeploy">Post-deployment Agent Test Plan</a></li>
-    <li><a href="#scope">Out of Scope</a></li>
+    <li><a href="#summary">Executive summary</a></li>
+    <li><a href="#state">Current state</a></li>
+    <li><a href="#contract">Minimal contract</a></li>
+    <li><a href="#approach">Implementation</a></li>
+    <li><a href="#alternatives">Alternatives and trade-offs</a></li>
+    <li><a href="#release">Release sequence</a></li>
+    <li><a href="#verify">Staging rubric</a></li>
+    <li><a href="#risks">Risks</a></li>
+    <li><a href="#scope">Out of scope</a></li>
     <li><a href="#tracking">Tracking</a></li>
   </ol>
   <h2>Audience</h2>
-  <p style="color: var(--muted); padding: 0 8px;">Backend, Python SDK, Go SDK, docs, release reviewers, and LLM agents validating AXI-1982 in dev or staging.</p>
+  <p style="color: var(--muted); padding: 0 8px;">Backend, SDK, documentation, and release reviewers for AXI-1982. Derived from the implementation branches and their native regression tests.</p>
 </nav>
 
 <main>
 <header class="doc-header">
-  <h1>AXI-1982 Telemetry compatibility baseline</h1>
-  <p class="subtitle">Accept the cost-map payload already on the wire, and make future frame kinds survivable before a third kind is deployed.</p>
-  <p class="status">Implemented locally — executable post-deploy gate added · 2026-09-01 · AXI-1982</p>
+  <h1>AXI-1982 telemetry compatibility baseline</h1>
+  <p class="subtitle">Match the cost-map schema to the wire and let supported SDKs survive a future telemetry frame kind.</p>
+  <p class="status">Implementation in review · staging evidence pending · 2026-09-01 · AXI-1982</p>
   <div class="callout">
     <div class="callout-title">One-line summary</div>
-    Make the two cost maps nullable in OpenAPI and ergonomic in Python, then add one narrow Python decoding fallback so a page containing a future frame kind remains usable instead of failing as a whole.
+    Keep retention-expired cost maps as raw <code>null</code>, normalize them to <code>{}</code> in Python’s high-level API, and add one forward-compatible Python frame fallback; prove the deployed seam with one narrow staging smoke.
   </div>
 </header>
 
 <section id="summary">
-  <h2>Executive Summary</h2>
-  <p><strong>Decision.</strong> AXI-1982 will establish a compatibility baseline, not redesign the frame model. The backend keeps its current retention-expired wire payload: <code>sdk_call_costs: null</code> and <code>inference_costs: null</code>. OpenAPI will declare those required properties nullable, the Python SDK will regenerate them as optional maps, and the high-level <code>Trace</code> helper will coalesce <code>None</code> to <code>{}</code>. Separately, the Python generated response union will receive a narrowly scoped, regeneration-safe unknown-kind fallback. Go already preserves unknown discriminants as raw JSON and only needs a regression gate.</p>
-  <p><strong>Why both changes belong in the minimal ticket.</strong> Null cost maps cause a failure customers can trigger today. Unknown kinds are the deployment constraint raised in review: without a tolerant baseline, adding a future <code>metric</code> frame can make an otherwise valid retained page unusable in Python. Fixing only nullability removes the present parser error but leaves backend and SDK releases coupled for every future frame kind.</p>
-  <p><strong>What “backend before SDK” means.</strong> This ticket must release one foundational tolerant SDK first. After customers are on that baseline, the backend may emit <code>metric</code> before an SDK release that adds a typed <code>MetricFrame</code>; the baseline SDK exposes it as unknown/raw. This ticket cannot retroactively change old strict SDK installations. Protecting every historical client would require server-side capability negotiation or filtering, which is intentionally outside this slice.</p>
-  <table>
-    <thead><tr><th>Surface</th><th>After AXI-1982</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Raw REST</strong></td><td>Retention-expired maps remain JSON <code>null</code>; <code>frames</code> remains an array.</td></tr>
-      <tr><td><strong>OpenAPI</strong></td><td>Both map properties remain required but accept <code>object | null</code>. Known frame variants remain <code>span | log</code>.</td></tr>
-      <tr><td><strong>Python raw client</strong></td><td>Null maps deserialize as <code>None</code>; an unrecognized non-empty string <code>kind</code> becomes an explicit raw-preserving unknown variant.</td></tr>
-      <tr><td><strong>Python Telemetry helper</strong></td><td><code>Trace.sdk_call_costs</code> and <code>Trace.inference_costs</code> are always dictionaries; unknown frames appear in <code>Trace.unknown</code> and do not discard known siblings.</td></tr>
-      <tr><td><strong>Go SDK</strong></td><td>Existing raw-preserving unknown union behavior remains unchanged and is pinned by an endpoint-level fixture.</td></tr>
-    </tbody>
-  </table>
+  <h2>Executive summary</h2>
+  <p><strong>Decision.</strong> Fix two concrete compatibility failures without redesigning telemetry frames. The backend will describe both required cost maps as nullable because retention-expired responses already return <code>null</code>. Python will expose that raw value as <code>None</code> and preserve its high-level dictionary contract by returning <code>{}</code>. Python will also preserve a frame with a new non-empty string <code>kind</code> as <code>UnknownFrame</code> instead of rejecting the whole page. Go already preserves unknown discriminants and needs only native regression coverage.</p>
+  <p>This is the baseline that permits a later backend frame kind to ship before its typed SDK model. It does not make old strict SDK releases tolerant retroactively. A future producer must wait until this baseline is released and the team accepts its adoption risk.</p>
+  <div class="callout callout-warn">
+    <div class="callout-title">Why documentation alone is insufficient</div>
+    Customers cannot “work with” a response that the generated client rejects before returning it. Documentation can explain raw <code>null</code> and unknown kinds, but it cannot change Pydantic validation or recover known frames from a rejected page.
+  </div>
 </section>
 
 <section id="state">
-  <h2>Current State</h2>
-  <p><em>Evidence snapshot: backend <code>82fc05d9</code> (with <code>origin/main</code> at API <code>0.84.1</code>), platform-python <code>f7bde1a8</code> using Fern Python <code>5.15.0</code>, platform-go <code>2c89948d</code> using Fern Go <code>1.47.2</code>, and docs <code>555c603e</code>, inspected 2026-08-31.</em></p>
+  <h2>Current state</h2>
   <table>
-    <thead><tr><th>Fact</th><th>Primary evidence</th><th>Consequence</th></tr></thead>
+    <thead><tr><th>Fact</th><th>Source of truth</th><th>Customer effect</th></tr></thead>
     <tbody>
-      <tr><td>Retention-expired responses leave both cost maps nil.</td><td><code>axilio/backend/internal/routers/run/frames.go:179-185</code></td><td>Go marshals both required properties as JSON <code>null</code>.</td></tr>
-      <tr><td>OpenAPI currently declares both cost maps as non-null objects.</td><td><code>platform-python/specs/production/openapi.json</code>; generated model at <code>src/axilio/types/run_session_frames_response.py:27-51</code></td><td>Checked-in Python requires <code>Dict[str, int]</code> and raises two validation errors for the real retention payload.</td></tr>
-      <tr><td>The high-level helper already normalizes <code>frames</code>, but not cost maps.</td><td><code>platform-python/src/axilio/platform/_telemetry.py:382-393</code></td><td>After a nullable regeneration, response parsing succeeds but <code>dict.update(None)</code> would become the next failure unless the helper coalesces.</td></tr>
-      <tr><td>The REST frame union is a closed Pydantic discriminated union.</td><td><code>platform-python/src/axilio/types/run_session_frames_response_frames_item.py:64-67</code>; <code>runs/raw_client.py:80-96</code></td><td>A single unknown <code>kind</code> rejects the complete response before the handwritten frame parser can run.</td></tr>
-      <tr><td>Python already has the desired user-facing unknown type.</td><td><code>platform-python/src/axilio/platform/_frames.py:39-80</code></td><td>Live messages can become <code>UnknownFrame(kind, raw)</code>. The missing seam is the generated REST response decoder.</td></tr>
-      <tr><td>Go already has forward-compatible discriminated unions.</td><td><code>platform-go/runs.go:2330-2370</code>; <code>frames_tolerantreader_test.go:36-73</code></td><td>Unknown discriminants survive as raw JSON. Fern documents this generator behavior from Go generator 1.44.0 onward; the repo is on 1.47.2.</td></tr>
-      <tr><td>Only <code>span</code> and <code>log</code> are emitted today.</td><td><code>axilio/commons/go/producttel/framewire.go:15-23,49-64</code></td><td>The tolerance change can ship and soak before any customer sees a third kind.</td></tr>
-      <tr><td>Known-frame fields and role strings are already permissive in first-party SDKs.</td><td><code>frames.go:47-82</code>; Python models use <code>extra="allow"</code>; Go stores extra properties</td><td>No enum or <code>additionalProperties</code> redesign is required to solve these two failures.</td></tr>
+      <tr><td>The retention gate returns before billing lookup and leaves both maps nil.</td><td><code>backend/internal/routers/run/frames.go</code>, <code>listSessionFramesGET</code></td><td>JSON contains two required properties with value <code>null</code>.</td></tr>
+      <tr><td>The generated Python response previously required dictionaries.</td><td><code>src/axilio/types/run_session_frames_response.py</code></td><td>Parsing fails before the customer can inspect <code>retention_expired</code>.</td></tr>
+      <tr><td>The generated Python frame union was closed to <code>span</code> and <code>log</code>.</td><td><code>src/axilio/types/run_session_frames_response_frames_item.py</code></td><td>One unfamiliar frame rejects an otherwise usable page.</td></tr>
+      <tr><td>The high-level Python trace already owns ergonomic aggregation.</td><td><code>src/axilio/platform/_telemetry.py</code>, <code>SessionTelemetry.trace</code></td><td>It is the narrow boundary where raw <code>None</code> can safely become <code>{}</code>.</td></tr>
+      <tr><td>Go’s generated union retains unknown discriminants as raw JSON.</td><td><code>runs.go</code>, <code>RunSessionFramesResponseFramesItem.UnmarshalJSON</code></td><td>No Go production-code workaround is needed.</td></tr>
     </tbody>
   </table>
 
-  <h3>Customer-visible failure A — expired retention</h3>
+  <h3>Customer trigger: retention has expired</h3>
   <pre><code>{
   "frames": [],
   "total": 0,
@@ -137,418 +125,186 @@
   "sdk_call_costs": null,
   "inference_costs": null
 }</code></pre>
-  <p>A customer calls <code>session.telemetry.trace()</code> after the organization’s retention window. The server correctly withholds frames, but the Python client raises while constructing <code>RunSessionFramesResponse</code>. The customer cannot inspect <code>retention_expired</code> because parsing fails before the response is returned.</p>
+  <p>A customer requests an older session through Python. The backend correctly withholds expired telemetry, but the generated model rejects both null maps. The customer receives a parsing exception instead of an empty trace with <code>retention_expired=True</code>.</p>
 
-  <h3>Customer-visible failure B — future kind in a mixed page</h3>
+  <h3>Customer trigger: the backend adds a frame kind</h3>
   <pre><code>{
   "frames": [
-    {"kind":"span", "span_id":"a", "phase":"end", "...":"..."},
-    {"kind":"metric", "name":"cpu.utilization", "value":0.72},
-    {"kind":"log", "body":"finished", "...":"..."}
-  ],
-  "...":"..."
+    {"kind": "span", "span_id": "call-1", "...": "..."},
+    {"kind": "metric", "name": "cpu.utilization", "value": 0.72},
+    {"kind": "log", "body": "finished", "...": "..."}
+  ]
 }</code></pre>
-  <p>A future backend release inserts one <code>metric</code> frame between a valid span and log. Current Python does not return the two frames it understands and skip only the new one; it raises <code>union_tag_invalid</code> for the page. A timeline, cost summary, or export can disappear because one additive item is unfamiliar.</p>
+  <p>Without the baseline, Python rejects the complete page because <code>metric</code> is not a recognized discriminator. The customer loses access to the valid span and log as well. With the baseline, those known siblings remain typed and the metric remains available as raw unknown data until a later SDK adds <code>MetricFrame</code>.</p>
 </section>
 
 <section id="contract">
-  <h2>Target Contract</h2>
-  <div class="callout">
-    <div class="callout-title">Compatibility rule after this ticket</div>
-    Unknown fields, new role-string values, and a new non-empty string frame <code>kind</code> are additive for the supported Python and Go SDK baselines. Python continues to reject malformed known frames. Go preserves its current generated behavior: the discriminant stays known, but omitted required fields decode to zero values rather than being strictly validated.
-  </div>
+  <h2>Minimal contract</h2>
   <table>
-    <thead><tr><th>Input</th><th>Raw SDK result</th><th>High-level helper result</th></tr></thead>
+    <thead><tr><th>Input</th><th>Raw client behavior</th><th>High-level Python behavior</th></tr></thead>
     <tbody>
-      <tr><td>Valid <code>span</code> or <code>log</code></td><td>Existing typed model</td><td>Existing typed model</td></tr>
-      <tr><td>Known kind with a new field</td><td>Typed model plus preserved/accepted extra field</td><td>Typed model; no failure</td></tr>
-      <tr><td>Known kind with a new <code>span_type</code>/<code>log_type</code></td><td>Typed model with string value</td><td>Typed model rendered generically</td></tr>
-      <tr><td>Unknown non-empty string <code>kind</code></td><td>Unknown variant carrying the semantically identical JSON object</td><td><code>UnknownFrame</code> in <code>Trace.unknown</code>; known siblings remain available</td></tr>
-      <tr><td>Missing, null, or non-string <code>kind</code></td><td>Validation error</td><td>Validation error</td></tr>
-      <tr><td>Malformed <code>span</code>/<code>log</code> missing required fields</td><td>Python: validation error, never relabeled unknown. Go: known variant with zero values for omitted fields.</td><td>Python: validation error. Go: caller must not treat generated decoding as full required-field validation.</td></tr>
-      <tr><td>Null cost maps</td><td><code>None</code> in Python; nil map in Go</td><td>Empty dictionaries/maps, with <code>retention_expired</code> retaining the reason</td></tr>
+      <tr><td>Normal response</td><td>Both cost maps are JSON objects; current frames decode as typed <code>span</code> or <code>log</code>.</td><td>Cost maps are dictionaries and all known frames remain available.</td></tr>
+      <tr><td>Retention-expired response</td><td>Both required cost properties may be <code>null</code>; <code>frames</code> is empty and pagination fields remain present.</td><td>Both cost maps are <code>{}</code>; <code>retention_expired</code> remains <code>True</code>.</td></tr>
+      <tr><td>Unknown non-empty string <code>kind</code></td><td>Python preserves the object in an explicit unknown variant. Go retains its existing raw representation.</td><td>Python includes <code>UnknownFrame(kind, raw)</code> without dropping known siblings.</td></tr>
+      <tr><td>Malformed known <code>span</code> or <code>log</code></td><td>Python still raises validation error.</td><td>The fallback must not relabel malformed known data as unknown.</td></tr>
+      <tr><td>Extra field or new role string on a known frame</td><td>Remains additive under the existing SDK behavior.</td><td>No AXI-1982 production change is needed.</td></tr>
     </tbody>
   </table>
-  <p>This boundary is deliberate. “Unknown” means a future discriminator, not malformed JSON. The Python fallback therefore cannot hide a malformed known frame. AXI-1982 does not add stricter validation to Go because that would be a separate generated-SDK behavior change; the post-deploy probe records the current behavior so reviewers do not infer a guarantee that does not exist.</p>
+  <p><strong>Compatibility promise.</strong> After the tolerant SDK baseline is released, a new non-empty string frame kind may precede its typed SDK model. This promise applies to supported baseline-or-newer Axilio SDKs, not every historical client or arbitrary OpenAPI generator.</p>
 </section>
 
 <section id="approach">
-  <h2>Implementation Approach</h2>
+  <h2>Implementation</h2>
 
-  <h3>1. Tell the truth about nullable cost maps</h3>
-  <p>In <code>backend/internal/routers/run/frames.go</code>, annotate <code>SDKCallCosts</code> and <code>InferenceCosts</code> as nullable while keeping them required and removing neither JSON property. Huma already uses <code>nullable:"false"</code> tags elsewhere in the monorepo, so this must be expressed at the source struct rather than by editing a checked-in generated spec. The emitted OpenAPI 3.1 shape should become:</p>
-  <pre><code>"sdk_call_costs": {
-  "type": ["object", "null"],
-  "additionalProperties": {"type": "integer", "format": "int64"}
-}</code></pre>
-  <p>Do not initialize the retention branch to empty maps in this solution. Raw API clients continue to see the exact state the backend emits: “cost lookup was not performed because the trace was withheld.” This is the cofounder’s proposed wire contract, made machine-readable.</p>
-
-  <h3>2. Regenerate Python and normalize only at the ergonomic boundary</h3>
-  <p>Regenerate with the pinned Fern Python generator <code>5.15.0</code>. The two response fields must become required-but-nullable Python values, conceptually <code>Optional[Dict[str, int]]</code>. Then change <code>SessionTelemetry.trace()</code> so its accumulators merge <code>page.sdk_call_costs or {}</code> and <code>page.inference_costs or {}</code>. The raw generated response remains truthful; the high-level <code>Trace</code> remains convenient and stable.</p>
-  <pre><code># Raw response: preserves the wire
-page.sdk_call_costs is None
-
-# High-level result: stable collection contract
-trace.sdk_call_costs == {}
-trace.inference_costs == {}</code></pre>
-
-  <h3>3. Add a Python unknown-kind fallback without weakening all validation</h3>
-  <p>Keep the OpenAPI frame union focused on the variants the server understands today: <code>span</code> and <code>log</code>. Do not add a fake discriminator mapping for arbitrary future values; OpenAPI discriminator mappings are concrete, and a nominal <code>UnknownFrame</code> mapping does not catch <code>metric</code>. Instead, add a deterministic post-generation step in platform-python that changes only <code>RunSessionFramesResponseFramesItem</code>:</p>
+  <h3>Backend and OpenAPI</h3>
   <ul>
-    <li>Generate the normal <code>Log</code> and <code>Span</code> classes from OpenAPI.</li>
-    <li>Append a small <code>..._Unknown</code> model with <code>kind: str</code>, extra fields allowed, and a validator that rejects the known values <code>span</code> and <code>log</code>.</li>
-    <li>Replace the discriminated two-member alias with an ordered plain union: <code>Log | Span | Unknown</code>.</li>
-    <li>Expose a <code>raw</code> view that serializes the unknown model back to the same JSON fields, and route it into the existing public <code>platform.UnknownFrame</code> in <code>SessionTelemetry.trace()</code>.</li>
-    <li>Support Pydantic v1 and v2 using the compatibility helpers already shipped by the SDK.</li>
+    <li>Mark <code>SDKCallCosts</code> and <code>InferenceCosts</code> as nullable at the Huma response struct, while keeping both properties required.</li>
+    <li>Keep the existing retention wire value <code>null</code>. Do not add a second normalization rule in the handler.</li>
+    <li>Pin the generated OpenAPI shape and both normal and retention-expired JSON bodies in router tests.</li>
+    <li>Bump the API contract version with the schema change.</li>
   </ul>
-  <p>The unknown validator is load-bearing. Without it, a malformed object claiming <code>kind:"span"</code> could fail the real span model and then be accepted by the generic fallback. The fallback must accept only values outside the known set.</p>
 
-  <h3>4. Make the post-generation exception safe</h3>
-  <p>Add a platform-python script such as <code>scripts/patch_generated_frames.py</code> and call it immediately after <code>fern generate</code> in the local/CI regeneration path. It must:</p>
+  <h3>Python SDK</h3>
   <ul>
-    <li>match the exact generated union declaration and fail with a useful message if Fern changes the file shape;</li>
-    <li>be idempotent, so running it twice produces no diff;</li>
-    <li>touch only the frame-item module and, if necessary, its public export list;</li>
-    <li>leave known generated model fields entirely generator-owned;</li>
-    <li>have a clean-regeneration test that runs Fern, applies the patch, and requires <code>git diff --exit-code</code>.</li>
+    <li>Regenerate required nullable maps so the raw model accepts and exposes <code>None</code>.</li>
+    <li>Coalesce each page’s missing cost map with <code>{}</code> inside <code>SessionTelemetry.trace()</code>.</li>
+    <li>Patch only the generated response union with an explicit unknown-kind model. The patch is exact, idempotent, regeneration-safe, and rejects known discriminator values.</li>
+    <li>Keep normal generated <code>Log</code> and <code>Span</code> constructors and validation intact.</li>
+    <li>Cover raw nullability, high-level normalization, mixed known/unknown pages, malformed known frames, and patch drift under Pydantic 1 and 2.</li>
+    <li>Record the compatibility change in the Python release notes.</li>
   </ul>
-  <p>This is preferable to adding the whole generated model file to <code>.fernignore</code>. Ignoring the file would duplicate every known span/log field by hand and allow future schema additions to drift silently. A small, fail-closed transformation owns only the one behavior Fern cannot currently express for Python.</p>
 
-  <h3>5. Prove Go instead of redesigning it</h3>
-  <p>Regenerate Go from the nullable spec into its throwaway <code>.gen</code> directory and inspect the public diff before release. Go maps already represent JSON <code>null</code> as nil, and the current generated union preserves an unknown discriminant as raw JSON. Add an endpoint-response fixture containing <code>span, metric, log</code> so the behavior is protected at the page level, not only at the union helper level. If nullable OpenAPI unexpectedly changes a public Go accessor or field shape, stop and review that generated diff rather than accepting it as incidental churn.</p>
+  <h3>Go SDK</h3>
+  <ul>
+    <li>Keep the generated tolerant-reader implementation unchanged.</li>
+    <li>Use native endpoint and high-level telemetry tests to pin null-map and unknown-kind behavior.</li>
+    <li>Do not add a standalone compatibility executable or a second validation framework.</li>
+  </ul>
 
-  <h3>Alternatives considered</h3>
-  <table>
-    <thead><tr><th>Option</th><th>Strongest case</th><th>Why it is not the minimal decision</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Backend returns <code>{}</code></strong></td><td>Fixes all installed clients centrally, including old Python versions, with a tiny server change.</td><td>Does not follow the chosen “document current wire” direction and erases the raw distinction between “not queried” and “queried with no results.” Keep as the fallback if adoption cannot be required.</td></tr>
-      <tr><td><strong>Nullable OpenAPI + Python coalesce</strong></td><td>Exactly describes the existing payload and gives high-level users stable dictionaries.</td><td>Chosen for costs. Requires a Python release, so old installed SDKs remain broken until upgraded.</td></tr>
-      <tr><td><strong>OpenAPI catch-all union member</strong></td><td>Could make the tolerance policy visible to every generator and third-party client.</td><td>A discriminator mapping cannot express arbitrary future strings. Removing the discriminator and adding an open object fallback can alter both SDKs’ public types and may greedily match known frames. Revisit only with generated proof across all supported SDKs.</td></tr>
-      <tr><td><strong>Make every frame a raw dictionary</strong></td><td>Most portable and always forward-compatible.</td><td>Throws away typed <code>span</code>/<code>log</code> ergonomics for every raw SDK customer to solve one extension seam.</td></tr>
-      <tr><td><strong>Disable Python response validation globally</strong></td><td>One generator setting can prevent parser failures.</td><td>Weakens every endpoint and every response, masking unrelated server/schema bugs. The blast radius is much larger than one union.</td></tr>
-      <tr><td><strong>Server capability negotiation</strong></td><td>Can protect even old strict clients by filtering kinds they did not advertise.</td><td>Adds request/version state, caching semantics, and permanent server branching. It is the honest answer if “never break any historical SDK” is required, but it is not minimal.</td></tr>
-    </tbody>
-  </table>
+  <h3>Deployment smoke</h3>
+  <p>Keep one backend-owned, manually dispatched workflow. It runs only from reviewed <code>main</code>, allows only dev or staging, and refuses production. It installs exact candidate SDK refs before credentials exist, converges only dedicated E2E fixtures, mints one key for the run, performs the live assertions, writes redacted evidence, revokes the key in unconditional cleanup, and fails if revocation cannot be confirmed.</p>
+  <p>The smoke proves the deployed OpenAPI, normal wire response, retention-expired wire response, and installed Python behavior. Future-kind and malformed-known behavior stay in deterministic native SDK tests because the deployed backend does not emit a third kind yet.</p>
 </section>
 
-<section id="phases">
-  <h2>The Phases</h2>
+<section id="alternatives">
+  <h2>Alternatives and trade-offs</h2>
   <table>
-    <thead><tr><th>Phase</th><th>Work</th><th>Exit gate</th><th>Status</th></tr></thead>
+    <thead><tr><th>Option</th><th>Why it is attractive</th><th>Decision</th></tr></thead>
     <tbody>
-      <tr><td><strong>0 · Design proof</strong></td><td>Prototype the three-member Python union against Pydantic v1 and v2. Prove valid known, valid unknown, malformed known, missing kind, extra fields, and round-trip behavior. Prototype the post-generation script on a clean Fern 5.15.0 run.</td><td>Known frames remain typed; unknown string kinds preserve all fields; malformed known frames still fail; the patch is idempotent and fail-closed.</td><td><span class="tag tag-amber">implemented · Fern CI pending</span></td></tr>
-      <tr><td><strong>1 · Source contract</strong></td><td>Mark both backend map fields nullable; add retention JSON/spec tests; bump the API version from the actual merge base. Do not change runtime response construction.</td><td>Public spec says required <code>object | null</code>; retention response still emits both properties as <code>null</code>; normal pages still emit objects.</td><td><span class="tag tag-green">verified locally</span></td></tr>
-      <tr><td><strong>2 · Python baseline</strong></td><td>Sync the 0.86.0 spec; add post-generation fallback and CI wiring; coalesce maps in <code>trace()</code>; adapt unknown response items into public <code>UnknownFrame</code>; update sync and async tests; bump the package to 0.20.0.</td><td>Both demonstrated failures are fixed in the new SDK without weakening validation for malformed known frames.</td><td><span class="tag tag-amber">implemented · Fern CI pending</span></td></tr>
-      <tr><td><strong>3 · Go regression</strong></td><td>Sync the 0.86.0 spec; add mixed-kind and null-map fixtures; verify the current generated public shape remains tolerant.</td><td>No unintended public type regression; unknown raw JSON and known siblings survive.</td><td><span class="tag tag-amber">tests green · Fern CI pending</span></td></tr>
-      <tr><td><strong>4 · Docs and release</strong></td><td>Document raw-null versus high-level-empty behavior, unknown-kind preservation, malformed-frame rejection, and the new minimum tolerant SDK versions. Publish Python and Go only after package tests and regeneration checks pass.</td><td>Customers can identify the baseline version and understand what is preserved versus normalized.</td><td><span class="tag tag-amber">docs updated · releases pending</span></td></tr>
-      <tr><td><strong>5 · Post-deploy gate</strong></td><td>Add an idempotent retention fixture and manifest, a raw OpenAPI/wire validator, Python and Go live/replay probes, and a dev/staging-only workflow that builds exact candidate artifacts.</td><td>The workflow can produce redacted evidence for every mandatory live and replay assertion without emitting synthetic telemetry to the deployment.</td><td><span class="tag tag-green">implemented locally</span></td></tr>
-      <tr><td><strong>6 · Deployment guard</strong></td><td>Record the tolerant versions as prerequisites for any ticket that adds a third producer kind. Do not emit <code>metric</code> in AXI-1982.</td><td>A future-kind PR links the fixture, names its baseline SDK requirement, and has an adoption/rollout decision.</td><td><span class="tag tag-blue">planned</span></td></tr>
+      <tr><td>Document the current payload only</td><td>No code or release coordination.</td><td>Rejected. It cannot prevent the current Python parsing exception or recover a mixed page.</td></tr>
+      <tr><td>Return <code>{}</code> from the backend</td><td>Smallest fix for null-map parsing and avoids optional raw fields.</td><td>Not chosen. The team wants to preserve the existing wire distinction: billing lookup did not run when retention withheld the trace. Python normalizes only at its ergonomic boundary.</td></tr>
+      <tr><td>Fix null maps but keep a closed frame union</td><td>Less Python generator customization.</td><td>Rejected. It leaves every future frame-kind deployment coupled to a prior Python release—the exact deployment failure this baseline is meant to remove.</td></tr>
+      <tr><td>Add server-side SDK negotiation or filtering</td><td>Could protect old strict clients too.</td><td>Deferred. It adds request metadata, policy, and server branches for a future compatibility problem; AXI-1982 first establishes a supported tolerant baseline.</td></tr>
+      <tr><td>Build a broad cross-repo evidence platform</td><td>Produces exhaustive provenance and replay artifacts.</td><td>Rejected for this ticket. Native tests already own synthetic edge cases; one live smoke is enough to prove deployment wiring and avoids a second system to maintain.</td></tr>
     </tbody>
   </table>
+
+  <h3>Pros of the chosen approach</h3>
+  <ul>
+    <li>Fixes the customer-visible parsing error while keeping the raw wire contract honest.</li>
+    <li>Prevents one future frame from making all known frames on a page unusable.</li>
+    <li>Keeps validation strict for malformed known frames.</li>
+    <li>Uses each repository’s native tests and leaves only deployed behavior to the live smoke.</li>
+  </ul>
+
+  <h3>Costs we accept</h3>
+  <ul>
+    <li>Raw Python callers must handle <code>None</code> for the two cost maps.</li>
+    <li>Python owns a small fail-closed post-generation exception until its generator supports an open union directly.</li>
+    <li>Unknown frames are preserved but not typed, so callers must inspect <code>kind</code> and raw fields.</li>
+    <li>Older strict SDKs can still fail on a future kind. Release and adoption sequencing remains a product decision.</li>
+    <li>The smoke requires a dedicated fixture and short-lived staging credential, which adds limited operational surface.</li>
+  </ul>
 </section>
 
 <section id="release">
-  <h2>Release Sequence</h2>
-  <p>The order is the compatibility mechanism. The backend need not wait for a typed SDK release for every future kind, but it must wait once for the tolerant baseline.</p>
-  <pre><code>1. Merge nullable OpenAPI + Python/Go tolerance tests
-                ↓
-2. Publish tolerant baseline SDK versions
-                ↓
-3. Document / observe adoption; set the supported minimum
-                ↓
-4. Future backend may emit kind="metric"
-                ↓
-5. Later SDK adds typed MetricFrame (optional for correctness)</code></pre>
-  <ul>
-    <li><strong>Backend API version:</strong> implemented as <code>0.86.0</code>, the next minor after AXI-1992 advanced current <code>main</code> to <code>0.85.0</code>. The <code>0.84.1</code> value above is retained only as the initial 2026-08-31 evidence snapshot.</li>
-    <li><strong>Python package:</strong> implemented as <code>0.20.0</code> because public annotations change and unknown response behavior becomes observable.</li>
-    <li><strong>Go package:</strong> remains <code>0.12.0</code>; the runtime already accepted null maps and unknown discriminants, so this slice adds spec synchronization and regression coverage without manufacturing a new public type.</li>
-    <li><strong>Rollback:</strong> no data migration exists. The backend spec change can be reverted before a third kind ships. A published SDK should be forward-fixed rather than unpublished. A future kind can be disabled at its producer if adoption proves insufficient.</li>
-  </ul>
-  <div class="callout callout-warn">
-    <div class="callout-title">Old clients remain old</div>
-    An installed Python version from before this baseline still fails on null maps and future kinds. If product policy requires a future backend kind to be safe for those versions too, AXI-1982 must expand to server-side negotiation/filtering or revert to the backend <code>{}</code> normalization for the cost-map failure.
-  </div>
-</section>
-
-<section id="risks">
-  <h2>Risks and Trade-offs</h2>
-  <ul>
-    <li><strong>The fix depends on SDK adoption.</strong> The cost parser failure is not fixed for already-installed Python clients. Mitigation: publish and document a clear minimum version; consider the backend <code>{}</code> fallback if retention reads cannot require upgrades.</li>
-    <li><strong>Post-generation code is maintenance.</strong> A Fern output change can break the transformation. Mitigation: exact anchors, idempotency, a clean-regeneration CI gate, and no ownership of generated span/log fields.</li>
-    <li><strong>An undiscriminated union performs more validation work.</strong> Python tries known candidates before the fallback. At the endpoint’s maximum page size of 1,000 and only three members, the expected cost is small; add a fixture benchmark only if tests show material latency.</li>
-    <li><strong>A permissive fallback could hide server bugs.</strong> The explicit “unknown kind only” validator prevents malformed <code>span</code>/<code>log</code> objects from falling through. Missing or non-string kinds remain errors.</li>
-    <li><strong>Raw and high-level cost semantics differ.</strong> Raw Python exposes <code>None</code>; <code>Trace</code> exposes <code>{}</code>. Mitigation: document the boundary and test it. <code>retention_expired</code> remains the authoritative reason.</li>
-    <li><strong>OpenAPI still cannot promise the SDK’s runtime catch-all structurally.</strong> The spec enumerates known server variants, while first-party SDKs implement tolerant reading. Third-party generated clients may remain closed. The raw API docs must continue telling customers to build tolerant readers.</li>
-    <li><strong>Go regeneration may react to nullable maps.</strong> Treat any pointer/accessor churn as a design review, not an automatic generated diff. Go already parses null maps without a schema change to its runtime representation.</li>
-    <li><strong>The post-deploy key is ephemeral on the runner, not automatically expired in the database.</strong> Each run rotates the one dedicated <code>e2e-telemetry-compat</code> key, so no standing plaintext secret lives in GitHub and the previous value stops working. The replacement remains a valid E2E-org key until the next run rotates it. Concurrent runs against the same E2E org could therefore invalidate one another mid-matrix. Mitigation: the checked-in workflow serializes runs per environment with <code>cancel-in-progress: false</code>; never reuse this key outside the compatibility gate, and treat an authentication failure after successful setup as an environment/concurrency failure before blaming the product.</li>
-    <li><strong>The baseline does not authorize a third kind.</strong> It removes a technical coupling for supported SDK versions; it does not decide the product semantics, storage, docs, or rollout of <code>metric</code>.</li>
-  </ul>
+  <h2>Release sequence</h2>
+  <ol>
+    <li><strong>Review native changes.</strong> Complete focused backend, Python, and Go review and CI. Keep the Python and docs PRs in draft while staging evidence is pending; Go may merge because this PR does not change its package version or runtime behavior.</li>
+    <li><strong>Deploy the backend schema fix.</strong> Merge the backend normally and let the reviewed deployment workflow promote that revision to staging. No third frame kind ships in this step.</li>
+    <li><strong>Run the staging smoke.</strong> Test the deployed backend with the exact Python candidate under both supported Pydantic majors. Preserve the redacted result and confirm key revocation.</li>
+    <li><strong>Release the tolerant baseline.</strong> Publish Python <code>0.20.0</code> only after the smoke passes. Go can merge independently because its runtime behavior does not change.</li>
+    <li><strong>Publish customer documentation.</strong> Merge docs only after the backend contract and Python package they describe are available.</li>
+    <li><strong>Gate a future frame kind.</strong> Before emitting <code>metric</code> or another kind, explicitly accept the remaining risk from customers on older SDKs. The backend may then ship before the SDK version that adds a typed model.</li>
+  </ol>
 </section>
 
 <section id="verify">
-  <h2>Verification</h2>
+  <h2>Staging rubric</h2>
+  <p>An LLM agent may dispatch the checked-in workflow after a dev or staging deployment. It must use the reviewed workflow from <code>main</code>, the declared deployment revision, immutable SDK refs, and dedicated E2E data. It must not target production, change customer data, print credentials, or replace a missing fixture with customer identifiers.</p>
   <table>
-    <thead><tr><th>Layer</th><th>Fixture/check</th><th>Pass condition</th></tr></thead>
+    <thead><tr><th>ID</th><th>Automated check</th><th>Pass condition</th></tr></thead>
     <tbody>
-      <tr><td><strong>Backend wire</strong></td><td>Retention-expired handler response</td><td><code>frames=[]</code>, both cost properties present as <code>null</code>, pagination preserved, <code>retention_expired=true</code>.</td></tr>
-      <tr><td><strong>Backend spec</strong></td><td>OpenAPI snapshot/guard</td><td>Both maps required and nullable; frame discriminator still maps known <code>span</code>/<code>log</code>; version bumped; no unrelated surface diff.</td></tr>
-      <tr><td><strong>Python raw sync</strong></td><td>Null-map retention response</td><td>Returns a response model with two <code>None</code> values; no <code>ParsingError</code>.</td></tr>
-      <tr><td><strong>Python high-level</strong></td><td>Same response through <code>SessionTelemetry.trace()</code></td><td>Returns <code>Trace</code> with empty cost dictionaries and <code>retention_expired=true</code>.</td></tr>
-      <tr><td><strong>Python raw sync + async</strong></td><td>Mixed page <code>[span, metric, log]</code></td><td>Page succeeds; order and count stay 3; known items are typed; metric is the unknown variant with every original field.</td></tr>
-      <tr><td><strong>Python high-level</strong></td><td>Same mixed page</td><td>Span/log remain in normal views; metric appears once in <code>Trace.unknown</code>; no item is silently dropped.</td></tr>
-      <tr><td><strong>Python validation</strong></td><td>Malformed known kind; missing/null/non-string kind</td><td>All fail validation. Unknown fallback cannot claim them.</td></tr>
-      <tr><td><strong>Python compatibility</strong></td><td>Pydantic v1 and v2 test matrix</td><td>Identical known/unknown behavior and semantically identical unknown round-trip.</td></tr>
-      <tr><td><strong>Python regen</strong></td><td>Clean Fern 5.15.0 generation → patch twice → diff check</td><td>First patch produces the checked-in exception; second is a no-op; clean regen plus patch reproduces the repository exactly.</td></tr>
-      <tr><td><strong>Go endpoint</strong></td><td>Null-map and mixed-kind response fixtures</td><td>Nil maps are accepted; unknown raw JSON survives; known sibling getters still work; marshal round-trip preserves unknown fields.</td></tr>
-      <tr><td><strong>Docs</strong></td><td>Preview Telemetry frame pages</td><td>Examples distinguish raw <code>null</code> from high-level <code>{}</code>, name minimum SDK versions, and do not imply old clients are retroactively tolerant.</td></tr>
-      <tr><td><strong>Staging</strong></td><td>Read a safe expired session with the released Python baseline; inject a synthetic unknown fixture in SDK tests, not the production stream</td><td>Expired trace returns normally. No third production kind is required to validate this ticket.</td></tr>
+      <tr><td><code>SPEC</code></td><td>Read deployed OpenAPI.</td><td>Both cost-map properties are required and accept exactly object or null with integer values.</td></tr>
+      <tr><td><code>WIRE-NORMAL</code></td><td>Read the dedicated normal session over raw HTTP.</td><td>Both maps are objects, pagination is coherent, and every current frame has known kind <code>span</code> or <code>log</code>.</td></tr>
+      <tr><td><code>WIRE-EXPIRED</code></td><td>Read the dedicated retention-expired session over raw HTTP.</td><td><code>retention_expired=true</code>, <code>frames=[]</code>, both maps are null, and requested limit/offset are preserved.</td></tr>
+      <tr><td><code>PY1-LIVE</code></td><td>Read both sessions using the exact Python candidate with Pydantic 1.</td><td>Raw expired maps are <code>None</code>; high-level maps are <code>{}</code>; normal known frames and maps remain usable.</td></tr>
+      <tr><td><code>PY2-LIVE</code></td><td>Repeat with Pydantic 2.</td><td>The same semantic assertions pass.</td></tr>
+      <tr><td><code>PY-NATIVE</code></td><td>Run focused Python compatibility and patch tests before key creation.</td><td>Mixed future-kind pages preserve known siblings and raw unknown data; malformed known and invalid discriminator values still fail; regeneration patch is idempotent and fail-closed.</td></tr>
+      <tr><td><code>GO-NATIVE</code></td><td>Run focused Go endpoint and telemetry tests before key creation.</td><td>Null maps remain safe and unknown discriminants retain raw JSON without changing existing typed behavior.</td></tr>
+      <tr><td><code>KEY-LIFECYCLE</code></td><td>Mint one run-scoped key after setup and revoke it in unconditional cleanup.</td><td>The key never appears in logs or evidence, revocation is confirmed, and a failed product assertion cannot skip cleanup.</td></tr>
     </tbody>
   </table>
+  <p><strong>Verdict rule.</strong> Report <code>PASS</code> only when every row passes on its first complete run and evidence names the environment, deployment revision, SDK refs, timestamps, and redacted expected/observed values. A missing fixture, missing provenance, skipped required row, retry-only pass, or unconfirmed revocation is not a pass.</p>
+  <p>Write one small machine-readable result plus a human summary. Do not upload raw frame bodies, authorization headers, API keys, customer identifiers, or broad runner directories.</p>
 </section>
 
-<section id="postdeploy">
-  <h2>Post-deployment Agent Test Plan</h2>
-  <div class="callout">
-    <div class="callout-title">Decision</div>
-    Validate the deployed backend with read-only requests, and validate forward-compatible SDK behavior with a local capture/replay server using the exact candidate SDK artifacts. Do not deploy a fake third frame kind, change an organization’s retention policy, edit session timestamps by hand, or use customer sessions merely to make the test possible.
-  </div>
-  <p>This runbook is designed for an LLM agent after the candidate backend reaches dev or staging and the candidate SDK artifacts are available. It produces a machine-readable result and a small redacted evidence bundle. It is intentionally stricter than a manual smoke test: a retry that passes is reported as flaky, a missing fixture is reported as blocked rather than green, and every assertion has a stable test ID.</p>
-  <div class="callout">
-    <div class="callout-title">Implemented entry point</div>
-    Dispatch <code>axilio/.github/workflows/telemetry_compat_postdeploy.yml</code> with the target, exact backend deploy SHA, exact <code>platform-python</code> ref, and exact <code>platform-go</code> ref. The workflow refuses production, converges the dedicated fixture, runs the raw validator, builds both candidate SDK artifacts, executes Python under Pydantic 1 and 2, executes Go, and uploads the redacted evidence bundle for 30 days. An LLM agent may dispatch and inspect this workflow; it should not reimplement the assertions ad hoc.
-  </div>
-
-  <h3>Validation topology and trust boundaries</h3>
+<section id="risks">
+  <h2>Risks</h2>
   <table>
-    <thead><tr><th>Leg</th><th>Shape</th><th>What it proves</th><th>What it may change</th></tr></thead>
+    <thead><tr><th>Risk</th><th>Mitigation or boundary</th></tr></thead>
     <tbody>
-      <tr><td><strong>Spec probe</strong></td><td>Agent → deployed <code>GET /openapi.json</code></td><td>The running artifact advertises API <code>0.86.0</code> and required nullable cost maps.</td><td>Nothing; unauthenticated read.</td></tr>
-      <tr><td><strong>Wire probe</strong></td><td>Agent → deployed <code>GET /api/v1/phones/sessions/{id}/frames</code></td><td>Normal and expired responses have the intended live JSON, pagination, auth, and org scoping.</td><td>Nothing; API-key-authenticated read.</td></tr>
-      <tr><td><strong>SDK live probe</strong></td><td>Candidate Python/Go SDK → deployed frames endpoint</td><td>The packages customers install can parse the actual deployment.</td><td>Nothing; API-key-authenticated read.</td></tr>
-      <tr><td><strong>Capture/replay probe</strong></td><td>Candidate SDK → loopback HTTP server</td><td>A synthetic future kind survives beside known siblings; Python does not hide malformed known frames; Go’s current zero-value behavior is characterized; pagination aggregation remains correct.</td><td>Only files/processes in a temporary local directory.</td></tr>
-      <tr><td><strong>Fixture + credential provisioning</strong></td><td>Existing guarded E2E seeder → exact workflow-owned <code>e2e-dashboard</code> org</td><td>Creates deterministic normal and retention-expired sessions, then rotates the exact <code>e2e-telemetry-compat</code> API key for this run.</td><td>Dedicated E2E corpus and that one named key only; the compatibility rotation never deletes or replaces <code>e2e-baseline</code>.</td></tr>
+      <tr><td>Fern regeneration changes the Python union shape.</td><td>The focused patch fails closed and its native test requires idempotence; update it intentionally during regeneration.</td></tr>
+      <tr><td>The fallback masks malformed known data.</td><td>The unknown model rejects <code>span</code> and <code>log</code>; native tests pin known-frame failures under both Pydantic majors.</td></tr>
+      <tr><td>A future backend kind still breaks old Python releases.</td><td>Do not interpret this patch as universal compatibility. Make future-kind rollout an explicit adoption gate.</td></tr>
+      <tr><td>The staging workflow leaks a durable credential.</td><td>Mint after build/setup, scope it to dedicated E2E data, redact outputs, and require unconditional server-side revocation.</td></tr>
+      <tr><td>Documentation gets ahead of released behavior.</td><td>Keep Python and docs draft until staging passes; publish docs only after package release.</td></tr>
     </tbody>
   </table>
-  <p>The topology is request/response throughout. There is no queue, stream, producer rollout, or live telemetry mutation in this validation. After the guarded setup mutation, all deployed validators are read-only and repeatable. The replay server binds only to <code>127.0.0.1</code>, accepts only the expected paths, serves deterministic JSON, and is destroyed with the temporary workspace.</p>
-
-  <h3>Required invocation contract</h3>
-  <p>The agent must receive these values from the deployment workflow or operator. It must not discover credentials by opening local secret files, print them, or silently substitute production defaults.</p>
-  <p>The checked-in workflow maps its dispatch inputs to these names. Its selected GitHub environment must provide <code>DATABASE_URL</code>, <code>CLICKHOUSE_HOST</code>, <code>CLICKHOUSE_USERNAME</code>, <code>CLICKHOUSE_PASSWORD</code>, and <code>CLICKHOUSE_DATABASE</code>. Missing values fail before seeding. It does <strong>not</strong> require a standing <code>TELEMETRY_COMPAT_API_KEY</code> secret: guarded setup rotates a dedicated key in the exact E2E org and hands the plaintext only to the current runner through a new <code>0600</code> file under <code>RUNNER_TEMP</code>.</p>
-  <table>
-    <thead><tr><th>Input</th><th>Requirement</th><th>Guard</th></tr></thead>
-    <tbody>
-      <tr><td><code>AXI_TEST_ENV</code></td><td>Exactly <code>dev</code> or <code>staging</code>.</td><td>Any other value is <code>BLOCKED_INPUT</code>.</td></tr>
-      <tr><td><code>AXI_BASE_URL</code></td><td>Origin only, with no <code>/api/v1</code> suffix. Staging is <code>https://staging-api.axilio.ai</code>; dev must be supplied explicitly.</td><td>Refuse <code>https://api.axilio.ai</code>, redirects to that origin, unknown hosts, embedded credentials, query strings, or non-HTTPS origins other than loopback dev.</td></tr>
-      <tr><td><code>AXILIO_API_KEY</code></td><td>Run-scoped plaintext for the rotated <code>e2e-telemetry-compat</code> key, read from the runner-temp file immediately before each validator.</td><td>Mask with the workflow command before export; never echo the value or headers, never copy the file into evidence, and remove the file in an unconditional cleanup step.</td></tr>
-      <tr><td><code>AXI_EXPECTED_API_VERSION</code></td><td>The exact deployed public API version; <code>0.86.0</code> for this change.</td><td>Exact equality, not “at least,” so a different deployment cannot accidentally satisfy the run.</td></tr>
-      <tr><td><code>AXI_DEPLOY_SHA</code></td><td>Backend commit reported by the deploy workflow.</td><td>Record as provenance; if unavailable, classify the run <code>INCONCLUSIVE_PROVENANCE</code>.</td></tr>
-      <tr><td><code>AXI_FIXTURE_MANIFEST</code></td><td>Path to the non-secret manifest described below.</td><td>Refuse handwritten IDs without fixture names/environment metadata.</td></tr>
-      <tr><td><code>AXI_PYTHON_ARTIFACT</code></td><td>Exact <code>0.20.0</code> wheel/sdist path, immutable package URL, or commit checkout produced by candidate CI.</td><td>After install, record version, file location, and artifact SHA-256; fail if Python imports a workspace checkout accidentally.</td></tr>
-      <tr><td><code>AXI_GO_SDK_REF</code></td><td>Exact platform-go commit containing the <code>0.86.0</code> spec/tests; package version may remain <code>0.12.0</code>.</td><td>Resolve and record the commit. A floating branch is not acceptable evidence.</td></tr>
-      <tr><td><code>AXI_EVIDENCE_DIR</code></td><td>Empty output directory outside all Git worktrees.</td><td>Refuse an existing non-empty directory; do not modify source repositories during validation.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Fixture contract and readiness dependency</h3>
-  <p>The validator consumes fixtures; it does not manufacture database state. The workflow first invokes the separately guarded <code>scripts/cmd/e2e-seed ensure-telemetry-compat</code> command with <code>--manifest</code>, <code>--seed-revision</code>, and <code>--api-key-file</code>. That command refuses production, rejects organization slugs without the <code>e2e-</code> prefix, and the workflow targets the exact default <code>e2e-dashboard</code> org. It converges the ordinary baseline, selects an existing effective telemetry retention window, and creates or updates only <code>e2e-session-retention-expired</code> with a non-null billing-plan snapshot and an age two days beyond that window. It then emits the versioned manifest, deletes only API keys whose name exactly equals <code>e2e-telemetry-compat</code>, creates one replacement, and writes its plaintext to a new file with mode <code>0600</code>. The normal <code>ensure-baseline</code> and <code>reset</code> commands do not opt into this retention fixture or rotate this key; <code>e2e-baseline</code> is never touched by the compatibility rotation.</p>
-  <table>
-    <thead><tr><th>Fixture</th><th>Required state</th><th>Used by</th></tr></thead>
-    <tbody>
-      <tr><td><code>normal_session</code></td><td>Owned by the E2E org, within retention, terminal, at least three durable known frames, including one span and preferably one log; cost maps are objects.</td><td>Wire shape, ordering, pagination, Python/Go live reads, soak.</td></tr>
-      <tr><td><code>normal_empty_session</code></td><td>Owned by the E2E org, within retention, terminal, no durable frames.</td><td>Successful empty-page collection shape.</td></tr>
-      <tr><td><code>expired_session</code></td><td>Owned by the E2E org, terminal, snapshotted to an existing billing plan with a resolvable telemetry window, and dated two days beyond that window. The session row remains addressable; the validator does not run the retention sweep.</td><td>The exact null-map failure path.</td></tr>
-      <tr><td><code>other_org_session</code> <span class="tag tag-blue">optional</span></td><td>Belongs to a second dedicated E2E org and is not readable by the primary key.</td><td>Positive org-isolation proof; otherwise a random nonexistent ID still proves the not-found shape.</td></tr>
-    </tbody>
-  </table>
-  <pre><code>{
-  "manifest_version": 1,
-  "environment": "staging",
-  "seed_revision": "&lt;git-sha&gt;",
-  "generated_at": "&lt;rfc3339&gt;",
-  "fixtures": {
-    "normal_session": {"id": "&lt;id&gt;", "name": "e2e-session-completed-1", "min_frames": 3},
-    "normal_empty_session": {"id": "&lt;id&gt;", "name": "e2e-session-completed-2"},
-    "expired_session": {"id": "&lt;id&gt;", "name": "e2e-session-retention-expired"},
-    "other_org_session": {"id": "&lt;optional-id&gt;"}
-  }
-}</code></pre>
-  <div class="callout callout-warn">
-    <div class="callout-title">Fixture safety rule</div>
-    Provision the expired state through a reviewed, idempotent seeder change with the existing <code>e2e-</code> slug and non-production guards. Do not have the validating agent update <code>billing_plans</code>, change an organization subscription, backdate a real session, run the retention sweep, or search for an arbitrary old customer session. If the manifest or fixture is absent, report <code>BLOCKED_FIXTURE</code>; do not downgrade or skip the retention assertions.
-  </div>
-  <div class="callout callout-warn">
-    <div class="callout-title">Credential lifecycle trade-off</div>
-    Rotation removes the standing GitHub API-key secret and makes every rerun self-healing, but setup is no longer purely fixture-convergent: it deliberately invalidates the previous compatibility key. The plaintext exists only in the current Linux runner’s <code>0600</code> temp file, is masked before each process receives it, is outside the evidence tree, is never uploaded, and is removed under <code>if: always()</code>. Cleanup removes the file, not the server-side key row; that dedicated key remains valid until the next rotation. The workflow’s per-environment concurrency group, with cancellation disabled, serializes runs so one cannot revoke another’s credential mid-test.
-  </div>
-
-  <h3>Phase A — preflight and deployment identity</h3>
-  <table>
-    <thead><tr><th>ID</th><th>Action</th><th>Pass condition</th></tr></thead>
-    <tbody>
-      <tr><td><code>PRE-01</code></td><td>Parse and normalize <code>AXI_BASE_URL</code>; resolve redirects with credentials omitted.</td><td>Final origin equals the approved dev/staging origin and is not production.</td></tr>
-      <tr><td><code>PRE-02</code></td><td>Validate the fixture manifest schema and environment.</td><td>Environment matches; all required named fixtures have non-empty IDs; manifest is not older than the most recent corpus reset.</td></tr>
-      <tr><td><code>PRE-03</code></td><td>Create isolated Python environments for Pydantic 1 and 2, plus a temporary Go module pinned to <code>AXI_GO_SDK_REF</code>.</td><td>Candidate artifacts install; imported module paths resolve to the isolated environment, not the source worktrees.</td></tr>
-      <tr><td><code>PRE-04</code></td><td>Disable SDK HTTP retries and set a 10-second request timeout.</td><td>A failing assertion is not hidden by automatic replay; retry behavior cannot duplicate evidence.</td></tr>
-      <tr><td><code>PRE-05</code></td><td>Fetch <code>/openapi.json</code> without credentials and record status, elapsed time, ETag/hash, and <code>info.version</code>.</td><td>HTTP 200, valid JSON, exact expected version, and no redirect to another origin.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Phase B — running OpenAPI contract</h3>
-  <table>
-    <thead><tr><th>ID</th><th>Assertion</th><th>Failure means</th></tr></thead>
-    <tbody>
-      <tr><td><code>SPEC-01</code></td><td><code>RunSessionFramesResponse.required</code> contains <code>sdk_call_costs</code> and <code>inference_costs</code>.</td><td>The running schema can omit properties the backend contract says are always present.</td></tr>
-      <tr><td><code>SPEC-02</code></td><td>Each cost property accepts exactly <code>object | null</code>; object values are <code>int64</code>.</td><td>The original Python parsing bug remains in the deployed public contract, or the cost value type drifted.</td></tr>
-      <tr><td><code>SPEC-03</code></td><td>The frames operation exists at <code>/phones/sessions/{session_id}/frames</code>, is <code>GET</code>, and advertises <code>apiKeyAuth</code>.</td><td>The wrong public spec or an internal surface was deployed.</td></tr>
-      <tr><td><code>SPEC-04</code></td><td>The known frame discriminator still maps <code>span</code> and <code>log</code>; no fake <code>metric</code> mapping was added.</td><td>The deployment includes unintended contract scope or a generator-hostile workaround.</td></tr>
-      <tr><td><code>SPEC-05</code></td><td>Store only the relevant schema/operation excerpt and its SHA-256.</td><td>Evidence cannot be tied to the exact public contract tested.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Phase C — deployed wire and access behavior</h3>
-  <p>Issue these calls first with a minimal HTTP client so SDK behavior cannot mask a server regression. Use <code>X-Axilio-Api-Key</code> only from the injected secret and redact headers. Require JSON content type and reject 2xx responses that fail JSON parsing.</p>
-  <table>
-    <thead><tr><th>ID</th><th>Request</th><th>Pass condition</th></tr></thead>
-    <tbody>
-      <tr><td><code>HTTP-01</code></td><td>Normal session, <code>limit=100&amp;offset=0</code>.</td><td>HTTP 200; <code>frames</code> is an array with at least the manifest minimum; <code>retention_expired=false</code>; both cost properties exist and are objects; <code>total ≥ len(frames)</code>; each known frame has a non-empty string <code>kind</code>.</td></tr>
-      <tr><td><code>HTTP-02</code></td><td>Normal session, <code>limit=1&amp;offset=0</code> then <code>offset=1</code>.</td><td>Both pages return at most one item, preserve requested pagination values and the same <code>total</code>, and do not repeat the same frame identity.</td></tr>
-      <tr><td><code>HTTP-03</code></td><td>Normal-empty session.</td><td>HTTP 200; <code>frames=[]</code>; <code>total=0</code>; cost properties are objects, not missing or null; <code>retention_expired=false</code>.</td></tr>
-      <tr><td><code>HTTP-04</code></td><td>Expired session with non-default <code>limit=7&amp;offset=3</code>.</td><td>HTTP 200 and the exact semantic shape: <code>frames=[]</code>, <code>total=0</code>, <code>limit=7</code>, <code>offset=3</code>, <code>retention_expired=true</code>, and both cost properties present as JSON <code>null</code>.</td></tr>
-      <tr><td><code>HTTP-05</code></td><td>Normal session without an API key.</td><td>Authentication failure, never a 2xx and never frame data.</td></tr>
-      <tr><td><code>HTTP-06</code></td><td>Random nonexistent session; optionally repeat with <code>other_org_session</code>.</td><td>Both read as not found to the caller; no ownership metadata or frames leak.</td></tr>
-      <tr><td><code>HTTP-07</code></td><td>Invalid paging: <code>limit=0</code>, <code>limit=1001</code>, <code>offset=-1</code>.</td><td>Each returns validation failure; none reach a successful empty response.</td></tr>
-      <tr><td><code>HTTP-08</code></td><td>Repeat the three successful fixture reads 20 times, concurrency at most 4.</td><td>Zero 5xx/timeouts, stable semantic shapes, and p95 latency recorded. This is a bounded read soak, not a load test.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Phase D — candidate Python package against the deployment</h3>
-  <p>Run the same assertions twice: once with the package’s supported Pydantic 1 line and once with Pydantic 2. Exercise both <code>AxilioApi.runs.sessions_list_frames</code> and the high-level <code>Client.telemetry(session_id).trace()</code>. The agent must print only types, counts, booleans, versions, and redacted IDs.</p>
-  <table>
-    <thead><tr><th>ID</th><th>Action</th><th>Pass condition</th></tr></thead>
-    <tbody>
-      <tr><td><code>PY-01</code></td><td>Raw sync read of the normal session.</td><td>Known items are generated span/log models; maps are dictionaries; no <code>ParsingError</code>.</td></tr>
-      <tr><td><code>PY-02</code></td><td>Raw sync and async reads of the expired session.</td><td>Both return models with <code>retention_expired is True</code>, <code>frames == []</code>, and both cost values <code>is None</code>.</td></tr>
-      <tr><td><code>PY-03</code></td><td>High-level <code>trace()</code> for the expired session.</td><td>No exception; <code>trace.retention_expired is True</code>; spans/logs/unknown are empty; both public cost maps equal <code>{}</code>.</td></tr>
-      <tr><td><code>PY-04</code></td><td>High-level <code>trace()</code> for the normal session.</td><td>Known frame counts agree with raw HTTP; no unknown item appears for today’s backend; cost dictionaries remain dictionaries.</td></tr>
-      <tr><td><code>PY-05</code></td><td>Run <code>summary()</code> and <code>logs()</code> on both fixtures.</td><td>Expired input returns empty/zero summaries without type errors; normal input completes without losing frames.</td></tr>
-      <tr><td><code>PY-06</code></td><td>Confirm package provenance.</td><td><code>axilio.__version__ == 0.20.0</code> where exposed, import path is isolated, and artifact hash matches the input.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Phase E — candidate Go package against the deployment</h3>
-  <p>Build <code>cmd/telemetry-compat-probe</code> from the exact SDK ref. The probe constructs the generated client with the approved API root, <code>option.WithAPIKey</code>, a 10-second HTTP client, redirect refusal, and <code>option.WithoutRetries</code>; it exercises both generated <code>Runs.SessionsListFrames</code> and <code>drivers/telemetry.NewSession(...).Trace</code>.</p>
-  <table>
-    <thead><tr><th>ID</th><th>Action</th><th>Pass condition</th></tr></thead>
-    <tbody>
-      <tr><td><code>GO-01</code></td><td>Generated client reads the normal fixture.</td><td>Maps are usable objects, all current frames are known, and the manifest minimum is met.</td></tr>
-      <tr><td><code>GO-02</code></td><td>Generated client reads the expired fixture with <code>limit=7&amp;offset=3</code>.</td><td>Both maps are nil; retention, empty frames, and pagination match raw HTTP.</td></tr>
-      <tr><td><code>GO-03</code></td><td>High-level telemetry session reads the expired fixture.</td><td><code>RetentionExpired=true</code> with empty spans/logs/unknown and no panic while ranging nil maps.</td></tr>
-      <tr><td><code>GO-04</code></td><td>High-level telemetry session reads the normal fixture.</td><td>Known frame counts meet the manifest minimum and no current backend frame becomes unknown.</td></tr>
-      <tr><td><code>GO-05</code></td><td>Record the requested ref and built binary SHA-256.</td><td>The evidence identifies the exact candidate source and artifact rather than a floating unrecorded checkout.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Phase F — local capture/replay compatibility matrix</h3>
-  <p>The backend emits only <code>span</code> and <code>log</code> today, so an honest post-deploy test cannot obtain <code>metric</code> from it. Start a loopback server and replay a redacted copy of the deployed normal page with deterministic mutations. Point the exact installed SDK artifacts at this server. Never send the synthetic payload to the deployed environment.</p>
-  <table>
-    <thead><tr><th>ID</th><th>Replay case</th><th>Pass condition</th></tr></thead>
-    <tbody>
-      <tr><td><code>REPLAY-01</code></td><td>Insert <code>{"kind":"metric","name":"axi.e2e.synthetic","value":0.72,"nested":{"unit":"ratio"},"tags":["a","b"]}</code> between valid known siblings.</td><td>The page succeeds; known siblings remain typed and ordered; exactly one unknown appears; its semantic JSON equals the inserted object including nested/list fields.</td></tr>
-      <tr><td><code>REPLAY-02</code></td><td>Add new fields and unknown <code>span_type</code>/<code>log_type</code> strings to otherwise valid known frames.</td><td>Known models still parse and expose/retain supported extra data; no item becomes unknown merely because a role string is new.</td></tr>
-      <tr><td><code>REPLAY-03</code> / <code>GO-REPLAY-03</code></td><td>Known <code>kind:"span"</code> and <code>kind:"log"</code> objects missing required fields.</td><td>Python raises <code>ParsingError</code> rather than relabeling either object unknown. Go keeps each known discriminant and exposes zero values for omitted fields; this is recorded as current behavior, not promoted to a validation guarantee.</td></tr>
-      <tr><td><code>REPLAY-04</code></td><td>Missing, empty, null, numeric, object, and array <code>kind</code> values.</td><td>Each fails. Only a non-empty unrecognized string is an unknown future kind.</td></tr>
-      <tr><td><code>REPLAY-05</code></td><td>Expired body with null maps.</td><td>Raw SDK semantics match the live deployment; Python high-level and Go high-level helpers remain empty-collection safe.</td></tr>
-      <tr><td><code>REPLAY-06</code></td><td>Two-page trace: page one contains 1,000 known frames and maps; page two contains one unknown frame and null/empty maps as permitted by the fixture.</td><td>High-level aggregation terminates after page two, keeps all 1,001 items exactly once, preserves costs from page one, and does not call page three.</td></tr>
-      <tr><td><code>REPLAY-07</code></td><td>Unknown object decode → public unknown → JSON serialization.</td><td>Semantic deep equality holds. Key order need not be byte-identical; no field or numeric/string distinction is lost.</td></tr>
-      <tr><td><code>REPLAY-08</code></td><td>Repeat <code>REPLAY-01</code> through Python sync/async and run the Go candidate’s corresponding <code>GO-REPLAY-01..07</code>.</td><td>Pydantic 1, Pydantic 2, Python async, and Go all retain the known span/log plus one unknown with zero silent drops.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Evidence, classification, and promotion gate</h3>
-  <p>Write one immutable evidence directory per run. Never store the API key, its runner-temp file, authorization headers, full customer payloads, raw span attributes, log bodies, or unredacted URLs containing identifiers. The artifact upload must select the evidence directory explicitly rather than a broad runner-temp path. The dedicated E2E fixture names may be recorded; session IDs should be hashed in summaries.</p>
-  <pre><code>axi-1982-evidence/
-  fixtures.json              # versioned E2E manifest consumed by all live probes
-  wire/
-    manifest.json            # environment, deploy SHA, spec + fixture provenance
-    results.json             # PRE/SPEC/HTTP records
-    openapi-excerpt.json     # frames operation + relevant components only
-    wire-shapes.json         # redacted types/counts/nullability/pagination
-    summary.md               # raw deployed verdict
-  python-pydantic-1.json     # live PY-* plus REPLAY-* and artifact provenance
-  python-pydantic-2.json
-  go.json
-</code></pre>
-  <p>Each <code>results.json</code> record contains <code>id</code>, <code>status</code>, <code>classification</code>, <code>started_at</code>, <code>duration_ms</code>, <code>attempts</code>, <code>expected</code>, <code>observed_redacted</code>, and <code>evidence_file</code>. Allowed statuses are <code>PASS</code>, <code>FAIL</code>, <code>FLAKY</code>, <code>BLOCKED</code>, and <code>SKIPPED_OPTIONAL</code>. A mandatory assertion may never be reported as skipped.</p>
-  <table>
-    <thead><tr><th>Classification</th><th>Meaning</th><th>Disposition</th></tr></thead>
-    <tbody>
-      <tr><td><code>PRODUCT_FAILURE</code></td><td>Live spec/wire violates the contract, or a candidate SDK cannot consume the live deployment.</td><td>Do not promote. Investigate deployment/version skew or revert/forward-fix.</td></tr>
-      <tr><td><code>SDK_ARTIFACT_FAILURE</code></td><td>Live wire is correct but candidate package fails capture/replay, provenance, or Pydantic/Go matrix.</td><td>Do not publish/promote the SDK baseline or authorize a future kind.</td></tr>
-      <tr><td><code>ENVIRONMENT_FAILURE</code></td><td>DNS, TLS, database-secret injection, dedicated-key rotation/read, deployment health, or E2E stores are unavailable before the product assertion runs.</td><td>Repair environment and rerun; do not label the product green or red.</td></tr>
-      <tr><td><code>BLOCKED_FIXTURE</code></td><td>Named corpus or manifest is absent/stale, especially the expired session.</td><td>Converge the guarded E2E corpus, then rerun. Never substitute customer data.</td></tr>
-      <tr><td><code>FLAKY_SUITE</code></td><td>An assertion passes only on a second whole-test attempt.</td><td>Treat as failure for promotion until explained; preserve both attempts.</td></tr>
-      <tr><td><code>PASS</code></td><td>Every mandatory test ID passed on its first attempt with complete provenance.</td><td>Dev: candidate is ready for staging. Staging: AXI-1982 backend/SDK behavior is ready for release review.</td></tr>
-    </tbody>
-  </table>
-  <p><strong>Mandatory promotion set:</strong> workflow preflight plus raw <code>PRE-01</code>, <code>PRE-02</code>, <code>PRE-04</code>, <code>PRE-05</code>; <code>SPEC-01..05</code>; <code>HTTP-01..08</code>; <code>PY-01..06</code> and <code>REPLAY-01..08</code> in both Pydantic environments; and <code>GO-01..05</code> plus <code>GO-REPLAY-01..07</code>. <code>PRE-03</code> is satisfied by the workflow’s separate wheel environments and exact-ref Go build, with provenance recorded in their output files. The cross-org half of <code>HTTP-06</code> is optional only until a second E2E-org fixture exists; the nonexistent-ID half is mandatory. No test may be waived merely because the deployment already occurred.</p>
-
-  <h3>LLM-agent execution prompt</h3>
-  <pre><code>You are validating AXI-1982 after deployment to dev or staging.
-
-Read the Post-deployment Agent Test Plan in
-docs/2026-08-31-axi-1982-telemetry-compatibility-baseline.html and execute
-the checked-in telemetry_compat_postdeploy.yml workflow with exact immutable
-inputs. Inspect its evidence for every mandatory test ID; do not substitute
-one-off curl or SDK snippets for a missing check. Treat deployed reads as
-read-only. The workflow may converge only its dedicated e2e- fixture through
-ensure-telemetry-compat and may rotate only the exact e2e-telemetry-compat key
-in the workflow-owned e2e-dashboard org. Refuse production, refuse unknown
-origins, never print secrets, and never alter customer retention, billing plans,
-timestamps, or data. Consume the generated runner-temp key only through the
-checked-in workflow; never upload it, and require unconditional cleanup.
-
-Use the exact backend version, deploy SHA, Python artifact, Go SDK ref, and
-fixture manifest supplied as inputs. Disable SDK retries. Use isolated temp
-environments, and validate Python under both Pydantic 1 and 2. Test the live
-deployment with raw HTTP and both SDKs. Test unknown future kinds only through
-a 127.0.0.1 capture/replay server; never emit them into the deployment.
-
-Write the redacted evidence bundle in the specified directory. Do not call a
-run green if a mandatory fixture is absent, provenance is missing, a test
-passes only on retry, or any mandatory assertion is skipped. Finish with one
-verdict: PASS, PRODUCT_FAILURE, SDK_ARTIFACT_FAILURE, ENVIRONMENT_FAILURE,
-BLOCKED_FIXTURE, FLAKY_SUITE, or INCONCLUSIVE_PROVENANCE. Name every failing
-test ID, expected versus redacted observed behavior, and the safest next step.</code></pre>
 </section>
 
 <section id="scope">
-  <h2>Out of Scope</h2>
+  <h2>Out of scope</h2>
   <ul>
-    <li>Changing the backend retention response from <code>null</code> to <code>{}</code>.</li>
-    <li>Guaranteeing compatibility for Python SDK versions released before the tolerant baseline.</li>
-    <li>Adding <code>metric</code> or any third frame producer, storage record, UI, or typed SDK model.</li>
-    <li>Server-side SDK-version headers, content negotiation, frame filtering, or feature flags.</li>
-    <li>Archive-specific frame types that require <code>phase=end</code>, end time, and status.</li>
-    <li>Separate OpenAPI models for live start, live end, and archived frames.</li>
-    <li>Tightening <code>frames</code> nullability or requiredness.</li>
-    <li>Changing frame/status <code>additionalProperties</code>, or adding enums/open-enum encodings.</li>
-    <li>Changing WebSocket cardinality, reconnect semantics, storage, pagination, retention policy, or billing joins.</li>
-    <li>Making arbitrary third-party OpenAPI generators forward-compatible; the guarantee in this slice covers Axilio’s supported Python and Go SDK baselines.</li>
+    <li>Returning <code>{}</code> instead of <code>null</code> on the raw retention-expired wire.</li>
+    <li>Adding <code>metric</code>, its producer/storage path, or a typed <code>MetricFrame</code>.</li>
+    <li>Guaranteeing future-kind compatibility for SDK releases older than this baseline.</li>
+    <li>Server-side capability negotiation, version headers, frame filtering, or feature flags.</li>
+    <li>Redesigning live versus archived frame schemas, pagination, retention, storage, or billing joins.</li>
+    <li>Creating standalone SDK probes, a general evidence framework, or production monitoring in this ticket.</li>
   </ul>
 </section>
 
 <section id="tracking">
   <h2>Tracking</h2>
-  <p><a href="https://linear.app/axilio/issue/AXI-1982/telemetry-frames-normalize-empty-responses-and-document-current-sdk"><strong>AXI-1982</strong></a> is the minimal implementation ticket and remains a child of <a href="https://linear.app/axilio/issue/AXI-1974/openapi-make-the-telemetry-frame-schema-internally-consistent-and-wire"><strong>AXI-1974</strong></a>. This revision supersedes AXI-1982’s earlier backend-normalization / narrowed-promise proposal: cost nullability moves into OpenAPI and Python, while unknown-kind tolerance becomes a release requirement rather than deferred scope.</p>
-  <p>Predecessor design: <code>axilio/docs/engineering/2026-08-20-telemetry-unified-frame-contract.html</code>. Customer contract: <code>docs/api-reference/versioning.mdx:13-29</code> and <code>docs/observability/frames.mdx:194-217</code>. Generator evidence: <a href="https://buildwithfern.com/learn/sdks/generators/go/changelog">Fern Go changelog</a> (forward-compatible discriminated unions added in 1.44.0); current pinned versions live in each SDK’s <code>fern/apis/backend/generators.yml</code>.</p>
-  <p><strong>Local implementation, updated 2026-09-01.</strong> Backend <code>frames.go</code> now generates required nullable map schemas and API <code>0.86.0</code>; its run-router, server OpenAPI guard, and vet checks pass. Python carries the deterministic post-generation patch, raw/high-level fixtures, map coalescing, and package <code>0.20.0</code>; 35 targeted contract, helper, patch, and post-deploy tests pass under both Pydantic v1 and v2, and targeted Black/Ruff/MyPy checks are clean. Go’s root, telemetry, and new compatibility-probe packages pass targeted test/vet/build with null-map and mixed-kind fixtures. A local Fern <code>--local</code> run was unavailable because Docker is not installed; the checked-in regen workflows now run the exact patch and remain the release gate. Full unrelated suite attempts exposed existing environment dependencies: Windows lacks <code>AF_UNIX</code> for 19 Python driver tests, generated Go WireMock suites expect a server on port 8080, and the pre-existing <code>drivers/mobile</code> wire-freshness test reports <code>wire_gen.go</code> behind the DCP AsyncAPI contract.</p>
-  <p><strong>Post-deploy implementation, 2026-09-01.</strong> The guarded E2E seeder now has an opt-in <code>ensure-telemetry-compat</code> command that converges a retention-expired session, writes a provenance-bearing fixture manifest, and—only when <code>--api-key-file</code> is supplied—rotates the exact <code>e2e-telemetry-compat</code> key without deleting or replacing <code>e2e-baseline</code>. Its file writer uses create-exclusive mode <code>0600</code> and refuses to overwrite a path. <code>scripts/cmd/telemetry-compat-validate</code> implements the raw target/spec/wire checks and redacted evidence. <code>platform-python/scripts/validate_telemetry_compat.py</code> implements live and loopback replay checks under Pydantic 1 and 2. <code>platform-go/cmd/telemetry-compat-probe</code> implements the equivalent live/replay gate while explicitly characterizing Go’s non-strict required-field decoding. <code>.github/workflows/telemetry_compat_postdeploy.yml</code> composes those pieces for dev/staging, serializes runs per environment, builds exact SDK refs, masks and consumes the generated key, uploads only the evidence tree, and always removes the temporary key file. Local unit/replay tests are green. A deployed staging run and its complete evidence matrix remain pending; no standing <code>TELEMETRY_COMPAT_API_KEY</code> environment secret is required.</p>
-  <p><span class="tag tag-amber">Fern regen CI</span> → <span class="tag tag-blue">backend merge/deploy</span> → <span class="tag tag-green">E2E retention fixture + validators</span> → <span class="tag tag-blue">deployed agent validation</span> → <span class="tag tag-blue">Python 0.20.0 release</span> → <span class="tag tag-blue">adoption baseline</span> → <span class="tag tag-blue">future-kind gate</span>. Add PR numbers and deployed/released timestamps here as work lands.</p>
+  <p><a href="https://linear.app/axilio/issue/AXI-1982/telemetry-frames-normalize-empty-responses-and-document-current-sdk"><strong>AXI-1982</strong></a> is the minimal implementation ticket under <a href="https://linear.app/axilio/issue/AXI-1974/openapi-make-the-telemetry-frame-schema-internally-consistent-and-wire"><strong>AXI-1974</strong></a>.</p>
+  <table>
+    <thead><tr><th>Work</th><th>Record</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td>Backend schema, wire tests, and narrow smoke</td><td><a href="https://github.com/axilioai/axilio/pull/2041">axilio #2041</a></td><td><span class="tag tag-amber">in review</span></td></tr>
+      <tr><td>Python nullable maps and tolerant frame fallback</td><td><a href="https://github.com/axilioai/platform-python/pull/49">platform-python #49</a></td><td><span class="tag tag-blue">draft until staging</span></td></tr>
+      <tr><td>Go native compatibility regressions</td><td><a href="https://github.com/axilioai/platform-go/pull/25">platform-go #25</a></td><td><span class="tag tag-amber">in review</span></td></tr>
+      <tr><td>Planning and customer documentation</td><td><a href="https://github.com/axilioai/docs/pull/39">docs #39</a></td><td><span class="tag tag-blue">draft until release</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Final evidence</h3>
+  <p>This is the only mutable evidence record in this document. Update it after the staging run rather than copying revisions or test totals into earlier sections.</p>
+  <table>
+    <thead><tr><th>Evidence</th><th>Final value</th></tr></thead>
+    <tbody>
+      <tr><td>Backend merge and deployed revision</td><td><code>TO BE RECORDED</code></td></tr>
+      <tr><td>Smoke workflow run and redacted artifact</td><td><code>TO BE RECORDED</code></td></tr>
+      <tr><td>Exact Python and Go candidate refs</td><td><code>TO BE RECORDED</code></td></tr>
+      <tr><td>Rubric verdict and any divergence</td><td><code>TO BE RECORDED</code></td></tr>
+      <tr><td>Run-scoped key revocation</td><td><code>TO BE RECORDED</code></td></tr>
+    </tbody>
+  </table>
+  <p><span class="tag tag-amber">review</span> → <span class="tag tag-blue">backend staging deploy</span> → <span class="tag tag-blue">staging smoke</span> → <span class="tag tag-blue">Python release</span> → <span class="tag tag-blue">docs publish</span> → <span class="tag tag-blue">future-kind adoption gate</span></p>
 </section>
 
 <footer>
-  <p>This is minimal in product scope, not casual about compatibility. It fixes the present null-map failure in the layer where the team chose to define it, creates the one tolerant SDK baseline needed to decouple future backend kinds from typed SDK releases, and leaves the broader archive/live schema redesign in AXI-1974.</p>
+  <p>AXI-1982 fixes the current null-map failure and establishes the smallest useful tolerant-reader baseline. Native tests own deterministic compatibility cases; one live smoke owns deployment truth. Broader schema redesign and universal legacy-client compatibility remain with AXI-1974 or a follow-on ticket.</p>
 </footer>
 </main>
 </div>
