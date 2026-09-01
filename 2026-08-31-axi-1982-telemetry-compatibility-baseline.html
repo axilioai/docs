@@ -214,6 +214,7 @@
     <li>Unknown frames are preserved but not typed, so callers must inspect <code>kind</code> and raw fields.</li>
     <li>Older strict SDKs can still fail on a future kind. Release and adoption sequencing remains a product decision.</li>
     <li>The smoke requires a dedicated fixture and short-lived staging credential, which adds limited operational surface.</li>
+    <li>A hard runner loss can prevent GitHub’s cleanup step from running. A stranded key is limited to the E2E organization and is deleted by the next compatibility rotation or nightly corpus reset.</li>
   </ul>
 </section>
 
@@ -258,6 +259,7 @@
       <tr><td>The fallback masks malformed known data.</td><td>The unknown model rejects <code>span</code> and <code>log</code>; native tests pin known-frame failures under both Pydantic majors.</td></tr>
       <tr><td>A future backend kind still breaks old Python releases.</td><td>Do not interpret this patch as universal compatibility. Make future-kind rollout an explicit adoption gate.</td></tr>
       <tr><td>The staging workflow leaks a durable credential.</td><td>Mint after build/setup, scope it to dedicated E2E data, redact outputs, and require unconditional server-side revocation.</td></tr>
+      <tr><td>The runner is lost before unconditional cleanup begins.</td><td>The key reaches only the non-production E2E organization; the next compatibility run rotates it and the nightly dashboard reset deletes all E2E-org keys.</td></tr>
       <tr><td>Documentation gets ahead of released behavior.</td><td>Keep Python and docs draft until staging passes; publish docs only after package release.</td></tr>
     </tbody>
   </table>
