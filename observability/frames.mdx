@@ -156,6 +156,11 @@ Cost maps belong to the response, not to individual frames. Join an SDK-call
 span through its `span_id`. Inference spans carry their inference ID in their
 attributes.
 
+When `retention_expired` is `true`, the raw REST response returns both cost
+maps as `null`: retention withheld the trace before the billing lookup ran.
+The Python `Trace` helper in `axilio>=0.20.0` normalizes those values to empty
+dictionaries, so high-level callers can iterate them without a special case.
+
 ## Frame envelope
 
 A completed span looks like this:
@@ -213,8 +218,10 @@ Build readers that:
 - accept one frame object or an array from the live stream; and
 - avoid treating a new value as a broken trace.
 
-The Python and Go helpers expose unknown frame kinds instead of silently
-dropping them.
+Python `axilio>=0.20.0` and Go `platform-go>=v0.12.0` preserve an unknown frame
+kind instead of failing or silently dropping it. This is the compatibility
+baseline for a backend that may introduce a new kind before an SDK adds its
+typed model; older SDK versions are not retroactively tolerant.
 
 ## Next steps
 
