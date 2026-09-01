@@ -1,44 +1,197 @@
 ---
 title: "API keys"
-sidebarTitle: "API Keys"
-description: "Create, list, and revoke the keys that authenticate the SDK."
+sidebarTitle: "API keys"
+description: "Create, list, replace, and revoke organization API keys."
 ---
 
-API keys authenticate the SDK. Each key belongs to your organization and starts
-with `axl_`.
+API keys authenticate the CLI, SDKs, and REST API. Each key belongs to one
+organization and starts with `axl_`.
+
+Listing, creating, and deleting API keys requires an organization admin.
 
 ## Create a key
 
-```python
-key = client.api_keys.create(name="ci-bot")
-print(key.key_value)   # the secret
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**API Keys**](https://app.axilio.ai/dashboard/axilio/api-keys) after choosing your organization.
+    2. Click **Create Key**.
+    3. Enter a name and create the key.
+    4. Copy the secret before closing the dialog.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio api-keys create ci-bot
+    ```
+
+    Add `-o json` for structured output.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    key = client.api_keys.create(name="ci-bot")
+    print(key.id, key.key_value)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    key, err := api.APIKeys.Create(ctx, &platformgo.APIKeyCreateRequest{
+        Name: "ci-bot",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(key.ID, key.KeyValue)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Create an API key**](/api-reference/rest/api-keys/create-an-api-key): `POST /api-keys`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/api-keys \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"name":"ci-bot"}'
+    ```
+  </Tab>
+</Tabs>
 
 <Warning>
-  `key_value` is shown once, right here. Save it somewhere safe; you can't see it
-  again.
+  Axilio returns the full `key_value` once, when you create the key. Store it in
+  a secret manager. List operations return only a masked preview.
 </Warning>
 
 ## List keys
 
-```python
-keys = client.api_keys.list()
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**API Keys**](https://app.axilio.ai/dashboard/axilio/api-keys) to search
+    by name or preview and inspect creator, last-used time, and creation time.
+  </Tab>
 
-## Regenerate or delete
+  <Tab title="CLI">
+    ```bash
+    axilio api-keys list
+    ```
+  </Tab>
 
-```python
-client.api_keys.regenerate(key_id="key_123")   # new secret, the old one stops working
-client.api_keys.delete(key_id="key_123")
-```
+  <Tab title="Python SDK">
+    ```python
+    keys = client.api_keys.list(limit=50)
+
+    for key in keys.api_keys or []:
+        print(key.id, key.name, key.key_preview, key.last_used_at)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    keys, err := api.APIKeys.List(ctx, &platformgo.APIKeysListRequest{
+        Limit: platformgo.Int64(50),
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List API keys**](/api-reference/rest/api-keys/list-api-keys): `GET /api-keys`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/api-keys?limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## Replace or delete a key
+
+There is no regenerate operation. Create the replacement, update and verify
+every consumer, then delete the old key.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**API Keys**](https://app.axilio.ai/dashboard/axilio/api-keys), then
+       create and save the replacement key.
+    2. Update every consumer and verify it can authenticate.
+    3. Select the old key, click **Delete**, and confirm.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio api-keys create replacement
+    # Save the secret and move consumers before continuing.
+    axilio api-keys delete key_123 --yes
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    replacement = client.api_keys.create(name="replacement")
+    print(replacement.key_value)
+
+    # Move and verify consumers before deleting the old key.
+    client.api_keys.delete("key_123")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    replacement, err := api.APIKeys.Create(ctx, &platformgo.APIKeyCreateRequest{
+        Name: "replacement",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    _, err = api.APIKeys.Delete(ctx, &platformgo.APIKeysDeleteRequest{
+        KeyID: "key_123",
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Create an API key**](/api-reference/rest/api-keys/create-an-api-key): `POST /api-keys`
+    - [**Delete an API key**](/api-reference/rest/api-keys/delete-an-api-key): `DELETE /api-keys/{key_id}`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/api-keys \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"name":"replacement"}'
+
+    # Save the new secret, migrate every consumer, and verify authentication.
+
+    curl --silent --show-error --fail-with-body \
+      --request DELETE \
+      --url https://api.axilio.ai/api/v1/api-keys/key_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+Deleting a key takes effect for subsequent requests. Do not delete the
+credential currently running an unattended migration until the replacement is
+confirmed.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Authentication" icon="lock" href="/authentication">
-    How keys authenticate the SDK.
+    Configure the CLI and SDKs without committing secrets.
   </Card>
-  <Card title="Members" icon="users" href="/org/members">
-    Who's in your organization.
+  <Card title="Organizations" icon="building" href="/org/overview">
+    Understand organization binding and CLI selection.
   </Card>
 </CardGroup>

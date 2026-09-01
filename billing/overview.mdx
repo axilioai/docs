@@ -1,31 +1,68 @@
 ---
-title: "How billing works"
+title: "Billing"
 sidebarTitle: "Overview"
-description: "You pay by the second for the time you use a phone, from a prepaid balance."
+description: "Understand dedicated rentals, inference usage, balance, and invoices."
 ---
 
-Axilio is **pay as you go**. You have a balance, and you spend from it as you use
-phones.
+Billing and usage are related but separate:
 
-- **Device time** is billed **per second**, from when you get a phone to when you
-  return it.
-- **Vision calls** (`find(query=...)`) cost a little extra, billed per call.
-- Everything is itemized, so you always know
-  [where your money went](/observability/cost).
+- [**Usage**](/usage/overview) shows phone sessions, aggregate spend, and
+  individual inference charges.
+- [**Balance, credits, and invoices**](/billing/balance-and-invoices) explains
+  available credit, purchases, expiration, and payment records.
+- **Current plan and plan changes** appear on the
+  [**Billing**](https://app.axilio.ai/dashboard/axilio/billing) page. The current
+  organization plan appears in the summary near the top. Click **Change Plan**
+  to open the plan-selection modal. Its muted gray style does not mean it is
+  disabled. There is no separate **Plans** page or tab in the dashboard.
+- [**Dedicated phone pricing**](/billing/plans) shows the current daily, weekly,
+  and monthly rental prices.
 
-Add funds and they're drawn down as you go. A plan can include a monthly balance
-and set limits like how many runs you can do at once.
+## Organization plans and dedicated rentals
+
+An organization plan is an account-level setting shown on the dashboard's
+**Billing** page. It can determine account terms such as included credit,
+concurrency, and usage pricing. The **Change Plan** modal shows the options
+available to your organization without navigating away from **Billing**.
+The page's tabs are **Dedicated Phones**, **Invoices**, and **Preferences**.
+
+A dedicated rental reserves one specific phone for a daily, weekly, or monthly
+period. It is separate from the organization plan. See
+[Dedicated phone pricing](/billing/plans) for the customer-facing rental
+offering.
+
+## What is billed
+
+| Product | Billing model |
+| --- | --- |
+| Dedicated phone | Flat rental; its sessions add no phone-time charge |
+| Vision inference | Metered per call according to the selected model |
+
+Your balance can contain included credit and purchased credit. See
+[How credits work](/billing/balance-and-invoices#how-credits-work) for spending
+priority, renewal behavior, and expiration.
+
+## Where actions are available
+
+| Action | Dashboard | CLI | Python / Go / REST |
+| --- | --- | --- | --- |
+| Read balance | Yes | Yes | Yes |
+| Read usage | Yes | Metrics and inferences | Yes |
+| List invoices and download PDFs | Yes | <span style={{ fontWeight: 700, opacity: 0.72 }}>No</span> | Yes |
+| Configure auto-recharge and balance alerts | Yes | <span style={{ fontWeight: 700, opacity: 0.72 }}>No</span> | Yes |
+| Add funds or add a payment method | Yes | <span style={{ fontWeight: 700, opacity: 0.72 }}>No</span> | <span style={{ fontWeight: 700, opacity: 0.72 }}>No</span> |
+| Rent a phone or cancel its renewal | Yes | <span style={{ fontWeight: 700, opacity: 0.72 }}>No</span> | Read-only rental APIs |
 
 ## Next steps
 
 <CardGroup cols={3}>
-  <Card title="Balance & invoices" icon="wallet" href="/billing/balance-and-invoices">
-    Check your balance and add funds.
+  <Card title="Usage" icon="chart-line" href="/usage/overview">
+    Review sessions, aggregate spend, and inference rows.
   </Card>
-  <Card title="Plans" icon="layer-group" href="/billing/plans">
-    See and change your plan.
+  <Card title="Balance, credits, and invoices" icon="wallet" href="/billing/balance-and-invoices">
+    Understand credit priority and expiration, add funds, and download invoices.
   </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
-    Where your money goes.
+  <Card title="Dedicated phone pricing" icon="mobile-screen" href="/billing/plans">
+    Compare daily, weekly, and monthly rentals.
   </Card>
 </CardGroup>

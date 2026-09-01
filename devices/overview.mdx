@@ -1,40 +1,141 @@
 ---
-title: "Devices and sessions"
+title: "Phones and sessions"
 sidebarTitle: "Overview"
-description: "A device is a real phone in the cloud. A session is a phone you've borrowed to use."
+description: "Choose a dedicated phone, start a session, and release it when you finish."
 ---
 
-A **device** is a real Android phone in Axilio's cloud. A **session** is a phone
-you've borrowed to use.
+A **phone** is a real Android device reserved for your organization. A
+**session** is the period when someone in your organization holds active
+control of that phone.
 
-You don't keep phones. You borrow one, do your thing, and give it back. You only
-pay for the time you hold it.
+Dedicated phones keep their apps and device state between sessions. You can
+start an interactive session and drive a phone yourself, or let a
+[workflow run](/workflows/overview) create the session. For a workflow run, the
+run ID is also its session ID.
 
-```python
-from axilio.platform import Client
+## Before you allocate
 
-client = Client()
+Open [**Phones**](https://app.axilio.ai/dashboard/axilio/phones) to rent a phone or inspect
+the dedicated phones your organization already rents. A phone must be idle and
+active before a new session can claim it.
 
-with client.session("android") as driver:
-    ...   # the phone is yours inside this block
-# it's returned automatically here
-```
+Availability is a snapshot. Another session can claim an idle phone before
+your allocation request reaches the service, so the allocation result is
+always the authority.
 
-## The basics
+## Start a session
 
-<CardGroup cols={3}>
-  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone.
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions), click
+    **Allocate A Phone**, choose **Use A Dedicated Phone**, and select **Any
+    available** or one exact idle phone.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio phones list
+    axilio sessions start --phone-id ph_123
+    ```
+
+    `axilio phones list` returns the dedicated phones that can be allocated
+    now. Use `axilio phones mine` when you also need to see busy or offline
+    inventory.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+
+    with client.session("android", phone_id="ph_123") as driver:
+        screen = driver.observe()
+    # The phone is released when the block exits.
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        PhoneID:   platformgo.String("ph_123"),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer func() {
+        if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+            PhoneID: allocation.PhoneID,
+        }); err != nil {
+            log.Printf("release phone: %v", err)
+        }
+    }()
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+    - [**Release a phone**](/api-reference/rest/phones/release-a-phone): `POST /phones/{phone_id}:deallocate`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123",
+        "pool": "dedicated"
+      }'
+
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones/ph_123:deallocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    See [Allocate a phone](/devices/allocate) for a complete request and
+    cleanup sequence.
+  </Tab>
+</Tabs>
+
+## What a session gives you
+
+An allocation returns a `phone_id`, `session_id`, `control_url`, and
+`telemetry_url`. It also returns `live_view_url` unless you disabled hosted
+live view:
+
+- `control_url` connects to the Device Control Protocol.
+- `telemetry_url` connects to [live Telemetry](/telemetry/live). The URL is
+  still present when `telemetry=false`, but that session emits no frames.
+- `live_view_url` opens the hosted interactive viewer when live view is
+  enabled.
+
+Treat control and Telemetry URLs, plus token-authenticated live-view URLs, as
+credentials. They are scoped to the session and stop accepting new connections
+after the session ends. An organization-authenticated live-view URL instead
+requires Axilio sign-in and membership in the session's organization.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Allocate a phone" icon="square-plus" href="/devices/allocate">
+    Start and release a session through each supported interface.
   </Card>
-  <Card title="See devices" icon="list" href="/devices/discover">
-    What's free, and which phones are yours.
+  <Card title="Discover phones" icon="list" href="/devices/discover">
+    Find an idle dedicated phone or inspect your complete inventory.
   </Card>
-  <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How borrowing works, and how long you hold a phone.
+  <Card title="Session lifecycle" icon="clock" href="/devices/timeouts">
+    Inspect sessions and understand idle and connection timeouts.
+  </Card>
+  <Card title="Control a phone" icon="hand-pointer" href="/driver/overview">
+    Use the mobile driver after allocation.
+  </Card>
+  <Card title="Get started with Telemetry" icon="signal-stream" href="/telemetry/get-started">
+    Follow the session's execution record live and after completion.
   </Card>
 </CardGroup>
-
-## How it fits with the driver
-
-The Platform gives you the phone. The [driver](/driver/overview) controls it.
-`session()` does both: it borrows a phone and hands you a driver to drive it.

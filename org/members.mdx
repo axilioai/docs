@@ -1,49 +1,114 @@
 ---
-title: "Members"
+title: "Members and invitations"
 sidebarTitle: "Members"
-description: "Invite teammates to your organization and manage their roles."
+description: "Manage organization membership in the dashboard and read member or invitation summaries through the public API."
 ---
 
-Invite teammates to share an organization. Manage members in your
-[dashboard](https://axilio.ai/dashboard), or from the SDK.
+Member and invitation changes are dashboard-only. The public API exposes
+read-only summaries so an integration can audit access without changing the
+organization that issued its key.
 
-<Note>
-  The SDK calls below take your organization ID, which you can find in your
-  dashboard settings.
-</Note>
+## Manage access
 
-## Invite a teammate
+1. Open [**Settings → Members**](https://app.axilio.ai/dashboard/axilio/settings/members) after choosing
+   your organization.
+2. Click **Invite member** to send an invitation.
+3. Use the member row to change a role or remove access.
+4. Use the invitations list to review or cancel outstanding invitations.
 
-```python
-client.org.create_invitation(
-    org_id="org_123",
-    email="teammate@example.com",
-    role="member",
-)
-```
+The CLI, Python SDK, Go SDK, and public REST API cannot invite, change, or remove
+members.
+
+The CLI also has no commands for listing members or invitations. Use the
+dashboard or the read-only public API for those operations.
 
 ## List members
 
-```python
-members = client.org.list_members(org_id="org_123")
-for member in members.members:
-    print(member)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Settings → Members**](https://app.axilio.ai/dashboard/axilio/settings/members)
+    after selecting the organization. Accepted members appear as active rows
+    with their name, email address, role, and join date.
 
-## Change a role or remove someone
+    The dashboard page is available to organization admins.
+  </Tab>
 
-```python
-client.org.update_member_role(org_id="org_123", user_id="user_456", role="admin")
-client.org.remove_member(org_id="org_123", user_id="user_456")
-```
+  <Tab title="Python SDK">
+    ```python
+    members = client.raw.organization.list_members()
 
-## Next steps
+    for member in members.members or []:
+        print(member.email, member.role, member.joined_at)
+    ```
+  </Tab>
 
-<CardGroup cols={2}>
-  <Card title="Organizations" icon="building" href="/org/overview">
-    What an organization is.
-  </Card>
-  <Card title="API keys" icon="key" href="/platform/api-keys">
-    Keys for the organization.
-  </Card>
-</CardGroup>
+  <Tab title="Go SDK">
+    ```go
+    members, err := api.Organization.ListMembers(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, member := range members.Members {
+        fmt.Println(member.Email, member.Role, member.JoinedAt)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List the organization's members**](/api-reference/rest/organization/list-the-organizations-members): `GET /organization/members`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/organization/members \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## List outstanding invitations
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Settings → Members**](https://app.axilio.ai/dashboard/axilio/settings/members)
+    after selecting the organization. Pending invitations appear in the same
+    table as accepted members, with their requested role and invitation date.
+
+    The dashboard page is available to organization admins.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    invitations = client.raw.organization.list_invitations()
+
+    for invitation in invitations.invitations or []:
+        print(invitation.email, invitation.role, invitation.invited_at)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    invitations, err := api.Organization.ListInvitations(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List pending invitations**](/api-reference/rest/organization/list-pending-invitations): `GET /organization/invitations`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/organization/invitations \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+The public members endpoint requires the viewer role or higher. The public
+invitations endpoint requires an organization admin. The dashboard page is
+admin-only for both lists.

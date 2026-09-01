@@ -1,24 +1,50 @@
 ---
 title: "Press a key"
 sidebarTitle: "Keys"
-description: "Press a named key like Enter to submit a form or fire the keyboard's Go / Search."
+description: "Press Enter to submit a form or trigger the keyboard's Go or Search action."
 ---
 
-Some steps need a key press, not a tap — submitting a form, or firing the on-screen
-keyboard's **Go** / **Search**. Use [`key_press`](/driver/reference#driver-key_press)
-with a [`Key`](/driver/key) constant:
+Some steps need a key press instead of a tap. The current named-key set contains
+only Enter.
 
-```python
-from axilio.drivers.mobile import Key
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone tap --query "the Search field"
+    axilio phone type "axilio"
+    axilio phone key enter
+    ```
+  </Tab>
 
-driver.find_text("Search").type_into("axilio")
-driver.key_press(Key.ENTER)   # submit
-```
+  <Tab title="Python SDK">
+    ```python
+    from axilio.drivers.mobile import Key
 
-<Note>
-  `Key.ENTER` is the only named key today; the set grows as real needs appear. To
-  type characters into a field, use [Type](/driver/type) — not `key_press`.
-</Note>
+    field = driver.wait_for_text("Search")
+    field.type_into("axilio")
+    driver.key_press(Key.ENTER)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    field, err := driver.WaitForText("Search", 10*time.Second, false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := field.TypeInto("axilio"); err != nil {
+        log.Fatal(err)
+    }
+    if err := driver.KeyPress(mobile.KeyEnter); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Key presses travel over the session's Device Control Protocol connection. They
+are not REST operations. To type characters into a field, use [Type](/driver/type)
+instead.
 
 ## Next steps
 
@@ -27,6 +53,6 @@ driver.key_press(Key.ENTER)   # submit
     Type text into a field.
   </Card>
   <Card title="Key reference" icon="code" href="/driver/key">
-    Every named-key constant.
+    See the named-key constants in each SDK.
   </Card>
 </CardGroup>

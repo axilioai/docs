@@ -1,0 +1,185 @@
+---
+title: "Telemetry reliability and troubleshooting"
+sidebarTitle: "Troubleshooting"
+description: "Build a gap-aware Telemetry reader and recover from duplicates, interruptions, expiration, and compatibility differences."
+---
+
+Telemetry provides progressive visibility into a session and a retained record
+for later retrieval. Both delivery paths are best effort. Build consumers that
+can tolerate duplicates, detect gaps, and reconcile with the available
+archive.
+
+Telemetry is not an exactly-once or complete audit ledger. Axilio does not
+publish a formal availability, completeness, replay, or durability SLA for
+this data.
+
+## Use the live and retained paths together
+
+The live stream and retained archive are independent delivery paths:
+
+- a frame observed live is not proof that the same record was durably
+  retained;
+- a retained span is not a byte-for-byte replay of its live `start` and `end`
+  messages;
+- reconnect can replay frames you already processed; and
+- moving to the current live tail does not repair an earlier gap.
+
+Use live Telemetry for progressive updates. Use
+`GET /phones/sessions/{session_id}/frames` to reconcile after a gap and after
+the session ends.
+
+## Resume without assuming exactly-once delivery
+
+Opt in to cursor checkpoints with `resume=1`. Store each opaque `CURSOR` value
+only after you have processed every frame that came before it.
+
+On reconnect, preserve the returned URL and its existing parameters. Add or
+replace `resume=1` and `cursor=<opaque-value>`. Never parse, construct, or
+depend on the cursor's encoding.
+
+```text
+wss://<returned-host>/api/v1/realtime/ws/telemetry?session_id=...&token=...&resume=1&cursor=...
+```
+
+The stream can redeliver frames around your last completed checkpoint. A
+consumer that needs exactly-once presentation must deduplicate them locally.
+Useful identities include:
+
+- `(trace_id, span_id, phase)` for a span;
+- stable session, span, timestamp, and body fields for a log; and
+- the complete normalized JSON for an unknown frame.
+
+Python's high-level live reader deduplicates replayed frames. Go can expose
+duplicates to your consumer.
+
+## Recover after a replay gap
+
+The live replay window is bounded, but Axilio does not publish a guaranteed
+duration or entry count.
+
+If the stream sends:
+
+```json
+{ "type": "RESYNC_REQUIRED" }
+```
+
+or an SDK reports a gap:
+
+1. Retrieve every available retained page for the session.
+2. Deduplicate the retained frames against data you already processed.
+3. Rebuild the local trace from the reconciled record.
+4. If the session remains active, attach again and resume from a current
+   checkpoint.
+
+The Go stream exposes this state through `Gapped()`. CLI follow mode and the
+Python helper perform more reconciliation for you.
+
+## Reconnect with a bounded budget
+
+Current first-party readers treat abrupt loss and observed WebSocket `1001`,
+`1011`, or `1013` closes as transient while a session is active. They use
+bounded exponential backoff with jitter.
+
+For a raw client:
+
+- retry transient connection loss with bounded backoff and the last completed
+  cursor;
+- treat a normal `1000` close with reason `session ended` as terminal;
+- treat an attach `401` as a credential problem;
+- treat an attach `403` as terminal for that live URL; and
+- switch to retained retrieval when the session has ended.
+
+<Note>
+  These are observed current signals and first-party retry behavior, not an
+  exhaustive versioned close-code contract. No public numeric
+  size, throughput, viewer, buffer, or slow-consumer limit is currently
+  published.
+</Note>
+
+There is no in-band token refresh. You can reconnect with the same URL while
+it remains valid or mint another URL while the session remains active.
+
+## Account for interface differences
+
+| Interface | Current behavior to account for |
+| --- | --- |
+| Dashboard | Deduplicates and pairs live span phases, then replaces live state with retained history. It retrieves only the first 1,000 retained frames. |
+| CLI | `sessions trace --follow` emits a retained prefix, deduplicated live frames, and a terminal marker. It reconciles across the two paths. |
+| Python SDK | The live reader deduplicates replay and preserves unknown string frame kinds. Released Python `v0.19.0` retained parsing can fail on expired null cost maps or an unknown top-level kind. |
+| Go SDK | Go `v0.12.0` preserves an unknown string kind and accepts expired null maps. Live replay can contain duplicates; use `Gapped()` to decide when to refill. |
+| Raw REST/WebSocket | Your application owns pagination, duplicate tolerance, cursor persistence, unknown-frame handling, retry bounds, and archive reconciliation. |
+
+Do not describe unreleased SDK behavior as available. Check the package version
+used by your application before relying on a compatibility fix.
+
+## Troubleshoot common symptoms
+
+| Symptom | What it can mean | What to do |
+| --- | --- | --- |
+| No live or retained frames | Telemetry was disabled, you lack access, or data was not produced. | Check the direct-allocation or workflow Telemetry setting and your organization access. |
+| Retained request returns `retention_expired=true` | The record is outside its customer access window. | Treat it as expired, not as proof that the session was never observed or that every physical copy was deleted. |
+| Telemetry is withheld without an ordinary expired result | Axilio could not establish retention eligibility and failed safe. | Treat the failure separately from an empty trace. Retry only with a bounded policy and contact support if it persists. |
+| Live frames repeat after reconnect | Duplication-permitting replay. | Deduplicate before applying the frame to your local trace. |
+| `RESYNC_REQUIRED` or `Gapped()` | Your cursor is outside the available live replay or another gap was detected. | Re-fetch all available retained pages and reconcile. |
+| Timeline or Console stops on a large session | The Dashboard currently reads one page of at most 1,000 frames. | Use CLI, Python, Go, or paginated REST to retrieve the complete available archive. |
+| An unfamiliar field or `span_type`/`log_type` appears | A forward-compatible addition. | Preserve, render generically, or ignore the value. Do not make these strings closed enums. |
+| An unfamiliar top-level `kind` appears | Support depends on the reader and released version. | Use a raw/tolerant path when your SDK cannot preserve it. |
+| SDK input/output is in raw frames but not Dashboard details | The Dashboard exposes curated fields rather than every raw attribute. | Inspect raw REST or SDK frames. |
+| The live URL stops after completion | Live access is scoped to the active session. | Switch to retained frames. |
+| A run response has no `logs` field | Run output moved to Telemetry. | Use **Console**, `sessions trace`, `runs watch`, or an SDK log helper. |
+| A workflow was deleted | Session history remains separately addressable while retained. | Query by `session_id` instead of through the workflow. |
+| A cost is zero or absent | It can be genuinely zero, pending, unavailable, too small to register at the reported precision, omitted by a failed lookup, or outside retention. | Check map-key presence, `retention_expired`, usage `processed_status`, and finalized billing records. Do not infer “free” from zero alone. |
+
+For REST failures, parse the Problem Details response and follow
+[Errors](/reference/errors). A missing session and one outside your
+organization are intentionally indistinguishable. Do not interpret an
+authorization, validation, rate-limit, or internal failure as an empty trace.
+
+## Build a tolerant reader
+
+A resilient custom reader should:
+
+1. accept one frame object or an array from the live transport, while
+   recognizing that current producers normally send individual objects;
+2. ignore or preserve unknown fields within a known frame;
+3. treat new `span_type` and `log_type` values as additive;
+4. preserve an unknown nonempty string `kind` as raw JSON;
+5. reject malformed data without discarding other valid frames when possible;
+6. persist cursors only after processing preceding frames;
+7. tolerate replayed frames;
+8. paginate the retained archive to `total`; and
+9. avoid relying on a deterministic order among frames with equal timestamps.
+
+See the [Frame reference](/telemetry/frames) for the current span and log
+shapes.
+
+## Claims to avoid
+
+Do not build or document an assumption that:
+
+- every produced frame reaches every live subscriber;
+- every event appears in retained history;
+- every live span receives an end frame;
+- replay is unlimited or time-guaranteed;
+- delivery is exactly once;
+- the Dashboard displays every retained frame or raw attribute;
+- all readers preserve an unknown top-level frame kind;
+- zero cost proves finalized free usage; or
+- the access-expiration timestamp is a physical-deletion deadline.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Live telemetry" icon="signal-stream" href="/telemetry/live">
+    Connect, mint access, and follow an active session.
+  </Card>
+  <Card title="Retrieve telemetry" icon="download" href="/telemetry/retrieve">
+    Refill from the retained record and page to completion.
+  </Card>
+  <Card title="Frame reference" icon="brackets-curly" href="/telemetry/frames">
+    Build a version-aware frame decoder.
+  </Card>
+  <Card title="Data controls" icon="shield" href="/telemetry/data-controls">
+    Control capture and protect sensitive Telemetry data.
+  </Card>
+</CardGroup>

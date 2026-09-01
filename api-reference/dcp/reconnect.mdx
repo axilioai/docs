@@ -1,0 +1,169 @@
+---
+title: "Reconnect and resume"
+sidebarTitle: "Reconnect & resume"
+description: "Recover a raw DCP WebSocket with close classification, cursor resume, replay tolerance, resync, and idempotent command resends."
+---
+
+A phone session outlives its individual WebSocket connections. A network path
+can change, a service can restart, or a laptop can switch networks while the
+same allocation remains active. Reconnect to the same `control_url` and
+continue the session.
+
+<Note>
+  The Python and Go mobile drivers implement control reconnect, cursor resume,
+  handshake replay, and idempotent input resends. Follow this page when you
+  manage a raw control WebSocket yourself. See
+  [Telemetry reliability](/telemetry/reliability) for the separate read-only
+  stream.
+</Note>
+
+## Classify the close
+
+Use the socket close code to decide whether to retry:
+
+| Close | Meaning | Client action |
+| --- | --- | --- |
+| `1001` Going Away | The service is shutting down or its ping timed out. | Reconnect with bounded backoff. |
+| `1013` Try Again Later | A draining service refused this connection. | Retry the same URL with bounded backoff. |
+| `1011` Internal Error | The service failed while setting up or handling the connection. | Retry with bounded backoff. |
+| Abrupt loss | The network path ended without a close frame. | Treat it like a retryable `1001`. |
+| `1000` with `session ended` | The allocation ended. | Stop. |
+| `1000` with `Superseded` | A newer connection replaced this control connection. | Stop this connection. |
+| `4409` with `control_held` | Another code-control surface holds the session. | Stop and surface the conflict. Do not retry-loop. |
+
+Use exponential backoff with jitter and a bounded attempt budget. On a refused
+WebSocket upgrade, `401` means the credential is invalid and `403` means the
+session is no longer active. Both are terminal for that URL.
+
+The session-scoped control URL remains valid for reconnects while its
+allocation is active. Do not mint a different control URL during a retry.
+
+## Opt in to cursor checkpoints
+
+Add `resume=1` to the URL on the first connection. The server then sends an
+opaque checkpoint after each delivered batch:
+
+```json
+{ "method": "Axilio.cursor", "params": { "cursor": "<opaque-cursor>" } }
+```
+
+Treat a cursor as an opaque string. Store the latest checkpoint only after your
+client has processed all DCP frames that came before it. Never parse or
+construct a cursor.
+
+Without `resume=1`, the server sends no cursor checkpoints. A fresh control
+connection starts at the live tail.
+
+## Present the cursor on reconnect
+
+Reconnect to the original URL. Parse it with a standard URL query API, preserve
+its existing parameters, and set or replace `resume=1` and `cursor` with the
+last completed checkpoint. Pass the opaque cursor unchanged as the parameter
+value so the API encodes only that value. Never concatenate it into the URL or
+encode the complete URL:
+
+```text
+wss://connect.axilio.ai/api/v1/realtime/ws/control?token=...&resume=1&cursor=...
+```
+
+Delivery continues strictly after that checkpoint. Resume is **at least once**:
+frames delivered after your last completed checkpoint can arrive again. Your
+client must tolerate duplicates.
+
+## Handle an expired replay window
+
+The control replay window is bounded. It retains roughly two minutes and about
+100 frames.
+
+When the cursor predates the retained window, the server sends a resync signal
+as the first stream-facing frame and then continues from the live tail:
+
+```json
+{
+  "method": "Axilio.resyncRequired",
+  "params": {
+    "requested": "<presented-cursor>",
+    "oldest": "<oldest-retained-cursor>"
+  }
+}
+```
+
+After a control resync, treat your device view as stale and call
+`Screen.observe` again before deciding the next action.
+
+## Resend input exactly once
+
+Cursor resume protects frames sent **to** your client. A connection can still
+drop after you send an input but before its response arrives. At that point,
+you do not know whether the phone executed it.
+
+Give every logical `Touch.*` and `Keyboard.*` command a client-generated
+`idempotencyKey`:
+
+```json
+{
+  "id": 18,
+  "method": "Touch.tap",
+  "params": {
+    "x": 120,
+    "y": 640,
+    "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+
+Generate one unique key per logical input. If its result is ambiguous after a
+drop, reconnect and resend the same command with a new request `id` and the
+same `idempotencyKey`. The session records the first response and returns it to
+the duplicate without executing the input again.
+
+Do not reuse an idempotency key for a different command. Read operations such
+as `Screen.observe`, `Screen.screenshot`, `Screen.find`, and `Device.info` do
+not need a key.
+
+## Keep request IDs monotonic
+
+Never reuse a DCP request `id` during the lifetime of your client. A resumed
+connection can replay a response created before the drop. Reusing its `id`
+could attach that old response to new work.
+
+Continue one monotonically increasing request counter across reconnects. Match
+each response by `id`, ignore id-less notifications after handling them, and
+discard a stale response whose `id` belongs to an already-resolved request.
+
+## Repeat the handshake
+
+Capability state belongs to a connection. After every reconnect, send
+[`Protocol.handshake`](/api-reference/dcp/reference#protocol-handshake) and
+process its response before sending more work. Re-evaluate `capabilities`
+instead of assuming they match the prior socket.
+
+The server sends WebSocket pings for keepalive. Standard WebSocket libraries
+answer them automatically, so you do not need an application-level DCP ping.
+
+## Raw client checklist
+
+1. Reconnect to the original session URL with the last completed cursor.
+2. Process cursor notifications and persist only completed checkpoints.
+3. On `1001`, `1011`, `1013`, or abrupt loss, retry with bounded jittered
+   backoff and the last cursor.
+4. Stop on a terminal close or a `401`/`403` upgrade refusal.
+5. If the server requests a resync, rebuild device state.
+6. Keep DCP request IDs monotonic across sockets.
+7. Repeat `Protocol.handshake` after each reconnect.
+8. Reuse the same idempotency key only when resending the same ambiguous input.
+9. Tolerate replayed DCP frames because cursor resume is at least once.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Drive a phone with raw DCP" icon="bolt" href="/api-reference/dcp/raw-usage">
+    Open the control socket and send your first command.
+  </Card>
+  <Card title="DCP message reference" icon="list" href="/api-reference/dcp/reference">
+    Review methods, parameters, results, and errors.
+  </Card>
+  <Card title="Telemetry reliability" icon="signal-stream" href="/telemetry/reliability">
+    Resume the read-only stream and refill a Telemetry gap.
+  </Card>
+</CardGroup>

@@ -1,51 +1,172 @@
 ---
 title: "Sessions and timeouts"
-sidebarTitle: "Sessions"
-description: "How borrowing a phone works, and how long you hold one."
+sidebarTitle: "Session lifecycle"
+description: "Inspect sessions and distinguish idle timeout, connection timeout, and the maximum session duration."
 ---
 
-A **session** is one borrowed phone. It starts when you get the phone and ends
-when you give it back.
+A session starts when Axilio allocates a phone. The common customer-visible
+boundaries are manual release, an optional idle timeout, and the platform's
+maximum session duration. Axilio can also close a session when its phone
+becomes unavailable.
 
-## Start and end
+## Inspect sessions
 
-A `with` block is the simplest session. The phone is yours inside it, and it goes
-back when the block ends, even if your code raises an error:
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions) to filter active and
+    completed sessions. Open a row for its phone, source, workflow, recording,
+    files, live view, and Telemetry.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio sessions list --remote
+    axilio sessions list --history
+    axilio sessions get sess_123
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    sessions = client.phones.list_sessions(limit=20)
+    session = client.phones.get_session("sess_123")
+
+    print(session.status, session.phone_id, session.recording_status)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    sessions, err := api.Phones.ListSessions(ctx, &platformgo.PhonesListSessionsRequest{
+        Limit: platformgo.Int64(20),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    session, err := api.Phones.GetSession(ctx, &platformgo.PhonesGetSessionRequest{
+        SessionID: "sess_123",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(sessions.Total, session.Status, session.PhoneID, session.RecordingStatus)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List sessions**](/api-reference/rest/phones/list-sessions): `GET /phones/sessions`
+    - [**Get a session**](/api-reference/rest/phones/get-a-session): `GET /phones/sessions/{session_id}`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/phones/sessions?limit=20" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/phones/sessions/sess_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## Idle timeout
+
+`ttl.idle_timeout_seconds` closes a session after that many seconds without a
+live user connection. A connected control, live-view, or Telemetry viewer keeps
+the session active; after the last viewer disconnects, the idle clock resumes.
+A session that was never connected is idle from allocation time.
+
+Omit the value, or pass a nonpositive value, for no idle timeout. Positive
+values are clamped to 1–3,600 seconds. A session without an idle timeout still
+ends at the one-hour platform cap.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions), click
+    **Allocate A Phone**, and enter **idle timeout (seconds)**. Leave it blank
+    for no idle timeout.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from axilio import PhoneSessionTtlOptions
+
+    allocation = client.phones.allocate(
+        phone_type="android",
+        phone_id="ph_123",
+        ttl=PhoneSessionTtlOptions(idle_timeout_seconds=300),
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
+        PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
+        PhoneID:   platformgo.String("ph_123"),
+        TTL: &platformgo.PhoneSessionTTLOptions{
+            IdleTimeoutSeconds: platformgo.Int64(300),
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer func() {
+        if _, err := api.Phones.Deallocate(ctx, &platformgo.PhonesDeallocateRequest{
+            PhoneID: allocation.PhoneID,
+        }); err != nil {
+            log.Printf("release phone: %v", err)
+        }
+    }()
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones:allocate \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "phone_type": "android",
+        "phone_id": "ph_123",
+        "pool": "dedicated",
+        "ttl": {
+          "idle_timeout_seconds": 300
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+The CLI does not currently expose the idle-timeout option. A CLI-started
+session remains active until you stop it or the maximum duration is reached.
+
+## Connection timeout is different
+
+Python's `open_timeout` controls how long the SDK waits to connect to the
+allocated phone. It does not set the session lifetime, wait for an app screen,
+or change a command deadline:
 
 ```python
-with client.session("android") as driver:
-    ...   # session is open
-# session closed, phone returned
+with client.session("android", phone_id="ph_123", open_timeout=20) as driver:
+    print(driver.observe())
 ```
 
-## You pay for the time you hold it
+## Release reliably
 
-Billing runs from when you get the phone to when you return it. So return phones as
-soon as you're done. [More on billing](/billing/overview).
+Use `client.session()` when Python owns the whole lifetime. For direct
+allocations, put deallocation in `finally` or `defer`. With the CLI, run
+`axilio sessions stop <session-id> --yes`.
 
-## Don't leak phones
-
-If you [get a phone yourself](/devices/allocate) with `allocate`, you have to call
-`deallocate`, or the phone stays yours and keeps costing you. A `session()` does
-this for you.
-
-## Connecting
-
-When a session starts, Axilio connects to the phone. `open_timeout` sets how many
-seconds to wait for that connection (10 by default):
-
-```python
-with client.session("ANDROID", open_timeout=20) as driver:
-    ...
-```
-
-## Next steps
-
-<CardGroup cols={2}>
-  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone.
-  </Card>
-  <Card title="Observability" icon="video" href="/observability/overview">
-    Watch and replay your sessions.
-  </Card>
-</CardGroup>
+Closing a Dashboard tab does not release the phone. End the session with
+**Release** or **Deallocate**. Ending a session frees its control lease; it does
+not erase the dedicated phone's apps or state and does not end its rental.

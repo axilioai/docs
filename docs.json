@@ -50,13 +50,13 @@
             "pages": [
               "index",
               "introduction",
+              "cli",
               "quickstart",
-              "authentication",
-              "cli"
+              "authentication"
             ]
           },
           {
-            "group": "Devices & Sessions",
+            "group": "Phones and Sessions",
             "icon": "mobile",
             "pages": [
               "devices/overview",
@@ -67,7 +67,7 @@
             ]
           },
           {
-            "group": "Workflows & Runs",
+            "group": "Workflows and Runs",
             "icon": "diagram-project",
             "pages": [
               "workflows/overview",
@@ -77,38 +77,60 @@
             ]
           },
           {
+            "group": "Files",
+            "icon": "folder-open",
+            "pages": [
+              "files/overview",
+              "files/move-files",
+              "files/session-captures"
+            ]
+          },
+          {
             "group": "Observability",
             "icon": "video",
             "pages": [
               "observability/overview",
               "observability/live-view",
-              "observability/embed-live-view",
-              "observability/telemetry",
-              "observability/recordings",
-              "observability/events",
-              "observability/cost"
+              "observability/recordings"
             ]
           },
           {
-            "group": "Account & Billing",
+            "group": "Telemetry",
+            "icon": "signal-stream",
+            "pages": [
+              "telemetry/overview",
+              "telemetry/get-started",
+              "telemetry/understand-a-trace",
+              "telemetry/live",
+              "telemetry/retrieve",
+              "telemetry/frames",
+              "telemetry/data-controls",
+              "telemetry/reliability"
+            ]
+          },
+          {
+            "group": "Usage",
+            "icon": "chart-line",
+            "pages": [
+              "usage/overview"
+            ]
+          },
+          {
+            "group": "Billing",
             "icon": "credit-card",
             "pages": [
-              {
-                "group": "Billing",
-                "pages": [
-                  "billing/overview",
-                  "billing/balance-and-invoices",
-                  "billing/plans"
-                ]
-              },
-              {
-                "group": "Organization",
-                "pages": [
-                  "org/overview",
-                  "org/members",
-                  "platform/api-keys"
-                ]
-              }
+              "billing/overview",
+              "billing/balance-and-invoices",
+              "billing/plans"
+            ]
+          },
+          {
+            "group": "Organization",
+            "icon": "users",
+            "pages": [
+              "org/overview",
+              "org/members",
+              "platform/api-keys"
             ]
           },
           {
@@ -188,6 +210,7 @@
             "pages": [
               "api-reference/dcp/overview",
               "api-reference/dcp/raw-usage",
+              "api-reference/dcp/reconnect",
               "api-reference/dcp/reference"
             ]
           },
@@ -215,11 +238,20 @@
       },
       {
         "tab": "Dashboard ↗",
-        "href": "https://axilio.ai/dashboard"
+        "href": "https://app.axilio.ai/dashboard/axilio/sessions"
       }
     ]
   },
   "redirects": [
+    {
+      "source": "/guides/search-x-with-the-interactive-cli",
+      "destination": "/cli",
+      "permanent": true
+    },
+    {
+      "source": "/go-quickstart",
+      "destination": "/quickstart#go"
+    },
     {
       "source": "/concepts/devices",
       "destination": "/devices/overview"
@@ -278,15 +310,35 @@
     },
     {
       "source": "/platform/usage",
-      "destination": "/observability/cost"
+      "destination": "/usage/overview"
     },
     {
       "source": "/usage/metrics",
-      "destination": "/observability/cost"
+      "destination": "/usage/overview"
     },
     {
       "source": "/usage/sessions",
-      "destination": "/observability/cost"
+      "destination": "/usage/overview"
+    },
+    {
+      "source": "/billing/usage-and-cost",
+      "destination": "/usage/overview"
+    },
+    {
+      "source": "/observability/events",
+      "destination": "/telemetry/retrieve"
+    },
+    {
+      "source": "/observability/telemetry",
+      "destination": "/telemetry/live"
+    },
+    {
+      "source": "/observability/frames",
+      "destination": "/telemetry/retrieve"
+    },
+    {
+      "source": "/observability/cost",
+      "destination": "/telemetry/understand-a-trace"
     },
     {
       "source": "/platform/organizations",
@@ -334,11 +386,11 @@
     },
     {
       "source": "/vision/locate",
-      "destination": "/api-reference/vision/inference/run-locate"
+      "destination": "/api-reference/vision/vision/run-locate"
     },
     {
       "source": "/vision/detect",
-      "destination": "/api-reference/vision/inference/run-inference"
+      "destination": "/api-reference/vision/vision/run-inference"
     },
     {
       "source": "/driver/models",

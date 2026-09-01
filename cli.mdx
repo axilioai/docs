@@ -1,63 +1,260 @@
 ---
-title: "CLI"
-sidebarTitle: "CLI"
-description: "Install the axilio CLI with Homebrew or one curl command, and drive real phones from your terminal — built for people and coding agents alike."
+title: "Explore with the CLI"
+sidebarTitle: "Explore with the CLI"
+description: "Install the Axilio CLI, explore a mobile task one action at a time, and use platform operations from a terminal."
 ---
 
-The `axilio` CLI puts the whole platform in your terminal: start a phone
-session, see what's on screen, tap and type, and inspect sessions, runs, and
-API keys. It's a single static binary with stable exit codes and JSON output,
-so it works as well in a coding agent's hands as in yours.
+The `axilio` CLI exposes phone control and platform operations to people,
+shell scripts, and coding agents. Human-readable tables are the default. Most
+commands also provide structured JSON output.
 
 ## Install
 
-### Homebrew (macOS, recommended)
+<Tabs>
+  <Tab title="Homebrew">
+    On macOS, install the CLI with Homebrew:
+
+    ```bash
+    brew install axilioai/tap/axilio
+    ```
+
+    Homebrew also installs the manual. Read it with `man axilio`.
+  </Tab>
+  <Tab title="Install script">
+    On macOS or Linux, install the latest release and verify its published
+    checksum with the install script:
+
+    ```bash
+    curl -fsSL https://axilio.ai/install.sh | sh
+    ```
+
+    The script chooses the binary for your operating system and architecture.
+    Set `INSTALL_DIR` if you need a non-default destination.
+  </Tab>
+  <Tab title="Release archive">
+    Prebuilt archives for Linux, macOS, and Windows are available on the
+    [GitHub releases page](https://github.com/axilioai/cli/releases).
+  </Tab>
+</Tabs>
+
+## Sign in
+
+Use browser authentication for an interactive terminal:
 
 ```bash
-brew install axilioai/tap/axilio
+axilio login
+axilio status
 ```
 
-Homebrew also installs the manual: read it with `man axilio`, or run
-`axilio help --html` for the browser edition.
+For CI or another non-interactive environment, supply an organization-scoped
+API key through `AXILIO_API_KEY`. See [Authentication](/authentication).
 
-### curl (macOS / Linux)
+## Inspect a phone from the terminal
+
+List the dedicated phones available to allocate, start a session, inspect the
+screen, and save a screenshot:
 
 ```bash
-curl -fsSL https://axilio.ai/install.sh | sh
+axilio phones list
+eval "$(axilio sessions start --phone-id ph_123 --export)"
+
+axilio phone observe
+axilio phone screenshot --out screen.png
+
+axilio sessions stop "$AXILIO_SESSION" --yes
+unset AXILIO_SESSION
 ```
 
-The script installs the latest release for your OS and architecture. Set
-`VERSION=v0.7.0` to pin a release, and `INSTALL_DIR` to choose the
-destination. It's [auditable on GitHub](https://github.com/axilioai/cli/blob/main/install.sh).
+Replace `ph_123` with an ID returned by `axilio phones list`. The exported
+`AXILIO_SESSION` selects the session for subsequent `axilio phone` commands.
+Unlike an SDK context manager, the CLI session remains active until you stop
+it, so always release the phone when you finish.
 
-Prebuilt binaries for Linux, macOS, and Windows are also on the
-[releases page](https://github.com/axilioai/cli/releases).
+## Explore a read-only task
 
-## Use it
+Work out a mobile task one action at a time before turning it into an SDK
+script. This example opens X, searches for `agentic infrastructure`, and
+scrolls through the first few **Top** results without changing the account.
 
-Authenticate with your [API key](/authentication), then drive a phone:
+### Before you start
+
+- Install the CLI above, run `axilio login`, and verify the setup with
+  `axilio doctor`.
+- Use a dedicated phone where X is already installed and signed in.
+- Make sure you are authorized to inspect the signed-in account. This guide
+  does not post, follow, like, message, or change settings.
+
+<Tip>
+  Explore the available commands with `axilio --help`. Run `man axilio` or
+  `axilio help --html` for the complete installed reference.
+</Tip>
+
+### Start a session
+
+In Bash or Zsh, list dedicated phones that can be allocated now, then start a
+session on one and select it for the current shell:
 
 ```bash
-axilio sessions start                 # start a phone session
-axilio phone observe                  # see what's on screen
-axilio phone tap --query "the search box"
-axilio phone type "androiddev"
-axilio sessions stop <id>             # release it
+axilio phones list
+eval "$(axilio sessions start --phone-id ph_123 --export)"
+
+cleanup() {
+  if [ -n "${AXILIO_SESSION:-}" ]; then
+    axilio sessions stop "$AXILIO_SESSION" --yes
+    unset AXILIO_SESSION
+  fi
+}
+trap cleanup EXIT
 ```
 
-Beyond phone control, the CLI covers lifecycle and inspection: list phones,
-view runs and workflows, and manage API keys. Every runnable command emits one
-JSON document under `-o json` for scripting.
+Replace `ph_123` with an ID from the first command. Every following
+`axilio phone` command uses `AXILIO_SESSION` automatically. The cleanup trap
+releases the phone if a later command fails or you exit the shell.
 
-## For coding agents
+<Note>
+  The pre-existing demo below uses `axilio phones mine`, which remains a valid
+  way to inspect all dedicated inventory. This guide uses `axilio phones list`
+  because it filters the result to phones that can be allocated immediately.
+</Note>
 
-`axilio init` writes an agent skill into your project: instructions that teach
-a coding agent to drive phones through the CLI and codify what it did as SDK
-code. The CLI's quiet mode, JSON output, and stable exit codes are designed
-for exactly this loop.
+The CLI saves session connection information locally. When several local
+sessions exist, use `--session` or `AXILIO_SESSION` to select the one a phone
+command should control.
+
+### Open X
+
+Observe the launcher, open the app drawer, and tap X:
+
+```bash
+axilio phone observe
+axilio phone swipe 244 950 244 300
+axilio phone tap --query "the X app"
+axilio phone observe
+```
+
+The swipe uses coordinates because opening the whole app drawer is a screen
+gesture, not a tappable element. These coordinates match the 488x1080 frame in
+the demo. Adjust them if `observe` reports a different screen size. The X tap
+uses a semantic target because one is available.
+
+### Search
+
+Focus the search field, enter the query, and submit it:
+
+```bash
+axilio phone tap --query "the Search field"
+axilio phone type "agentic infrastructure"
+axilio phone key enter
+axilio phone observe
+```
+
+The final `observe` verifies that X opened the **Top** results for the intended
+query before you continue.
+
+### Scroll through the top results
+
+Run these commands up to three times. Observe after each swipe so you can check
+the screen before continuing:
+
+```bash
+axilio phone swipe 244 900 244 260
+axilio phone observe
+```
+
+This swipe also uses coordinates because it scrolls the whole results view.
+
+### Stop the session
+
+Stop as soon as you finish, then clear the shell trap:
+
+```bash
+cleanup
+trap - EXIT
+```
+
+Screen recording is enabled by default unless the session or workflow turns it
+off. The CLI does not currently look up or download recordings. To replay this
+session, open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions),
+select the completed session, and
+use its recording when the status becomes `ready`. Python, Go, and REST lookup
+options are documented in [Recordings](/observability/recordings).
+
+### Watch the demo
+
+The original poster and recording still match the X interaction above. The
+inventory command shown in the recording is the supported `phones mine`
+variant described earlier.
+
+<video
+  controls
+  playsInline
+  preload="metadata"
+  poster="/videos/cli-demo-poster.jpg"
+  className="mx-auto w-full max-w-xs rounded-xl"
+  src="/videos/cli-demo.mp4"
+  title="Axilio interactive CLI demo"
+>
+  Your browser does not support video playback.
+</video>
+
+### Turn the exploration into code
+
+Once the sequence is reliable, reproduce it with the
+[Python or Go SDK](/quickstart). Keep semantic targets for taps, retain
+coordinate gestures only where the whole screen must move, observe after
+important transitions, and preserve guaranteed session cleanup.
+
+## Command map
+
+| Command group | Customer tasks |
+|---|---|
+| `axilio phones`, `axilio sessions` | Discover phones and manage phone sessions |
+| `axilio phone` | Observe and control the selected session's phone |
+| `axilio workflows`, `axilio runs` | Author workflows and start, inspect, cancel, or watch runs |
+| `axilio files` | Upload, list, download, push, and delete library files |
+| `axilio usage` | Read usage metrics and per-inference records |
+| `axilio billing` | Read the organization's balance and plan |
+| `axilio api-keys` | List, create, and delete API keys |
+| `axilio orgs` | List and select organizations for a browser session |
+
+Run `axilio <command> --help` for flags and examples. Run `axilio help --html`
+to open the self-contained browser manual installed with the CLI.
+
+## Structured output
+
+Use `-o json` for scripting:
+
+```bash
+axilio files list -o json
+```
+
+Most successful commands emit one JSON document. Two live commands use
+newline-delimited JSON because frames arrive over time:
+
+- `axilio sessions trace <session-id> --follow -o json` emits one object per
+  frame and finishes with a `trace_end` summary.
+- `axilio runs watch <run-id> -o json` emits one object per frame and finishes
+  with a `watch_end` summary.
+
+`axilio sessions start --phone-id <id> --export` emits shell text for `eval`,
+not JSON. Progress,
+notes, and prompts go to standard error so standard output remains usable by
+scripts.
 
 ## Source
 
 The CLI is open source at
-[github.com/axilioai/cli](https://github.com/axilioai/cli), released through
-the [axilioai/homebrew-tap](https://github.com/axilioai/homebrew-tap) cask.
+[github.com/axilioai/cli](https://github.com/axilioai/cli). Homebrew packages
+are published through
+[axilioai/homebrew-tap](https://github.com/axilioai/homebrew-tap).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="SDK quickstart" icon="code" href="/quickstart">
+    Turn a proven CLI sequence into a Python or Go program.
+  </Card>
+  <Card title="Control reference" icon="hand-pointer" href="/driver/reference">
+    Compare CLI commands with the Python and Go driver methods.
+  </Card>
+</CardGroup>

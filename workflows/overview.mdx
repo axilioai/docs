@@ -1,30 +1,49 @@
 ---
 title: "Workflows and runs"
 sidebarTitle: "Overview"
-description: "A workflow is your automation saved on Axilio. A run is one execution of it."
+description: "Save phone-driving code as a workflow, then queue one or more runs."
 ---
 
-A **workflow** is your automation saved on Axilio: the code that drives a phone,
-the same code you've seen in these docs. A **run** is one execution of a workflow.
+A **workflow** is Python phone-driving code saved in Axilio. Axilio stores the
+code in numbered revisions and runs it unchanged.
 
-Save a workflow once, then run it again and again, on demand or on a schedule.
+A **run** is one execution of that workflow. Its run ID is also used as the
+session ID when Axilio claims a phone.
 
-## The basics
+## Lifecycle
+
+1. Create a workflow and save its first code revision.
+2. Pull, edit, push, and restore code as new revisions.
+3. Queue one or more runs immediately.
+4. Axilio starts the run on the dedicated phone you selected.
+5. Inspect the run, its phone session, Telemetry, recording, and captured files.
+
+Runs do not currently accept a future start time or recurring schedule.
+`start_timeout_seconds` only limits how long a queued run can wait for a phone.
+
+## Workflow settings
+
+Workflow-level settings become defaults for every run:
+
+- `recording` controls video and rolling thumbnails.
+- `telemetry` controls whether Axilio produces
+  [live and retained Telemetry](/telemetry/data-controls). Set it to `false`
+  when the run must produce no Telemetry trace.
+- `capture` controls whether media produced on the phone enters the
+  organization's [Files](/files/overview) library.
+- `platform` selects the target mobile platform.
+- `ocr_engine` selects the default OCR backend.
+
+## Next steps
 
 <CardGroup cols={3}>
-  <Card title="Create" icon="square-plus" href="/workflows/create">
-    Write and save your automation.
+  <Card title="Create a workflow" icon="square-plus" href="/workflows/create">
+    Save code and manage revisions.
   </Card>
-  <Card title="Run" icon="play" href="/workflows/run">
-    Start a run, now or scheduled.
+  <Card title="Run a workflow" icon="play" href="/workflows/run">
+    Queue one or more executions.
   </Card>
-  <Card title="Watch a run" icon="list" href="/workflows/monitor">
-    Check its status and replay it.
+  <Card title="Monitor runs" icon="list" href="/workflows/monitor">
+    Inspect, watch, cancel, and summarize runs.
   </Card>
 </CardGroup>
-
-## How it relates to sessions
-
-When you write code with `session()`, you're driving a phone live. A workflow is
-that same code, saved so Axilio can run it for you on phones it manages. The script
-you test runs unchanged as a workflow.

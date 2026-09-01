@@ -6,13 +6,13 @@ description: "The raw wire that drives a phone — CDP-shaped JSON-RPC over one 
 
 Every phone you allocate exposes a `control_url`: a single WebSocket that
 drives the phone. The Device Control Protocol (DCP) is what rides on that
-socket. The [Python SDK](/quickstart) speaks it for you, but the socket is
-yours — you can open it directly and drive a phone from any language with a
-WebSocket client.
+socket. The [Python and Go mobile drivers](/driver/overview) speak it for you,
+but the socket is yours — you can open it directly and drive a phone from any
+language with a WebSocket client.
 
 DCP is to phones what the Chrome DevTools Protocol is to browsers: a small,
 literal message protocol you can drive raw. Commands go down, results and
-events come back, one phone per connection.
+notifications come back, one phone per connection.
 
 ## Two layers, one protocol
 
@@ -23,19 +23,21 @@ events come back, one phone per connection.
   work outside Python, embed control in your own runtime, or want the exact
   frames on the wire with nothing in between.
 
-Both drive the same phone through the same socket. Anything the SDK does, it
-does by sending DCP frames.
+Both drive the same phone through the same socket. The mobile drivers implement
+their high-level actions by sending these DCP methods.
 
 ## How the wire looks
 
 DCP is JSON-RPC framed like the Chrome DevTools Protocol — the frame *is* the
-whole payload, at the top level, with no envelope:
+whole payload, at the top level, with no envelope. A command looks like this:
 
 ```json
-// command  (you → phone)
 { "id": 1, "method": "Touch.tap", "params": { "x": 540, "y": 1180 } }
+```
 
-// response (phone → you)
+The phone returns a response with the same `id`:
+
+```json
 { "id": 1, "result": {} }
 ```
 
@@ -43,6 +45,16 @@ Each command carries an `id`; its response echoes that `id`. A method name is
 `Domain.method` — `Touch.tap`, `Screen.observe`, `Device.info`. A phone
 advertises the domains it supports in the [handshake](/api-reference/dcp/reference#protocol-handshake),
 so you discover its capabilities instead of assuming them.
+
+## Connection lifetime
+
+The phone session outlives an individual WebSocket. The Python and Go mobile
+drivers reconnect automatically. If you manage a raw client, classify socket
+closes, resume with the opaque cursor the server provides, repeat the handshake,
+and reuse idempotency keys when you resend an ambiguous input command.
+
+See [Reconnect and resume](/api-reference/dcp/reconnect) for the complete raw
+client contract.
 
 ## What DCP drives
 
@@ -64,6 +76,9 @@ DCP is a phone protocol. A phone advertises these capability domains:
   </Card>
   <Card title="Message reference" icon="list" href="/api-reference/dcp/reference">
     Every method, its params, and its result.
+  </Card>
+  <Card title="Reconnect and resume" icon="rotate" href="/api-reference/dcp/reconnect">
+    Recover from a dropped socket without a gap or double input.
   </Card>
   <Card title="Get a phone" icon="mobile" href="/devices/allocate">
     Allocate a phone and read its `control_url`.

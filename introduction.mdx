@@ -1,76 +1,52 @@
 ---
 title: "What is Axilio?"
 sidebarTitle: "Introduction"
-description: "Axilio is a cloud of real Android phones your code can control — see the screen, tap, type, and swipe, just like a person would."
+description: "Axilio is the mobile cloud for agents: real Android phones, reusable workflows, files, and Telemetry exposed through customer-facing APIs and tools."
 ---
 
-Axilio is a cloud of **real Android phones** that your code can control. You write
-a few lines of Python; Axilio hands you a phone and lets you see its screen and
-tap, type, and swipe — exactly like a person using it.
+Axilio is a cloud of **real Android phones** that software can control. Your
+agent can see a phone's screen and tap, type, swipe, or capture a screenshot in
+the same environment a mobile user experiences.
 
 ## Why a real phone?
 
-Most apps have no way for software to plug into them directly — no public API. The
-only way to use them is through the screen, on a real phone. So that's what Axilio
-gives your agent: a real phone, used the way a person uses one.
+Many mobile apps do not expose a public API for the task you need. Axilio lets
+your agent use the app through its screen on physical hardware and a carrier
+network.
 
 <Info>
-  Every device is a real, physical Android phone on a real carrier network — the
-  same hardware and connectivity your users have.
+  Axilio phones are physical Android devices, not emulators. A phone can be in
+  only one active session at a time.
 </Info>
 
-## How it works
+## The core concepts
 
-Three things, in order:
-
-<Steps>
-  <Step title="Client — your connection to Axilio">
-    Reads your API key and lets you reach everything: phones, runs, billing.
-  </Step>
-  <Step title="Session — borrow a phone">
-    Ask for a phone and Axilio gives you one. It's yours until you're done, then
-    it goes back to the pool. You only pay for the time you hold it.
-  </Step>
-  <Step title="Driver — control the phone">
-    Find things on the screen, then tap, type, and swipe.
-  </Step>
-</Steps>
-
-```python
-from axilio.platform import Client
-
-client = Client()  # reads your API key from the environment
-
-with client.session("android") as driver:
-    driver.find(query="the search box").type_into("axilio")
-    photo = driver.screenshot()
-```
-
-## What makes it different
-
-- **Real hardware** — real consumer Android phones, the same devices people use
-  every day, not emulators or virtual devices.
-- **Carrier networks** — real SIMs on real carrier networks, with genuine mobile
-  connectivity on every plan.
-- **Find things in plain English** — describe what you want (`find(query="the blue
-  Continue button")`) instead of writing brittle coordinates.
-- **Run many at once** — start lots of phones in parallel, each isolated.
-- **Simple pricing** — pay by the second for the time you use a phone.
-- **Replay** — watch a recording of everything your agent did.
+| Concept | What it means |
+|---|---|
+| **Phone** | The physical mobile device your organization can allocate. |
+| **Session** | A temporary reservation of one phone. Release the session when the work is done. |
+| **Driver** | The control interface inside a session. It observes the screen and performs input actions. |
+| **Workflow** | Session-driving code saved in Axilio so it can run again unchanged. |
+| **Run** | One execution of a workflow. Its run ID is also used as the session ID after allocation. |
+| **File** | An item in your organization's library. It either entered by upload or was captured from a session. |
+| **Telemetry** | The session-scoped execution record that explains operations, timing, output, and errors while a session runs and afterward. |
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Control your first phone in five minutes.
+  <Card title="CLI" icon="terminal" href="/cli">
+    Work with phones and platform resources from your terminal.
+  </Card>
+  <Card title="SDK quickstart" icon="rocket" href="/quickstart">
+    Install the Python SDK and inspect your first phone.
   </Card>
   <Card title="Authentication" icon="key" href="/authentication">
-    Get an API key and set it up.
+    Create an API key and configure each interface safely.
   </Card>
-  <Card title="Controlling the device" icon="hand-pointer" href="/driver/overview">
-    Find things on the screen and act on them.
+  <Card title="Files" icon="folder-open" href="/files/overview">
+    Move media into, out of, and between phone sessions.
   </Card>
-  <Card title="Devices" icon="mobile" href="/devices/overview">
-    How borrowing and returning phones works.
+  <Card title="Telemetry" icon="signal-stream" href="/telemetry/overview">
+    Understand and inspect a session's execution record.
   </Card>
 </CardGroup>

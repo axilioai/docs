@@ -17,7 +17,8 @@ method rather than assuming the whole surface.
 
 ### `Protocol.handshake`
 Negotiate the protocol and discover what the phone supports. Send it once, right
-after you open the socket.
+after you open the socket, and repeat it after every reconnect before sending
+more work.
 
 ```json
 { "id": 1, "method": "Protocol.handshake", "params": {} }
@@ -25,7 +26,7 @@ after you open the socket.
 
 | Param | Type | Required | Description |
 | --- | --- | --- | --- |
-| `client_version` | string | No | Your client's version, for the phone's logs. |
+| `client_version` | string | No | Reserved informational field; the phone currently accepts but does not act on it. |
 | `min_protocol` | integer | No | Informational; the phone reports its own version in the result. |
 
 **Result**
@@ -73,6 +74,7 @@ Tap a pixel.
 | --- | --- | --- | --- |
 | `x` | integer | Yes | X coordinate in pixels. |
 | `y` | integer | Yes | Y coordinate in pixels. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -88,6 +90,7 @@ Press and hold a pixel.
 | `x` | integer | Yes | X coordinate in pixels. |
 | `y` | integer | Yes | Y coordinate in pixels. |
 | `duration_ms` | integer | No | Hold duration in milliseconds. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -103,6 +106,7 @@ Swipe from one pixel to another.
 | `x1`, `y1` | integer | Yes | Start pixel. |
 | `x2`, `y2` | integer | Yes | End pixel. |
 | `duration_ms` | integer | No | Swipe duration in milliseconds. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -118,11 +122,14 @@ Type a string into the focused field.
 | Param | Type | Required | Description |
 | --- | --- | --- | --- |
 | `text` | string | Yes | The text to type. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
 ### `Keyboard.keyPress`
-Press a named key or a single printable character.
+Press a supported named key. Raw DCP accepts `enter` and `capslock`; the CLI
+and SDKs expose Enter as their customer-facing named key. Use
+`Keyboard.typeText` for printable text.
 
 ```json
 { "id": 7, "method": "Keyboard.keyPress", "params": { "key": "enter" } }
@@ -130,7 +137,8 @@ Press a named key or a single printable character.
 
 | Param | Type | Required | Description |
 | --- | --- | --- | --- |
-| `key` | string | Yes | A named key (`"enter"`, `"tab"`, `"backspace"`, ...) or a single character. |
+| `key` | string | Yes | `"enter"` or `"capslock"`. The server rejects other values. |
+| `idempotencyKey` | string | No | Unique key for this logical input. Reuse it only when resending the same command after reconnect. |
 
 **Result** — an empty object `{}`.
 
@@ -174,7 +182,7 @@ Read the screen — its text and icons, with bounding boxes.
 Find one element by describing it in plain English.
 
 ```json
-{ "id": 10, "method": "Screen.find", "params": { "query": "the Settings icon" } }
+{ "id": 10, "method": "Screen.find", "params": { "query": "the search icon" } }
 ```
 
 | Param | Type | Required | Description |
@@ -189,7 +197,9 @@ Find one element by describing it in plain English.
 | --- | --- | --- |
 | `found` | object \| null | The match (`bbox`, `confidence`, `text`), or `null` on a miss. A miss is a result, not an error. |
 | `model_name` | string | The vision model that answered. |
-| `model_cost_microdollars` | integer | The cost of this call, in millionths of a dollar. |
+
+Customer-billed cost is available from the session's
+[retained Telemetry response](/telemetry/retrieve), not from the DCP result.
 
 ## Errors
 
@@ -230,6 +240,9 @@ whether retrying the same command could succeed:
   </Card>
   <Card title="Protocol overview" icon="plug" href="/api-reference/dcp/overview">
     How the wire is framed and why.
+  </Card>
+  <Card title="Reconnect and resume" icon="rotate" href="/api-reference/dcp/reconnect">
+    Close classes, cursor replay, resync, and idempotency keys.
   </Card>
   <Card title="Use the SDK instead" icon="hand-pointer" href="/driver/reference">
     The ergonomic driver over these methods.

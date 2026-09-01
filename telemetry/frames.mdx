@@ -1,0 +1,255 @@
+---
+title: "Telemetry frame reference"
+sidebarTitle: "Telemetry frames"
+description: "Parse the span and log frames used by live and retained telemetry."
+---
+
+A frame is the JSON wire representation of one telemetry span or log. Live
+telemetry and retained retrieval use the same tolerant envelope. Telemetry is
+the product concept; frames are the format you parse when you use the API,
+SDKs, CLI JSON output, or raw WebSocket.
+
+Current producers emit two top-level frame kinds: `span` and `log`.
+
+## Understand live and retained shapes
+
+| Record | Live stream | Retained `/frames` response |
+| --- | --- | --- |
+| Span | Can arrive as separate `start` and `end` frames. | One completed frame with `phase: "end"`. |
+| Log | One point-in-time frame. | One point-in-time frame with the same envelope. |
+
+The shared schema keeps `end_time_unix_nano` and `status` optional because an
+in-flight live start has neither. Current retained spans contain both fields.
+Do not assume that every live start will receive an end frame.
+
+## Span frames
+
+A completed SDK-call span can look like this:
+
+```json
+{
+  "kind": "span",
+  "phase": "end",
+  "span_type": "sdk_call",
+  "trace_id": "8d3a71e7ee20455a8540f8282af28d3d",
+  "span_id": "f2d6bca40d47f56a",
+  "parent_span_id": "4a281c89b3806610",
+  "name": "Screen.observe",
+  "start_time_unix_nano": 1788296400123456789,
+  "end_time_unix_nano": 1788296400456789012,
+  "status": {
+    "code": "ok",
+    "message": ""
+  },
+  "attributes": {
+    "axilio.sdk.op": "Screen.observe"
+  }
+}
+```
+
+### Span fields
+
+“Required” describes the current shared REST schema. The retained runtime is
+more specific where noted.
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `kind` | Yes | Literal `span`. |
+| `phase` | Yes | Current producers use `start` and `end`. Retained spans use `end`. |
+| `span_type` | Yes | Open product-role string. |
+| `trace_id` | Yes | Session trace ID. Current producers use 32 lowercase hexadecimal characters. |
+| `span_id` | Yes | Span identity. Current producers use 16 lowercase hexadecimal characters. |
+| `parent_span_id` | No | Parent span ID. Omitted on the session root. |
+| `name` | Yes | Operation or span name. |
+| `start_time_unix_nano` | Yes | Signed 64-bit nanoseconds since the Unix epoch. |
+| `end_time_unix_nano` | No | Completion time. Present on current retained spans and absent from an in-flight live start. |
+| `status` | No | Outcome object. Present on current retained spans. |
+| `attributes` | No | Open string-keyed producer attributes. |
+
+`status` contains required string fields `code` and `message`. Current
+producers use `ok` and `error`. A successful span normally has an empty
+message. Treat new status strings as additive values.
+
+### Span types
+
+Current producers use these `span_type` values:
+
+| Value | Meaning |
+| --- | --- |
+| `session` | Root lifetime of the phone session. |
+| `run` | Workflow run or editor cell. |
+| `sdk_call` | One Axilio SDK operation. |
+| `inference` | Inference work, usually nested under an SDK call. |
+| `file_push` | File delivery to the phone. |
+| `media_capture` | Phone-initiated media capture. |
+
+Older retained session roots can use `phone_session`. Treat it as the older
+name for the session root. The vocabulary is open: render an unfamiliar value
+generically instead of rejecting the frame.
+
+## Log frames
+
+An output log can look like this:
+
+```json
+{
+  "kind": "log",
+  "log_type": "output_log",
+  "trace_id": "8d3a71e7ee20455a8540f8282af28d3d",
+  "span_id": "4a281c89b3806610",
+  "time_unix_nano": 1788296400234567890,
+  "severity": "INFO",
+  "body": "hello",
+  "attributes": {
+    "axilio.log.stream": "stdout"
+  }
+}
+```
+
+### Log fields
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `kind` | Yes | Literal `log`. |
+| `log_type` | Yes | Open product-role string. |
+| `trace_id` | Yes | Session trace ID. |
+| `span_id` | No | Containing span. Omitted for a session-level log. |
+| `time_unix_nano` | Yes | Signed 64-bit event time in nanoseconds since the Unix epoch. |
+| `severity` | Yes | Open severity string. Current producers use values such as `INFO` and `ERROR`. |
+| `body` | Yes | Human-readable log text. |
+| `attributes` | No | Open string-keyed producer attributes. |
+
+### Log types
+
+| Value | Meaning |
+| --- | --- |
+| `output_log` | Standard output, standard error, or a result line. |
+| `output_error` | Run error details. |
+| `kernel_status` | Kernel lifecycle state. |
+| `transfer_progress` | Point-in-time file-transfer progress. |
+
+The `log_type` vocabulary is open. Preserve, render, or ignore an unfamiliar
+value without failing the rest of the trace.
+
+## Reconstruct relationships
+
+All frames for a session share a `trace_id`. A span's `parent_span_id` connects
+it to its parent. A log's optional `span_id` connects it to the span under
+which it occurred.
+
+The common hierarchy is:
+
+```text
+session
+└── run
+    └── sdk_call
+        └── inference
+```
+
+`file_push` and `media_capture` spans are normally session-level siblings of a
+run. A workflow-less interactive SDK call can sit directly under the session.
+
+Use `span_id` as the identity when you pair a live `start` with its `end`,
+deduplicate a replay, or join an SDK-call cost map. Use
+`axilio.inference.id` to join an inference cost map.
+
+## Read common attributes
+
+`attributes` is an extension point. Producers can add namespaced keys without
+changing the frame envelope. Raw API and SDK readers can see attributes that
+the Dashboard does not display.
+
+Common cross-cutting keys include:
+
+| Attribute | Meaning |
+| --- | --- |
+| `axilio.session.id` | Session identity. |
+| `axilio.workflow.id` | Workflow identity when applicable. |
+| `axilio.device.class` | Device class. Current phone sessions use `phone`. |
+| `axilio.device.id` | Device identity. |
+| `axilio.duration_ns` | Source-measured duration in nanoseconds. |
+| `axilio.ok` | Producer success flag on outcome-bearing spans. |
+| `axilio.error.code` | Categorized producer error code when available. |
+| `axilio.inference.id` | Inference and cost-map join key. |
+| `axilio.sdk.op` | SDK operation name. |
+| `axilio.sdk.input` | Captured and processed SDK-call input, when present. |
+| `axilio.sdk.output` | Captured and processed SDK-call output, when present. |
+
+Captured SDK-call input and output can contain sensitive data. See
+[Data controls](/telemetry/data-controls) before storing or redistributing raw
+attributes.
+
+### File and media attributes
+
+These attributes can appear on `file_push` or `media_capture` spans:
+
+| Attribute | Meaning |
+| --- | --- |
+| `axilio.file.id` | File identity. |
+| `axilio.file.name` | File name. |
+| `axilio.file.mime_type` | MIME type. |
+| `axilio.file.size_bytes` | File size in bytes. |
+| `axilio.file.collection` | File collection, when a push specifies one. |
+| `axilio.capture.state` | Media-capture lifecycle state. |
+
+A `transfer_progress` log uses its `span_id` to correlate with the file push
+or media capture and can contain:
+
+| Attribute | Meaning |
+| --- | --- |
+| `axilio.transfer.direction` | Current values identify a push or capture direction. |
+| `axilio.transfer.bytes` | Bytes transferred so far. |
+| `axilio.transfer.size_bytes` | Total transfer size in bytes. |
+
+Attributes are not all required on every phase. Do not reject a frame because
+an activity-specific attribute is absent.
+
+## Build a tolerant reader
+
+For every interface:
+
+- Accept unknown fields within a known frame.
+- Treat new `span_type`, `log_type`, severity, status, and attribute values as
+  additive.
+- Preserve or render unknown data when your application needs lossless
+  forwarding.
+- Validate required fields before using them. An omitted known-frame field is
+  malformed even if a generated client model decodes it to a zero value.
+- In the live stream, accept either one frame object or an array of frames.
+
+Top-level `kind` compatibility currently varies by interface and version:
+
+| Reader | Current unknown-`kind` behavior |
+| --- | --- |
+| Raw JSON reader | Preserve an unfamiliar nonempty string `kind` and its raw JSON. |
+| Go SDK `v0.12.0` | Preserves the unknown string discriminator and raw JSON. |
+| Python live helper | Preserves an unknown string kind as an unknown frame. |
+| Python SDK `v0.19.0` retained reader | Can fail while parsing an unknown kind. |
+| Dashboard | Recognizes `span` and `log`; it does not render an unknown top-level kind. |
+
+A missing, empty, null, or non-string `kind` is malformed data, not a future
+frame kind. Do not describe unknown top-level kinds as universally supported
+until the reader you deploy has been tested for that behavior.
+
+<Note>
+  The generated [REST API reference](/api-reference/rest/runs/list-a-sessions-telemetry-frames)
+  owns the machine-readable operation schema. This page explains field meaning
+  and compatibility across retained and live interfaces.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Retrieve telemetry" icon="download" href="/telemetry/retrieve">
+    Retrieve and paginate the retained frame envelope.
+  </Card>
+  <Card title="Live telemetry" icon="signal-stream" href="/telemetry/live">
+    Consume frames and cursor messages while a session is active.
+  </Card>
+  <Card title="Telemetry dashboard" icon="timeline" href="/telemetry/understand-a-trace">
+    Turn frame relationships into a useful execution story.
+  </Card>
+  <Card title="Data controls" icon="shield-halved" href="/telemetry/data-controls">
+    Understand sensitive attributes, retention, and access.
+  </Card>
+</CardGroup>

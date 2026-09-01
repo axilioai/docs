@@ -1,7 +1,7 @@
 ---
-title: "Driver"
+title: "Driver reference"
 sidebarTitle: "Driver"
-description: "The driver object returned by client.session() — every action you call on a phone, with full signatures."
+description: "Python driver signatures, DCP mappings, and the corresponding Go methods."
 ---
 
 The **driver** is what [`client.session()`](/driver/client) hands you inside a
@@ -11,17 +11,47 @@ swiping, and reading the screen. Methods that locate something return an
 [`Screen`](/driver/screen).
 
 <Info>
-  This page is the signature reference. To learn the model — how you chain a
-  **find** into an action — start with [How the driver works](/driver/overview)
-  and the [Basics](/driver/find).
+  The detailed signatures below use Python. The Go SDK exposes the same DCP
+  surface with Go naming and explicit duration arguments; see the method map at
+  the end. Live phone actions are not REST operations.
 </Info>
 
 ```python
 from axilio.platform import Client
 
-with Client().session("android") as driver:
-    driver.find_text("Settings").tap()
+with Client().session("android", phone_id="ph_123") as driver:
+    driver.wait_for_text("Continue").tap()
 ```
+
+## Connection and capabilities
+
+### `driver.handshake()`
+
+Return the executor's protocol version, device descriptor, domains, and exact
+capability set. Gate optional behavior on these advertised capabilities.
+
+```python
+hello = driver.handshake()
+print(hello.protocol_version, hello.capabilities)
+```
+
+**Returns** `HandshakeResult`.
+
+### `driver.device_info()`
+
+Return the phone's static DCP descriptor.
+
+```python
+device = driver.device_info()
+print(device.screen_width, device.screen_height)
+```
+
+**Returns** `DeviceInfo`.
+
+### `driver.close()`
+
+Close the underlying control transport. `client.session()` calls this and
+deallocates its phone automatically when the context exits.
 
 ## Finding
 
@@ -40,7 +70,7 @@ driver.find_text("Sign in", exact=False, ocr_engine="premium")
 | `exact` | `bool` | `False` | Require the whole label to match, not a substring. |
 | `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine. `premium` handles harder screens. See [Models](/drivers/models). |
 
-**Returns** <code><a href="/driver/element">Element</a> | None</code> — the best match, or `None` if not found.
+**Returns** <code><a href="/driver/element">Element</a> | None</code> — the first match, or `None` if not found.
 
 ### `driver.find_all_text()`
 Find every on-screen element whose text matches. Handy for lists and feeds. Pass
@@ -55,6 +85,7 @@ for item in driver.find_all_text(contains="Notification"):
 |---|---|---|---|
 | `contains` | `str` | `None` | Keep matches that contain this substring. |
 | `pattern` | `str` | `None` | Keep matches against this regular expression. |
+| `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine for this observation. |
 
 **Returns** <code>list[<a href="/driver/element">Element</a>]</code> — every match, or an empty list.
 
@@ -75,6 +106,7 @@ driver.find(
 |---|---|---|---|
 | `query` | `str` | required | A plain-English description of what to find (keyword-only). |
 | `timeout` | `float` | `10.0` | Seconds to wait for the model before giving up. |
+| `ocr_engine` | `"free" \| "premium"` | session default | OCR engine used to ground the semantic query. |
 | `model` | `str` | session default | A [vision model](/drivers/models) id. |
 
 **Returns** [`Element`](/driver/element). **Raises** `ElementNotFoundError` on a miss —
@@ -169,7 +201,10 @@ driver.wait_for_text("Confirmed", timeout=30).tap()
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `text` | `str` | required | The visible text to wait for. |
-| `timeout` | `int` | `10` | Seconds to wait before giving up. |
+| `timeout` | `float` | `10.0` | Seconds to wait before giving up. |
+| `poll_ms` | `int` | `300` | Delay between observations in milliseconds. |
+| `exact` | `bool` | `False` | Require a case-sensitive exact match. |
+| `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine for each observation. |
 
 **Returns** [`Element`](/driver/element). **Raises** `TimeoutError` — import it from
 `axilio.drivers.mobile`.
@@ -185,7 +220,10 @@ driver.wait_until_gone("Loading", timeout=15)
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `text` | `str` | required | The visible text to wait to disappear. |
-| `timeout` | `int` | `10` | Seconds to wait before giving up. |
+| `timeout` | `float` | `10.0` | Seconds to wait before giving up. |
+| `poll_ms` | `int` | `300` | Delay between observations in milliseconds. |
+| `exact` | `bool` | `False` | Require a case-sensitive exact match. |
+| `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine for each observation. |
 
 **Returns** `None`. **Raises** `TimeoutError`.
 
@@ -201,6 +239,7 @@ screen = driver.wait_for(lambda s: s.find_text("Done") is not None)
 |---|---|---|---|
 | `predicate` | `(Screen) -> object` | required | Called with each [`Screen`](/driver/screen); a truthy return ends the wait. |
 | `timeout` | `float` | `10.0` | Seconds to wait before giving up. |
+| `poll_ms` | `int` | `300` | Delay between observations in milliseconds. |
 
 **Returns** [`Screen`](/driver/screen). **Raises** `TimeoutError`.
 
@@ -215,6 +254,10 @@ screen = driver.observe()
 prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
 ```
 
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ocr_engine` | `"free" \| "premium"` | session default | Text-reading engine for this observation. |
+
 **Returns** [`Screen`](/driver/screen).
 
 ### `driver.screenshot()`
@@ -226,6 +269,35 @@ open("screen.png", "wb").write(picture)
 ```
 
 **Returns** `bytes` — raw PNG data.
+
+## Go method map
+
+Go constructs a driver with `mobile.ConnectRemote(controlURL, options...)`.
+Use `mobile.WithDefaultOCREngine`, `mobile.WithDefaultModel`, and
+`mobile.WithOpenTimeout` for connection-wide defaults. Per-call vision options
+include `mobile.WithOCREngine`, `mobile.WithModel`, and `mobile.WithTimeout`.
+
+| Python | Go |
+| --- | --- |
+| `handshake()` | `Handshake(opts...)` |
+| `device_info()` | `DeviceInfo(opts...)` |
+| `observe(ocr_engine=...)` | `Observe(opts...)` |
+| `find_text(text, exact=..., ocr_engine=...)` | `FindText(text, exact, opts...)` |
+| `find_all_text(contains=..., pattern=..., ocr_engine=...)` | `FindAllText(contains, pattern, opts...)` |
+| `find(query=..., timeout=..., ocr_engine=..., model=...)` | `Find(query, opts...)` |
+| `wait_for_text(text, timeout=..., poll_ms=..., exact=..., ocr_engine=...)` | `WaitForText(text, timeout, exact, opts...)` |
+| `wait_until_gone(text, timeout=..., poll_ms=..., exact=..., ocr_engine=...)` | `WaitUntilGone(text, timeout, exact, opts...)` |
+| `wait_for(predicate, timeout=..., poll_ms=...)` | `WaitFor(predicate, timeout)` |
+| `tap(coords)` | `Tap(coords)` |
+| `long_press(coords, duration_ms=...)` | `LongPress(coords, durationMs)` |
+| `swipe(start, end, duration_ms=...)` | `Swipe(start, end, durationMs)` |
+| `type_text(text)` | `TypeText(text)` |
+| `key_press(key)` | `KeyPress(key)` |
+| `screenshot()` | `Screenshot()` |
+| `close()` | `Close()` |
+
+Go's wait loop uses a fixed 300 ms poll interval. Go requires gesture duration
+arguments where Python supplies defaults.
 
 ## See also
 

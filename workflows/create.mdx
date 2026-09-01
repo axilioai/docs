@@ -1,46 +1,277 @@
 ---
 title: "Create a workflow"
-sidebarTitle: "Create"
-description: "Write your automation in the code editor, then save it as a workflow."
+sidebarTitle: "Create and revise"
+description: "Save phone-driving Python and manage its revision history."
 ---
 
-A workflow is just the Python you've been writing, saved on Axilio.
+A workflow name can contain letters, digits, hyphens, and underscores. It must
+be unique inside the organization.
 
-## Write it in the editor
+## Create the workflow
 
-The easiest way is the **code editor** in your
-[dashboard](https://axilio.ai/dashboard). Write your automation, run it against a
-live phone as you go, and save it when it works. It's the same code you'd write
-anywhere:
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    From the workflow editor:
 
-```python
-with client.session("android") as driver:
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows) and choose your organization.
+    2. Click **Create A Workflow**, enter a unique name, then click **Create Workflow**.
+    3. Replace the Android starter source with this code:
+
+       ```python
+       driver.find(query="the search box").type_into("axilio")
+       driver.find_text("Search").tap()
+       ```
+
+    4. Click **Allocate Phone**. Run individual blocks from the editor gutter while you iterate.
+    5. Click **Save**.
+
+    You can also turn code from a live session into a workflow. Open
+    [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions), select the
+    active session, open **Code**, enter and run the same source, then click
+    **Save as workflow** and give it a unique name.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    cat > workflow.py <<'PY'
     driver.find(query="the search box").type_into("axilio")
     driver.find_text("Search").tap()
-```
+    PY
 
-## Or create it from the SDK
+    axilio workflows create search-flow \
+      --platform android \
+      --code workflow.py
+    ```
 
-You can also save a workflow straight from code:
+    Passing `--code` saves the file atomically as revision 1. Omit it to create
+    an empty workflow.
+  </Tab>
 
-```python
-workflow = client.workflows.create_from_code(
-    name="Search Axilio",
-    code_source=open("automation.py").read(),
-)
-print(workflow.workflow_id)
-```
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
 
-Update its code later with `client.workflows.save_code(workflow.workflow_id,
-source=...)`.
+    client = Client()
+    source = """\
+    driver.find(query="the search box").type_into("axilio")
+    driver.find_text("Search").tap()
+    """
+
+    created = client.workflows.create(
+        name="search-flow",
+        platform="android",
+        code=source,
+    )
+    print(created.workflow_id, created.revision)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    source := `driver.find(query="the search box").type_into("axilio")
+    driver.find_text("Search").tap()
+    `
+
+    created, err := api.Workflows.Create(ctx, &platformgo.WorkflowCreateRequest{
+        Name:     "search-flow",
+        Platform: platformgo.WorkflowCreateRequestPlatformAndroid.Ptr(),
+        Code:     platformgo.String(source),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(created.WorkflowID)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Create a workflow**](/api-reference/rest/workflows/create-a-workflow): `POST /workflows`
+
+    ```bash
+    cat > workflow.py <<'PY'
+    driver.find(query="the search box").type_into("axilio")
+    driver.find_text("Search").tap()
+    PY
+
+    jq -n --rawfile code workflow.py \
+      '{name:"search-flow", platform:"android", code:$code}' |
+      curl --silent --show-error --fail-with-body \
+        --request POST \
+        --url https://api.axilio.ai/api/v1/workflows \
+        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+        --header "Content-Type: application/json" \
+        --data-binary @-
+    ```
+  </Tab>
+</Tabs>
+
+Axilio pre-binds `driver` and `Key` to the phone allocated for a hosted run or
+Dashboard editor session. Do not allocate another phone inside saved workflow
+source. Select the dedicated phone when you
+[queue the run](/workflows/run#select-dedicated-phones).
+
+Recording, Telemetry, and file capture default to enabled. Set
+`recording=false` to suppress video, `telemetry=false` to suppress both live and
+archived Telemetry, or `capture=false` to skip session file capture for every
+run.
+
+## Pull and save code
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows) and click **Edit** for the workflow.
+    2. Edit the current source in the code editor.
+    3. Click **Save** to create a revision. Saving unchanged source is a no-op.
+
+    The **Code** tab of a workflow-linked live session provides the same
+    **Save** action. The saved source applies to the next run, not the session
+    already in progress.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio workflows pull wf_123 --out workflow.py
+    # Edit workflow.py.
+    axilio workflows push wf_123 workflow.py --message "handle sign-in"
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    current = client.workflows.get_code("wf_123")
+    print(current.revision, current.source)
+
+    saved = client.workflows.save_code(
+        "wf_123",
+        source=open("workflow.py", encoding="utf-8").read(),
+        message="handle sign-in",
+    )
+    print(saved.revision, saved.no_op)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    current, err := api.Workflows.GetCode(ctx, &platformgo.WorkflowsGetCodeRequest{
+        WorkflowID: "wf_123",
+    })
+
+    saved, err := api.Workflows.SaveCode(ctx, &platformgo.WorkflowSaveCodeRequest{
+        WorkflowID: "wf_123",
+        Source:     string(sourceBytes),
+        Message:    platformgo.String("handle sign-in"),
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get current workflow code**](/api-reference/rest/workflows/get-current-workflow-code): `GET /workflows/{workflow_id}/code`
+    - [**Save workflow code**](/api-reference/rest/workflows/save-workflow-code): `POST /workflows/{workflow_id}/code`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/code \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    jq -n --rawfile source workflow.py \
+      --arg message "handle sign-in" \
+      '{source:$source, message:$message}' |
+      curl --silent --show-error --fail-with-body \
+        --request POST \
+        --url https://api.axilio.ai/api/v1/workflows/wf_123/code \
+        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+        --header "Content-Type: application/json" \
+        --data-binary @-
+    ```
+  </Tab>
+</Tabs>
+
+Saving the same content is a no-op. Source is limited to 256 KiB.
+
+## Inspect or restore revisions
+
+Restoring never deletes history. Axilio copies the selected source into a new
+revision so the action remains auditable.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows) and click **Edit** for the workflow.
+    2. Open **Revision history** in the right tool rail.
+    3. Select a revision to inspect its source in the read-only preview.
+    4. Click **Restore this revision**, then click **Confirm**.
+
+    The restored source becomes a new revision. Existing history remains.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio workflows revisions wf_123
+    axilio workflows restore wf_123 rev_456
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    history = client.workflows.list_revisions("wf_123", limit=20)
+    for revision in history.revisions or []:
+        print(revision.revision, revision.id, revision.message)
+
+    client.workflows.restore_revision("wf_123", revision_id="rev_456")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    history, err := api.Workflows.ListRevisions(
+        ctx,
+        &platformgo.WorkflowsListRevisionsRequest{
+            WorkflowID: "wf_123",
+            Limit:      platformgo.Int64(20),
+        },
+    )
+
+    restored, err := api.Workflows.RestoreRevision(
+        ctx,
+        &platformgo.WorkflowRestoreRevisionRequest{
+            WorkflowID: "wf_123",
+            RevisionID: "rev_456",
+        },
+    )
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List workflow revisions**](/api-reference/rest/workflows/list-workflow-revisions): `GET /workflows/{workflow_id}/revisions`
+    - [**Restore a workflow revision**](/api-reference/rest/workflows/restore-a-workflow-revision): `POST /workflows/{workflow_id}/code/restore`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/workflows/wf_123/revisions?limit=20" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/code/restore \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"revision_id":"rev_456"}'
+    ```
+  </Tab>
+</Tabs>
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Run" icon="play" href="/workflows/run">
-    Run the workflow you saved.
+  <Card title="Run the workflow" icon="play" href="/workflows/run">
+    Queue the saved code on one or more phones.
   </Card>
-  <Card title="Watch a run" icon="list" href="/workflows/monitor">
-    Check status and replay a run.
+  <Card title="Monitor runs" icon="list" href="/workflows/monitor">
+    Inspect status, history, statistics, and live Telemetry.
   </Card>
 </CardGroup>
