@@ -1,78 +1,97 @@
 ---
 title: "Element"
 sidebarTitle: "Element"
-description: "What find() and find_text() return — a located thing on the screen, with actions to call and fields to read."
+description: "Act on a located screen element or inspect its geometry and confidence."
 ---
 
-An `Element` is what [`driver.find()`](/driver/reference#driver-find) and
-[`driver.find_text()`](/driver/reference#driver-find_text) return. Act on it
-directly, or read its fields to drive [raw input](/driver/reference#tapping).
+Python `driver.find()` and `driver.find_text()` return an `Element`; Go returns
+the corresponding `mobile.Element`. An element remembers its location and the
+driver that found it, so it can tap, type, long-press, or swipe from its center.
 
-```python
-el = driver.find_text("Sign in")
-el.tap()
-print(el.center, el.confidence)
-```
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    element = driver.find_text("Sign in")
+    if element is not None:
+        print(element.center, element.confidence)
+        element.tap()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    element, err := driver.FindText("Sign in", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if element != nil {
+        fmt.Println(element.Center, element.Confidence)
+        if err := element.Tap(); err != nil {
+            log.Fatal(err)
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The CLI prints the same element data in table or JSON output, but it does not
+retain a persistent element object between commands. There is no REST element
+resource.
 
 ## Methods
 
-### `element.tap()`
-Tap the element's center.
+### Tap the center {#element-tap}
 
-**Returns** `None`.
+`element.tap()` and `element.Tap()` tap the element's center.
 
-### `element.type_into()`
-Tap the element, then type `text` into it.
+### Tap, then type {#element-type_into}
 
-```python
-driver.find_text("Search").type_into("axilio")
-```
+`element.type_into(text)` and `element.TypeInto(text)` tap the element, then
+type `text`.
 
-**Returns** `None`. `text` is a `str`.
+### Press and hold {#element-long_press}
 
-### `element.long_press()`
-Press and hold the element, for example to open a menu.
+`element.long_press(duration_ms=...)` and `element.LongPress(durationMs)` press
+and hold the element. Python defaults to 800 ms; Go requires a duration.
 
-```python
-driver.find_text("Photo").long_press(duration_ms=1500)
-```
+### Swipe to another element {#element-swipe_to}
 
-**Returns** `None`. `duration_ms` is an `int`, default `800`.
+`element.swipe_to(other, duration_ms=...)` and
+`element.SwipeTo(other, durationMs)` swipe from one element to another. Python
+defaults to 300 ms; Go requires a duration.
 
-### `element.swipe_to()`
-Swipe from this element to another `Element` — for example to drag a card onto a
-target.
+Guard an OCR lookup before calling an element method:
 
 ```python
-driver.find_text("Card").swipe_to(driver.find_text("Archive"))
+card = driver.find_text("Card")
+archive = driver.find_text("Archive")
+if card is None or archive is None:
+    raise RuntimeError("drag target is not visible")
+card.swipe_to(archive, duration_ms=300)
 ```
-
-**Returns** `None`. `other` is an `Element`.
 
 ## Fields
 
-| Field | Type | Description |
-|---|---|---|
-| `element.center` | `{"x", "y"}` | Tap point at the element's center. |
-| `element.bbox` | `{"x", "y", "width", "height"}` | Bounding box, in pixels. |
-| `element.text` | `str \| None` | Recognized text, if any. |
-| `element.confidence` | `float` | Match confidence, `0`–`1`. |
-| `element.source` | `"ocr" \| "vlm"` | Whether it was found by its text or by describing it. |
+| Python | Go | Description |
+| --- | --- | --- |
+| `element.center` | `element.Center` | Tap point at the element's center. |
+| `element.bbox` | `element.BBox` | Bounding box in screen pixels. |
+| `element.text` | `element.Text` | Recognized text, when present. |
+| `element.confidence` | `element.Confidence` | Match confidence from `0` to `1`. |
+| `element.source` | `element.Source` | `ocr` when the returned result carries recognized text; otherwise `vlm`. |
 
 <Note>
-  [`driver.find_text()`](/driver/reference#driver-find_text) returns `None` on a
-  miss, so guard the result before acting.
-  [`driver.find()`](/driver/reference#driver-find) raises `ElementNotFoundError`
-  instead.
+  `find_text` returns `None` or `nil` on a miss. Semantic `find` instead returns
+  an `element_not_found` error.
 </Note>
 
 ## See also
 
 <CardGroup cols={2}>
-  <Card title="Driver" icon="mobile" href="/driver/reference">
-    The methods that return an `Element`.
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    Learn how each kind of element is located.
   </Card>
   <Card title="Screen" icon="table-list" href="/driver/screen">
-    The snapshot that holds many elements.
+    Query all elements from one observation.
   </Card>
 </CardGroup>

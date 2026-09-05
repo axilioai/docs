@@ -1,26 +1,123 @@
 ---
 title: "Organizations"
 sidebarTitle: "Overview"
-description: "Your organization is your account: its members, API keys, devices, and billing all belong to it."
+description: "Understand organization scope, switch organizations, and read organization details across interfaces."
 ---
 
-An **organization** is your account on Axilio. Your members, API keys, devices,
-runs, and billing all belong to it.
+An **organization** owns its phones, sessions, workflows, runs, files, API keys,
+usage, and billing.
 
-Each [API key](/platform/api-keys) is tied to one organization, so everything you
-do with that key counts against that org's balance and shows up in its history. If
-you're in more than one organization, use the key for the one you mean to work in.
+An API key selects one organization for Python SDK, Go SDK, and REST API
+requests. OAuth CLI sessions can switch among the organizations your user
+belongs to.
+
+## Select an organization
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Use the organization switcher in the dashboard sidebar. Dashboard URLs
+    include the selected organization's slug.
+
+    Open [**Settings → General**](https://app.axilio.ai/dashboard/axilio/settings/organization)
+    to inspect the selected organization.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio orgs list
+    axilio orgs use example-org
+
+    # Override the selection for one command.
+    axilio --org another-org workflows list
+    ```
+
+    Organization switching requires an OAuth login. API-key logins stay bound
+    to the key's organization.
+  </Tab>
+</Tabs>
+
+The Python SDK, Go SDK, and REST API do not provide a runtime organization
+selector when you authenticate with an API key. The credential determines the
+organization. To access another organization, use a key issued by that
+organization and create another SDK client or change the REST credential.
+
+<Note>
+  `X-Axilio-Org` selects an organization only for CLI OAuth requests. It is
+  ignored when you authenticate with an API key, even if an SDK lets you add
+  custom request headers.
+</Note>
+
+## Read the organization descriptor
+
+Available fields differ by interface. The SDKs and REST API return the full
+public organization descriptor.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Settings → General**](https://app.axilio.ai/dashboard/axilio/settings/organization)
+    after selecting the organization.
+
+    The admin-only page shows the organization's name, slug, ID, creation date,
+    and additional account information. It is a dashboard summary, not the
+    exact public API descriptor. For example, it does not show `plan_name`.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio orgs list
+    ```
+
+    This OAuth-only command returns each accessible organization's ID, slug,
+    and name. It is a partial summary, not the full public descriptor. It does
+    not return `plan_name` or `created_at`.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    organization = client.raw.organization.get()
+
+    print(organization.id, organization.slug, organization.name)
+    print(organization.plan_name)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    organization, err := api.Organization.Get(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(organization.ID, organization.Slug, organization.Name)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get the caller's organization**](/api-reference/rest/organization/get-the-callers-organization): `GET /organization`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/organization \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+Renaming an organization and changing its members or invitations are
+dashboard-only actions. The public API can read member and invitation summaries
+but cannot mutate them.
 
 ## Next steps
 
 <CardGroup cols={3}>
   <Card title="Members" icon="users" href="/org/members">
-    Invite and manage teammates.
+    Manage members in the dashboard or read summaries through the API.
   </Card>
   <Card title="API keys" icon="key" href="/platform/api-keys">
-    Keys for the organization.
+    Create, list, replace, and delete organization credentials.
   </Card>
   <Card title="Billing" icon="credit-card" href="/billing/overview">
-    The organization's balance and plan.
+    Read the organization's usage, balance, invoices, and dedicated rentals.
   </Card>
 </CardGroup>

@@ -1,51 +1,382 @@
 ---
-title: "Balance and invoices"
-sidebarTitle: "Balance & invoices"
-description: "Check your balance, add funds, and get your invoices."
+title: "Balance, credits, and invoices"
+sidebarTitle: "Balance, credits, and invoices"
+description: "Understand credit priority and expiration, add funds, configure alerts, and download invoice PDFs."
 ---
 
-## Check your balance
+## Check the balance
 
-```python
-balance = client.billing.get_balance()
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing) after choosing your
+    organization. The balance card separates included and purchased credit.
+  </Tab>
 
-print(balance.balance_display)        # e.g. $12.34
-print(balance.balance_microdollars)   # the exact amount
-```
+  <Tab title="CLI">
+    ```bash
+    axilio billing balance
+    axilio billing balance -o json
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    balance = client.billing.get_balance()
+
+    print(balance.balance_display)
+    print(balance.included_microdollars)
+    print(balance.purchased_microdollars)
+    print(balance.purchased_next_expiry)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    balance, err := api.Billing.GetBalance(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(balance.BalanceDisplay)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get account balance**](/api-reference/rest/billing/get-account-balance): `GET /billing/balance`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/balance \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## How credits work
+
+Axilio applies credits and charges using these rules:
+
+1. **Included credit is spent first.** Axilio spends your current period's free
+   allowance before using any purchased credit. This ensures any purchases of
+   additional credit are never wasted.
+2. **Included credit resets instead of accumulating.** At renewal, any unused
+   included credit lapses. The new period begins with exactly the new
+   allowance.
+3. **Purchased credits are only spent after any included credits are spent.**
+   Top-ups and automatic recharges create separate purchased lots. When more
+   than one lot remains, Axilio spends the lot with the soonest expiration
+   first (FIFO) to minimize expired credits.
+4. **Each purchased lot expires one year after settlement.** The one-year
+   clock begins when Stripe settles that purchase. Unused credit in that lot is
+   removed at expiration.
+5. **Automatic recharge restores your balance to the amount you configure.**
+   It is not a separate credit bucket. When your total balance falls below the
+   configured **Threshold**, Axilio purchases enough credit to reach the
+   configured **Recharge to** amount. That purchase then follows the same
+   debt-first and expiration rules.
+6. **New credit repays debt first.** If your balance is negative, a grant or
+   purchase first reduces that deficit. Only the remainder becomes spendable
+   credit. For example, a `$10` top-up against a `-$1` balance leaves `$9`
+   available.
+
+The balance shown in the dashboard is the combined amount available after
+these rules are applied. The `GET /billing/balance` response exposes the same
+result as separate fields:
+
+- `balance_microdollars` is the combined balance. It can be negative when
+  charges exceed the available credit.
+- `included_microdollars` is the unused included credit in the current period.
+- `purchased_microdollars` is the total remaining purchased credit across all
+  unexpired lots.
+- `purchased_next_expiry` is the expiration time of the purchased lot that
+  expires next. It is empty when no purchased credit remains.
+
+When `balance_microdollars` is negative, both live-credit fields are zero. The
+next grant or purchase repays that deficit before adding spendable credit.
+
+Dedicated-phone rental charges are separate from these credit buckets. A
+dedicated session does not consume phone-time credit, but metered vision calls
+during that session can consume the balance. See
+[Dedicated phone pricing](/billing/plans) for rental periods and
+[Models and pricing](/drivers/models) for metered inference pricing.
+
+Axilio does not provide a routine self-service refund path. Contact support if
+you believe a purchase or charge requires review.
+
+<Accordion
+  title="See how credit moves through each bucket"
+  id="credit-bucket-diagram"
+  defaultOpen={false}
+>
+  ```mermaid
+  %%{init: {'flowchart': {'defaultRenderer': 'elk', 'curve': 'basis'}}}%%
+  flowchart TB
+      renewal["Account renewal<br/>when included credit applies"]
+      topup["Top-up or automatic recharge<br/>after Stripe settles"]
+      deficit{"Existing negative balance?"}
+      repay["Repay the deficit first"]
+
+      included[("Included credit<br/>maximum = current allowance")]
+      purchased[("Purchased credit lots<br/>each has its own expiry")]
+
+      charge["Metered usage charge"]
+      negative["Negative balance<br/>after all live credit is spent"]
+      lapse["Unused included credit lapses"]
+      expiry["Unused purchased lot expires"]
+
+      renewal -->|"reset to the new allowance"| included
+      included -.->|"at the next renewal"| lapse
+
+      topup --> deficit
+      deficit -->|"yes"| repay
+      repay -->|"credit left after repayment"| purchased
+      deficit -->|"no"| purchased
+
+      included -->|"1 · spend first"| charge
+      purchased -->|"2 · soonest expiry first"| charge
+      charge -->|"3 · no credit remains"| negative
+      negative -.->|"the next credit returns here"| deficit
+      purchased -.->|"one year after settlement"| expiry
+
+      classDef source fill:#052e24,stroke:#10b981,color:#ecfdf5,stroke-width:2px;
+      classDef bucket fill:#0f172a,stroke:#34d399,color:#f8fafc,stroke-width:2px;
+      classDef terminal fill:#2a1111,stroke:#f87171,color:#fff1f2,stroke-width:2px;
+      classDef exit fill:#262626,stroke:#737373,color:#f5f5f5;
+      class renewal,topup,repay source;
+      class included,purchased bucket;
+      class negative terminal;
+      class lapse,expiry exit;
+  ```
+</Accordion>
 
 ## Add funds
 
-```python
-client.billing.add_funds(amount_cents=2000)   # add $20.00
-```
+Adding funds and managing payment methods are dashboard-only actions:
 
-## Invoices
+1. Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing).
+2. Click **Add Funds**.
+3. Choose an amount and complete checkout.
 
-List your billing history:
+The CLI, SDKs, and public REST API do not create an add-funds checkout or
+customer-portal session.
 
-```python
-history = client.billing.get_history(limit=20, offset=0)
-for item in history.items:
-    print(item)
-```
+## List and download invoices
 
-Get an invoice as a PDF, or open the full billing portal:
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), select
+    **Invoices**, filter the list, then click **PDF** on the invoice you need.
+  </Tab>
 
-```python
-invoice = client.billing.download_invoice(invoice_id="inv_123")
-print(invoice.download_url)
+  <Tab title="Python SDK">
+    ```python
+    history = client.billing.get_history(limit=20, offset=0)
 
-portal = client.billing.customer_portal()
-print(portal.portal_url)
-```
+    for invoice in history.items or []:
+        print(invoice.id, invoice.invoice_number, invoice.status)
 
-## Next steps
+    pdf = client.billing.download_invoice("inv_123")
+    print(pdf.download_url, pdf.expires_at)
+    ```
+  </Tab>
 
-<CardGroup cols={2}>
-  <Card title="How billing works" icon="circle-info" href="/billing/overview">
-    Per-second billing, explained.
-  </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
-    See where your money goes.
-  </Card>
-</CardGroup>
+  <Tab title="Go SDK">
+    ```go
+    history, err := api.Billing.GetHistory(ctx, &platformgo.BillingGetHistoryRequest{
+        Limit:  platformgo.Int64(20),
+        Offset: platformgo.Int64(0),
+    })
+
+    pdf, err := api.Billing.DownloadInvoice(ctx, &platformgo.BillingDownloadInvoiceRequest{
+        InvoiceID: "inv_123",
+    })
+    fmt.Println(pdf.DownloadURL, pdf.ExpiresAt)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List billing history**](/api-reference/rest/billing/list-billing-history): `GET /billing/history`
+    - [**Get an invoice PDF URL**](/api-reference/rest/billing/get-an-invoice-pdf-url): `GET /billing/history/{invoice_id}/pdf`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/billing/history?limit=20&offset=0" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/history/inv_123/pdf \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+The CLI does not currently list or download invoices. A PDF URL is temporary;
+request a fresh one instead of storing it.
+
+## Configure automatic recharge
+
+Automatic recharge charges the saved payment method when the balance falls
+below a threshold, restoring it to a target amount. Adding the payment method
+itself remains a dashboard action.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), select
+    **Preferences**, then find **Auto-recharge**. If you are an organization
+    admin, you can:
+
+    1. Add or update the saved card through **Manage payment method**.
+    2. Set **Threshold** to the balance that triggers a recharge.
+    3. Set **Recharge to** to the balance Axilio should restore.
+    4. Turn on **Automatically top up**. Enabling it saves the amounts shown.
+
+    If auto-recharge is already on, select **Save** after changing either
+    amount without toggling it off.
+
+    The recharge target must be at least $5 and greater than the threshold.
+    If you are not an administrator, you can view the current state but cannot
+    change it.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    settings = client.billing.get_auto_recharge()
+
+    updated = client.billing.update_auto_recharge(
+        enabled=True,
+        threshold_cents=500,
+        target_cents=2500,
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    settings, err := api.Billing.GetAutoRecharge(ctx)
+
+    updated, err := api.Billing.UpdateAutoRecharge(
+        ctx,
+        &platformgo.SubscriptionAutoRechargeSettings{
+            Enabled:        true,
+            ThresholdCents: 500,
+            TargetCents:    2500,
+        },
+    )
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get auto-recharge settings**](/api-reference/rest/billing/get-auto-recharge-settings): `GET /billing/auto-recharge`
+    - [**Update auto-recharge settings**](/api-reference/rest/billing/update-auto-recharge-settings): `PUT /billing/auto-recharge`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/auto-recharge \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --request PUT \
+      --url https://api.axilio.ai/api/v1/billing/auto-recharge \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "enabled": true,
+        "threshold_cents": 500,
+        "target_cents": 2500
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+The CLI does not configure automatic recharge; its billing commands are
+read-only.
+
+## Configure low-balance alerts
+
+Low-balance alerts warn you before insufficient funds can block a session.
+Negative-balance alerts are separate, always enabled, and cannot be turned off.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), select
+    **Preferences**, then find **Usage alerts**. If you are an organization
+    admin, you can:
+
+    1. Set **Alert threshold** to a positive dollar amount.
+    2. Turn on **Low-balance alert**. Enabling it saves the threshold shown.
+
+    If the alert is already on, select **Save** after changing the threshold.
+    If you are not an administrator, you can view its current state but cannot
+    change it.
+  </Tab>
+
+  <Tab title="CLI">
+    The CLI does not currently read or configure low-balance alerts. Its
+    relevant command is `axilio billing balance`.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    alerts = client.billing.get_usage_alerts()
+    print(alerts.enabled, alerts.threshold_cents)
+
+    updated = client.billing.update_usage_alerts(
+        enabled=True,
+        threshold_cents=1000,
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    alerts, err := api.Billing.GetUsageAlerts(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(alerts.Enabled, alerts.ThresholdCents)
+
+    updated, err := api.Billing.UpdateUsageAlerts(
+        ctx,
+        &platformgo.SubscriptionUsageAlertSettings{
+            Enabled:        true,
+            ThresholdCents: 1000,
+        },
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(updated.Enabled, updated.ThresholdCents)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get usage-alert settings**](/api-reference/rest/billing/get-usage-alert-settings): `GET /billing/usage-alerts`
+    - [**Update usage-alert settings**](/api-reference/rest/billing/update-usage-alert-settings): `PUT /billing/usage-alerts`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/usage-alerts \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --request PUT \
+      --url https://api.axilio.ai/api/v1/billing/usage-alerts \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "enabled": true,
+        "threshold_cents": 1000
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+Updating auto-recharge or alerts requires an organization admin. An API key
+inherits its creator's organization role.

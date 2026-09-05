@@ -1,54 +1,244 @@
 ---
 title: "Run a workflow"
 sidebarTitle: "Run"
-description: "Start a run now, or on a schedule, from the dashboard or the SDK."
+description: "Queue a workflow immediately on one or more phones."
 ---
 
-A **run** is one execution of a workflow. Start one from the
-[dashboard](https://axilio.ai/dashboard) with a click, or from the SDK.
+One entry in `runs` creates one run. Its unique run ID is also used as the
+session ID when the phone starts it.
 
-## Run it now
+## Queue a run
 
-```python
-from axilio import RunRunTimeConfig
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows).
+    2. Select the workflow and click **Run**.
+    3. Choose **Run Now**.
+    4. Choose **Use Dedicated Phones**, then select one or more phones.
+    5. Set **Number of Runs** and **Queue Timeout (min)**, then start the run.
+  </Tab>
 
-result = client.runs.create(
-    workflow_id="wf_abc123",
-    number_of_runs=1,
-    run_time=RunRunTimeConfig(
-        is_immediate=True,
-        is_scheduled=False,
-        schedule_timeout_seconds=300,
-    ),
-)
-run_id = result.run_ids[0]
-```
+  <Tab title="CLI">
+    ```bash
+    axilio runs start wf_123 --start-timeout 300
+    ```
 
-## Run it on a schedule
+    Add `--watch` to follow the one run immediately after creating it.
+  </Tab>
 
-Schedule it for later instead of running now:
+  <Tab title="Python SDK">
+    ```python
+    from axilio import RunConfig
 
-```python
-run_time=RunRunTimeConfig(
-    is_immediate=False,
-    is_scheduled=True,
-    schedule_time="2026-01-01T09:00:00Z",
-    schedule_timeout_seconds=300,
-)
-```
+    result = client.runs.create(
+        "wf_123",
+        runs=[RunConfig(variables=[{"query": "coffee"}])],
+        start_timeout_seconds=300,
+    )
+    run_id = result.run_ids[0]
+    ```
+  </Tab>
 
-## Run many at once
+  <Tab title="Go SDK">
+    ```go
+    result, err := api.Runs.Create(ctx, &platformgo.RunCreateRequest{
+        WorkflowID: "wf_123",
+        Runs: []*platformgo.RunConfig{
+            {
+                Variables: []map[string]any{{"query": "coffee"}},
+            },
+        },
+        StartTimeoutSeconds: platformgo.Int64(300),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    runID := result.RunIDs[0]
+    ```
+  </Tab>
 
-Set `number_of_runs` higher to run the workflow on several phones in parallel.
-Each one gets its own phone and its own [recording and events](/observability/overview).
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/runs \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "runs": [{"variables": [{"query": "coffee"}]}],
+        "start_timeout_seconds": 300
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+`start_timeout_seconds` is the number of seconds a queued run may wait for a
+phone before Axilio cancels it. The accepted range is 60–86,400 seconds. The
+default is 300.
+
+The dashboard sends its visible 30-minute queue timeout unless you change it.
+
+<Warning>
+  Runs queue immediately. The current public request contract has no future
+  start time or recurring schedule. In
+  [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows), choose
+  **Run Now**; do not rely on the visible **Schedule** option.
+</Warning>
+
+## Run in parallel
+
+Create one run entry per execution:
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio runs start wf_123 --count 3
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    result = client.runs.create(
+        "wf_123",
+        runs=[RunConfig(variables=[{}]) for _ in range(3)],
+    )
+    print(result.run_ids)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    result, err := api.Runs.Create(ctx, &platformgo.RunCreateRequest{
+        WorkflowID: "wf_123",
+        Runs: []*platformgo.RunConfig{
+            {Variables: []map[string]any{{}}},
+            {Variables: []map[string]any{{}}},
+            {Variables: []map[string]any{{}}},
+        },
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/runs \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "runs": [
+          {"variables": [{}]},
+          {"variables": [{}]},
+          {"variables": [{}]}
+        ]
+      }'
+    ```
+
+    The endpoint accepts 1–1,000 entries per request.
+  </Tab>
+</Tabs>
+
+Concurrency and phone availability determine how many runs execute at once.
+The remainder stay queued until a phone becomes available or their start
+timeout expires.
+
+## Select dedicated phones
+
+Set `phone_id` on each run entry when that run must use one exact dedicated
+phone:
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows), select the workflow, and click **Run**.
+    2. Choose **Run Now** and set **Number of Runs**.
+    3. Enable **Use Dedicated Phones** and select one or more active, idle phones.
+    4. Set **Queue Timeout (min)** and start the run.
+
+    When you select fewer phones than runs, Axilio assigns the selected phones
+    to runs in round-robin order.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs start wf_123 --phone-id ph_123
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    result = client.runs.create(
+        "wf_123",
+        runs=[
+            RunConfig(phone_id="ph_123", variables=[{}]),
+            RunConfig(phone_id="ph_456", variables=[{}]),
+        ],
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    result, err := api.Runs.Create(ctx, &platformgo.RunCreateRequest{
+        WorkflowID: "wf_123",
+        Runs: []*platformgo.RunConfig{
+            {
+                PhoneID:   platformgo.String("ph_123"),
+                Variables: []map[string]any{{}},
+            },
+            {
+                PhoneID:   platformgo.String("ph_456"),
+                Variables: []map[string]any{{}},
+            },
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/runs \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "runs": [
+          {"phone_id": "ph_123", "variables": [{}]},
+          {"phone_id": "ph_456", "variables": [{}]}
+        ]
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  Axilio stores and delivers run variables to workflow code as plaintext. Do
+  not put passwords, API keys, or other secrets in `variables`.
+</Warning>
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Watch a run" icon="list" href="/workflows/monitor">
-    Check status and replay the run.
+  <Card title="Monitor runs" icon="list" href="/workflows/monitor">
+    Watch, inspect, cancel, or summarize the runs.
   </Card>
-  <Card title="Observability" icon="video" href="/observability/overview">
-    See recordings, events, and cost.
+  <Card title="Live Telemetry" icon="chart-line" href="/telemetry/live">
+    Follow the session created by a run.
   </Card>
 </CardGroup>

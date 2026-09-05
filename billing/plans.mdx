@@ -1,57 +1,97 @@
 ---
-title: "Your plan"
-sidebarTitle: "Plans"
-description: "See your current plan and change it."
+title: "Dedicated phone pricing"
+sidebarTitle: "Dedicated phone pricing"
+description: "Compare daily, weekly, and monthly pricing for dedicated Axilio phones."
 ---
 
-A plan sets your monthly included balance, how many runs you can do at once, and
-your rates.
+Dedicated phones are real Android devices reserved exclusively for your
+organization. Pricing is per phone for the rental period you choose.
 
-<div id="axilio-plans" />
+<div id="axilio-rental-plans" />
 
-These prices are pulled live from Axilio. See the
-[pricing page](https://axilio.ai) for full details.
+Every dedicated-phone rental includes:
 
-## Vision model pricing
+- Exclusive access to one phone for your organization.
+- Unlimited phone hours during the rental period.
+- Persistent apps and device state between sessions.
+- No additional phone-time charge for sessions on that phone.
 
-`find(query=...)` and other vision calls use one of these models, billed per token
-on top of your device time.
+<Note>
+  Vision inference and other metered services are billed separately. See
+  [Models and pricing](/drivers/models) for current inference pricing.
+</Note>
 
-<div id="axilio-models" />
+## Rent a phone
 
-Prices are per million tokens, pulled live. See [Cost](/observability/cost) to
-track what you actually spend.
+Rentals begin in the dashboard:
 
-## Your current plan
+1. Open [**Phones**](https://app.axilio.ai/dashboard/axilio/phones).
+2. Click **Rent A Phone**.
+3. Choose **Daily**, **Weekly**, or **Monthly**.
+4. Complete checkout to reserve the phone for your organization.
 
-```python
-sub = client.billing.get_subscription()
+## Inspect or cancel renewals
 
-print(sub.plan_name)
-print(sub.included_balance_display)   # balance included each month
-print(sub.max_concurrent_runs)        # how many runs at once
-print(sub.current_period_end)
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), then
+    select **Dedicated Phones**. You can inspect the rental period, next
+    renewal, payment status, and monthly-equivalent cost. You can also cancel
+    an automatic renewal from this view.
+  </Tab>
 
-## Change your plan
+  <Tab title="Python SDK">
+    ```python
+    rentals = client.billing.get_rental_subscriptions()
 
-Start a checkout for a new plan, then open the link to finish:
+    for rental in rentals.subscriptions or []:
+        print(
+            rental.phone_id,
+            rental.plan_name,
+            rental.status,
+            rental.current_period_end,
+        )
+    ```
+  </Tab>
 
-```python
-checkout = client.billing.create_checkout(plan_id="plan_pro", billing_cycle="monthly")
-print(checkout.checkout_url)
-```
+  <Tab title="Go SDK">
+    ```go
+    rentals, err := api.Billing.GetRentalSubscriptions(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, rental := range rentals.Subscriptions {
+        phoneID := "not assigned"
+        if rental.PhoneID != nil {
+            phoneID = *rental.PhoneID
+        }
+        fmt.Println(
+            phoneID,
+            rental.PlanName,
+            rental.Status,
+            rental.CurrentPeriodEnd,
+        )
+    }
+    ```
+  </Tab>
 
-Find plan IDs and prices on the [pricing page](https://axilio.ai) or in your
-[dashboard](https://axilio.ai/dashboard).
+  <Tab title="REST API">
+    REST API References:
 
-## Next steps
+    - [**List phone rentals**](/api-reference/rest/billing/list-phone-rentals): `GET /billing/phone-rental-subscriptions`
 
-<CardGroup cols={2}>
-  <Card title="Balance & invoices" icon="wallet" href="/billing/balance-and-invoices">
-    Check your balance and add funds.
-  </Card>
-  <Card title="How billing works" icon="circle-info" href="/billing/overview">
-    Per-second billing, explained.
-  </Card>
-</CardGroup>
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/phone-rental-subscriptions \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+The SDKs and REST API can inspect rentals. Starting checkout and canceling a
+renewal remain dashboard actions.
+
+## Use a dedicated phone
+
+See [Dedicated phones](/devices/dedicated) to learn how rentals affect phone
+availability, allocation, session charges, renewal, and device state.

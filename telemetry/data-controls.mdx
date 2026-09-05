@@ -1,0 +1,165 @@
+---
+title: "Telemetry data controls"
+sidebarTitle: "Data controls"
+description: "Control Telemetry capture, understand access retention, and protect sensitive session data."
+---
+
+Telemetry can include console output, operation attributes, and captured SDK
+inputs or results. Decide whether to enable it as part of your session's data
+handling policy.
+
+## Enable or disable Telemetry
+
+Telemetry is enabled by default. Set `telemetry: false` on a direct allocation
+or workflow when you do not want Axilio to create a live or retained Telemetry
+record for the resulting session.
+
+```json
+{
+  "telemetry": false
+}
+```
+
+This setting is all-or-nothing:
+
+- no frames are available from the live Telemetry stream;
+- **Timeline** and **Console** have no Telemetry to display; and
+- no retained frame archive is available after the session.
+
+<Warning>
+  There is no live-only Telemetry mode. Copy that says Telemetry remains
+  available live when storage is disabled is outdated.
+</Warning>
+
+Recording is a separate control. `recording: false` does not disable
+Telemetry, and `telemetry: false` does not disable a recording.
+
+| Configuration | Telemetry | Recording |
+| --- | --- | --- |
+| Neither setting is disabled | Live and retained | Captured |
+| `telemetry: false` | Not created | Captured unless separately disabled |
+| `recording: false` | Live and retained | Not captured |
+| Both are `false` | Not created | Not captured |
+
+## Understand the access window
+
+For the current standard dedicated-phone policy, Telemetry is normally
+accessible for up to 10 days from session creation.
+
+Daily, Weekly, and Monthly dedicated rental cadence changes the rental and
+renewal interval. It does not select a different Telemetry retention period.
+An organization-specific policy can still differ from the current standard
+policy.
+
+The retention clock begins when the session is created, not when it ends or
+when the last frame arrives. Read `retention_expired` from a retained
+[frames response](/telemetry/retrieve) before interpreting an empty archive.
+
+<Note>
+  The access period is not a guaranteed minimum. It also does not promise that
+  every physical copy is deleted at the exact instant customer access expires.
+  Access enforcement and physical cleanup are separate lifecycle operations.
+</Note>
+
+If Axilio cannot establish that the session remains inside its access window,
+the retention check fails safe and withholds the trace.
+
+An explicit organization policy can disable Telemetry writing. Other
+configurations can leave a session with no positive access window. Customer
+access can then expire immediately even when frames may have been emitted. Do
+not infer the session's physical storage history from an empty or expired
+response.
+
+## Keep session history after workflow deletion
+
+Deleting a workflow does not delete the sessions it previously created.
+Session details and retained Telemetry remain addressable by `session_id`,
+subject to the normal retention policy.
+
+You can no longer mint a live Telemetry URL after the session ends. Existing
+history remains a session resource rather than a child of the deleted
+workflow.
+
+## Know what Telemetry can contain
+
+Raw frames can contain producer attributes and data supplied by your SDK
+calls. SDK-call spans use these attributes:
+
+| Attribute | Content |
+| --- | --- |
+| `axilio.sdk.input` | The captured input parameters. |
+| `axilio.sdk.output` | The captured result. |
+
+Each nonempty input and output value is capped independently at 4,096 bytes.
+A truncation marker indicates when the value exceeded the cap. Truncation is a
+size control, not a privacy control.
+
+Current capture behavior is:
+
+- `Keyboard.typeText` input replaces its `text` value with
+  `<redacted:string:N>`, where `N` is the character count;
+- malformed typed-text input is replaced with a placeholder;
+- other nonempty SDK inputs and all nonempty SDK results can be captured
+  verbatim;
+- empty bytes, `{}`, and `null` are omitted; and
+- transport operations such as `Protocol.handshake` and `Device.info` do not
+  create SDK-call spans.
+
+<Warning>
+  Redaction is not schema-driven. A typed request does not imply that its
+  sensitive fields are removed.
+</Warning>
+
+There is no separate switch for SDK-call input/output capture. To prevent
+these values from entering the Telemetry record, disable Telemetry for the
+session. Otherwise, avoid putting secrets or unnecessary sensitive data in
+SDK parameters, return values, or custom attributes.
+
+The Dashboard details pane renders a curated set of fields. A value can exist
+in a [raw frame](/telemetry/frames) without appearing in **Timeline** details.
+
+## Protect Telemetry access
+
+Retained frames and Telemetry-token requests use your customer API key and
+require organization viewer access. A session outside your organization is
+reported the same way as a missing session.
+
+A live `telemetry_url` is a session-scoped bearer secret:
+
+- do not write it to application logs;
+- do not include it in screenshots, analytics, or support bundles;
+- keep it out of browser history and referrer data;
+- do not share it as a device-control or recording credential; and
+- discard it when you no longer need it.
+
+The URL is read-only and stops working no later than the end of the active
+session. There is no refresh message inside the WebSocket. See
+[Live telemetry](/telemetry/live) for attaching and minting another URL while
+the session remains active.
+
+## Data-handling checklist
+
+1. Decide whether the session needs Telemetry and recording independently.
+2. Keep sensitive values out of SDK inputs, outputs, and custom attributes.
+3. Treat the live URL and API key as secrets.
+4. Use raw frames when you need attributes that the Dashboard does not show.
+5. Check `retention_expired` instead of treating every empty archive alike.
+6. Base deletion commitments on your approved data policy, not the customer
+   access-expiration timestamp.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Get started" icon="rocket" href="/telemetry/get-started">
+    Inspect Telemetry from your first session.
+  </Card>
+  <Card title="Retrieve telemetry" icon="download" href="/telemetry/retrieve">
+    Page through the available retained record.
+  </Card>
+  <Card title="Frame reference" icon="brackets-curly" href="/telemetry/frames">
+    Review raw fields and compatibility rules.
+  </Card>
+  <Card title="Reliability" icon="shield-check" href="/telemetry/reliability">
+    Handle empty, expired, interrupted, or incompatible data.
+  </Card>
+</CardGroup>

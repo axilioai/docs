@@ -1,38 +1,53 @@
 ---
 title: "Key"
 sidebarTitle: "Key"
-description: "The named-key constants you pass to driver.key_press(). Today, that's Enter."
+description: "Use the current named-key constant, Enter, from the CLI or either SDK."
 ---
 
-`Key` holds the named-key constants for
-[`driver.key_press()`](/driver/reference#driver-key_press).
+The current named-key set contains only Enter.
 
-```python
-from axilio.drivers.mobile import Key
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone key enter
+    ```
+  </Tab>
 
-driver.key_press(Key.ENTER)
-```
+  <Tab title="Python SDK">
+    ```python
+    from axilio.drivers.mobile import Key
 
-## Constants
+    driver.key_press(Key.ENTER)
+    ```
+  </Tab>
 
-| Constant | Value | What it does |
-|---|---|---|
-| `Key.ENTER` | `"enter"` | Submit a form, or fire the on-screen keyboard's Go / Search action. |
+  <Tab title="Go SDK">
+    ```go
+    if err := driver.KeyPress(mobile.KeyEnter); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
-<Note>
-  Enter is the only named key today. The set grows one entry at a time, as real
-  needs appear. To type characters (rather than press a key), use
-  [`driver.type_text()`](/driver/reference#driver-type_text) or
-  [`element.type_into()`](/driver/element#element-type_into).
-</Note>
+| Interface | Constant or value |
+| --- | --- |
+| CLI | `enter` |
+| Python | `Key.ENTER` (`"enter"`) |
+| Go | `mobile.KeyEnter` (`"enter"`) |
+
+Use Enter to submit a form or trigger the on-screen keyboard's **Go** or
+**Search** action. To enter characters, use [Type](/driver/type).
+
+This action maps to DCP `Keyboard.keyPress`; it is not a REST operation.
 
 ## See also
 
 <CardGroup cols={2}>
-  <Card title="Driver" icon="mobile" href="/driver/reference">
-    `key_press()` and every other action.
+  <Card title="Keys guide" icon="keyboard" href="/driver/buttons">
+    Focus a field, type, and press Enter.
   </Card>
-  <Card title="Keys" icon="keyboard" href="/driver/buttons">
-    The guide to pressing a key.
+  <Card title="Driver reference" icon="mobile" href="/driver/reference">
+    See every driver action.
   </Card>
 </CardGroup>

@@ -1,40 +1,63 @@
 ---
 title: "Screenshot"
 sidebarTitle: "Screenshot"
-description: "Take a picture of the screen to save, log, or debug a run."
+description: "Capture the current phone screen as PNG bytes."
 ---
 
-[`screenshot`](/driver/reference#driver-screenshot) takes a picture of the screen and hands it back as image data (a PNG)
-to save, log, or look at later.
+Use a screenshot to save, display, or debug the exact screen image. The result
+is a PNG.
 
-```python
-picture = driver.screenshot()
-with open("screen.png", "wb") as f:
-    f.write(picture)
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone screenshot --out screen.png
+    ```
 
-Because it's plain image data, you can hand it straight to anything that takes an
-image. No temporary file needed.
+    The default path is `screenshot.png`. The CLI overwrites an existing output
+    file without confirmation.
+  </Tab>
 
-## A picture, or the text?
+  <Tab title="Python SDK">
+    ```python
+    picture = driver.screenshot()
+    with open("screen.png", "wb") as output:
+        output.write(picture)
+    ```
+  </Tab>
 
-- **`screenshot`** gives you a **picture**. Use it to save or show what the screen
-  looked like.
-- **[Observe](/driver/observe)** gives you the **text and icons** on the screen.
-  Use it to decide what to do next.
+  <Tab title="Go SDK">
+    ```go
+    picture, err := driver.Screenshot()
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := os.WriteFile("screen.png", picture, 0o600); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+`screenshot` maps to DCP `Screen.screenshot`; it is not a REST operation.
+
+## Picture or structured screen?
+
+- Use **screenshot** for the pixels as PNG data.
+- Use [**observe**](/driver/observe) for recognized text, icons, dimensions,
+  and a queryable snapshot.
 
 <Tip>
-  Take a screenshot when something goes wrong. It's the fastest way to see what
-  the phone actually looked like.
+  Capture a screenshot when a step fails. It shows the exact state your
+  automation encountered.
 </Tip>
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Observe" icon="table-list" href="/driver/observe">
-    Get the text and icons instead of a picture.
+    Get structured text and icons.
   </Card>
-  <Card title="Overview" icon="hand-pointer" href="/driver/overview">
-    Back to everything the driver can do.
+  <Card title="Driver overview" icon="hand-pointer" href="/driver/overview">
+    Return to the complete control loop.
   </Card>
 </CardGroup>

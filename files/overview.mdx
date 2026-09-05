@@ -1,0 +1,120 @@
+---
+title: "Files"
+sidebarTitle: "Overview"
+description: "Understand the organization file library, upload and capture provenance, phone deliveries, filters, and storage limits."
+---
+
+Files is your organization's shared media library. A file can enter the
+library because you uploaded it or because a phone session captured it. Every
+ready file has one ID and can be downloaded locally or delivered to a phone.
+
+## The file model
+
+| Concept | Customer-facing contract |
+|---|---|
+| **Library** | A flat, organization-scoped collection. Files persist until you delete them. |
+| **Upload** | An action that stores a local image or video. The resulting file has `source=upload`. |
+| **Capture** | A file collected from a session. It has `source=capture`, `surface=phone`, and a `session_id`. |
+| **Delivery** | One attempt to push a library file to a phone. It has its own ID, status, progress, and error fields. |
+
+<Info>
+  Upload and capture describe provenance. They are not separate libraries.
+  Uploaded and captured files share the same ID space and delivery flow.
+</Info>
+
+## Limits and lifecycle
+
+- The library accepts supported image and video formats.
+- One library file can be up to 1 GiB.
+- A file delivered to a phone can be up to 100 MiB.
+- Every library listing reports the organization's current file-count and byte
+  usage against its quota. Treat those returned limits as authoritative.
+- An upload becomes usable after its bytes are verified and its status reaches
+  `ready`.
+- A capture has a more detailed `capture_state`. It can remain visible even
+  when the phone skips it or the transfer fails.
+- Download URLs are short-lived. List the file again to obtain a new URL after
+  one expires.
+
+Search and filter the library instead of navigating folders. You can filter by
+source, capture surface, session, MIME type, size, and creation time. You can
+sort by creation time, filename, size, or source.
+
+## Open the library
+
+<Tabs>
+  <Tab title="Dashboard">
+    Open [**Files**](https://app.axilio.ai/dashboard/axilio/files) for your
+    organization. The organization-specific route is
+    `/dashboard/<organization-slug>/files`.
+
+    The page shows uploads and captures together. Filter by source, search by
+    filename, switch between grid and list views, and inspect live quota usage.
+  </Tab>
+  <Tab title="CLI">
+    ```bash
+    axilio files list
+    axilio files list --source capture --surface phone
+    ```
+
+    The table includes source, state, session, and quota usage. Use `-o json`
+    for the complete response.
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    page = client.files.list(limit=50)
+
+    for file in page.files or []:
+        print(file.id, file.source, file.filename, file.status)
+
+    print(page.usage.file_count, page.usage.file_limit)
+    ```
+  </Tab>
+  <Tab title="Go SDK">
+    ```go
+    page, err := files.List(ctx, c, &platformgo.FilesListRequest{})
+    if err != nil {
+        return err
+    }
+
+    for _, file := range page.Files {
+        fmt.Println(file.ID, file.Source, file.Filename, file.Status)
+    }
+    ```
+
+    This example uses `github.com/axilioai/platform-go/drivers/files` for
+    `files.List` and `github.com/axilioai/platform-go` for the request type.
+  </Tab>
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/files?limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    `GET /api/v1/files` returns `files`, `total`, and `usage`.
+  </Tab>
+</Tabs>
+
+<Note>
+  Use the `axilio files` command group in new scripts. Older directional CLI
+  groups remain hidden compatibility aliases, not the current interface.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Move files" icon="arrow-right-arrow-left" href="/files/move-files">
+    Upload, download, push, rename, and delete files.
+  </Card>
+  <Card title="Session captures" icon="camera" href="/files/session-captures">
+    Find files that a session captured from its phone.
+  </Card>
+</CardGroup>

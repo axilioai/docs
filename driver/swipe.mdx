@@ -1,41 +1,91 @@
 ---
 title: "Swipe"
 sidebarTitle: "Swipe"
-description: "Swipe and scroll the screen."
+description: "Swipe between screen coordinates or drag one located element to another."
 ---
 
-[`swipe`](/driver/reference#driver-swipe) moves between two points on the screen. This is also how you scroll:
+A swipe moves between two points. Swipe upward to move down a list; swipe
+downward to move up.
 
-```python
-# scroll down
-driver.swipe(
-    {"x": 540, "y": 1600},
-    {"x": 540, "y": 400},
-)
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone swipe 540 1600 540 400 --duration-ms 300
+    ```
 
-<Note>
-  Swiping is how you scroll: swipe **up** (end higher than start) to move *down* a
-  list, and the other way to move up. Pass `duration_ms` for a slower, shorter
-  swipe.
-</Note>
+    The CLI swipe command is coordinate-only.
+  </Tab>
 
-## Swipe one thing onto another
+  <Tab title="Python SDK">
+    ```python
+    driver.swipe(
+        {"x": 540, "y": 1600},
+        {"x": 540, "y": 400},
+        duration_ms=300,
+    )
+    ```
+  </Tab>
 
-Swipe from something you [found](/driver/find) to another, for example to drag a
-card onto a target:
+  <Tab title="Go SDK">
+    ```go
+    err := driver.Swipe(
+        mobile.Coords{X: 540, Y: 1600},
+        mobile.Coords{X: 540, Y: 400},
+        300,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
-```python
-driver.find_text("Card").swipe_to(driver.find_text("Archive"))
-```
+The CLI and Python defaults are 300 milliseconds. Go requires the duration
+argument explicitly.
+
+## Drag one element to another
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    card = driver.find_text("Card")
+    archive = driver.find_text("Archive")
+    if card is None or archive is None:
+        raise RuntimeError("drag target is not visible")
+    card.swipe_to(archive, duration_ms=300)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    card, err := driver.FindText("Card", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    archive, err := driver.FindText("Archive", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if card == nil || archive == nil {
+        log.Fatal("drag target is not visible")
+    }
+    if err := card.SwipeTo(*archive, 300); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Element dragging is an SDK composition over DCP `Touch.swipe`. Live swipe
+actions are not REST operations.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Tap" icon="hand-pointer" href="/driver/tap">
-    Tap things on the screen.
+    Tap semantic or coordinate targets.
   </Card>
   <Card title="Observe" icon="table-list" href="/driver/observe">
-    Read what's on the screen after a scroll.
+    Verify the screen after a swipe.
   </Card>
 </CardGroup>

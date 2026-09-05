@@ -1,0 +1,247 @@
+---
+title: "Usage"
+sidebarTitle: "Usage"
+description: "Review phone sessions, aggregate spend, and individual inference charges."
+---
+
+Usage explains what your organization consumed. Billing explains the balance,
+plan, rentals, and invoices that pay for it.
+
+The public usage surface has three views:
+
+| View | What it answers |
+| --- | --- |
+| Metrics | How much session and inference usage occurred in a reporting window? |
+| Sessions | Which phone sessions contributed time and cost? |
+| Inferences | Which vision calls contributed cost and latency? |
+
+## Aggregate metrics
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Usage → Sessions**](https://app.axilio.ai/dashboard/axilio/usage/sessions)
+    or [**Usage → Inferences**](https://app.axilio.ai/dashboard/axilio/usage/inferences)
+    after choosing your organization. Each view combines an aggregate chart
+    with the rows for its selected date range.
+    [**Billing**](https://app.axilio.ai/dashboard/axilio/billing) shows total
+    usage spend.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio usage metrics \
+      --from 2026-08-01 \
+      --to 2026-08-28 \
+      --granularity daily
+    ```
+
+    Add `-o json` for the chart series as well as the summary.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from datetime import datetime, timezone
+
+    start = datetime(2026, 8, 1, tzinfo=timezone.utc)
+    end = datetime(2026, 8, 28, tzinfo=timezone.utc)
+
+    metrics = client.usage.get_metrics(
+        start_date=start,
+        end_date=end,
+        granularity="daily",
+        timezone="America/Chicago",
+    )
+    print(metrics.cost_by_product.sessions)
+    print(metrics.cost_by_product.inference)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    metrics, err := api.Usage.GetMetrics(ctx, &platformgo.UsageGetMetricsRequest{
+        StartDate:   platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
+        EndDate:     platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
+        Granularity: platformgo.UsageGetMetricsRequestGranularityDaily.Ptr(),
+        Timezone:    platformgo.String("America/Chicago"),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(metrics.CostByProduct.Sessions, metrics.CostByProduct.Inference)
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get usage metrics**](/api-reference/rest/usage/get-usage-metrics): `GET /usage/metrics`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/usage/metrics?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&granularity=daily" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## Session usage
+
+Session usage includes lifecycle, allocation source, phone time, inference cost,
+and billing processing state for each phone session.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open
+    [**Usage → Sessions**](https://app.axilio.ai/dashboard/axilio/usage/sessions),
+    then filter by session status, billing state, allocation source, or date.
+    Search can match a session or workflow ID.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    sessions = client.usage.list_sessions(
+        start_date=start,
+        end_date=end,
+        limit=50,
+    )
+    for session in sessions.sessions or []:
+        print(session.session_id, session.total_cost_microdollars)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    sessions, err := api.Usage.ListSessions(ctx, &platformgo.UsageListSessionsRequest{
+        StartDate: platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
+        EndDate:   platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
+        Limit:     platformgo.Int64(50),
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List phone sessions with cost**](/api-reference/rest/usage/list-phone-sessions-with-cost): `GET /usage/sessions`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/usage/sessions?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+### Filter, order, and page session usage
+
+`start_date` and `end_date` are required RFC 3339 timestamps. A session-usage
+request also supports:
+
+- `session_status_filter`;
+- `processed_status_filter`;
+- `workflow_id`;
+- `allocated_by`;
+- `search`;
+- `limit` from 1 through 100, defaulting to 50; and
+- a nonnegative `offset`, defaulting to 0.
+
+Use `order_by` with one of `allocated_at`, `deallocated_at`, `duration`,
+`cost_microdollars`, `session_status`, `processed_status`, `allocated_by`,
+`session_id`, or `workflow_id`, followed optionally by `asc` or `desc`. The
+default is `allocated_at desc`.
+
+The response contains `sessions`, `total`, `limit`, and `offset`. Continue
+requesting pages until you have consumed `total`.
+
+Each row identifies the session, workflow, and phone and reports session,
+inference, and total microdollar cost. It can also include allocation and
+deallocation time, duration, session and processing status, billing plan,
+allocation source, and session metadata. An interactive pending session can
+use an empty `workflow_id` because it was not created by a workflow.
+
+<Warning>
+  Read `processed_status` before interpreting cost. A numeric zero on a
+  pending row is not proof that the finalized session was free. Inference-cost
+  lookup is also best effort, so a point-in-time total can temporarily omit an
+  inference component.
+</Warning>
+
+The CLI currently exposes aggregate metrics and inference rows, but not the
+session-usage table. Use the dashboard, an SDK, or REST for this view.
+
+## Inference usage
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open
+    [**Usage → Inferences**](https://app.axilio.ai/dashboard/axilio/usage/inferences).
+    Filter by endpoint, model, or date, and use search to find an ID.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio usage inferences \
+      --from 2026-08-01 \
+      --to 2026-08-28 \
+      --endpoint locate \
+      --limit 50
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    inferences = client.usage.list_inferences(
+        start_date=start,
+        end_date=end,
+        endpoint_filter=["locate"],
+        limit=50,
+    )
+    for inference in inferences.inferences or []:
+        print(inference.inference_id, inference.cost_microdollars)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    inferences, err := api.Usage.ListInferences(
+        ctx,
+        &platformgo.UsageListInferencesRequest{
+            StartDate:      platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
+            EndDate:        platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
+            EndpointFilter: []string{"locate"},
+            Limit:          platformgo.Int64(50),
+        },
+    )
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List inference calls**](/api-reference/rest/usage/list-inference-calls): `GET /usage/inferences`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/usage/inferences?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&endpoint_filter=locate&limit=50" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+Aggregate `cost_by_product` values are US dollars. Session and inference row
+fields whose names end in `_microdollars` use microdollars. One US dollar
+equals 1,000,000 microdollars.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Telemetry dashboard" icon="diagram-project" href="/telemetry/understand-a-trace">
+    Relate point-in-time operation costs to one session's execution.
+  </Card>
+  <Card title="Billing" icon="credit-card" href="/billing/overview">
+    Understand dedicated rentals, balance, and payment actions.
+  </Card>
+  <Card title="Balance, credits, and invoices" icon="wallet" href="/billing/balance-and-invoices">
+    Understand credit lifecycle, configure alerts, and download invoice PDFs.
+  </Card>
+</CardGroup>

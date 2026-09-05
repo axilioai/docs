@@ -1,64 +1,88 @@
 ---
-title: "Dedicated devices"
-sidebarTitle: "Dedicated devices"
-description: "Rent a specific phone that's yours around the clock, with no per-session cost."
+title: "Dedicated phones"
+sidebarTitle: "Dedicated phones"
+description: "Rent one specific phone, keep its state, and use it without per-session phone-time charges."
 ---
 
-By default you borrow any free phone. A **dedicated device** is a specific phone
-you rent, so it's yours around the clock, with no waiting for one to be free.
+A **dedicated phone** is reserved for your organization for its rental period.
+It keeps its apps and device state between sessions.
 
-- It's the **same phone every time**, so apps stay logged in and set up the way
-  you left them.
-- You pay a **flat rental** (daily, weekly, or monthly) instead of per second.
-  Sessions on a dedicated phone cost **$0**.
+- Rent by day, week, or month.
+- Reuse the same `phone_id`.
+- Sessions on the phone add no phone-time charge.
+- Vision and other metered services remain separate usage.
 
-## Rent one
+## Rent or manage a phone
 
-Dedicated phones are billed as a flat rental:
+Rentals are dashboard actions:
 
-<div id="axilio-rental-plans" />
+1. Open [**Phones**](https://app.axilio.ai/dashboard/axilio/phones).
+2. Click **Rent A Phone**.
+3. Choose a rental period and complete checkout.
+4. Open [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), then
+   choose **Dedicated Phones** to inspect or cancel a renewal.
 
-Start a checkout for a rental plan, then open the link to finish:
+The public API, SDKs, and CLI do not start checkout, renew, or cancel a rental.
 
-```python
-checkout = client.billing.create_rental_checkout(plan_id="rental_monthly")
-print(checkout.checkout_url)
+## Read rental subscriptions
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    rentals = client.billing.get_rental_subscriptions()
+
+    for rental in rentals.subscriptions or []:
+        print(rental.phone_id, rental.status, rental.current_period_end)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    rentals, err := api.Billing.GetRentalSubscriptions(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, rental := range rentals.Subscriptions {
+        phoneID := "not assigned"
+        if rental.PhoneID != nil {
+            phoneID = *rental.PhoneID
+        }
+        fmt.Println(phoneID, rental.Status, rental.CurrentPeriodEnd)
+    }
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List phone rentals**](/api-reference/rest/billing/list-phone-rentals): `GET /billing/phone-rental-subscriptions`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/billing/phone-rental-subscriptions \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## Use your phone
+
+Find the ID with `axilio phones mine` or
+`client.phones.list(ownership="dedicated")`, then pin it:
+
+```bash
+axilio sessions start --phone-id ph_123
 ```
 
-Find rental plans in your [dashboard](https://axilio.ai/dashboard).
-
-## Use your dedicated phone
-
-Your rented phones show up in `devices.mine()`. Pass a phone's `phone_id` to
-`session()` to use that exact phone:
-
-```python
-mine = client.phones.mine()
-
-for phone in mine.phones:
-    if phone.rental_expires_at:   # your dedicated phones
-        print(phone.nickname, phone.phone_id, phone.rental_expires_at)
-
-with client.session("ANDROID", phone_id="<your phone_id>") as driver:
-    ...
-```
-
-## Manage your rentals
-
-```python
-subs = client.billing.list_rental_subscriptions()
-
-client.billing.renew_rental_subscriptions(subscription_ids=["sub_123"])
-client.billing.cancel_rental_subscriptions(subscription_ids=["sub_123"])
-```
+The dashboard also lets you choose any idle dedicated phone or one exact phone.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone from the shared pool.
+  <Card title="Discover phones" icon="list" href="/devices/discover">
+    Inspect dedicated status and availability.
   </Card>
-  <Card title="How billing works" icon="credit-card" href="/billing/overview">
-    Per-second time vs flat rentals.
+  <Card title="Billing" icon="credit-card" href="/billing/overview">
+    Understand rentals, usage, balance, and invoices.
   </Card>
 </CardGroup>

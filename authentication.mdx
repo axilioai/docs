@@ -1,65 +1,126 @@
 ---
 title: "Authentication"
 sidebarTitle: "Authentication"
-description: "Get an API key and give it to Axilio — through the environment or directly in code."
+description: "Create an organization-scoped API key or sign in to the CLI, then authenticate Python, Go, and REST requests safely."
 ---
 
-Every request to Axilio needs an **API key** — a secret that identifies your
-account.
+Axilio authenticates SDK and REST requests with an **API key**. The CLI can use
+an API key or a browser sign-in.
 
-## Get a key
+## Create an API key
 
-Create one in the [dashboard](https://axilio.ai/dashboard), under
-**Settings → API keys**. Keys start with `axl_`.
+Open [**API Keys**](https://app.axilio.ai/dashboard/axilio/api-keys) for your
+organization. The organization-specific page is
+`/dashboard/<organization-slug>/api-keys`.
+
+Choose **Create API Key**, give the key a name, and copy the secret. Keys start
+with `axl_`.
 
 <Warning>
-  Your key is shown once, when you create it. Save it somewhere safe and never
-  commit it to your code.
+  Axilio shows the secret only when you create the key. Store it in a secret
+  manager. Never commit it, paste it into logs, or pass it as a command-line
+  argument that your shell may record.
 </Warning>
 
-## Use it
+## Authenticate an interface
 
-The easiest way is an environment variable — Axilio reads it automatically:
+<Tabs>
+  <Tab title="CLI">
+    For interactive use, sign in through your browser and verify the session:
 
-```bash
-export AXILIO_API_KEY=axl_your_key_here
-```
+    ```bash
+    axilio login
+    axilio status
+    ```
 
-```python
-from axilio.platform import Client
+    For non-interactive use, expose an API key through the environment:
 
-client = Client()
-```
+    ```bash
+    export AXILIO_API_KEY=axl_your_key_here
+    axilio status
+    ```
 
-Or pass it directly:
+    A browser session can switch organizations with `axilio orgs use
+    <organization-slug>`. An API key remains scoped to the organization that
+    created it.
+  </Tab>
+  <Tab title="Python SDK">
+    Set the environment variable before starting your process:
 
-```python
-client = Client(api_key="axl_your_key_here")
-```
+    ```bash
+    export AXILIO_API_KEY=axl_your_key_here
+    ```
 
-## Options
+    `Client` reads it automatically:
 
-`Client()` takes a few optional settings:
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    ```
+
+    You can also pass `api_key=` from a secret provider:
+
+    ```python
+    client = Client(api_key=secret_value)
+    ```
+  </Tab>
+  <Tab title="Go SDK">
+    Read the secret from your environment or secret provider and pass it to
+    the generated client:
+
+    ```go
+    import (
+        "os"
+
+        client "github.com/axilioai/platform-go/client"
+        option "github.com/axilioai/platform-go/option"
+    )
+
+    c := client.NewClient(
+        option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+    )
+    ```
+  </Tab>
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
+
+    Send the key in the `X-Axilio-Api-Key` header:
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/files \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    Do not send the key to presigned file upload or download URLs. Those URLs
+    authorize the storage request themselves and expire after a short time.
+  </Tab>
+</Tabs>
+
+## Python client options
 
 | Setting | Default | What it does |
 |---|---|---|
-| `api_key` | `AXILIO_API_KEY` | Your key. Required. |
-| `base_url` | `https://api.axilio.ai` | Where to send requests. |
-| `timeout` | `30.0` | Seconds to wait per request. |
-| `max_retries` | `3` | Automatic retries on temporary failures. |
+| `api_key` | `AXILIO_API_KEY` | Authenticates requests. Required. |
+| `base_url` | `AXILIO_BASE_URL`, then `https://api.axilio.ai` | Selects the API host. |
+| `timeout` | `30.0` | Sets the per-request timeout in seconds. |
+| `max_retries` | `3` | Retries temporary failures before returning an error. |
 
 <Note>
-  Each key belongs to one organization. If you're in more than one, make a
-  separate key for each.
+  Each API key belongs to one organization. Create a separate key for each
+  organization that your application needs to access.
 </Note>
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Control your first phone.
+  <Card title="SDK quickstart" icon="rocket" href="/quickstart">
+    Allocate and inspect your first phone with Python.
   </Card>
-  <Card title="Devices" icon="mobile" href="/devices/overview">
-    Get and manage phones.
+  <Card title="CLI" icon="terminal" href="/cli">
+    Sign in and drive a phone from your terminal.
   </Card>
 </CardGroup>

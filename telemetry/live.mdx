@@ -1,0 +1,280 @@
+---
+title: "Live telemetry"
+sidebarTitle: "Live telemetry"
+description: "Follow an active session through the Dashboard, CLI, SDKs, or the read-only telemetry WebSocket."
+---
+
+Live telemetry gives you progressive visibility into a phone session. It uses
+the same span-and-log frame envelope that you can [retrieve later](/telemetry/retrieve),
+but live delivery and retained storage are separate best-effort paths.
+
+Use the live stream to monitor work as it happens. Use retained telemetry to
+reconcile the available record after the session ends or after you detect a
+live gap.
+
+## Follow an active session
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+    2. Select an active session.
+    3. Click **Observability**.
+
+    **Timeline** pairs span starts and ends as work progresses. **Console**
+    displays output and error logs. Select a timeline row to inspect its
+    currently available details.
+
+    When the session ends, the Dashboard replaces the live view of the trace
+    with retained history.
+  </Tab>
+
+  <Tab title="CLI">
+    Print the retained prefix, then follow new frames until the session ends:
+
+    ```bash
+    axilio sessions trace sess_123 --follow
+    ```
+
+    Follow a workflow run from its queue state through its final outcome:
+
+    ```bash
+    axilio runs watch run_123
+    ```
+
+    Add `-o json` for newline-delimited JSON. `sessions trace --follow` emits
+    one frame per line and finishes with:
+
+    ```json
+    {"trace_end":true,"session_id":"...","frames":0,"session_ended":true,"sdk_call_costs":{},"inference_costs":{}}
+    ```
+
+    `frames` is the number of distinct delivered frames. `runs watch -o json`
+    ends with:
+
+    ```json
+    {"watch_end":true,"run_id":"...","status":"completed","error_message":null}
+    ```
+
+    `runs watch` exits with 0 for completed, 1 for failed, and 7 for cancelled
+    or locally interrupted work. The CLI handles cursor resume, replay
+    deduplication, and retained reconciliation.
+  </Tab>
+
+  <Tab title="Python SDK">
+    Mint a URL for an active session, then attach the synchronous helper:
+
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    session_id = "sess_123"
+
+    grant = client.phones.session_telemetry_token(session_id)
+    telemetry = client.telemetry(session_id, grant.telemetry_url)
+
+    for frame in telemetry.tail(open_timeout=10):
+        print(frame)
+    ```
+
+    If your process allocated the phone, you can pass the allocation's
+    `telemetry_url` instead of minting another URL. The helper reconnects,
+    resumes from its latest cursor, and deduplicates replayed frames. Use
+    `telemetry.logs(live=True)` when you only need logs.
+
+    `open_timeout` covers the opening WebSocket handshake. Iteration can wait
+    for the next frame while the session remains active.
+
+    The high-level helper is synchronous. A missing `telemetry_url` raises
+    `ValueError`. Attach `401` raises `UnauthorizedError`, attach `403` raises
+    `SessionEndedError`, and an exhausted reconnect sequence raises a
+    retryable `ConnectionError`.
+  </Tab>
+
+  <Tab title="Go SDK">
+    Mint a URL and pass it to the telemetry session helper:
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "errors"
+        "fmt"
+        "io"
+        "log"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/drivers/telemetry"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        sessionID := "sess_123"
+
+        grant, err := api.Phones.SessionTelemetryToken(
+            ctx,
+            &platformgo.PhonesSessionTelemetryTokenRequest{SessionID: sessionID},
+        )
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        view := telemetry.NewSession(
+            api,
+            sessionID,
+            telemetry.WithTelemetryURL(grant.TelemetryURL),
+        )
+        stream, err := view.Tail(ctx)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer stream.Close()
+
+        for {
+            frame, err := stream.Next(ctx)
+            if errors.Is(err, io.EOF) {
+                break
+            }
+            if err != nil {
+                log.Fatal(err)
+            }
+            fmt.Printf("%+v\n", frame)
+        }
+
+        if stream.Gapped() {
+            fmt.Println("Live gap detected; retrieve the retained trace")
+        }
+    }
+    ```
+
+    Import the helper from
+    `github.com/axilioai/platform-go/drivers/telemetry`. It reconnects and
+    resumes after an established stream drops. It can expose replayed frames,
+    so deduplicate them when your presentation requires it. If `Gapped()` is
+    `true`, call `view.Trace(ctx)` to rebuild from retained telemetry.
+
+    `Stream.Next(ctx)` returns the next frame. `Ended()` reports terminal
+    session completion, `Gapped()` reports a replay gap, and `Close()` stops
+    the reader. Context cancellation or deadline returns the context error.
+    After terminal completion, `Next` returns `io.EOF`.
+
+    An initial `Tail` connection fails fast. After a stream has attached, the
+    helper retries transient loss. `*telemetry.Error` uses the codes
+    `unauthorized`, `connection`, `session_ended`, and `closed`. `Next` and
+    `Close` can run from different goroutines, but multiple concurrent `Next`
+    calls are not supported.
+  </Tab>
+
+  <Tab title="REST + WebSocket">
+    Use the REST API to mint a read-only capability URL for an active session,
+    then give the returned URL to a WebSocket client.
+
+    REST API reference:
+
+    - [**Mint a telemetry stream URL**](/api-reference/rest/phones/mint-a-telemetry-stream-url): `POST /phones/sessions/{session_id}/telemetry-token`
+
+    ```bash
+    TELEMETRY_URL=$(curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones/sessions/sess_123/telemetry-token \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      | jq -r '.telemetry_url')
+
+    websocat "$TELEMETRY_URL"
+    ```
+
+    Consume the URL Axilio returns. Do not construct the real-time host, path,
+    `session_id`, or bearer token yourself.
+  </Tab>
+</Tabs>
+
+## Protect the capability URL
+
+The telemetry URL contains a bearer credential in its query string.
+
+- Treat the entire URL as a secret.
+- Do not put it in application logs, analytics, screenshots, or referrer data.
+- Share it only with the process that reads this session's telemetry.
+- Do not send device commands over this connection. The stream is read-only.
+- Discard the URL when you no longer need it.
+
+The capability is scoped to one session and can attach only while that session
+is active. There is no refresh message inside the WebSocket. You can reconnect
+with the same URL while it remains valid, or mint a new URL while the session
+is still active. Switch to retained retrieval after the session ends.
+
+## Parse frames and transport messages
+
+Current first-party producers normally send one frame object in each WebSocket
+text message. Build a raw reader that accepts either one frame object or an
+array of frame objects. Array tolerance follows the transport contract; it does
+not mean the server currently batches arrays.
+
+Frames use a `kind` discriminator such as `span` or `log`. Cursor and resync
+objects are transport messages, not telemetry frames:
+
+```json
+{"type":"CURSOR","cursor":"<opaque-value>"}
+```
+
+```json
+{"type":"RESYNC_REQUIRED"}
+```
+
+Accept new fields and unfamiliar `span_type` or `log_type` values. Support for
+an unfamiliar top-level `kind` depends on the client and version. See the
+[frame compatibility guidance](/telemetry/frames#build-a-tolerant-reader)
+before choosing a generated or handwritten decoder.
+
+## Resume from a cursor
+
+To receive checkpoints, preserve every query parameter in the returned URL and
+set `resume=1`. After you receive a checkpoint, store its `cursor` value as an
+opaque string. On reconnect, add or replace `cursor` with that exact value:
+
+```text
+<returned-telemetry-url>&resume=1&cursor=<opaque-value>
+```
+
+The cursor requests entries strictly after the checkpoint. Do not parse its
+format or use it as a timestamp.
+
+If the cursor is outside the available live replay window, the stream sends
+`RESYNC_REQUIRED` and continues near the current stream tail. It does not
+reconstruct the missing history for you. [Retrieve the retained record](/telemetry/retrieve#recover-after-a-live-gap)
+before treating your local view as reconciled.
+
+## Set delivery expectations
+
+- Late attach and reconnect can replay a bounded recent window. No fixed public
+  replay duration or entry count is guaranteed.
+- Reconnect can redeliver frames. Tolerate duplicates.
+- Live delivery is best-effort. Replay tolerance does not guarantee that every
+  produced frame reaches every subscriber.
+- A live frame does not prove that an identical record was retained.
+- Do not assume every started span receives a live end frame.
+- The live and retained paths are not exactly-once services.
+
+For retry classification, gap recovery, and terminal outcomes, follow
+[Reliability and troubleshooting](/telemetry/reliability).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Retrieve telemetry" icon="download" href="/telemetry/retrieve">
+    Page through retained history or refill after a live gap.
+  </Card>
+  <Card title="Frame reference" icon="brackets-curly" href="/telemetry/frames">
+    Parse spans, logs, attributes, and additive values.
+  </Card>
+  <Card title="Reliability and troubleshooting" icon="life-ring" href="/telemetry/reliability">
+    Handle interruption, duplication, gaps, and expired history.
+  </Card>
+  <Card title="Data controls" icon="shield-halved" href="/telemetry/data-controls">
+    Protect sensitive telemetry and understand retention.
+  </Card>
+</CardGroup>

@@ -1,43 +1,115 @@
 ---
 title: "Tap"
 sidebarTitle: "Tap"
-description: "Tap something on the screen, or tap and hold."
+description: "Tap a semantic target or an exact screen coordinate, or press and hold."
 ---
 
-Tap whatever you [found](/driver/find):
+Prefer a semantic or text target when one exists. Use raw coordinates only
+when the action belongs to a fixed point on the current screen.
 
-```python
-driver.find_text("Settings").tap()
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone tap --query "the Continue button"
+    ```
 
-## Tap and hold
+    `--query` finds the target with semantic vision and taps its center. You can
+    add `--ocr-engine` or `--model` overrides.
+  </Tab>
 
-[`long_press`](/driver/element#element-long_press) presses and holds, for example to open a menu:
+  <Tab title="Python SDK">
+    ```python
+    driver.wait_for_text("Continue").tap()
+    ```
+  </Tab>
 
-```python
-driver.find_text("Photo").long_press()
-driver.find_text("Photo").long_press(duration_ms=1500)   # hold longer
-```
+  <Tab title="Go SDK">
+    ```go
+    button, err := driver.WaitForText("Continue", 10*time.Second, false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := button.Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
-## Tap an exact spot
+## Tap an exact point
 
-If you already know the point (an `x`, `y` on the screen), tap it directly:
+Coordinates start at `(0, 0)` in the screen's top-left corner.
 
-```python
-driver.tap({"x": 540, "y": 1180})
-driver.long_press({"x": 540, "y": 1180})
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone tap 540 1180
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    driver.tap({"x": 540, "y": 1180})
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    if err := driver.Tap(mobile.Coords{X: 540, Y: 1180}); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Press and hold
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone long-press 540 1180 --duration-ms 1500
+    ```
+
+    The CLI long-press command is coordinate-only. The CLI and Python default
+    to 800 milliseconds; Go requires the duration explicitly.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    photo = driver.find_text("Photo")
+    if photo is not None:
+        photo.long_press(duration_ms=1500)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    photo, err := driver.FindText("Photo", false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if photo != nil {
+        if err := photo.LongPress(1500); err != nil {
+            log.Fatal(err)
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Tap and long-press use DCP `Touch.tap` and `Touch.longPress`; they are not REST
+operations.
 
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    Locate a safe target before acting.
+  </Card>
   <Card title="Type" icon="keyboard" href="/driver/type">
-    Type into a field.
+    Enter text after focusing a field.
   </Card>
   <Card title="Swipe" icon="arrows-up-down-left-right" href="/driver/swipe">
-    Swipe and scroll.
-  </Card>
-  <Card title="Find" icon="magnifying-glass" href="/driver/find">
-    Find what to tap.
+    Scroll or move between two points.
   </Card>
 </CardGroup>

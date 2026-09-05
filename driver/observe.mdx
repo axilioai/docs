@@ -1,48 +1,91 @@
 ---
 title: "Observe"
 sidebarTitle: "Observe"
-description: "Read the whole screen at once (all the text and icons) and pull the data you need from it."
+description: "Read all recognized text and icons on the current screen."
 ---
 
-[`observe`](/driver/reference#driver-observe) reads **everything on the screen at once**: all the text and icons. So
-you can look through it, and pull out the data you need, in your code.
+`observe` captures one screen and returns its recognized text, icons,
+dimensions, hash, and capture time.
 
-```python
-screen = driver.observe()
-print(len(screen.texts), "pieces of text")
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone observe -o json | jq '.texts | length'
+    ```
 
-## What you get
+    Add `--ocr-engine premium` when the screen needs the premium OCR engine.
+  </Tab>
 
-`observe` hands back a snapshot of the screen, with its `texts`, `icons`, and size.
-See the [Screen reference](/driver/screen) for the full list.
+  <Tab title="Python SDK">
+    ```python
+    screen = driver.observe()
+    print(len(screen.texts), "pieces of text")
+    ```
+  </Tab>
 
-## Pull data off the screen
+  <Tab title="Go SDK">
+    ```go
+    screen, err := driver.Observe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(len(screen.Texts), "pieces of text")
+    ```
+  </Tab>
+</Tabs>
 
-Search the snapshot without going back to the phone:
+## Search the snapshot locally
 
-```python
-screen = driver.observe()
+Searching an observed snapshot does not capture the screen again.
 
-prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
-total = screen.find_text("Total")
-```
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone observe -o json > screen.json
+    jq '.texts[] | select(.text | test("\\$[0-9]+\\.[0-9]{2}"))' screen.json
+    jq '.texts[] | select(.text | contains("Total"))' screen.json
+    ```
+  </Tab>
 
-This is how you get data off the screen today: **observe** it, then read the text
-you want. (A one-call `extract` is on the roadmap.)
+  <Tab title="Python SDK">
+    ```python
+    screen = driver.observe()
+    prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
+    total = screen.find_text("Total")
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    screen, err := driver.Observe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    prices, err := screen.FindAllText("", `\$\d+\.\d{2}`)
+    if err != nil {
+        log.Fatal(err)
+    }
+    total := screen.FindText("Total", false)
+    fmt.Println(len(prices), total)
+    ```
+  </Tab>
+</Tabs>
+
+See [Screen](/driver/screen) for the snapshot fields and local query rules.
+`observe` maps to DCP `Screen.observe`; it is not a REST operation.
 
 ## A picture instead?
 
-`observe` gives you the text and icons. For the screen as an **image**, use
-[Screenshot](/driver/screenshot).
+`observe` gives you structured text and icons. Use [Screenshot](/driver/screenshot)
+when you need PNG bytes.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Find" icon="magnifying-glass" href="/driver/find">
-    Search the live screen for one thing.
+    Search the live screen for one target.
   </Card>
   <Card title="Screenshot" icon="camera" href="/driver/screenshot">
-    Get the screen as an image.
+    Save the current screen as an image.
   </Card>
 </CardGroup>

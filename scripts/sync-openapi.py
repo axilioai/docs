@@ -15,6 +15,10 @@ renames; it just does the few things Mintlify needs that the spec can't express:
                  (and collapse to one tag per op) for a clean sidebar.
   4. role badge - lift `x-required-role` (viewer/member/admin) into an x-mint
                  badge rendered above each endpoint (AXI-1123).
+  5. MDX placeholders - escape angle-bracket sort placeholders so Mintlify does
+                 not interpret them as JSX tags on generated endpoint pages.
+  6. known description drift - correct customer-visible schema prose when the
+                 deployed runtime contract is newer than its source comment.
 
 DROP is retained only as a thin safety net: the backend's openapi_guard_test now
 locks the surface at the source, but if a management/destructive route ever
@@ -47,6 +51,120 @@ def strip_schema(node):
     elif isinstance(node, list):
         for v in node:
             strip_schema(v)
+
+
+_MDX_PLACEHOLDERS = {
+    "<field>": "&lt;field&gt;",
+    "<asc|desc>": "&lt;asc|desc&gt;",
+}
+
+
+def escape_mdx_placeholders(node):
+    """Escape known prose placeholders that Mintlify otherwise parses as JSX."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if isinstance(value, str):
+                for placeholder, escaped in _MDX_PLACEHOLDERS.items():
+                    value = value.replace(placeholder, escaped)
+                node[key] = value
+            else:
+                escape_mdx_placeholders(value)
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            if isinstance(value, str):
+                for placeholder, escaped in _MDX_PLACEHOLDERS.items():
+                    value = value.replace(placeholder, escaped)
+                node[index] = value
+            else:
+                escape_mdx_placeholders(value)
+
+
+_DESCRIPTION_CORRECTIONS = {
+    (
+        "Persist telemetry spans for this workflow's runs (default true). "
+        "false skips the durable trace store; the live telemetry stream still "
+        "works while a run is active."
+    ): (
+        "Emit telemetry for this workflow's runs (default true). false suppresses "
+        "both live frames and durable trace storage."
+    ),
+    "OTel trace id (32 lowercase hex chars) of the session the log belongs to.": (
+        "Telemetry trace ID (32 lowercase hex characters) for the session that "
+        "produced this log."
+    ),
+    (
+        "OTel span id (16 lowercase hex chars). Upsert key: the live copy of "
+        "this span carries the same id."
+    ): (
+        "Telemetry span ID (16 lowercase hex characters). The live and archived "
+        "copies of a span use the same ID."
+    ),
+    (
+        "OTel trace id (32 lowercase hex chars), derived from the session id: "
+        "one session is one trace."
+    ): (
+        "Telemetry trace ID (32 lowercase hex characters), derived from the "
+        "session ID; one session produces one trace."
+    ),
+    (
+        "True when the trace is past the org's retention window; frames are "
+        "withheld and the underlying data is deleted by a daily sweep."
+    ): (
+        "True when the trace is past the organization's telemetry access "
+        "window; frames are not returned."
+    ),
+    "Customer-facing plan name (Hobby, Pro, Scale, Enterprise).": (
+        "Customer-facing plan name."
+    ),
+    "Whether this workflow's runs persist telemetry spans (default true).": (
+        "Whether this workflow's runs emit live and retained telemetry (default true)."
+    ),
+}
+
+
+_DESCRIPTION_FRAGMENT_CORRECTIONS = {
+    (
+        "Tolerant reader (unified frame contract): consumers MUST ignore frames "
+        "with an unknown kind, unknown fields within known kinds, and unknown "
+        "span_type/log_type values (render generically, never error). Generated "
+        "SDK types surface an unrecognized frame as an explicit UnknownFrame "
+        "variant carrying the raw JSON, never a silent drop. A live-stream "
+        "message MAY carry a JSON array of frame objects; consumers MUST accept "
+        "a single object or an array."
+    ): (
+        "Forward-compatible raw JSON consumers should accept unknown fields "
+        "within known kinds and treat unknown span_type/log_type values "
+        "generically. Top-level unknown-kind handling varies by interface and "
+        "SDK version; do not assume every generated SDK exposes an UnknownFrame "
+        "variant. Live readers should accept either a single frame object or an "
+        "array for forward compatibility; current first-party forwarding "
+        "normally sends one frame object per message."
+    ),
+    ", 3h token": "",
+}
+
+
+def _correct_description(value: str) -> str:
+    value = _DESCRIPTION_CORRECTIONS.get(value, value)
+    for stale, corrected in _DESCRIPTION_FRAGMENT_CORRECTIONS.items():
+        value = value.replace(stale, corrected)
+    return value
+
+
+def correct_known_description_drift(node):
+    """Normalize descriptions whose generated prose trails runtime behavior."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if isinstance(value, str):
+                node[key] = _correct_description(value)
+            else:
+                correct_known_description_drift(value)
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            if isinstance(value, str):
+                node[index] = _correct_description(value)
+            else:
+                correct_known_description_drift(value)
 
 
 # Safety net only. The backend curates the public surface at the source
@@ -136,6 +254,8 @@ def build(url: str, server: str, out: str):
     spec = fetch(url)
     spec["servers"] = [{"url": server, "description": "Production"}]
     strip_schema(spec)
+    correct_known_description_drift(spec)
+    escape_mdx_placeholders(spec)
     drop_internal(spec)   # safety net only; backend curates at the source
     titlecase_tags(spec)
     badge_roles(spec)

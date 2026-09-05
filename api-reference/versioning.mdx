@@ -1,0 +1,80 @@
+---
+title: "Versioning & Deprecation"
+sidebarTitle: "Versioning & deprecation"
+description: "How the API is versioned, what can change without notice, how deprecations are announced, and the rate limits that apply to every caller."
+---
+
+You can build against the Axilio API without watching for surprise breakage.
+This page is the contract: what stays stable, what can change, and exactly how
+you'll hear about anything that goes away.
+
+## Versioning
+
+The REST API is versioned in the URL path. Everything on these pages lives
+under:
+
+```
+https://api.axilio.ai/api/v1
+```
+
+`/api/v1` is a stability boundary. Within it:
+
+- **Non-breaking changes ship without notice.** New endpoints, new optional
+  request fields, new response fields, new enum values, and new headers can
+  appear at any time. Write your client so extra fields it doesn't recognize
+  are ignored, not errors.
+- **Breaking changes don't ship to `/api/v1`.** Removing or renaming a field,
+  changing a field's type or meaning, tightening validation on existing
+  requests, or removing an endpoint would land in a new version prefix
+  (`/api/v2`), never silently in place.
+
+The [OpenAPI spec](https://api.axilio.ai/openapi.json) is regenerated with
+every release and carries the current API version in `info.version`. If you
+generate a client, generate it from there.
+
+## Deprecation
+
+When an endpoint or field is scheduled for removal, you hear about it three
+ways, well before anything stops working:
+
+1. **In the spec and on these pages.** The operation is marked deprecated in
+   the OpenAPI spec (`deprecated: true`) and badged on its reference page,
+   with a pointer to the replacement.
+2. **On the wire.** Responses from a deprecated endpoint carry a
+   `Deprecation` header, and once a removal date is set, a `Sunset` header
+   with that date (RFC 8594). Log these in your client and you will never be
+   surprised.
+3. **With a real migration window.** A deprecated endpoint keeps working for
+   at least **90 days** after the `Sunset` header first appears, and we
+   contact organizations that are still calling it before it goes away.
+
+Nothing is removed quietly: no `Sunset` header, no removal.
+
+## Rate limits
+
+Every caller gets a per-minute request budget, keyed by API key (or by IP for
+unauthenticated requests). Each response tells you where you stand:
+
+| Header | Meaning |
+|---|---|
+| `RateLimit-Limit` | Your budget for the current window (requests per minute). |
+| `RateLimit-Remaining` | Requests left in the window. |
+| `RateLimit-Reset` | Seconds until the window resets. |
+
+Past the budget, requests return `429 Too Many Requests` with a `Retry-After`
+header (seconds). Back off for that long and retry; the response body is the
+standard [error shape](/reference/errors).
+
+The default budget is generous for normal use, including fleet-scale work: one
+`runs` call fans a workflow across many phones, so driving thousands of phones
+does not mean thousands of API calls. If you're hitting the limit with a
+legitimate workload, [contact us](https://axilio.ai/contact).
+
+## What to do as a client
+
+- Ignore unknown response fields and headers instead of failing on them.
+- Watch for `Deprecation` and `Sunset` headers in responses and surface them
+  in your logs.
+- Honor `Retry-After` on `429`s rather than retrying immediately.
+- Regenerate clients from the [live spec](https://api.axilio.ai/openapi.json),
+  not from a saved copy.

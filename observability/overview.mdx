@@ -1,33 +1,54 @@
 ---
 title: "Observability"
 sidebarTitle: "Overview"
-description: "See everything your agents do, and exactly what it costs: live view, recordings, events, and cost, on the dashboard and in the SDK."
+description: "Watch a phone session live and replay its screen recording after it ends."
 ---
 
-Axilio shows you everything: what your agents did, and what it cost. Every session
-is recorded, every step is logged, and every cost is itemized. No black box.
-
-## What you can see
+Observability covers the phone's visual state during and after a session. Use
+Live view to watch an active phone. Use Recordings to replay the screen after a
+recorded session finishes processing.
 
 <CardGroup cols={2}>
   <Card title="Live view" icon="tower-broadcast" href="/observability/live-view">
-    Watch a phone in real time.
+    Watch or embed a phone's interactive screen.
   </Card>
   <Card title="Recordings" icon="video" href="/observability/recordings">
-    Replay any session as a video.
-  </Card>
-  <Card title="Events" icon="list-check" href="/observability/events">
-    The step-by-step of a run.
-  </Card>
-  <Card title="Cost" icon="coins" href="/observability/cost">
-    Exactly where your money goes.
+    Replay a recorded session after processing completes.
   </Card>
 </CardGroup>
 
-## Where to see it
+## Choose the right surface
 
-- **Dashboard**: live view, replays, and charts in your
-  [dashboard](https://axilio.ai/dashboard).
-- **SDK**: pull recordings, events, and costs from code.
-- **Locally too**: even when you drive a phone from your own machine, the session
-  is recorded and shows up the same way.
+| You want to | Use |
+| --- | --- |
+| Watch or embed the phone screen while a session is active | [Live view](/observability/live-view) |
+| Replay the screen after the session | [Recordings](/observability/recordings) |
+| Understand operations, timing, output, errors, or per-call cost | [Telemetry](/telemetry/overview) |
+
+Live view, recording, and Telemetry use different credentials and controls.
+A Telemetry URL is read-only. A live-view URL can carry broader phone
+privileges unless the session is view-only. Neither live URL is a recording or
+archive credential.
+
+## Follow a visual session
+
+1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+2. Select an active session to watch its screen in **Live view**.
+3. After the session ends, wait for its recording status to become `ready`.
+4. Replay the recording and, when useful, compare it with the session's
+   [Telemetry dashboard](/telemetry/understand-a-trace).
+
+Recording playback can synchronize its playhead with Telemetry time so you can
+compare screen changes with the operations that caused them.
+
+## Control recording separately
+
+Recording and Telemetry are enabled by default, but they are independent:
+
+- `recording: false` prevents the screen recording and rolling thumbnail from
+  being written.
+- `telemetry: false` prevents both live and retained Telemetry without
+  disabling recording.
+
+See [Telemetry data controls](/telemetry/data-controls) for retention,
+sensitive-data, and Telemetry opt-out guidance.

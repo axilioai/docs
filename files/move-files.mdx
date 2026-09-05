@@ -1,0 +1,444 @@
+---
+title: "Move files"
+sidebarTitle: "Move files"
+description: "Upload a file, push it to a phone, download it locally, rename supported uploads, and delete or recall delivered copies."
+---
+
+Moving a file is a two-part operation:
+
+1. **Upload** stores the local bytes once in your organization's library.
+2. **Push** creates a delivery from that library file to a phone.
+
+You can push the same file to several phones without uploading it again. You
+can also use a one-shot send helper when you do not need to retain the two
+steps separately.
+
+<Warning>
+  The library accepts files up to 1 GiB, but phone delivery is limited to 100
+  MiB per file. A one-shot Python or Go send refuses an oversized file and does
+  not upload it. A separate upload can still store it in the library.
+</Warning>
+
+## Upload and push
+
+<Tabs>
+  <Tab title="Dashboard">
+    Open [**Files**](https://app.axilio.ai/dashboard/axilio/files) for your
+    organization and choose **Upload Files**, drag files onto the page, or upload
+    from the **Files** tool during a workflow or session.
+
+    During an active session, open the **Files** tool, select a library file,
+    and choose **Send**. The delivery reports progress and reaches `delivered`
+    or `failed` after the phone responds.
+  </Tab>
+  <Tab title="CLI">
+    ```bash
+    axilio files upload ./photo.jpg
+    axilio files list --source upload
+    axilio files push <file-id> --phone-id <phone-id> --wait
+    ```
+
+    `files upload` infers the filename and MIME type. Use `--filename` or
+    `--mime-type` to override them. `files push` returns after dispatch unless
+    you add `--wait`; then inspect whether the final status is `delivered` or
+    `failed`.
+
+    Use `axilio phone send ./photo.jpg` when the selected session should upload
+    and deliver the file in one command.
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+
+    stored = client.files.upload("./photo.jpg")
+    delivery = client.files.push(
+        "<phone-id>",
+        stored.id,
+        wait=True,
+    )
+
+    print(stored.id, delivery.status)
+    ```
+
+    `client.files.send("<phone-id>", "./photo.jpg", wait=True)` combines the
+    upload and push. A waited delivery can still return at its timeout, so
+    inspect `delivery.status`.
+  </Tab>
+  <Tab title="Go SDK">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "os"
+        "time"
+
+        client "github.com/axilioai/platform-go/client"
+        files "github.com/axilioai/platform-go/drivers/files"
+        option "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        stored, err := files.Upload(ctx, c, "./photo.jpg")
+        if err != nil {
+            panic(err)
+        }
+
+        delivery, err := files.Push(
+            ctx, c, "<phone-id>", stored.ID, files.WithWait(time.Minute),
+        )
+        if err != nil {
+            panic(err)
+        }
+        fmt.Println(delivery.Status)
+    }
+    ```
+
+    `files.Send` combines the upload and push.
+  </Tab>
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Register a file upload**](/api-reference/rest/files/register-a-file-upload): `POST /files`
+    - [**Mark an upload complete**](/api-reference/rest/files/mark-an-upload-complete): `POST /files/{file_id}/complete`
+    - [**Deliver a library file to a phone**](/api-reference/rest/phones/deliver-a-library-file-to-a-phone): `POST /phones/{phone_id}/deliveries`
+
+    Register the upload. Use the exact byte count and media type for the file:
+
+    ```bash
+    FILE_SIZE=$(wc -c < photo.jpg)
+
+    REGISTER_RESPONSE=$(curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/files \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data "{\"filename\":\"photo.jpg\",\"mime_type\":\"image/jpeg\",\"size_bytes\":$FILE_SIZE}")
+
+    FILE_ID=$(jq -r '.file.id' <<<"$REGISTER_RESPONSE")
+    UPLOAD_URL=$(jq -r '.upload_url' <<<"$REGISTER_RESPONSE")
+    ```
+
+    The command stores `file.id` and `upload_url`. Upload the raw bytes to the
+    presigned URL without the Axilio API-key header, then complete the file:
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request PUT \
+      --url "$UPLOAD_URL" \
+      --header "Content-Type: image/jpeg" \
+      --header "Content-Length: $FILE_SIZE" \
+      --data-binary @photo.jpg
+
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/files/$FILE_ID/complete" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    Push the ready file by creating a phone delivery:
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/phones/ph_123/deliveries \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data "{\"file_id\":\"$FILE_ID\"}"
+    ```
+  </Tab>
+</Tabs>
+
+Delivery status moves from `dispatching` to `dispatched`, then to `delivered`
+or `failed`. The phone may also report `bytes_transferred` while a delivery is
+in progress.
+
+## Download a file
+
+Only a ready file has a `download_url`. The URL is short-lived and needs no
+Axilio authentication header.
+
+<Tabs>
+  <Tab title="Dashboard">
+    On [**Files**](https://app.axilio.ai/dashboard/axilio/files), choose the
+    download action on a ready file. Selecting a preview opens the original in a
+    new tab.
+  </Tab>
+  <Tab title="CLI">
+    ```bash
+    axilio files download <file-id>
+    axilio files download <file-id> --out ./captures/photo.jpg
+    ```
+
+    The command refuses to overwrite an existing destination unless you add
+    `--force`.
+  </Tab>
+  <Tab title="Python SDK">
+    Search by filename, then stream the first ready match to a path you choose:
+
+    ```python
+    from pathlib import Path
+
+    import httpx
+
+    page = client.files.list(q="photo.jpg")
+    item = next((file for file in page.files or [] if file.download_url), None)
+    if item is None:
+        raise RuntimeError("no ready file matched photo.jpg")
+
+    output_path = Path("photo.jpg")
+    with httpx.stream("GET", item.download_url, follow_redirects=True) as response:
+        response.raise_for_status()
+        with output_path.open("wb") as output:
+            for chunk in response.iter_bytes():
+                output.write(chunk)
+
+    print(f"saved {output_path}")
+    ```
+  </Tab>
+  <Tab title="Go SDK">
+    Search by filename, then stream the first ready match to a path you choose:
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "io"
+        "log"
+        "net/http"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        client "github.com/axilioai/platform-go/client"
+        files "github.com/axilioai/platform-go/drivers/files"
+        option "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        page, err := files.List(ctx, c, &platformgo.FilesListRequest{
+            Q: platformgo.String("photo.jpg"),
+        })
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        var selected *platformgo.FileSummary
+        for _, item := range page.Files {
+            if item != nil && item.DownloadURL != nil {
+                selected = item
+                break
+            }
+        }
+        if selected == nil {
+            log.Fatal("no ready file matched photo.jpg")
+        }
+
+        request, err := http.NewRequestWithContext(
+            ctx, http.MethodGet, *selected.DownloadURL, nil,
+        )
+        if err != nil {
+            log.Fatal(err)
+        }
+        response, err := http.DefaultClient.Do(request)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer response.Body.Close()
+        if response.StatusCode < 200 || response.StatusCode >= 300 {
+            log.Fatalf("download failed: %s", response.Status)
+        }
+
+        outputPath := "photo.jpg"
+        output, err := os.Create(outputPath)
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer output.Close()
+        if _, err := io.Copy(output, response.Body); err != nil {
+            log.Fatal(err)
+        }
+
+        fmt.Println("saved", outputPath)
+    }
+    ```
+
+    Re-list before retrying an expired URL.
+  </Tab>
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
+
+    Search by filename, then download the first ready match to a path you choose:
+
+    ```bash
+    DOWNLOAD_URL=$(curl --silent --show-error --fail-with-body \
+      --get \
+      --url https://api.axilio.ai/api/v1/files \
+      --data-urlencode "q=photo.jpg" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" |
+      jq -r '[.files[]? | select(.status == "ready" and .download_url)][0].download_url // empty')
+
+    if [ -z "$DOWNLOAD_URL" ]; then
+      echo "no ready file matched photo.jpg" >&2
+      exit 1
+    fi
+
+    curl --silent --show-error --fail-with-body \
+      --location \
+      --url "$DOWNLOAD_URL" \
+      --output photo.jpg
+    ```
+  </Tab>
+</Tabs>
+
+## Rename an uploaded file
+
+Only `source=upload` files can be renamed. A capture keeps the filename that
+the phone reported because it is part of the capture's provenance. Renaming is
+metadata-only: existing URLs still work, and earlier deliveries retain the
+name they used at push time.
+
+<Tabs>
+  <Tab title="Dashboard">
+    On [**Files**](https://app.axilio.ai/dashboard/axilio/files), use the rename
+    action beside an uploaded filename. Captured filenames have no rename
+    action.
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    renamed = client.files.rename(
+        "<file-id>",
+        filename="launch-photo.jpg",
+    )
+    ```
+  </Tab>
+  <Tab title="Go SDK">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        client "github.com/axilioai/platform-go/client"
+        option "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        renamed, err := c.Files.Rename(ctx, &platformgo.FileRenameRequest{
+            FileID:   "<file-id>",
+            Filename: "launch-photo.jpg",
+        })
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println(renamed.File.Filename)
+    }
+    ```
+  </Tab>
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Rename a file**](/api-reference/rest/files/rename-a-file): `PATCH /files/{file_id}`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request PATCH \
+      --url https://api.axilio.ai/api/v1/files/file_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"filename":"launch-photo.jpg"}'
+    ```
+  </Tab>
+</Tabs>
+
+The CLI does not have a post-upload rename command. Set the stored name during
+upload with `axilio files upload <path> --filename <name>` or use one of the
+rename interfaces above.
+
+## Delete and recall
+
+Deleting a file removes it from the library and frees its quota. Axilio also
+schedules removal from phones that hold or are receiving a delivered copy.
+
+<Tabs>
+  <Tab title="Dashboard">
+    Open [**Files**](https://app.axilio.ai/dashboard/axilio/files), choose the
+    delete action on the file, and review how many phones currently hold or are
+    receiving a copy before confirming.
+  </Tab>
+  <Tab title="CLI">
+    ```bash
+    axilio files delete <file-id>
+    ```
+
+    Interactive table mode asks for confirmation. Non-interactive, JSON, and
+    quiet execution require `--yes`.
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    client.files.delete("<file-id>")
+    ```
+  </Tab>
+  <Tab title="Go SDK">
+    ```go
+    package main
+
+    import (
+        "context"
+        "log"
+        "os"
+
+        client "github.com/axilioai/platform-go/client"
+        files "github.com/axilioai/platform-go/drivers/files"
+        option "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        ctx := context.Background()
+        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+
+        if err := files.Delete(ctx, c, "<file-id>"); err != nil {
+            log.Fatal(err)
+        }
+    }
+    ```
+  </Tab>
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Delete a file**](/api-reference/rest/files/delete-a-file): `DELETE /files/{file_id}`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request DELETE \
+      --url https://api.axilio.ai/api/v1/files/file_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    The response includes `phones_pending_removal`.
+  </Tab>
+</Tabs>
+
+<Note>
+  Deleting a captured file recalls copies that Axilio delivered later. It does
+  not remove the original media from the phone that produced the capture.
+</Note>

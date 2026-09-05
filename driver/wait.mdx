@@ -1,63 +1,113 @@
 ---
 title: "Wait"
 sidebarTitle: "Wait"
-description: "Wait for the screen to change before you act. The reliable alternative to a fixed pause."
+description: "Poll the screen for an expected change instead of sleeping for a fixed delay."
 ---
 
-Apps take a moment to load and change. Acting too early is the most common reason
-automation breaks. Instead of a fixed pause, **wait for what you expect**.
+Apps take time to load and change. Wait for the state you expect before acting.
 
-## Wait for something to appear
+## Wait for text to appear
 
-[`wait_for_text`](/driver/reference#driver-wait_for_text) waits until the text shows up, then hands it to you:
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone wait-for "Welcome" --timeout 30s -o json
+    ```
 
-```python
-driver.wait_for_text("Welcome").tap()   # waits, then taps
-```
+    Add `--exact` for a case-sensitive exact match. A timeout returns exit
+    status `5`.
+  </Tab>
 
-## Wait for something to go away
+  <Tab title="Python SDK">
+    ```python
+    welcome = driver.wait_for_text(
+        "Welcome",
+        timeout=30,
+        poll_ms=300,
+    )
+    welcome.tap()
+    ```
+  </Tab>
 
-[`wait_until_gone`](/driver/reference#driver-wait_until_gone) waits until the text is gone. Handy for loading spinners:
+  <Tab title="Go SDK">
+    ```go
+    welcome, err := driver.WaitForText("Welcome", 30*time.Second, false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := welcome.Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
-```python
-driver.wait_until_gone("Loading")
-```
+## Wait for text to disappear
 
-## How long to wait
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone wait-for "Loading" --gone --timeout 30s
+    ```
+  </Tab>
 
-Both take a `timeout`, the number of seconds to wait before giving up (10 by
-default):
+  <Tab title="Python SDK">
+    ```python
+    driver.wait_until_gone("Loading", timeout=30, poll_ms=300)
+    ```
+  </Tab>
 
-```python
-driver.wait_for_text("Confirmed", timeout=30).tap()
-```
+  <Tab title="Go SDK">
+    ```go
+    if err := driver.WaitUntilGone("Loading", 30*time.Second, false); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
 
-<Warning>
-  If what you're waiting for never happens, you get a `TimeoutError`. Catch it to
-  handle screens that might not appear:
+Python and Go also accept OCR call options for these helpers. The CLI `wait-for`
+command does not expose an OCR-engine flag.
 
-  ```python
-  from axilio.drivers.mobile import TimeoutError
+## Wait for a custom condition
 
-  try:
-      driver.wait_for_text("Approved", timeout=15).tap()
-  except TimeoutError:
-      ...   # do something else
-  ```
-</Warning>
+The SDKs can poll until a predicate accepts the observed screen:
 
-<Tip>
-  Always prefer waiting over a fixed pause like `time.sleep`. A wait continues the
-  moment the screen is ready, usually faster, and far more reliable.
-</Tip>
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    screen = driver.wait_for(
+        lambda current: current.find_text("Done") is not None,
+        timeout=30,
+        poll_ms=300,
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    screen, err := driver.WaitFor(func(current mobile.Screen) bool {
+        return current.FindText("Done", false) != nil
+    }, 30*time.Second)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(screen.Hash)
+    ```
+  </Tab>
+</Tabs>
+
+Wait helpers repeatedly call DCP `Screen.observe` and evaluate the match in the
+client. They are not REST operations. Prefer them to a fixed sleep because they
+continue as soon as the screen is ready.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Find" icon="magnifying-glass" href="/driver/find">
-    What a wait looks for.
+    Understand text and semantic selectors.
   </Card>
-  <Card title="Tap" icon="hand-pointer" href="/driver/tap">
-    Act on what a wait hands back.
+  <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
+    Recover from timeouts and other control failures.
   </Card>
 </CardGroup>

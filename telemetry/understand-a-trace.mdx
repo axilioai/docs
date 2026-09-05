@@ -1,0 +1,190 @@
+---
+title: "Telemetry dashboard"
+sidebarTitle: "Telemetry dashboard"
+description: "Interpret session operations, relationships, timing, output, errors, and available cost context."
+---
+
+A Telemetry trace helps you reconstruct what a session did, where it spent
+time, and where it failed. Start with the Dashboard for a visual explanation.
+Use CLI, SDK, or REST retrieval when you need every available frame or raw
+attributes.
+
+## Open the trace
+
+1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+2. Select an active or completed session.
+3. Open **Observability**.
+4. Use **Timeline** for operations and **Console** for point-in-time logs.
+
+When a live session ends, the Dashboard reconciles the live view with its
+retained history. If a recording is available, its playhead can synchronize
+with Telemetry time.
+
+## Read the Timeline
+
+Each bar represents an operation span. Its placement shows when the operation
+started and how long it ran. Parent and child spans show which operation
+caused another operation.
+
+```text
+session
+└── run
+    ├── sdk_call
+    │   └── inference
+    ├── file_push
+    └── media_capture
+```
+
+The current producer vocabulary includes session, run, SDK-call, inference,
+file-push, and media-capture spans. These roles are open-ended. Older retained
+session roots can use `phone_session`, and future Telemetry can add new values.
+
+The raw relationship uses three identifiers:
+
+| Field | Purpose |
+| --- | --- |
+| `trace_id` | Correlates frames in the session's product trace. |
+| `span_id` | Identifies one operation span. |
+| `parent_span_id` | Links an operation to the span that contains or caused it. A root omits it. |
+
+Completed run spans also preserve the workflow and user context needed to
+identify where a run came from.
+
+Retained Telemetry sorts spans by `start_time_unix_nano` and logs by
+`time_unix_nano` on one ascending timeline. Do not depend on a stable order
+between frames with exactly equal timestamps.
+
+### Filter the timeline
+
+The Timeline shows filters when relevant values exist:
+
+- **Kind** can show **SDK calls**, **Inference**, and **Gaps**.
+- **Op** contains the SDK operation labels present in the trace.
+
+These filters change the visible rows. They do not recalculate the totals in
+the header. File-push rows can appear in the Timeline, but file pushes are not
+a **Kind** option today.
+
+### Use the header as a summary
+
+The header can show:
+
+- total session duration;
+- summed SDK-call duration;
+- unobserved duration;
+- SDK-call count; and
+- model cost and billable-call count when the current positive values are
+  available.
+
+An unobserved gap marks time not covered by a recorded SDK call. It may include
+customer code, waiting or idle time, Axilio session activity, or telemetry that
+did not reach the viewer. The gap alone does not identify the cause.
+
+## Inspect operation details
+
+Select a timeline row to inspect its available details.
+
+| Row | Current Dashboard details |
+| --- | --- |
+| **All operations** | Status, duration, and start offset. |
+| **SDK call** | Operation, cost when available, OCR engine, and error. |
+| **Inference** | Model, cost when available, inference ID, and stage timing. |
+| **File push** | File name, size, and error. |
+| **Unobserved gap** | An explanation of the uncovered interval. |
+
+Status helps distinguish successful and failed completed spans. In raw
+Telemetry, a status contains `code` and `message`; current producers use `ok`
+and `error`. A live start frame can arrive before end time or final status is
+known.
+
+The Dashboard intentionally renders a curated set of details. Raw frames can
+contain additional producer attributes. Captured SDK-call input and output
+attributes are not currently wired into the Dashboard details pane. Use
+[Retrieve Telemetry](/telemetry/retrieve) and the
+[Frame reference](/telemetry/frames) when you need the raw record.
+
+<Warning>
+  Raw attributes can contain customer-provided SDK inputs and outputs. Treat
+  them as sensitive data. Typed text receives a specific input-redaction rule,
+  but other nonempty inputs and results can be captured.
+</Warning>
+
+## Read the Console
+
+The Console presents logs on the same session timeline. Use it to find:
+
+- run output;
+- error output;
+- kernel-status messages; and
+- transfer progress for file pushes and media captures.
+
+A log can belong to a containing span through `span_id`, or it can be
+session-level. The known raw roles include `output_log`, `output_error`,
+`kernel_status`, and `transfer_progress`, but new `log_type` values are
+additive.
+
+When a run fails, inspect its session's Console and Timeline. Run output and
+error details belong in Telemetry rather than a `logs` field on the run
+response.
+
+## Interpret cost context
+
+Retained Telemetry can join billed SDK-call and inference costs to the trace:
+
+- `sdk_call_costs` is keyed by SDK-call `span_id`.
+- `inference_costs` is keyed by inference ID.
+- Each value uses microdollars, where `1,000,000` microdollars equals `$1.00`.
+
+These response-level maps are point-in-time, best-effort joins. They can lag or
+be corrected independently of the frames. A missing key, an empty map, and a
+numeric zero are not interchangeable, so do not use any one of them as proof
+that an operation was definitively free.
+
+Use this page to understand cost in the context of one trace. Use
+[Usage](/usage/overview) for organization-level session and inference totals,
+and use [Billing](/billing/overview) for balance, plan, and invoice
+information.
+
+## Know the Dashboard boundaries
+
+- The Dashboard currently requests one retained page with up to 1,000 frames.
+  It does not follow later pages. A long session can therefore look incomplete
+  even when more retained frames are available through REST, CLI, or SDK
+  pagination.
+- Timeline filters hide rows without recalculating header totals.
+- The details pane shows known curated fields, not every raw attribute.
+- Captured SDK-call input and output are raw-only today.
+- Telemetry is best effort. A missing interval is not proof that no work
+  happened during that interval.
+
+### Recognize unavailable states
+
+The Dashboard shows **Telemetry disabled for this session** when the session
+started with Telemetry off. No live or retained trace exists for that session.
+
+It shows **Trace past your retention window** when retained access has expired.
+Daily, Weekly, and Monthly dedicated rental cadence does not choose a
+different Telemetry retention period. See
+[Data controls](/telemetry/data-controls) for the current standard access
+window and organization-policy exceptions.
+
+If the trace looks incomplete, retrieve all retained pages before drawing a
+conclusion. Then use [Reliability and troubleshooting](/telemetry/reliability)
+to distinguish gaps, expiration, disabled Telemetry, and client compatibility.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Retrieve Telemetry" icon="download" href="/telemetry/retrieve">
+    Read every available page and interpret empty or expired responses.
+  </Card>
+  <Card title="Frame reference" icon="brackets-curly" href="/telemetry/frames">
+    Inspect span, log, status, timestamp, relationship, and attribute fields.
+  </Card>
+  <Card title="Data controls" icon="shield-halved" href="/telemetry/data-controls">
+    Learn what Telemetry can capture and how to protect sensitive data.
+  </Card>
+  <Card title="Reliability and troubleshooting" icon="life-ring" href="/telemetry/reliability">
+    Recover from gaps and diagnose incomplete or unavailable traces.
+  </Card>
+</CardGroup>

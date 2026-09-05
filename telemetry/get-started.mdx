@@ -1,0 +1,169 @@
+---
+title: "Get started with Telemetry"
+sidebarTitle: "Get started"
+description: "Follow one phone session live, then inspect its available retained trace."
+---
+
+This guide takes one phone session from live activity to its retained
+Telemetry record. You need a session ID and access to the session's
+organization.
+
+Telemetry is enabled by default for direct sessions and workflow runs. Leave
+it enabled for this guide. Recording is a separate setting and is not required.
+
+## 1. Start or choose a session
+
+Start a direct session with [Allocate a phone](/devices/allocate), start a
+[workflow run](/workflows/run), or choose an existing active session. Save its
+`session_id`.
+
+If you explicitly set `telemetry=false`, that session produces neither live
+nor retained Telemetry. Start another session with Telemetry enabled before
+continuing.
+
+## 2. Inspect its Telemetry
+
+Choose the interface you use today. Each tab gives you a first useful view of
+the same session-scoped record.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
+    2. Select the active or completed session.
+    3. Open **Observability**.
+    4. Use **Timeline** for operations and **Console** for output and errors.
+
+    An active session updates as work runs. When the session ends, the
+    Dashboard replaces its live data with retained history.
+  </Tab>
+
+  <Tab title="CLI">
+    Follow the retained prefix, then new live frames:
+
+    ```bash
+    axilio sessions trace sess_123 --follow
+    ```
+
+    After the session ends, retrieve the available trace without following:
+
+    ```bash
+    axilio sessions trace sess_123
+    ```
+
+    Replace `sess_123` with your session ID. Add `-o json` when you need
+    structured output. The CLI handles retained pagination and reconciles live
+    data with retained Telemetry.
+  </Tab>
+
+  <Tab title="Python SDK">
+    Retrieve the available trace with the synchronous Telemetry helper:
+
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    telemetry = client.telemetry("sess_123")
+    trace = telemetry.trace()
+
+    for item in trace.spans:
+        print(item.frame.name, item.duration_ms)
+
+    for entry in trace.logs:
+        print(entry.severity, entry.body)
+    ```
+
+    The helper retrieves every retained page. Use `telemetry.summary()` for a
+    summary and `telemetry.logs()` for logs only. To follow an active session,
+    pass an allocation or token-mint `telemetry_url`, then iterate
+    `telemetry.tail()`. See [Follow live Telemetry](/telemetry/live) for the
+    complete live example.
+  </Tab>
+
+  <Tab title="Go SDK">
+    Retrieve the available trace with the Telemetry helper:
+
+    ```go
+    view := telemetry.NewSession(api, "sess_123")
+
+    trace, err := view.Trace(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for _, item := range trace.Spans {
+        fmt.Println(item.Span.Name, item.Duration())
+    }
+    for _, entry := range trace.Logs {
+        fmt.Println(entry.Severity, entry.Body)
+    }
+    ```
+
+    Import the helper from
+    `github.com/axilioai/platform-go/drivers/telemetry`. It retrieves every
+    retained page. Use `Tail(ctx)` with a live URL to follow an active session;
+    see [Follow live Telemetry](/telemetry/live) for the complete stream loop.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API reference:
+
+    - [**List a session's Telemetry frames**](/api-reference/rest/runs/list-a-sessions-telemetry-frames): `GET /phones/sessions/{session_id}/frames`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request GET \
+      --url 'https://api.axilio.ai/api/v1/phones/sessions/sess_123/frames?limit=1000&offset=0' \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      | jq
+    ```
+
+    The response contains a page of `frames`, pagination fields,
+    response-level cost maps, and `retention_expired`. Continue through the
+    pages instead of assuming the first response contains the whole session.
+
+    For active streaming, mint a read-only URL with
+    `POST /phones/sessions/{session_id}/telemetry-token`, then follow the raw
+    WebSocket contract in [Live Telemetry](/telemetry/live).
+  </Tab>
+</Tabs>
+
+## 3. Follow the live-to-retained handoff
+
+The live URL works only while the session is active. When the session ends,
+switch to retained retrieval by the same `session_id`.
+
+The Dashboard and CLI reconcile the live view with retained history. The SDK
+helpers expose both paths so your application can do the same. A custom
+WebSocket reader must perform that handoff itself. If it detects a live gap,
+retrieve all available retained pages before treating the local view as
+reconciled.
+
+<Note>
+  Telemetry is best effort. Live delivery can replay frames or contain gaps,
+  and a frame seen live does not prove that an identical record was retained.
+</Note>
+
+## 4. Find the useful signal
+
+- Use **Timeline** or trace spans to see what ran, how operations nested, and
+  which operations failed.
+- Use **Console** or trace logs to inspect output and errors. Run output is
+  Telemetry; it is not a field on the run response.
+- Read `retention_expired` before interpreting an empty retained result.
+- Treat billed cost as point-in-time context. Do not infer that a missing key
+  or numeric zero means an operation was definitively free.
+
+<CardGroup cols={2}>
+  <Card title="Telemetry dashboard" icon="diagram-project" href="/telemetry/understand-a-trace">
+    Interpret Timeline, Console, relationships, status, and cost context.
+  </Card>
+  <Card title="Retrieve Telemetry" icon="download" href="/telemetry/retrieve">
+    Learn pagination, ordering, empty states, and response-level cost maps.
+  </Card>
+  <Card title="Data controls" icon="shield-halved" href="/telemetry/data-controls">
+    Understand what is captured and how long it is normally accessible.
+  </Card>
+  <Card title="Troubleshoot Telemetry" icon="life-ring" href="/telemetry/reliability">
+    Diagnose gaps, duplicates, disabled capture, expiration, and compatibility.
+  </Card>
+</CardGroup>

@@ -1,26 +1,78 @@
 ---
 title: "How the driver works"
 sidebarTitle: "Overview"
-description: "The Mobile driver is a handful of basics (find, tap, type, swipe) that you chain together to control a phone."
+description: "Observe a phone, find a target, act, and verify the next screen with the CLI or an SDK."
 ---
 
-The **Mobile driver** is how you control a phone that the
-[Platform](/introduction) gives you. A [session](/quickstart) hands you one.
+The mobile driver controls the phone inside a session. Its reliable loop is:
 
-It's a small set of **basics** (find, tap, type, swipe) that you chain together to
-do anything:
+1. Observe the current screen.
+2. Find a target by visible text or description.
+3. Tap, type, swipe, or press a key.
+4. Observe or wait for the expected result.
 
-```python
-from axilio.platform import Client
+Start with a [dedicated-phone session](/devices/allocate), then use the
+interface that fits your program.
 
-client = Client()
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio phone observe
+    axilio phone tap --query "the search icon"
+    axilio phone tap --query "the Search field"
+    axilio phone type "axilio"
+    axilio phone key enter
+    axilio phone observe
+    ```
+  </Tab>
 
-with client.session("android") as driver:
-    driver.find(query="the Settings icon").tap()
-    driver.find_text("Search").type_into("axilio")
-```
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
 
-Every basic is one idea. Learn the handful below and you can drive any app.
+    client = Client()
+
+    with client.session("android", phone_id="ph_123") as driver:
+        driver.find(query="the search icon").tap()
+        driver.wait_for_text("Search").type_into("axilio")
+        driver.key_press("enter")
+        screen = driver.observe()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    searchIcon, err := driver.Find("the search icon")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := searchIcon.Tap(); err != nil {
+        log.Fatal(err)
+    }
+
+    field, err := driver.WaitForText("Search", 10*time.Second, false)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := field.TypeInto("axilio"); err != nil {
+        log.Fatal(err)
+    }
+    if err := driver.KeyPress(mobile.KeyEnter); err != nil {
+        log.Fatal(err)
+    }
+    screen, err := driver.Observe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(len(screen.Texts))
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  Phone control uses the session's Device Control Protocol WebSocket. The CLI
+  and SDK drivers expose these actions; they are not REST endpoints.
+</Note>
 
 ## The basics
 
@@ -29,13 +81,13 @@ Every basic is one idea. Learn the handful below and you can drive any app.
     Locate something by its text or by describing it.
   </Card>
   <Card title="Tap" icon="hand-pointer" href="/driver/tap">
-    Tap it, or tap and hold.
+    Tap a target or press and hold.
   </Card>
   <Card title="Type" icon="keyboard" href="/driver/type">
     Type into a field.
   </Card>
   <Card title="Swipe" icon="arrows-up-down-left-right" href="/driver/swipe">
-    Swipe and scroll.
+    Swipe, scroll, or drag.
   </Card>
   <Card title="Keys" icon="keyboard" href="/driver/buttons">
     Press Enter to submit a form or search.
@@ -44,25 +96,21 @@ Every basic is one idea. Learn the handful below and you can drive any app.
     Read the whole screen at once.
   </Card>
   <Card title="Wait" icon="hourglass-half" href="/driver/wait">
-    Wait for the screen to change before you act.
+    Wait for the screen to change before acting.
   </Card>
   <Card title="Screenshot" icon="camera" href="/driver/screenshot">
-    Take a picture of the screen.
+    Capture the current pixels as a PNG.
   </Card>
 </CardGroup>
 
-## Chaining them together
+## Semantic targets and coordinates
 
-Most steps are a **find** followed by an action:
+Use text or a natural-language query for a tappable target whenever possible.
+Coordinates are appropriate for gestures that move the whole screen or for a
+fixed point you derived from the current observation.
 
-```python
-driver.find_text("Settings").tap()          # find -> tap
-driver.find(query="the search box").type_into("hello")   # find -> type
-driver.wait_for_text("Welcome").tap()        # wait -> tap
-```
+Only tap, long-press, and swipe have raw coordinate forms. Finding, waiting,
+typing, key presses, observation, and screenshots use their own typed inputs.
 
-That's the whole model. When you need exact control, every action also takes raw
-coordinates. See [Tap](/driver/tap) and [Swipe](/driver/swipe).
-
-For every method with its full signature, arguments, and return type, see the
+For complete Python signatures and the corresponding Go methods, see the
 [Driver reference](/driver/reference).

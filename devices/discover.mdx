@@ -1,40 +1,78 @@
 ---
-title: "See available devices"
-sidebarTitle: "See devices"
-description: "Check what phones are free, and which ones are yours."
+title: "Discover phones"
+sidebarTitle: "Discover"
+description: "Find an idle dedicated phone or inspect every phone your organization rents."
 ---
 
-## What's free
+Use the dedicated-phone inventory to choose the `phone_id` for a session. A
+phone can be allocated when its `status` is `active` and
+`current_session_id` is empty. The full inventory also shows phones already in
+a session and phones whose status is `inactive`, `maintenance`, or `suspended`.
 
-`available` shows how many phones are free to borrow right now:
+## Find a phone
 
-```python
-free = client.phones.available()
-print(free.android_count, "Android phones free")
-```
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Phones**](https://app.axilio.ai/dashboard/axilio/phones). Search or filter your
+    dedicated inventory, then choose **Allocate** on an idle phone.
+  </Tab>
 
-## Your phones
+  <Tab title="CLI">
+    ```bash
+    # Dedicated phones that can be allocated now.
+    axilio phones list
 
-`mine` lists the phones tied to your account, like
-[dedicated ones you rented](/billing/plans):
+    # Complete dedicated inventory, including busy and offline phones.
+    axilio phones mine
+    axilio phones mine -o json
+    ```
+  </Tab>
 
-```python
-mine = client.phones.mine()
+  <Tab title="Python SDK">
+    ```python
+    inventory = client.phones.list(ownership="dedicated")
 
-for phone in mine.phones:
-    print(phone.phone_id, phone.nickname, phone.status)
-```
+    for phone in inventory.phones or []:
+        print(
+            phone.phone_id,
+            phone.nickname,
+            phone.status,
+            phone.current_session_id,
+        )
+    ```
+  </Tab>
 
-Pass a phone's `phone_id` to [`session`](/devices/allocate) to use that exact
-phone.
+  <Tab title="Go SDK">
+    ```go
+    inventory, err := api.Phones.List(ctx, &platformgo.PhonesListRequest{
+        Ownership: platformgo.PhonesListRequestOwnershipDedicated,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, phone := range inventory.Phones {
+        fmt.Println(phone.PhoneID, phone.Status, phone.CurrentSessionID)
+    }
+    ```
+  </Tab>
 
-## Next steps
+  <Tab title="REST API">
+    REST API References:
 
-<CardGroup cols={2}>
-  <Card title="Get a device" icon="square-plus" href="/devices/allocate">
-    Borrow a phone.
-  </Card>
-  <Card title="Sessions" icon="clock" href="/devices/timeouts">
-    How borrowing works.
-  </Card>
-</CardGroup>
+    - [**List the organization's phones**](/api-reference/rest/phones/list-the-orgs-phones): `GET /phones`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/phones?ownership=dedicated" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+
+    This endpoint returns the full rented inventory. Require `status=active`
+    and an empty `current_session_id`, then handle an allocation
+    conflict in case another session claims it first.
+  </Tab>
+</Tabs>
+
+You can use the **`phone_id`** when you
+[**Allocate a phone**](/devices/allocate) to select a specific phone for a
+session.

@@ -1,11 +1,9 @@
 // Live pricing tables. Instead of hardcoding prices, the docs fetch them from the
 // public, CORS-open billing endpoints at view time, so they're never stale:
-//   GET /api/v1/billing/plans
 //   GET /api/v1/billing/phone-rental-plans
 //
 // A page opts in by including an empty element:
-//   <div id="axilio-plans" />          -> the subscription plans table
-//   <div id="axilio-rental-plans" />   -> the dedicated-device rental table
+//   <div id="axilio-rental-plans" />   -> the dedicated-phone rental cards
 //   <div id="axilio-models" />         -> the vision-language models table
 //   <div id="axilio-argus-models" />   -> the Axilio (argus) model line table
 //
@@ -17,10 +15,17 @@
   var ARGUS = "https://argus.axilio.ai/api/v1";
 
   function dollars(cents) { return "$" + (cents / 100).toFixed(2); }
-  function fromMicro(micro) { return "$" + (micro / 1e6).toFixed(2); }
-  function perHour(microPerSec) { return "$" + ((microPerSec * 3600) / 1e6).toFixed(2); }
   function perMillion(dollarsPerToken) { return "$" + (parseFloat(dollarsPerToken) * 1e6).toFixed(2); }
   function contextWindow(n) { return n >= 1e6 ? (n / 1e6) + "M" : Math.round(n / 1000) + "K"; }
+
+  function escapeHTML(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
   function buildTable(headers, rows) {
     var head = "<thead><tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr></thead>";
@@ -34,38 +39,38 @@
     el.innerHTML = "<p>See the <a href=\"https://axilio.ai\">pricing page</a> for current prices.</p>";
   }
 
-  function renderPlans(el) {
-    fetch(API + "/billing/plans").then(function (r) { return r.json(); }).then(function (d) {
-      var plans = (d.plans || []).filter(function (p) { return p.is_available; })
-        .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
-      if (!plans.length) { return fallback(el); }
-      var rows = plans.map(function (p) {
-        var pr = p.pricing || {};
-        var custom = p.tier === "enterprise";
-        return [
-          "<strong>" + p.name + "</strong>",
-          custom ? "Custom" : (pr.monthly_price_cents ? dollars(pr.monthly_price_cents) + "/mo" : "Free"),
-          custom ? "—" : fromMicro(pr.included_balance_microdollars || 0),
-          custom ? "—" : perHour(pr.price_per_second_microdollars || 0),
-          (p.limits || {}).max_concurrent_runs
-        ];
-      });
-      el.innerHTML = buildTable(
-        ["Plan", "Price", "Included balance", "Per device hour", "Concurrent runs"], rows
-      );
-    }).catch(function () { fallback(el); });
-  }
-
   function renderRentals(el) {
     fetch(API + "/billing/phone-rental-plans").then(function (r) { return r.json(); }).then(function (d) {
       var order = { day: 0, week: 1, month: 2 };
-      var plans = (d.plans || []).filter(function (p) { return p.is_available; })
-        .sort(function (a, b) { return (order[a.interval] || 9) - (order[b.interval] || 9); });
+      var plans = (d.plans || []).filter(function (p) {
+        return p.is_available && Object.prototype.hasOwnProperty.call(order, p.interval);
+      })
+        .sort(function (a, b) {
+          var aOrder = Object.prototype.hasOwnProperty.call(order, a.interval) ? order[a.interval] : 9;
+          var bOrder = Object.prototype.hasOwnProperty.call(order, b.interval) ? order[b.interval] : 9;
+          return aOrder - bOrder;
+        });
       if (!plans.length) { return fallback(el); }
-      var rows = plans.map(function (p) {
-        return ["<strong>" + p.name + "</strong>", dollars(p.price_cents), "per " + p.interval];
+      var cards = plans.map(function (p) {
+        var features = ["Unlimited phone hours"].concat(p.features || []);
+        var featureList = features.map(function (feature) {
+          return "<li><span aria-hidden=\"true\">✓</span>" + escapeHTML(feature) + "</li>";
+        }).join("");
+        var popular = p.is_popular
+          ? "<div class=\"axilio-rental-badge\">Best value</div>"
+          : "";
+        return [
+          "<article class=\"axilio-rental-card" + (p.is_popular ? " is-popular" : "") + "\">",
+          popular,
+          "<div class=\"axilio-rental-eyebrow\">Dedicated phone</div>",
+          "<h3>" + escapeHTML(p.name) + "</h3>",
+          "<div class=\"axilio-rental-price\"><strong>" + dollars(p.price_cents) + "</strong><span>/" + escapeHTML(p.interval) + "</span></div>",
+          "<div class=\"axilio-rental-per-phone\">per phone</div>",
+          "<ul>" + featureList + "</ul>",
+          "</article>"
+        ].join("");
       });
-      el.innerHTML = buildTable(["Rental", "Price", "Billed"], rows);
+      el.innerHTML = "<div class=\"axilio-rental-grid\">" + cards.join("") + "</div>";
     }).catch(function () { fallback(el); });
   }
 
@@ -133,8 +138,6 @@
     // div#… (not getElementById): Mintlify slugifies headings into element ids,
     // so a heading like "## Axilio models" also carries id="axilio-models" and
     // getElementById would hand us the heading instead of our anchor div.
-    var p = document.querySelector("div#axilio-plans");
-    if (p && !p.dataset.loaded) { p.dataset.loaded = "1"; renderPlans(p); }
     var r = document.querySelector("div#axilio-rental-plans");
     if (r && !r.dataset.loaded) { r.dataset.loaded = "1"; renderRentals(r); }
     var m = document.querySelector("div#axilio-models");
