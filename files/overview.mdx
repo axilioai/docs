@@ -25,8 +25,9 @@ ready file has one ID and can be downloaded locally or delivered to a phone.
 ## Limits and lifecycle
 
 - The library accepts supported image and video formats.
-- One library file can be up to 1 GiB.
-- A file delivered to a phone can be up to 100 MiB.
+- A library file can be up to 100 MiB, which is also the phone-delivery
+  ceiling. Files stored under the earlier 1 GiB library limit remain listed,
+  but a push still refuses anything over 100 MiB.
 - Every library listing reports the organization's current file-count and byte
   usage against its quota. Treat those returned limits as authoritative.
 - An upload becomes usable after its bytes are verified and its status reaches

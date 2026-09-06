@@ -291,7 +291,7 @@
             },
             "type": "array",
             "title": "Icon Detections",
-            "description": "Icon detections (YOLO)"
+            "description": "Icon detections"
           },
           "hash_result": {
             "anyOf": [
@@ -354,7 +354,7 @@
             "title": "Queue Wait Ns",
             "description": "Nanoseconds the job waited in the inference queue"
           },
-          "yolo_ns": {
+          "detect_ns": {
             "anyOf": [
               {
                 "type": "integer"
@@ -363,8 +363,8 @@
                 "type": "null"
               }
             ],
-            "title": "Yolo Ns",
-            "description": "Nanoseconds spent in YOLO detection"
+            "title": "Detect Ns",
+            "description": "Nanoseconds spent in icon detection"
           },
           "ocr_ns": {
             "anyOf": [
@@ -458,7 +458,7 @@
       "InferenceType": {
         "type": "string",
         "enum": [
-          "yolo",
+          "detect",
           "ocr",
           "combined"
         ],
