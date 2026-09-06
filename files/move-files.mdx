@@ -14,9 +14,11 @@ can also use a one-shot send helper when you do not need to retain the two
 steps separately.
 
 <Warning>
-  The library accepts files up to 1 GiB, but phone delivery is limited to 100
-  MiB per file. A one-shot Python or Go send refuses an oversized file and does
-  not upload it. A separate upload can still store it in the library.
+  Both the library and phone delivery cap a file at 100 MiB. An upload larger
+  than that is rejected before any bytes transfer, and a one-shot Python or Go
+  send refuses an oversized file without uploading it. Files stored under the
+  earlier 1 GiB library limit stay in the library, but a push to a phone still
+  refuses anything over 100 MiB.
 </Warning>
 
 ## Upload and push
