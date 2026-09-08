@@ -165,9 +165,12 @@ This swipe also uses coordinates because it scrolls the whole results view.
 
 ### Stop the session
 
-Stop as soon as you finish, then clear the shell trap:
+Stop as soon as you finish, then clear the shell trap. Keep the session id
+first, because `cleanup` unsets `AXILIO_SESSION` and you still need it to
+download the recording:
 
 ```bash
+recording_session="$AXILIO_SESSION"
 cleanup
 trap - EXIT
 ```
@@ -176,7 +179,7 @@ Screen recording is enabled by default unless the session or workflow turns it
 off. Download the recording from the CLI once processing finishes:
 
 ```bash
-axilio sessions recording "$AXILIO_SESSION" --wait --out axilio-session.mp4
+axilio sessions recording "$recording_session" --wait --out axilio-session.mp4
 ```
 
 `--wait` polls while the recording is still processing. Without `--out` the
