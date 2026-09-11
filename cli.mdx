@@ -173,11 +173,18 @@ trap - EXIT
 ```
 
 Screen recording is enabled by default unless the session or workflow turns it
-off. The CLI does not currently look up or download recordings. To replay this
-session, open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions),
-select the completed session, and
-use its recording when the status becomes `ready`. Python, Go, and REST lookup
-options are documented in [Recordings](/observability/recordings).
+off. Download the recording from the CLI once processing finishes:
+
+```bash
+axilio sessions recording "$AXILIO_SESSION" --wait --out axilio-session.mp4
+```
+
+`--wait` polls while the recording is still processing. Without `--out` the
+command prints the status and a short-lived URL instead. Or open
+[**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions), select the
+completed session, and use its recording when the status becomes `ready`.
+Python, Go, and REST lookup options are documented in
+[Recordings](/observability/recordings).
 
 ### Watch the demo
 
