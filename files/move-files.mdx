@@ -1,7 +1,7 @@
 ---
 title: "Move files"
 sidebarTitle: "Move files"
-description: "Upload a file, push it to a phone, download it locally, rename supported uploads, and delete or recall delivered copies."
+description: "Upload a file, push it to a phone, download it locally, rename supported uploads, and delete it from the library."
 ---
 
 Moving a file is a two-part operation:
@@ -376,16 +376,18 @@ The CLI does not have a post-upload rename command. Set the stored name during
 upload with `axilio files upload <path> --filename <name>` or use one of the
 rename interfaces above.
 
-## Delete and recall
+## Delete
 
-Deleting a file removes it from the library and frees its quota. Axilio also
-schedules removal from phones that hold or are receiving a delivered copy.
+Deleting a file removes it from the library and frees its quota. Copies already
+on phones are not touched, whether the file was pushed to a phone or captured
+from one. Removing a file from a phone is a separate operation and is not
+available yet.
 
 <Tabs>
   <Tab title="Dashboard">
-    Open [**Files**](https://app.axilio.ai/dashboard/axilio/files), choose the
-    delete action on the file, and review how many phones currently hold or are
-    receiving a copy before confirming.
+    Open [**Files**](https://app.axilio.ai/dashboard/axilio/files) and choose
+    the delete action on the file. The confirmation shows how many phones were
+    sent a copy; those copies stay on the phones.
   </Tab>
   <Tab title="CLI">
     ```bash
@@ -436,11 +438,11 @@ schedules removal from phones that hold or are receiving a delivered copy.
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
-    The response includes `phones_pending_removal`.
+    The response's `phones_pending_removal` field is deprecated and always `0`.
   </Tab>
 </Tabs>
 
 <Note>
-  Deleting a captured file recalls copies that Axilio delivered later. It does
-  not remove the original media from the phone that produced the capture.
+  Deleting a captured file removes the library copy only. The media stays on
+  the phone it was captured from, and on any phone it was later pushed to.
 </Note>
