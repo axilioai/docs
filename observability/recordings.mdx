@@ -172,26 +172,28 @@ prevent recordings from being created or make older recordings unavailable.
   </Tab>
 
   <Tab title="CLI">
-    `sessions get` returns the recording status and a time-limited URL when it
-    is ready:
+    Look up the recording's status and, when it is ready, a time-limited URL:
 
     ```bash
-    SESSION=$(axilio sessions get sess_123 -o json)
-    STATUS=$(printf '%s' "$SESSION" | jq -r '.recording_status')
-
-    if [ "$STATUS" != "ready" ]; then
-      printf 'recording is %s\n' "$STATUS" >&2
-      exit 1
-    fi
-
-    RECORDING_URL=$(printf '%s' "$SESSION" | jq -r '.recording_url')
-    curl --silent --show-error --fail --location \
-      "$RECORDING_URL" \
-      --output session.mp4
+    axilio sessions recording sess_123
+    axilio sessions recording sess_123 -o json
     ```
 
-    The CLI does not have a dedicated recording download command. Run
-    `sessions get` again instead of persisting an expired URL.
+    The lookup exits 0 for `ready`, `pending`, and `expired`, so a script can
+    branch on the `status` field.
+
+    Download the MP4. `--wait` polls while the recording is still processing
+    (default timeout 10 minutes, exit status 5 when it elapses), and `--force`
+    overwrites an existing file:
+
+    ```bash
+    axilio sessions recording sess_123 --wait --out session.mp4
+    ```
+
+    The file is written atomically, so an interrupted download never leaves a
+    partial MP4 behind. A pending recording is refused without `--wait`; an
+    expired recording cannot be downloaded and exits with not-found status 4.
+    Run the lookup again instead of persisting a URL: returned URLs expire.
   </Tab>
 
   <Tab title="Python SDK">
@@ -305,7 +307,8 @@ prevent recordings from being created or make older recordings unavailable.
 | `expired` | The recording is outside the organization's retention window. |
 
 Only `ready` includes a URL. If you know recording was enabled and the session
-has completed, fetch the lookup again while its upload processes. `pending`
+has completed, fetch the lookup again while its upload processes, or let
+`axilio sessions recording <session-id> --wait` poll for you. `pending`
 alone does not promise that a recording will appear.
 
 ## Next steps
