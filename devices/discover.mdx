@@ -7,7 +7,20 @@ description: "Find an idle dedicated phone or inspect every phone your organizat
 Use the dedicated-phone inventory to choose the `phone_id` for a session. A
 phone can be allocated when its `status` is `active` and
 `current_session_id` is empty. The full inventory also shows phones already in
-a session and phones whose status is `inactive`, `maintenance`, or `suspended`.
+a session and phones in every other status:
+
+| Status | What it means | Comes back |
+| --- | --- | --- |
+| `active` | Ready to allocate. | |
+| `inactive` | The phone cannot be reached. | On its own, when it reconnects. |
+| `maintenance` | Planned work, such as an update or a wipe. | On its own, when the work finishes. |
+| `recovering` | The platform is repairing the phone automatically. | On its own, if the repair works. Otherwise it becomes `out_of_service`. |
+| `out_of_service` | The phone needs a repair at the rack. | After Axilio fixes it. |
+| `suspended` | The phone is on hold by an administrator. | When the hold is lifted. |
+
+Only `active` phones can be allocated. Treat any status you do not recognize
+as unavailable: new statuses may be added, and SDK code that switches over
+every value should keep a default branch.
 
 ## Find a phone
 
