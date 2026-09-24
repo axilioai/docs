@@ -120,8 +120,8 @@ changes the bytes and the signature no longer matches.
 ## Delivery guarantees
 
 - **At least once.** Respond with any `2xx` as soon as you have the event, and
-  do slow work afterwards. Any other response, or none, is retried after
-  30 seconds, 2 minutes, 5 minutes, 15 minutes and 1 hour.
+  do slow work afterwards. On any other response, or none, Axilio retries
+  after 30 seconds, 2 minutes, 5 minutes, 15 minutes and 1 hour.
 - **Duplicates are possible.** A retry or a network failure can deliver the same
   event twice. Keep the `id` of events you have handled and skip repeats.
 - **Order is not guaranteed.** `run.completed` can arrive before `run.started`.
