@@ -1,7 +1,7 @@
 ---
 title: "Run a workflow"
 sidebarTitle: "Run"
-description: "Queue a workflow immediately on one or more phones."
+description: "Queue a workflow on one or more phones, now or at a time you choose."
 ---
 
 One entry in `runs` creates one run. Its unique run ID is also used as the
@@ -82,12 +82,82 @@ default is 300.
 
 The dashboard sends its visible 30-minute queue timeout unless you change it.
 
-<Warning>
-  Runs queue immediately. The current public request contract has no future
-  start time or recurring schedule. In
-  [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows), choose
-  **Run Now**; do not rely on the visible **Schedule** option.
-</Warning>
+## Schedule a run for later
+
+Set `start_at` to book the runs for a future time instead of starting them now.
+It applies to every run in the request.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Workflows**](https://app.axilio.ai/dashboard/axilio/workflows), select the workflow, and click **Run**.
+    2. Choose **Schedule for later** and pick a date and time. The picker uses your local time.
+    3. Set **Number of Runs** and **Queue Timeout (min)**, then click **Schedule Run**.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs start wf_123 --start-at 2026-10-01T03:00:00Z
+    ```
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    import datetime as dt
+
+    result = client.runs.create(
+        "wf_123",
+        runs=[RunConfig(variables=[{}])],
+        start_at=dt.datetime(2026, 10, 1, 3, 0, tzinfo=dt.timezone.utc),
+    )
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    startAt := time.Date(2026, 10, 1, 3, 0, 0, 0, time.UTC)
+    result, err := api.Runs.Create(ctx, &platformgo.RunCreateRequest{
+        WorkflowID: "wf_123",
+        Runs:       []*platformgo.RunConfig{{Variables: []map[string]any{{}}}},
+        StartAt:    &startAt,
+    })
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/runs \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "runs": [{"variables": [{}]}],
+        "start_at": "2026-10-01T03:00:00Z"
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+- `start_at` is an RFC 3339 timestamp at least 60 seconds and at most 30 days
+  ahead. Anything else returns `422` with the error on `start_at`.
+- A booked run is listed with status `scheduled` and trigger `scheduled`, and
+  its response carries `start_at`. Filter for it with `status_filter=scheduled`.
+- A run starts within about 15 seconds of `start_at`, then waits for a phone
+  like any queued run. Runs booked for the same time are not guaranteed to
+  start in any particular order.
+- `start_timeout_seconds` counts from when the run is released at `start_at`,
+  not from when you booked it.
+- A scheduled run holds no concurrency slot while it waits. Your plan's
+  concurrency limit applies when it starts.
+- You can [cancel](/workflows/monitor#cancel-a-scheduled-queued-or-running-run)
+  a scheduled run any time before it starts. It then never runs, and a
+  `run.cancelled` webhook is sent.
+
+Scheduling is one-off. There are no recurring schedules or cron expressions.
 
 ## Run in parallel
 

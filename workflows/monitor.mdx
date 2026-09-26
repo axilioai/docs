@@ -91,12 +91,15 @@ axilio sessions trace sess_123 --follow
 See [Get started with Telemetry](/telemetry/get-started) for SDK helpers and
 retained-data behavior.
 
-## Cancel a queued or running run
+## Cancel a scheduled, queued or running run
+
+A scheduled run you cancel never starts.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
     Open [**Runs**](https://app.axilio.ai/dashboard/axilio/runs), select the run,
-    and click **Cancel**. A completed, failed, or already canceled run is already
+    and click **Cancel**. Scheduled runs show a **Scheduled** status and
+    their start time. A completed, failed, or already canceled run is already
     terminal.
   </Tab>
 
