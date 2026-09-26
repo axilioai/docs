@@ -13,6 +13,9 @@ API, but carries only the fields listed for each event: never your own content
 [Webhooks](/webhooks/overview) for the request format, signatures and delivery
 guarantees.
 
+Events about a session, a run or a device you rent carry `device_class`, which
+says what kind of device the event concerns. It is `phone` today.
+
 <Info>
   You can send every type below from the dashboard with **Test** on a
   destination's page. A test carries the example payload shown here and
@@ -27,8 +30,9 @@ from the event type and the resource:
 
 | Events | `id` |
 |---|---|
-| `run.*`, `session.*`, `phone.rental.activated`, `phone.rental.canceled`, `subscription.canceled` | `<type>:<resource id>`. These happen once per resource. |
+| `run.*`, `session.started`, `session.ended`, `phone.rental.activated`, `phone.rental.canceled`, `subscription.canceled` | `<type>:<resource id>`. These happen once per resource. |
 | `phone.maintenance_*`, `phone.offline`, `phone.online`, `phone.rental.past_due`, `subscription.updated` | `<type>:<resource id>:<time of the change>`. These can happen many times. |
+| `session.recording_ready` | `<type>:<session id>:<time the recording was ready>`. One per recording. |
 | `invoice.paid`, `auto_recharge.*` | `<type>:<Stripe invoice id>` |
 | `invoice.payment_failed` | `<type>:<Stripe invoice id>:<attempt number>` |
 | `balance.*` | `<type>:<alert id>`. A new alert opens each time the balance drops again. |
@@ -44,9 +48,10 @@ from the event type and the resource:
 | `run.cancelled` | A run stops before it finishes. `reason` is `user` (you cancelled it) or `queue_timeout` (it waited longer than its start timeout for a phone). |
 
 `data` carries these fields of the [run](/api-reference/rest/runs/get-a-run):
-`id`, `workflow_id`, `phone_id`, `session_id`, `status`, `trigger`,
-`started_at`, `completed_at`, `canceled_at`, `success` and `created_at`. A field
-with no value yet is left out. `run.cancelled` adds `reason`. Fetch the run for
+`id`, `workflow_id`, `device_class`, `phone_id`, `session_id`, `status`,
+`trigger`, `started_at`, `completed_at`, `canceled_at`, `success` and
+`created_at`. A field with no value yet is left out, so a run still waiting for
+a phone has no `device_class` or `phone_id`. `run.cancelled` adds `reason`. Fetch the run for
 anything else, such as its variables, error message or recording.
 
 ```json
@@ -76,6 +81,7 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
 {
   "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
   "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
   "status": "cancelled",
@@ -94,6 +100,7 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
 {
   "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
   "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
   "status": "completed",
@@ -112,6 +119,7 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
 {
   "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
   "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
   "status": "failed",
@@ -130,6 +138,7 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
 {
   "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
   "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
   "status": "running",
@@ -158,13 +167,14 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
   [idle timeout](/devices/timeouts).
 - **`max_duration`**: the session reached the maximum session length.
 - **`run_finished`**: the run that the session served finished.
-- **`phone_lost`**: the phone stopped answering during the session.
+- **`device_lost`**: the phone stopped answering during the session.
 
 `data` for `session.started` and `session.ended` carries these fields of the
-[session](/devices/timeouts): `session_id`, `status`, `source`, `phone_id`,
-`workflow_id`, `allocated_at`, `deallocated_at` and `is_dedicated_phone`. A
-field with no value yet is left out. `session.recording_ready` carries
-`session_id` and `phone_id`; fetch the recording with
+[session](/devices/timeouts): `session_id`, `status`, `source`,
+`device_class`, `phone_id`, `workflow_id`, `allocated_at`, `deallocated_at` and
+`is_dedicated_phone`. A field with no value yet is left out.
+`session.recording_ready` carries `session_id`, `device_class` and `phone_id`;
+fetch the recording with
 `GET /phones/sessions/{session_id}/recording`.
 
 ```json
@@ -177,6 +187,7 @@ field with no value yet is left out. `session.recording_ready` carries
     "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
     "status": "completed",
     "source": "interactive",
+    "device_class": "phone",
     "phone_id": "k3Vq8ZrT2mXa",
     "allocated_at": "2026-09-24T12:00:00Z",
     "deallocated_at": "2026-09-24T12:05:00Z",
@@ -196,6 +207,7 @@ The `data` for each session event, exactly as a **Test** delivery sends it:
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
   "status": "completed",
   "source": "interactive",
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "allocated_at": "2026-09-24T12:00:00Z",
   "deallocated_at": "2026-09-24T12:05:00Z",
@@ -210,6 +222,7 @@ The `data` for each session event, exactly as a **Test** delivery sends it:
 ```json
 {
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa"
 }
 ```
@@ -222,6 +235,7 @@ The `data` for each session event, exactly as a **Test** delivery sends it:
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
   "status": "active",
   "source": "interactive",
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "allocated_at": "2026-09-24T12:00:00Z",
   "is_dedicated_phone": false
@@ -488,8 +502,9 @@ Axilio sends these events only for phones your organization
 | `phone.rental.past_due` | A rental payment fails. The phone stays yours while Stripe retries the payment. |
 | `phone.rental.canceled` | A rental subscription ends. Axilio releases the phone once no session is running on it. |
 
-`reason` on the maintenance and offline events is one of `hardware`, `update`,
-`unresponsive` or `operator`. The rental events carry the rental as
+The health events carry `device_class` (`phone`), `phone_id`, `phone_name`,
+`nickname`, `status`, `reason` and `changed_at`. `reason` on the maintenance and
+offline events is one of `hardware`, `update`, `unresponsive` or `operator`. The rental events carry the rental as
 `GET /billing/phone-rental-subscriptions` returns it.
 
 ```json
@@ -499,6 +514,7 @@ Axilio sends these events only for phones your organization
   "occurred_at": "2026-09-24T12:00:00Z",
   "test": false,
   "data": {
+    "device_class": "phone",
     "phone_id": "k3Vq8ZrT2mXa",
     "phone_name": "Pixel 9 #14",
     "nickname": "checkout-bot",
@@ -516,6 +532,7 @@ The `data` for each phone event, exactly as a **Test** delivery sends it:
 
 ```json
 {
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "phone_name": "Pixel 9 #14",
   "nickname": "checkout-bot",
@@ -529,6 +546,7 @@ The `data` for each phone event, exactly as a **Test** delivery sends it:
 
 ```json
 {
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "phone_name": "Pixel 9 #14",
   "nickname": "checkout-bot",
@@ -543,6 +561,7 @@ The `data` for each phone event, exactly as a **Test** delivery sends it:
 
 ```json
 {
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "phone_name": "Pixel 9 #14",
   "nickname": "checkout-bot",
@@ -557,6 +576,7 @@ The `data` for each phone event, exactly as a **Test** delivery sends it:
 
 ```json
 {
+  "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "phone_name": "Pixel 9 #14",
   "nickname": "checkout-bot",
