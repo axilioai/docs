@@ -1,0 +1,149 @@
+---
+title: "Webhooks"
+sidebarTitle: "Overview"
+description: "Get a signed HTTP request the moment a run finishes, a session ends, a payment fails or a phone goes offline, instead of polling."
+keywords: ["webhooks", "events", "callbacks", "notifications", "signature"]
+---
+
+Webhooks tell your server when something changes in your organization. Instead
+of polling `GET /runs/{run_id}` until a run finishes, you register an endpoint
+once and Axilio sends it a signed `POST` when the run completes.
+
+<CardGroup cols={2}>
+  <Card title="Event reference" icon="list" href="/webhooks/events">
+    Every event type, when it fires, and what its payload contains.
+  </Card>
+  <Card title="Runs" icon="diagram-project" href="/workflows/monitor">
+    The run lifecycle the `run.*` events report.
+  </Card>
+</CardGroup>
+
+## Register a destination
+
+1. Open **Settings** > **Webhooks** in the [dashboard](https://app.axilio.ai).
+2. Click **Register Destination** and enter a public `https://` URL.
+3. Choose the event types to receive, or subscribe to all of them.
+4. Copy the signing secret. It starts with `whsec_` and is shown once.
+
+Event types are grouped by area: runs, sessions, billing, files and phones.
+Subscribe narrowly. An endpoint that only handles `run.failed` should not
+receive `session.started`.
+
+## The request
+
+Every delivery is a `POST` with a JSON body in the same shape:
+
+```json
+{
+  "id": "run.completed:0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
+  "type": "run.completed",
+  "occurred_at": "2026-09-24T12:00:45Z",
+  "test": false,
+  "data": {
+    "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
+    "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+    "status": "completed",
+    "trigger": "api",
+    "started_at": "2026-09-24T12:00:00Z",
+    "completed_at": "2026-09-24T12:00:45Z",
+    "success": true,
+    "created_at": "2026-09-24T11:59:57Z"
+  }
+}
+```
+
+- **`id`**: unique per event. The same value is in the `webhook-id` header. Use
+  it to discard a duplicate.
+- **`type`**: the event type you subscribed to.
+- **`occurred_at`**: when the change happened, in UTC.
+- **`test`**: `true` only on a test you sent yourself.
+- **`data`**: the resource the event is about. It uses the same field names as
+  the API, and carries ids, statuses, reasons and timestamps only.
+
+<Note>
+  Payloads never contain your content: no run variables or outputs, no file
+  bytes, no recordings and no download links. Fetch those through the API with
+  your own key when you need them.
+</Note>
+
+## Verify the signature
+
+Axilio signs every request with the [Standard Webhooks](https://www.standardwebhooks.com)
+scheme. Each request carries three headers: `webhook-id`, `webhook-timestamp`
+and `webhook-signature`. Verify them with any Standard Webhooks library before
+you trust the body.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    import os
+
+    from flask import Flask, request
+    from standardwebhooks.webhooks import Webhook
+
+    app = Flask(__name__)
+    verifier = Webhook(os.environ["AXILIO_WEBHOOK_SECRET"])
+
+    @app.post("/axilio/webhooks")
+    def receive():
+        event = verifier.verify(request.get_data(), request.headers)
+        if event["type"] == "run.failed":
+            print("run failed:", event["data"]["id"])
+        return "", 204
+    ```
+  </Tab>
+
+  <Tab title="Node.js">
+    ```javascript
+    import express from "express";
+    import { Webhook } from "standardwebhooks";
+
+    const app = express();
+    const verifier = new Webhook(process.env.AXILIO_WEBHOOK_SECRET);
+
+    app.post("/axilio/webhooks", express.raw({ type: "application/json" }), (req, res) => {
+      const event = verifier.verify(req.body, req.headers);
+      if (event.type === "run.failed") {
+        console.log("run failed:", event.data.id);
+      }
+      res.sendStatus(204);
+    });
+
+    app.listen(3000);
+    ```
+  </Tab>
+</Tabs>
+
+Verify against the raw request body. Parsing and re-serializing the JSON first
+changes the bytes and the signature no longer matches.
+
+## Delivery guarantees
+
+- **At least once.** Respond with any `2xx` as soon as you have the event, and
+  do slow work afterwards. On any other response, or none, Axilio retries
+  after 30 seconds, 2 minutes, 5 minutes, 15 minutes and 1 hour.
+- **Duplicates are possible.** A retry or a network failure can deliver the same
+  event twice. Keep the `id` of events you have handled and skip repeats.
+- **Order is not guaranteed.** `run.completed` can arrive before `run.started`.
+  Compare `occurred_at`, or fetch the resource, rather than relying on arrival
+  order.
+- **Failed deliveries stay replayable.** The dashboard's delivery log shows every
+  attempt and its response. Replay a failed event once your endpoint is fixed.
+
+## Send a test
+
+On a destination's page, click **Test** and pick an event type. Axilio
+delivers that type's example payload to that destination only, with
+`"test": true`. Every event type in the [reference](/webhooks/events) can be
+tested this way before the real event ever fires.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Event reference" icon="list" href="/webhooks/events">
+    What each event means and carries.
+  </Card>
+  <Card title="Sessions and timeouts" icon="clock" href="/devices/timeouts">
+    Why a session ends, which `session.ended` reports.
+  </Card>
+</CardGroup>
