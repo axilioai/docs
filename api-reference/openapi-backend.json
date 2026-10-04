@@ -310,16 +310,10 @@
         "properties": {
           "message": {
             "type": "string"
-          },
-          "phones_pending_removal": {
-            "description": "Phones that still hold a copy and have been scheduled to remove it. Zero means the file is already gone everywhere.",
-            "format": "int64",
-            "type": "integer"
           }
         },
         "required": [
-          "message",
-          "phones_pending_removal"
+          "message"
         ],
         "type": "object"
       },
@@ -596,7 +590,7 @@
             "type": "string"
           },
           "on_phone_count": {
-            "description": "Distinct phones currently holding or receiving a copy. Deleting the file recalls these.",
+            "description": "Distinct phones currently holding or receiving a delivered copy. Informational: deleting the file from the library does not remove these.",
             "format": "int64",
             "type": "integer"
           },
@@ -894,12 +888,14 @@
             "type": "string"
           },
           "phone_status": {
-            "description": "Phone's lifecycle status (ACTIVE/INACTIVE/...).",
+            "description": "Fleet status of the phone. Only active is allocatable; see PhoneSummary.status for each value.",
             "enum": [
               "active",
               "inactive",
               "maintenance",
-              "suspended"
+              "suspended",
+              "recovering",
+              "out_of_service"
             ],
             "type": "string"
           },
@@ -972,6 +968,11 @@
         "additionalProperties": false,
         "description": "Request body for allocating a phone.",
         "properties": {
+          "accessibility": {
+            "default": true,
+            "description": "Accessibility mode for this session, which lets locators resolve against the phone's accessibility tree. Defaults to true. true requires a phone that supports it: only such phones are claimed, and a phone_id that does not support it is refused with an accessibility_unavailable conflict. false turns it off on any phone. While on, the accessibility service is visible to apps on the phone.",
+            "type": "boolean"
+          },
           "capture": {
             "description": "Capture media this session produces on the phone into the org's file library (default true). false disables capture for this session entirely.",
             "type": "boolean"
@@ -1036,6 +1037,10 @@
         "additionalProperties": false,
         "description": "Returned when a device has been successfully allocated.",
         "properties": {
+          "accessibility": {
+            "description": "Whether accessibility mode is on for this session, as requested. The phone confirms the state before the session goes live; if it cannot, the session ends with reason accessibility_unavailable.",
+            "type": "boolean"
+          },
           "control_url": {
             "description": "WebSocket URL for driving the phone over the device control protocol.",
             "type": "string"
@@ -1069,7 +1074,8 @@
         "required": [
           "phone_id",
           "session_id",
-          "workflow_started_at"
+          "workflow_started_at",
+          "accessibility"
         ],
         "type": "object"
       },
@@ -1684,6 +1690,10 @@
         "additionalProperties": false,
         "description": "Detail for a single session: the session, phone display fields, and a recording URL when available.",
         "properties": {
+          "accessibility": {
+            "description": "Whether accessibility mode was on for this session at allocation. A mid-session enable or disable is recorded here too.",
+            "type": "boolean"
+          },
           "allocated_at": {
             "description": "When the session claimed the phone.",
             "format": "date-time",
@@ -1737,12 +1747,14 @@
             "type": "string"
           },
           "phone_status": {
-            "description": "Fleet status of the phone.",
+            "description": "Fleet status of the phone. Only active is allocatable. inactive: unreachable, back on its next heartbeat. maintenance: planned work that releases itself. suspended: an administrative hold. recovering: being repaired automatically. out_of_service: needs a repair at the rack. Treat unknown values as unavailable.",
             "enum": [
               "active",
               "inactive",
               "maintenance",
-              "suspended"
+              "suspended",
+              "recovering",
+              "out_of_service"
             ],
             "type": "string"
           },
@@ -1820,7 +1832,8 @@
           "is_dedicated_phone",
           "recording_status",
           "capture_enabled",
-          "telemetry_disabled"
+          "telemetry_disabled",
+          "accessibility"
         ],
         "type": "object"
       },
@@ -2201,12 +2214,14 @@
             ]
           },
           "status": {
-            "description": "Fleet status of the phone.",
+            "description": "Fleet status of the phone. Only active is allocatable. inactive: unreachable, back on its next heartbeat. maintenance: planned work that releases itself. suspended: an administrative hold. recovering: being repaired automatically. out_of_service: needs a repair at the rack. Treat unknown values as unavailable.",
             "enum": [
               "active",
               "inactive",
               "maintenance",
-              "suspended"
+              "suspended",
+              "recovering",
+              "out_of_service"
             ],
             "type": "string"
           },
@@ -2374,8 +2389,13 @@
             "minItems": 1,
             "type": "array"
           },
+          "start_at": {
+            "description": "Start the runs at this time (RFC 3339) instead of now. Must be at least 60 seconds and at most 30 days ahead. The runs are listed as scheduled until then, can be cancelled, and start within about 15 seconds of this time plus the usual wait for a phone. Omit to start now.",
+            "format": "date-time",
+            "type": "string"
+          },
           "start_timeout_seconds": {
-            "description": "How long a queued run may wait for a phone before it is auto-cancelled (60-86400). Defaults to 300.",
+            "description": "How long a queued run may wait for a phone before it is auto-cancelled (60-86400). Defaults to 300. For a scheduled run the wait counts from when it is released at start_at, not from booking.",
             "format": "int64",
             "maximum": 86400,
             "minimum": 60,
@@ -2473,6 +2493,7 @@
           "status": {
             "description": "Run's final status.",
             "enum": [
+              "scheduled",
               "queued",
               "running",
               "completed",
@@ -2688,6 +2709,11 @@
             "format": "uuid",
             "type": "string"
           },
+          "start_at": {
+            "description": "When the run was booked to start; absent for a run started on request.",
+            "format": "date-time",
+            "type": "string"
+          },
           "start_timeout_seconds": {
             "description": "How long the queued run may wait for a phone before auto-cancel.",
             "format": "int64",
@@ -2701,6 +2727,7 @@
           "status": {
             "description": "Current lifecycle state of the run.",
             "enum": [
+              "scheduled",
               "queued",
               "running",
               "completed",
@@ -3882,10 +3909,729 @@
         },
         "type": "object"
       },
+      "WebhookAttempt": {
+        "additionalProperties": false,
+        "description": "One delivery attempt of an event to an endpoint.",
+        "properties": {
+          "attempt_number": {
+            "description": "1-based position of this try among the event's tries to the endpoint: 1 is the first delivery, 2 and up are retries or replays.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "delivered_at": {
+            "description": "Timestamp when the attempt completed, null if pending.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "endpoint_id": {
+            "description": "Endpoint the attempt targeted.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Attempt identifier.",
+            "type": "string"
+          },
+          "manual": {
+            "description": "True for an attempt driven by an explicit replay rather than the automatic retry schedule.",
+            "type": "boolean"
+          },
+          "response_status": {
+            "description": "HTTP status the endpoint returned, or 0 if it never answered.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "description": "Attempt outcome: success (endpoint acknowledged with a 2xx) or failed (non-2xx or no answer).",
+            "enum": [
+              "success",
+              "failed"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "endpoint_id",
+          "status",
+          "response_status",
+          "manual",
+          "attempt_number"
+        ],
+        "type": "object"
+      },
+      "WebhookAttemptListResponse": {
+        "additionalProperties": false,
+        "description": "One page of the delivery attempts for one event.",
+        "properties": {
+          "attempts": {
+            "description": "Delivery attempts on this page, newest first.",
+            "items": {
+              "$ref": "#/components/schemas/WebhookAttempt"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "next_cursor": {
+            "description": "Opaque cursor for the next page (pass as the cursor query parameter). Null when this is the last page.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "attempts",
+          "next_cursor"
+        ],
+        "type": "object"
+      },
+      "WebhookDelivery": {
+        "additionalProperties": false,
+        "description": "One event in the delivery log.",
+        "properties": {
+          "endpoint_ids": {
+            "description": "Endpoints the event was routed to: the subscribers of its type at publish time, or the one endpoint a targeted test named. Empty when none was subscribed.",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "event_id": {
+            "description": "Event identifier.",
+            "type": "string"
+          },
+          "event_type": {
+            "description": "Event type the event was published to.",
+            "type": "string"
+          },
+          "published_at": {
+            "description": "Timestamp when the event was published.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_type",
+          "published_at",
+          "endpoint_ids"
+        ],
+        "type": "object"
+      },
+      "WebhookDeliveryDetail": {
+        "additionalProperties": false,
+        "description": "One delivery-log event with its delivered payload.",
+        "properties": {
+          "endpoint_ids": {
+            "description": "Endpoints the event was routed to.",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "event_id": {
+            "description": "Event identifier.",
+            "type": "string"
+          },
+          "event_type": {
+            "description": "Event type the event was published to.",
+            "type": "string"
+          },
+          "payload": {
+            "description": "JSON body as delivered to the endpoints. Null for a data-free event."
+          },
+          "published_at": {
+            "description": "Timestamp when the event was published.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_type",
+          "published_at",
+          "endpoint_ids",
+          "payload"
+        ],
+        "type": "object"
+      },
+      "WebhookDeliveryListResponse": {
+        "additionalProperties": false,
+        "description": "One page of the organization's delivery log.",
+        "properties": {
+          "deliveries": {
+            "description": "Delivery-log events on this page, newest first.",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDelivery"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "next_cursor": {
+            "description": "Opaque cursor for the next page (pass as the cursor query parameter). Null when this is the last page.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "deliveries",
+          "next_cursor"
+        ],
+        "type": "object"
+      },
+      "WebhookDeliveryMetricPoint": {
+        "additionalProperties": false,
+        "description": "One aggregated bucket of delivery-attempt metrics.",
+        "properties": {
+          "avg_latency_ms": {
+            "description": "Mean destination response time in the bucket, in milliseconds. Null when no attempt in the bucket recorded a latency.",
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "endpoint_id": {
+            "description": "Destination this bucket aggregates. Empty when the series is not grouped by destination.",
+            "type": "string"
+          },
+          "error_rate": {
+            "description": "Failed over total in the bucket, from 0 to 1.",
+            "format": "double",
+            "type": "number"
+          },
+          "failed": {
+            "description": "Failed-attempt count in the bucket.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "p50_latency_ms": {
+            "description": "Median destination response time in the bucket, in milliseconds. Null when no attempt recorded a latency.",
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "p95_latency_ms": {
+            "description": "95th-percentile destination response time in the bucket, in milliseconds. Null when no attempt recorded a latency.",
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "p99_latency_ms": {
+            "description": "99th-percentile destination response time in the bucket, in milliseconds. Null when no attempt recorded a latency.",
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "time_bucket": {
+            "description": "Start of the time bucket. Null for a single aggregate over the whole window.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "total": {
+            "description": "Delivery-attempt count in the bucket.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "failed",
+          "error_rate",
+          "avg_latency_ms",
+          "p50_latency_ms",
+          "p95_latency_ms",
+          "p99_latency_ms"
+        ],
+        "type": "object"
+      },
+      "WebhookDeliveryMetricsResponse": {
+        "additionalProperties": false,
+        "description": "Delivery-attempt metrics: volume, error rate and response time over the requested window.",
+        "properties": {
+          "points": {
+            "description": "Aggregated metric buckets over the window.",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDeliveryMetricPoint"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "points"
+        ],
+        "type": "object"
+      },
+      "WebhookEndpoint": {
+        "additionalProperties": false,
+        "description": "A registered webhook or BYOS endpoint.",
+        "properties": {
+          "config": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Non-secret configuration of a BYOS destination (e.g. queue_url + region). Absent for webhook destinations.",
+            "type": "object"
+          },
+          "created_at": {
+            "description": "Timestamp when the endpoint was registered.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "disabled": {
+            "description": "True once delivery has been suspended for a persistently failing endpoint.",
+            "type": "boolean"
+          },
+          "event_types": {
+            "description": "Subscribed event types (\"*\" means all).",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "id": {
+            "description": "Endpoint identifier.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Destination type: webhook or a BYOS type (aws_sqs, aws_s3, aws_kinesis).",
+            "enum": [
+              "webhook",
+              "aws_sqs",
+              "aws_s3",
+              "aws_kinesis"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "description": "Delivery endpoint URL (webhook destinations).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "event_types",
+          "disabled",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "WebhookEndpointAttempt": {
+        "additionalProperties": false,
+        "description": "One delivery attempt to an endpoint, with the event it delivered.",
+        "properties": {
+          "attempt_number": {
+            "description": "1-based position of this try among the event's tries to the endpoint: 1 is the first delivery, 2 and up are retries or replays.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "delivered_at": {
+            "description": "Timestamp when the attempt completed, null if pending.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "event_id": {
+            "description": "Event the attempt delivered.",
+            "type": "string"
+          },
+          "event_published_at": {
+            "description": "Timestamp when the delivered event was published.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "event_type": {
+            "description": "Type of the event the attempt delivered.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Attempt identifier.",
+            "type": "string"
+          },
+          "manual": {
+            "description": "True for an attempt driven by an explicit replay rather than the automatic retry schedule.",
+            "type": "boolean"
+          },
+          "response_status": {
+            "description": "HTTP status the endpoint returned, or 0 if it never answered.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "description": "Attempt outcome: success (endpoint acknowledged with a 2xx) or failed (non-2xx or no answer).",
+            "enum": [
+              "success",
+              "failed"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "response_status",
+          "manual",
+          "attempt_number",
+          "event_id",
+          "event_type"
+        ],
+        "type": "object"
+      },
+      "WebhookEndpointAttemptListResponse": {
+        "additionalProperties": false,
+        "description": "One page of the delivery attempts made to one endpoint.",
+        "properties": {
+          "attempts": {
+            "description": "Delivery attempts on this page, newest first.",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEndpointAttempt"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "next_cursor": {
+            "description": "Opaque cursor for the next page (pass as the cursor query parameter). Null when this is the last page.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "attempts",
+          "next_cursor"
+        ],
+        "type": "object"
+      },
+      "WebhookEndpointCreateRequest": {
+        "additionalProperties": false,
+        "description": "Request body for registering an outbound webhook or BYOS endpoint.",
+        "properties": {
+          "config": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Non-secret configuration for a BYOS destination (e.g. queue_url + region for aws_sqs).",
+            "type": "object"
+          },
+          "credentials": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Customer secrets for a BYOS destination (e.g. AWS key/secret). Never stored or logged by Axilio; passed to the delivery gateway, which encrypts them.",
+            "type": "object"
+          },
+          "event_types": {
+            "description": "Event types to subscribe to. Empty means all event types.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "type": {
+            "description": "Destination type: webhook (default when omitted), aws_sqs, aws_s3, or aws_kinesis.",
+            "enum": [
+              "webhook",
+              "aws_sqs",
+              "aws_s3",
+              "aws_kinesis"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "description": "HTTPS endpoint that signed events are delivered to (webhook destinations).",
+            "format": "uri",
+            "maxLength": 2048,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WebhookEndpointCreateResponse": {
+        "additionalProperties": false,
+        "description": "A newly registered webhook endpoint, including its signing secret (shown once).",
+        "properties": {
+          "config": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Non-secret configuration of a BYOS destination (e.g. queue_url + region). Absent for webhook destinations.",
+            "type": "object"
+          },
+          "created_at": {
+            "description": "Timestamp when the endpoint was registered.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "event_types": {
+            "description": "Subscribed event types (\"*\" means all).",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "id": {
+            "description": "Endpoint identifier.",
+            "type": "string"
+          },
+          "secret": {
+            "description": "Standard Webhooks signing secret (whsec_...), webhook destinations only. Shown once at creation and never returned again. Absent for BYOS destinations.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Destination type: webhook or a BYOS type (aws_sqs, aws_s3, aws_kinesis).",
+            "enum": [
+              "webhook",
+              "aws_sqs",
+              "aws_s3",
+              "aws_kinesis"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "description": "Delivery endpoint URL (webhook destinations).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "event_types",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "WebhookEndpointListResponse": {
+        "additionalProperties": false,
+        "description": "The organization's registered webhook endpoints (the complete set, not a page).",
+        "properties": {
+          "endpoints": {
+            "description": "Registered endpoints.",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEndpoint"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "endpoints"
+        ],
+        "type": "object"
+      },
+      "WebhookEventTypeCatalogResponse": {
+        "additionalProperties": false,
+        "description": "The catalog of event types an endpoint can subscribe to.",
+        "properties": {
+          "event_types": {
+            "description": "Subscribable event types.",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventTypeDescriptor"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "event_types"
+        ],
+        "type": "object"
+      },
+      "WebhookEventTypeDescriptor": {
+        "additionalProperties": false,
+        "description": "A subscribable webhook event type.",
+        "properties": {
+          "description": {
+            "description": "What the event means and when it fires.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The area of the product the event belongs to, for grouping: platform, runs, sessions, billing, files or phones.",
+            "enum": [
+              "platform",
+              "runs",
+              "sessions",
+              "billing",
+              "files",
+              "phones"
+            ],
+            "type": "string"
+          },
+          "sample": {
+            "description": "A representative payload of this event type: the data object of the delivered body. A test of this type delivers exactly this, with test set to true, so a handler can be exercised before the real event fires."
+          },
+          "type": {
+            "description": "Event type wire value (e.g. webhook.test).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "domain",
+          "description"
+        ],
+        "type": "object"
+      },
+      "WebhookReplayRequest": {
+        "additionalProperties": false,
+        "description": "Request body to replay one event to one endpoint.",
+        "properties": {
+          "endpoint_id": {
+            "description": "Endpoint to replay the event to.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint_id"
+        ],
+        "type": "object"
+      },
+      "WebhookReplayResponse": {
+        "additionalProperties": false,
+        "description": "Identifies the replay that was queued.",
+        "properties": {
+          "endpoint_id": {
+            "description": "Endpoint the event is re-driven to.",
+            "type": "string"
+          },
+          "event_id": {
+            "description": "Event being re-driven.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "endpoint_id"
+        ],
+        "type": "object"
+      },
+      "WebhookRotateSecretRequest": {
+        "additionalProperties": false,
+        "description": "Optional body for rotating a signing secret: how the previous secret is retired.",
+        "properties": {
+          "mode": {
+            "description": "graceful: the previous secret keeps verifying for 24 hours so the new one can be rolled out across a deploy. immediate: the previous secret stops verifying at once, for a secret that may be compromised. Omit for graceful.",
+            "enum": [
+              "graceful",
+              "immediate"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WebhookRotateSecretResponse": {
+        "additionalProperties": false,
+        "description": "A rotated signing secret, shown once, with the grace window during which the old secret still verifies.",
+        "properties": {
+          "id": {
+            "description": "Endpoint identifier.",
+            "type": "string"
+          },
+          "previous_secret_invalid_at": {
+            "description": "When the previous signing secret stops verifying: 24 hours out for a graceful rotation, already past for an immediate one. Until then both the old and new secret verify.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "secret": {
+            "description": "New Standard Webhooks signing secret (whsec_...). Shown once and never returned again.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "secret"
+        ],
+        "type": "object"
+      },
+      "WebhookTestEventRequest": {
+        "additionalProperties": false,
+        "description": "Optional body for sending a test event: pick the event type to simulate and, optionally, one endpoint to deliver to.",
+        "properties": {
+          "endpoint_id": {
+            "description": "Deliver the test event to this endpoint only. It must be subscribed to the event type. Omit to deliver to every endpoint subscribed to the type.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "event_type": {
+            "description": "The event type to simulate, from the event-type catalog; the event carries that type's sample payload. Omit for webhook.test.",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WebhookTestEventResponse": {
+        "additionalProperties": false,
+        "description": "Identifies the test event that was published.",
+        "properties": {
+          "endpoint_id": {
+            "description": "The endpoint the test event was aimed at, when one was named in the request.",
+            "type": "string"
+          },
+          "event_id": {
+            "description": "Identifier of the published test event.",
+            "type": "string"
+          },
+          "event_type": {
+            "description": "Event type of the published test event.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_type"
+        ],
+        "type": "object"
+      },
       "WorkflowCreateRequest": {
         "additionalProperties": false,
         "description": "Request body for creating a new workflow.",
         "properties": {
+          "accessibility": {
+            "default": true,
+            "description": "Accessibility mode for this workflow's runs (default true). true requires a phone that supports it for every run dispatched through the scheduler; false turns it off.",
+            "type": "boolean"
+          },
           "capture": {
             "description": "Capture media this workflow's runs produce on the phone into the org's file library (default true). false disables capture for every run dispatched through the scheduler.",
             "type": "boolean"
@@ -4254,6 +5000,10 @@
         "additionalProperties": false,
         "description": "A workflow: a saved automation that runs against a phone.",
         "properties": {
+          "accessibility": {
+            "description": "Whether this workflow's runs use accessibility mode (default true), which requires a phone that supports it.",
+            "type": "boolean"
+          },
           "capture": {
             "description": "Whether this workflow's runs capture media into the org's file library (default true).",
             "type": "boolean"
@@ -4344,6 +5094,7 @@
           "recording",
           "telemetry",
           "capture",
+          "accessibility",
           "created_at",
           "updated_at",
           "last_run_at"
@@ -4354,6 +5105,10 @@
         "additionalProperties": false,
         "description": "Request body for updating mutable workflow fields.",
         "properties": {
+          "accessibility": {
+            "description": "Accessibility mode for this workflow's runs. true requires a phone that supports it for every run dispatched through the scheduler; false turns it off. Omit to leave it unchanged.",
+            "type": "boolean"
+          },
           "capture": {
             "description": "Capture media this workflow's runs produce on the phone into the org's file library (default true). false disables capture for every run dispatched through the scheduler.",
             "type": "boolean"
@@ -4412,7 +5167,7 @@
   "info": {
     "description": "Axilio backend HTTP API.",
     "title": "Axilio API",
-    "version": "0.85.0"
+    "version": "0.104.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -5364,7 +6119,7 @@
     },
     "/files/{file_id}": {
       "delete": {
-        "description": "Removes a file from the org's library and everywhere it was delivered: the stored object and the library entry go immediately, and every phone holding a copy is scheduled to remove it (removal is confirmed per phone and retried until it lands). The response reports how many phones that recall reaches. This runs the same for an uploaded or a captured file; a capture's source phone keeps its own session copy, which belongs to the session, not the library.",
+        "description": "Removes a file from the org's library: the stored object and the library entry go immediately. Copies already on phones are not removed, whether the file was pushed to them or captured from one; removing a file from a phone is a separate operation. This runs the same for an uploaded or a captured file.",
         "operationId": "files_delete",
         "parameters": [
           {
@@ -5718,12 +6473,12 @@
             }
           },
           {
-            "description": "filter by phone status (active/inactive/maintenance/suspended); case-insensitive",
+            "description": "filter by phone status (active/inactive/maintenance/suspended/recovering/out_of_service); case-insensitive",
             "explode": false,
             "in": "query",
             "name": "status",
             "schema": {
-              "description": "filter by phone status (active/inactive/maintenance/suspended); case-insensitive",
+              "description": "filter by phone status (active/inactive/maintenance/suspended/recovering/out_of_service); case-insensitive",
               "items": {
                 "type": "string"
               },
@@ -7358,6 +8113,7 @@
               "description": "Restrict results to the given run statuses.",
               "items": {
                 "enum": [
+                  "scheduled",
                   "queued",
                   "running",
                   "completed",
@@ -7516,6 +8272,7 @@
               "description": "Restrict results to the given run statuses (case-insensitive).",
               "items": {
                 "enum": [
+                  "scheduled",
                   "queued",
                   "running",
                   "completed",
@@ -7708,7 +8465,7 @@
     },
     "/runs/{run_id}:cancel": {
       "post": {
-        "description": "Cancels a run that is still queued or running, scoped to the caller's org. A run that has already reached a terminal state (completed/failed/cancelled) cannot be cancelled and reads as not found. Returns the updated run.",
+        "description": "Cancels a run that is scheduled, queued or running, scoped to the caller's org. A scheduled run is cancelled before it starts and never runs. A run that has already reached a terminal state (completed/failed/cancelled) cannot be cancelled and reads as not found. Returns the updated run.",
         "operationId": "runs_cancel",
         "parameters": [
           {
@@ -8217,6 +8974,992 @@
         "x-required-role": "viewer",
         "x-mint": {
           "content": "<span class=\"api-role api-role-viewer\" title=\"Any org member (viewer, member, or admin) can call this.\">Minimum role required: Viewer</span>"
+        }
+      }
+    },
+    "/webhooks/deliveries": {
+      "get": {
+        "description": "Lists events published for the caller's organization, newest first, one page at a time. Pass the response's next_cursor as cursor to fetch the following page.",
+        "operationId": "webhooks_list_deliveries",
+        "parameters": [
+          {
+            "description": "Page size.",
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "description": "Page size.",
+              "format": "int64",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Opaque cursor from a previous page's next_cursor. Omit for the first page.",
+            "explode": false,
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "description": "Opaque cursor from a previous page's next_cursor. Omit for the first page.",
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Restrict the log to one event type. Omit for all types.",
+            "explode": false,
+            "in": "query",
+            "name": "event_type",
+            "schema": {
+              "description": "Restrict the log to one event type. Omit for all types.",
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Restrict the log to deliveries to one destination (endpoint id). Omit for all destinations.",
+            "explode": false,
+            "in": "query",
+            "name": "endpoint_id",
+            "schema": {
+              "description": "Restrict the log to deliveries to one destination (endpoint id). Omit for all destinations.",
+              "maxLength": 255,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List the delivery log",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/deliveries/{event_id}": {
+      "get": {
+        "description": "Fetches one event from the delivery log with the payload that was delivered and the endpoints it was routed to. A missing or wrong-organization id returns 404.",
+        "operationId": "webhooks_get_delivery",
+        "parameters": [
+          {
+            "description": "Event identifier.",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "description": "Event identifier.",
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryDetail"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get a delivery-log event",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/deliveries/{event_id}/attempts": {
+      "get": {
+        "description": "Lists the delivery attempts for one event across the organization's endpoints, newest first, including automatic retries and manual replays. Pages the same way as the delivery log.",
+        "operationId": "webhooks_list_attempts",
+        "parameters": [
+          {
+            "description": "Event identifier.",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "description": "Event identifier.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size.",
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "description": "Page size.",
+              "format": "int64",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Opaque cursor from a previous page's next_cursor. Omit for the first page.",
+            "explode": false,
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "description": "Opaque cursor from a previous page's next_cursor. Omit for the first page.",
+              "maxLength": 512,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAttemptListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List delivery attempts for an event",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/deliveries/{event_id}:replay": {
+      "post": {
+        "description": "Re-drives one event to one endpoint. Used to recover a dead-lettered delivery once the endpoint is healthy again. The replay is queued, not delivered synchronously; the response identifies it, and its attempt appears under the event's attempts with manual set.",
+        "operationId": "webhooks_replay_delivery",
+        "parameters": [
+          {
+            "description": "Event identifier to replay.",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "description": "Event identifier to replay.",
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookReplayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookReplayResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Replay a delivery",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/deliveries:sendTest": {
+      "post": {
+        "description": "Publishes a simulated event to the caller's organization so an endpoint can be verified end to end. Name an event_type from the catalog to simulate it with that type's sample payload (default webhook.test), and an endpoint_id to deliver to that endpoint only (a missing or wrong-organization id returns 404; an endpoint not subscribed to the type is a validation error rather than a silent no-op). Omit the body to deliver webhook.test to every endpoint subscribed to it. The event is queued, not delivered synchronously; the response carries the event id to look up in the delivery log.",
+        "operationId": "webhooks_send_test_event",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookTestEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookTestEventResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Send a test event",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/endpoints": {
+      "get": {
+        "description": "Lists every webhook endpoint registered for the caller's organization. The collection is bounded, so it is returned whole rather than paged. Signing secrets are never included.",
+        "operationId": "webhooks_list_endpoints",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List webhook endpoints",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      },
+      "post": {
+        "description": "Registers an HTTPS endpoint to receive signed events for the caller's organization, subscribed to a set of event types (or all). The signing secret is returned exactly once.",
+        "operationId": "webhooks_create_endpoint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookEndpointCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointCreateResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Register a webhook endpoint",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/endpoints/{endpoint_id}": {
+      "delete": {
+        "description": "Removes a webhook endpoint. Subsequent events are no longer delivered to it. A missing or wrong-organization id returns 404.",
+        "operationId": "webhooks_delete_endpoint",
+        "parameters": [
+          {
+            "description": "Endpoint identifier.",
+            "in": "path",
+            "name": "endpoint_id",
+            "required": true,
+            "schema": {
+              "description": "Endpoint identifier.",
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Delete a webhook endpoint",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      },
+      "get": {
+        "description": "Fetches one webhook endpoint by id. A missing or wrong-organization id returns 404.",
+        "operationId": "webhooks_get_endpoint",
+        "parameters": [
+          {
+            "description": "Endpoint identifier.",
+            "in": "path",
+            "name": "endpoint_id",
+            "required": true,
+            "schema": {
+              "description": "Endpoint identifier.",
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpoint"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get a webhook endpoint",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/endpoints/{endpoint_id}/attempts": {
+      "get": {
+        "description": "Lists every delivery attempt made to one endpoint across the organization's events, newest first, each with its outcome, the HTTP status the endpoint returned, its try number and the event it delivered. Filter by outcome (status) or event type. Pages the same way as the delivery log. A missing or wrong-organization endpoint id returns 404.",
+        "operationId": "webhooks_list_endpoint_attempts",
+        "parameters": [
+          {
+            "description": "Endpoint identifier.",
+            "in": "path",
+            "name": "endpoint_id",
+            "required": true,
+            "schema": {
+              "description": "Endpoint identifier.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size.",
+            "explode": false,
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "description": "Page size.",
+              "format": "int64",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Opaque cursor from a previous page's next_cursor. Omit for the first page.",
+            "explode": false,
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "description": "Opaque cursor from a previous page's next_cursor. Omit for the first page.",
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Keep only attempts with this outcome. Omit for both.",
+            "explode": false,
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "description": "Keep only attempts with this outcome. Omit for both.",
+              "enum": [
+                "success",
+                "failed"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Keep only attempts of events of this type. Omit for all types.",
+            "explode": false,
+            "in": "query",
+            "name": "event_type",
+            "schema": {
+              "description": "Keep only attempts of events of this type. Omit for all types.",
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only attempts that completed at or after this time (RFC 3339).",
+            "explode": false,
+            "in": "query",
+            "name": "delivered_after",
+            "schema": {
+              "description": "Only attempts that completed at or after this time (RFC 3339).",
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only attempts that completed at or before this time (RFC 3339).",
+            "explode": false,
+            "in": "query",
+            "name": "delivered_before",
+            "schema": {
+              "description": "Only attempts that completed at or before this time (RFC 3339).",
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointAttemptListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List delivery attempts to an endpoint",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/endpoints/{endpoint_id}:rotateSecret": {
+      "post": {
+        "description": "Issues a new signing secret for the endpoint, returned exactly once. With mode graceful (the default) the previous secret keeps verifying for 24 hours (previous_secret_invalid_at in the response) so the new secret can be rolled out across a deploy without dropping deliveries in flight. With mode immediate the previous secret stops verifying at once, for a secret that may be compromised. A missing or wrong-organization id returns 404.",
+        "operationId": "webhooks_rotate_endpoint_secret",
+        "parameters": [
+          {
+            "description": "Endpoint identifier.",
+            "in": "path",
+            "name": "endpoint_id",
+            "required": true,
+            "schema": {
+              "description": "Endpoint identifier.",
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookRotateSecretRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookRotateSecretResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Rotate a webhook endpoint's signing secret",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/event-types": {
+      "get": {
+        "description": "Lists the event types an endpoint can subscribe to, with a description of each, so a caller knows what to subscribe to before registering an endpoint.",
+        "operationId": "webhooks_list_event_types",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEventTypeCatalogResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "List subscribable event types",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
+        }
+      }
+    },
+    "/webhooks/metrics": {
+      "get": {
+        "description": "Returns delivery volume and error rate over a window, either for one destination (endpoint_id) or grouped across all of them, time-bucketed for charting. Response time is not included: the gateway records no per-attempt latency.",
+        "operationId": "webhooks_get_metrics",
+        "parameters": [
+          {
+            "description": "Window and bucket size: 24h (hourly buckets), 7d or 30d (daily buckets).",
+            "explode": false,
+            "in": "query",
+            "name": "range",
+            "schema": {
+              "default": "7d",
+              "description": "Window and bucket size: 24h (hourly buckets), 7d or 30d (daily buckets).",
+              "enum": [
+                "24h",
+                "7d",
+                "30d"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "One destination's series. Omit to get every destination grouped, for the list-view sparklines.",
+            "explode": false,
+            "in": "query",
+            "name": "endpoint_id",
+            "schema": {
+              "description": "One destination's series. Omit to get every destination grouped, for the list-view sparklines.",
+              "maxLength": 255,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryMetricsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V2ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "summary": "Get delivery metrics",
+        "tags": [
+          "Webhooks"
+        ],
+        "x-required-role": "admin",
+        "x-mint": {
+          "content": "<span class=\"api-role api-role-admin\" title=\"Admins only.\">Minimum role required: Admin</span>"
         }
       }
     },
@@ -9094,6 +10837,9 @@
     },
     {
       "name": "Usage"
+    },
+    {
+      "name": "Webhooks"
     },
     {
       "name": "Workflows"
