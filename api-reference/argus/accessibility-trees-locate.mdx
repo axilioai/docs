@@ -1,0 +1,78 @@
+---
+title: "Accessibility trees: locate"
+sidebarTitle: "Accessibility trees: locate"
+openapi: "/api-reference/openapi-argus.json POST /api/v1/accessibility-trees:locate"
+---
+
+Choose the node that a natural-language query describes from a screen's
+accessibility tree. You send the candidate nodes, and Argus answers with one
+of your `node_id` values, or `found: false`. It never answers with a point, so
+you act on the node itself.
+
+## Why trees and screenshots are separate operations
+
+Screenshot grounding and tree grounding take different inputs and give
+different answers. A screenshot locate reads pixels and returns a box. A tree
+locate reads structured nodes and returns a node ID. Keeping them as separate
+operations gives each one a request and response that fit it exactly.
+
+The tree operation is device-neutral. A node is a `node_id`, a `role`, a
+`name`, an optional `value`, optional pixel `bounds`, and an optional
+`platform` object of native attributes, which Argus passes to the model as
+given. Android accessibility nodes map onto this shape today. Browser (CDP),
+macOS, and Windows accessibility trees map onto the same shape, so this one
+operation can serve them as those device classes arrive.
+
+## Request
+
+- **`query`** describes the target, such as `"the Sign in button"`.
+- **`nodes`** holds 1 to 2,000 candidates. Each `node_id` must be unique in the
+  request; a duplicate is a validation error.
+- **`image`** is an optional base64 PNG or JPEG screenshot. When you send one,
+  give `bounds` in that screenshot's pixel space.
+- **`model`** is an optional vision-language model from
+  [Models: list](/api-reference/argus/list-models). Omit it to use the default.
+
+```json
+{
+  "query": "the Sign in button",
+  "nodes": [
+    {"node_id": "12", "role": "textbox", "name": "Email", "value": ""},
+    {"node_id": "13", "role": "textbox", "name": "Password"},
+    {
+      "node_id": "14",
+      "role": "button",
+      "name": "Sign in",
+      "bounds": {"x": 96, "y": 1480, "width": 888, "height": 144}
+    }
+  ]
+}
+```
+
+## Response
+
+`found` tells you whether the model chose a node. When it did, `node_id` is
+one of the IDs you sent. Argus checks the answer against your request, so an
+ID you didn't send comes back as not found rather than as a guess.
+`confidence` is the model's own estimate from 0 to 1.
+
+```json
+{
+  "found": true,
+  "node_id": "14",
+  "confidence": 0.97,
+  "model": "anthropic/claude-haiku-4.5",
+  "cost_microdollars": 412,
+  "prompt_tokens": 1210,
+  "completion_tokens": 18,
+  "latency_ms": 640
+}
+```
+
+## Billing
+
+Tree locate is billed per token on the model it ran, the same way as
+[Screenshots: locate](/api-reference/argus/screenshots-locate). Usage rows
+label it with the endpoint `tree_locate`. See [Usage](/usage/overview#inference-usage).
+
+Errors use the [problem details](/reference/errors#problem-details) shape.

@@ -1,11 +1,11 @@
 ---
 title: "Client"
 sidebarTitle: "Client"
-description: "Open a dedicated-phone driver with Python or call Argus on your own images from Python, Go, or REST."
+description: "Open a dedicated-phone driver with Python, or call the Argus API on your own screenshots and accessibility trees."
 ---
 
-Python's high-level `Client` authenticates Platform requests, opens phone
-sessions, and exposes the Argus vision service.
+Python's high-level `Client` authenticates Platform requests and opens phone
+sessions.
 
 ```python
 from axilio.platform import Client
@@ -38,151 +38,105 @@ The yielded [driver](/driver/reference) closes its connection and deallocates th
 phone when the block exits. A per-call OCR engine or model overrides the
 session default.
 
-## Call Argus on your own image
+## Call Argus on your own input
 
-The phone driver already uses Argus for screen understanding. Use the direct
-clients below when the input is an image you provide. The CLI does not expose a
-direct own-image Argus command.
+The phone driver already uses Argus for screen understanding. Call the Argus
+API directly when the input is a screenshot or an accessibility tree that you
+provide. Argus has one operation per kind of input, because a screenshot is
+answered with a box and a tree is answered with a node. The CLI does not
+expose a direct Argus command.
 
-### Locate a described target
+<Note>
+  The Python and Go clients for the Argus API are being regenerated for these
+  operations. Until that SDK release, call them over HTTP as shown below. Every
+  operation except the model list needs your API key in `X-Axilio-Api-Key`.
+</Note>
 
-<Tabs sync={false}>
-  <Tab title="Python SDK">
-    ```python
-    result = client.argus.locate(
-        image=image_b64,
-        query="the blue Continue button",
-    )
-    if result.found:
-        print(result.bbox, result.confidence, result.cost_microdollars)
-    ```
-  </Tab>
+### Locate a described target in a screenshot
 
-  <Tab title="Go SDK">
-    ```go
-    visionClient := argusclient.NewClient(
-        argusoption.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
-    )
-    result, err := visionClient.Vision.Locate(ctx, &argusapi.LocateRequest{
-        Image: imageB64,
-        Query: "the blue Continue button",
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    if result.Found {
-        fmt.Println(result.Bbox, result.Confidence, result.CostMicrodollars)
-    }
-    ```
+REST API References:
 
-    Import `argusapi`, `argusclient`, and `argusoption` from the
-    `github.com/axilioai/platform-go/argus` module tree.
-  </Tab>
+- [**Screenshots: locate**](/api-reference/argus/screenshots-locate): `POST /api/v1/screenshots:locate`
 
-  <Tab title="REST API">
-    REST API References:
+```bash
+jq -n \
+  --arg image "$IMAGE_B64" \
+  --arg query "the blue Continue button" \
+  '{image: $image, query: $query}' |
+  curl --silent --show-error --fail-with-body \
+    --request POST \
+    --url https://argus.axilio.ai/api/v1/screenshots:locate \
+    --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+    --header "Content-Type: application/json" \
+    --data-binary @-
+```
 
-    - [**Run locate**](/api-reference/vision/vision/run-locate): `POST /api/v1/vision/locate`
+When `found` is true, the response carries either a pixel `bbox` or, if you
+sent OCR results as `texts`, a `matched_text_index` into that list. The request
+also accepts an optional `model`.
 
-    ```bash
-    jq -n \
-      --arg image "$IMAGE_B64" \
-      --arg query "the blue Continue button" \
-      '{image: $image, query: $query}' |
-      curl --silent --show-error --fail-with-body \
-        --request POST \
-        --url https://argus.axilio.ai/api/v1/vision/locate \
-        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-        --header "Content-Type: application/json" \
-        --data-binary @-
-    ```
-  </Tab>
-</Tabs>
+### Locate a described node in an accessibility tree
 
-The Python method also accepts optional `model` and precomputed OCR `texts`.
-The Go request exposes the corresponding `Model` and `Texts` fields.
+REST API References:
 
-### Detect text and icons
+- [**Accessibility trees: locate**](/api-reference/argus/accessibility-trees-locate): `POST /api/v1/accessibility-trees:locate`
 
-<Tabs sync={false}>
-  <Tab title="Python SDK">
-    ```python
-    result = client.argus.detect(
-        image=image_b64,
-        inference_type="combined",
-        ocr_engine="free",
-    )
-    ```
-  </Tab>
+```bash
+jq -n \
+  --arg query "the Sign in button" \
+  '{
+    query: $query,
+    nodes: [
+      {node_id: "13", role: "textbox", name: "Password"},
+      {node_id: "14", role: "button", name: "Sign in"}
+    ]
+  }' |
+  curl --silent --show-error --fail-with-body \
+    --request POST \
+    --url https://argus.axilio.ai/api/v1/accessibility-trees:locate \
+    --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+    --header "Content-Type: application/json" \
+    --data-binary @-
+```
 
-  <Tab title="Go SDK">
-    ```go
-    result, err := visionClient.Vision.Detect(ctx, &argusapi.InferenceRequest{
-        Image:         imageB64,
-        InferenceType: argusapi.InferenceTypeCombined.Ptr(),
-        OcrEngine:     argusapi.String("free"),
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println(result.GetType())
-    ```
-  </Tab>
+The response names one of your `node_id` values, or reports `found: false`.
+Each node can also carry `value`, pixel `bounds`, and a `platform` object of
+native attributes, and the request accepts an optional screenshot as `image`.
 
-  <Tab title="REST API">
-    REST API References:
+### Detect text and icons in a screenshot
 
-    - [**Run inference**](/api-reference/vision/vision/run-inference): `POST /api/v1/vision/detect`
+REST API References:
 
-    ```bash
-    jq -n --arg image "$IMAGE_B64" \
-      '{image: $image, inference_type: "combined", ocr_engine: "free"}' |
-      curl --silent --show-error --fail-with-body \
-        --request POST \
-        --url https://argus.axilio.ai/api/v1/vision/detect \
-        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-        --header "Content-Type: application/json" \
-        --data-binary @-
-    ```
-  </Tab>
-</Tabs>
+- [**Screenshots: detect**](/api-reference/argus/screenshots-detect): `POST /api/v1/screenshots:detect`
+
+```bash
+jq -n --arg image "$IMAGE_B64" \
+  '{image: $image, inference_type: "combined", ocr_engine: "free"}' |
+  curl --silent --show-error --fail-with-body \
+    --request POST \
+    --url https://argus.axilio.ai/api/v1/screenshots:detect \
+    --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+    --header "Content-Type: application/json" \
+    --data-binary @-
+```
 
 Detection also accepts `confidence_threshold` and `nms_iou_threshold`.
 
 ### List supported models
 
-<Tabs sync={false}>
-  <Tab title="Python SDK">
-    ```python
-    models = client.argus.list_models()
-    for model in models.data:
-        print(model.id, model.pricing)
-    ```
-  </Tab>
+REST API References:
 
-  <Tab title="Go SDK">
-    ```go
-    models, err := visionClient.Vision.ListModels(ctx)
-    if err != nil {
-        log.Fatal(err)
-    }
-    for _, model := range models.Data {
-        fmt.Println(model.ID, model.Pricing)
-    }
-    ```
-  </Tab>
+- [**Models: list**](/api-reference/argus/list-models): `GET /api/v1/models`
 
-  <Tab title="REST API">
-    REST API References:
+```bash
+curl --silent --show-error --fail-with-body \
+  --url https://argus.axilio.ai/api/v1/models
+```
 
-    - [**List models**](/api-reference/vision/vision/list-models): `GET /api/v1/vision/models`
+The catalog is public, so this request does not need an API key.
 
-    ```bash
-    curl --silent --show-error --fail-with-body \
-      --url https://argus.axilio.ai/api/v1/vision/models
-    ```
-  </Tab>
-</Tabs>
+Argus errors use the [problem details](/reference/errors#problem-details)
+shape, the same as the REST API.
 
 ## See also
 

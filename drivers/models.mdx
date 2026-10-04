@@ -12,47 +12,29 @@ with live pricing.
 
 <Tabs sync={false}>
   <Tab title="CLI">
-    The CLI does not have a model-catalog command. Use an SDK or the public
-    REST operation, then pass the chosen engine or model to `axilio phone`.
-  </Tab>
-
-  <Tab title="Python SDK">
-    ```python
-    models = client.argus.list_models()
-    for model in models.data:
-        print(model.id, model.pricing)
-    ```
-  </Tab>
-
-  <Tab title="Go SDK">
-    ```go
-    visionClient := argusclient.NewClient()
-    models, err := visionClient.Vision.ListModels(ctx)
-    if err != nil {
-        log.Fatal(err)
-    }
-    for _, model := range models.Data {
-        fmt.Println(model.ID, model.Pricing)
-    }
-    ```
-
-    Import the generated client as
-    `argusclient "github.com/axilioai/platform-go/argus/client"`.
+    The CLI does not have a model-catalog command. Use the public REST
+    operation, then pass the chosen engine or model to `axilio phone`.
   </Tab>
 
   <Tab title="REST API">
     REST API References:
 
-    - [**List models**](/api-reference/vision/vision/list-models): `GET /api/v1/vision/models`
+    - [**Models: list**](/api-reference/argus/list-models): `GET /api/v1/models`
 
     ```bash
     curl --silent --show-error --fail-with-body \
-      https://argus.axilio.ai/api/v1/vision/models
+      https://argus.axilio.ai/api/v1/models
     ```
 
     The catalog is public; this request does not need an API key.
   </Tab>
 </Tabs>
+
+<Note>
+  The Python and Go clients for the Argus API are being regenerated for its
+  new operations. Until that SDK release, call the REST operations on this page
+  directly.
+</Note>
 
 ## Axilio models
 
@@ -207,14 +189,19 @@ to track what you actually spend.
 
 ## Calling Argus directly
 
-The driver runs Argus for you on the live screen. If you have your own image to
-analyze, call it directly with
-[`client.argus`](/driver/client#call-argus-on-your-own-image) — the same models,
-on any image. See the
-[`Client` reference](/driver/client#call-argus-on-your-own-image)
-for the SDK methods (`locate`, `detect`, `list_models`), or the
-[Vision API reference](/api-reference/vision/vision/run-locate) for the REST
-endpoints.
+The driver runs Argus for you on the live screen. If you have your own image
+or accessibility tree to analyze, call the Argus API directly. It uses the same
+models and has one operation per input:
+
+- [**Screenshots: detect**](/api-reference/argus/screenshots-detect) finds
+  icons and reads text in an image.
+- [**Screenshots: locate**](/api-reference/argus/screenshots-locate) finds a
+  described element in an image.
+- [**Accessibility trees: locate**](/api-reference/argus/accessibility-trees-locate)
+  picks the described node from accessibility tree nodes you send.
+
+See [Call Argus on your own input](/driver/client#call-argus-on-your-own-input)
+for examples.
 
 ## Next steps
 

@@ -1,0 +1,23 @@
+---
+title: "Models: list"
+sidebarTitle: "Models: list"
+openapi: "/api-reference/openapi-argus.json GET /api/v1/models"
+---
+
+List every model Argus serves, with live pricing. The catalog is public, so
+this request does not need an API key.
+
+The catalog has two families:
+
+- **Vision-language models** (`type: "vlm"`) answer the locate operations. Pass
+  one as `model` to [Screenshots: locate](/api-reference/argus/screenshots-locate)
+  or [Accessibility trees: locate](/api-reference/argus/accessibility-trees-locate).
+  They bill per token.
+- **Axilio models** (`axilio/argus-*`) run behind
+  [Screenshots: detect](/api-reference/argus/screenshots-detect). You select
+  them with `ocr_engine` and `inference_type`, not by ID. They bill per page,
+  where one screenshot is one page.
+
+A locate request with a model ID that isn't in this list is rejected with
+`400` before anything is billed. See [Models](/drivers/models) for how the
+driver picks each one.

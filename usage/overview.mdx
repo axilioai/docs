@@ -228,6 +228,16 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
   </Tab>
 </Tabs>
 
+Each inference row names the Argus operation it billed in `endpoint`:
+
+| `endpoint` | Argus operation | Billed |
+| --- | --- | --- |
+| `detect` | [Screenshots: detect](/api-reference/argus/screenshots-detect) | Per page, on the Axilio model line |
+| `locate` | [Screenshots: locate](/api-reference/argus/screenshots-locate) | Per token, on the model that ran |
+| `tree_locate` | [Accessibility trees: locate](/api-reference/argus/accessibility-trees-locate) | Per token, on the model that ran |
+
+Pass any of these values as the endpoint filter.
+
 Aggregate `cost_by_product` values are US dollars. Session and inference row
 fields whose names end in `_microdollars` use microdollars. One US dollar
 equals 1,000,000 microdollars.
