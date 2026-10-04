@@ -17,7 +17,7 @@ direct control over HTTP requests.
 | API | Base URL |
 |---|---|
 | REST API | `https://api.axilio.ai/api/v1` |
-| Vision API ([Argus](/drivers/models)) | `https://argus.axilio.ai` |
+| Argus API ([models](/drivers/models)) | `https://argus.axilio.ai/api/v1` |
 
 ## Authentication
 
@@ -47,6 +47,23 @@ Get a key from [**API Keys**](https://app.axilio.ai/dashboard/axilio/api-keys). 
   files. Session execution data is exposed through the
   [Telemetry frame contract](/telemetry/frames), not events.
 </Note>
+
+## Argus operations
+
+Argus is the model service the driver uses to understand a screen. Call it
+directly to ground a query in your own input. Its operations are split by
+input, so each request and answer fits its input exactly:
+
+| Operation | Input | Answer |
+|---|---|---|
+| [Models: list](/api-reference/argus/list-models) | None. Public, no API key. | The model catalog with live pricing. |
+| [Screenshots: detect](/api-reference/argus/screenshots-detect) | A screenshot. | Every detected icon and text element. |
+| [Screenshots: locate](/api-reference/argus/screenshots-locate) | A screenshot and a query. | A pixel box, or a match in OCR text you supplied. |
+| [Accessibility trees: locate](/api-reference/argus/accessibility-trees-locate) | Accessibility tree nodes, a query, and an optional screenshot. | The chosen node's ID, or not found. |
+
+Argus uses the same API key header and the same
+[problem details](/reference/errors#problem-details) error shape as the REST
+API.
 
 ## Roles & permissions
 

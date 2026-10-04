@@ -223,12 +223,15 @@
             }
           },
           {
-            "group": "Vision API",
+            "group": "Argus API",
             "icon": "eye",
-            "openapi": {
-              "source": "/api-reference/openapi-argus.json",
-              "directory": "api-reference/vision"
-            }
+            "openapi": "/api-reference/openapi-argus.json",
+            "pages": [
+              "api-reference/argus/list-models",
+              "api-reference/argus/screenshots-detect",
+              "api-reference/argus/screenshots-locate",
+              "api-reference/argus/accessibility-trees-locate"
+            ]
           }
         ]
       },
@@ -386,15 +389,27 @@
     },
     {
       "source": "/vision/locate",
-      "destination": "/api-reference/vision/vision/run-locate"
+      "destination": "/api-reference/argus/screenshots-locate"
     },
     {
       "source": "/vision/detect",
-      "destination": "/api-reference/vision/vision/run-inference"
+      "destination": "/api-reference/argus/screenshots-detect"
     },
     {
       "source": "/driver/models",
       "destination": "/drivers/models"
+    },
+    {
+      "source": "/api-reference/vision/vision/list-models",
+      "destination": "/api-reference/argus/list-models"
+    },
+    {
+      "source": "/api-reference/vision/vision/run-inference",
+      "destination": "/api-reference/argus/screenshots-detect"
+    },
+    {
+      "source": "/api-reference/vision/vision/run-locate",
+      "destination": "/api-reference/argus/screenshots-locate"
     }
   ],
   "footer": {

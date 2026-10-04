@@ -26,8 +26,18 @@ regresses back into the public spec, dropping it here keeps it out of the docs.
 
 Run from the docs repo root:  python scripts/sync-openapi.py
 Outputs: api-reference/openapi-backend.json, api-reference/openapi-argus.json
+
+To sync ahead of a deploy, pass a spec dumped from the service instead of the
+live URL. For argus that is the same dump the monorepo's publish-argus-spec job
+takes: run `python main.py --openapi` in axilio/argus and keep the last stdout
+line.
+
+  python scripts/sync-openapi.py --argus-spec /tmp/argus-openapi.json
+  python scripts/sync-openapi.py --only argus --argus-spec /tmp/argus-openapi.json
 """
+import argparse
 import json
+import re
 import urllib.request
 
 # A default Python UA gets a 403 from the edge; a browser-ish UA is fine.
@@ -206,7 +216,9 @@ def drop_internal(spec: dict):
 
 
 def nice_tag(tag: str) -> str:
-    return tag.replace("-", " ").title().replace("Api", "API")  # api-keys -> API Keys
+    # api-keys -> API Keys; AccessibilityTrees -> Accessibility Trees
+    spaced = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", tag).replace("-", " ")
+    return spaced.title().replace("Api", "API")
 
 
 def titlecase_tags(spec: dict):
@@ -250,8 +262,15 @@ def badge_roles(spec: dict):
                 )
 
 
-def build(url: str, server: str, out: str):
-    spec = fetch(url)
+def load(source: str) -> dict:
+    if source.startswith(("http://", "https://")):
+        return fetch(source)
+    with open(source) as f:
+        return json.load(f)
+
+
+def build(source: str, server: str, out: str):
+    spec = load(source)
     spec["servers"] = [{"url": server, "description": "Production"}]
     strip_schema(spec)
     correct_known_description_drift(spec)
@@ -269,8 +288,22 @@ def build(url: str, server: str, out: str):
     print(f"{out}: {len(spec.get('paths', {}))} paths, {len(spec.get('tags', []))} tags, roles={roles}")
 
 
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--only", choices=("backend", "argus"),
+                        help="sync one spec instead of both")
+    parser.add_argument("--backend-spec", default="https://api.axilio.ai/openapi.json",
+                        help="URL or local path of the backend spec")
+    parser.add_argument("--argus-spec", default="https://argus.axilio.ai/openapi.json",
+                        help="URL or local path of the argus spec")
+    args = parser.parse_args()
+    if args.only in (None, "backend"):
+        build(args.backend_spec, "https://api.axilio.ai/api/v1",
+              "api-reference/openapi-backend.json")
+    if args.only in (None, "argus"):
+        build(args.argus_spec, "https://argus.axilio.ai",
+              "api-reference/openapi-argus.json")
+
+
 if __name__ == "__main__":
-    build("https://api.axilio.ai/openapi.json", "https://api.axilio.ai/api/v1",
-          "api-reference/openapi-backend.json")
-    build("https://argus.axilio.ai/openapi.json", "https://argus.axilio.ai",
-          "api-reference/openapi-argus.json")
+    main()

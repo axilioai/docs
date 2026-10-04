@@ -1,0 +1,19 @@
+---
+title: "Screenshots: detect"
+sidebarTitle: "Screenshots: detect"
+openapi: "/api-reference/openapi-argus.json POST /api/v1/screenshots:detect"
+---
+
+Detect icons and UI elements and read the text in a screenshot you supply.
+Send the image as base64 PNG or JPEG. `inference_type` chooses icons
+(`detect`), text (`ocr`), or both (`combined`), and `ocr_engine` chooses the
+free or premium text engine.
+
+Detection is billed per page through the Axilio model line. See
+[Models](/drivers/models#axilio-models) for the tiers and prices.
+
+To find one described element instead of every element, use
+[Screenshots: locate](/api-reference/argus/screenshots-locate). You can pass
+the text this operation returns as that request's `texts`.
+
+Errors use the [problem details](/reference/errors#problem-details) shape.

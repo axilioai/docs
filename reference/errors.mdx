@@ -17,8 +17,11 @@ example, does not necessarily mean the phone session or DCP control path failed.
 
 ## API errors
 
-HTTP failures use a Problem Details JSON body with a status and human-readable
-detail. Validation responses can also include field-specific errors.
+HTTP failures from the REST API and the Argus API return an
+[RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details body, with
+the content type `application/problem+json`. Branch on the status and the
+`code`, not on the human-readable text. See [Problem details](#problem-details)
+for the full shape.
 
 | Status | Meaning | Recovery |
 | --- | --- | --- |
@@ -29,12 +32,61 @@ detail. Validation responses can also include field-specific errors.
 | `404 Not Found` | The resource does not exist or is not visible to the organization. | Verify the ID and organization. |
 | `408 Request Timeout` | The request exceeded a server or gateway deadline. | Retry with backoff only when the operation is safe to repeat. |
 | `409 Conflict` | Current state conflicts with the request, such as a busy phone or duplicate active name. | Refresh the resource, resolve the conflict, and try again. |
+| `405 Method Not Allowed` | The path does not accept this HTTP method. | Check the method against the reference page. |
 | `422 Unprocessable Entity` | The body or query does not match the endpoint schema. | Correct the fields identified by the validation errors. |
 | `429 Too Many Requests` | The caller exceeded a rate limit. | Honor retry guidance and back off. |
 | `500 Internal Server Error` | Axilio encountered an unexpected failure. | Retry once with backoff; report it if it persists. |
 | `502 Bad Gateway` | A phone or edge service rejected the operation. | Read the detail and correct the upstream condition. |
 | `503 Service Unavailable` | A service is temporarily unavailable. | Retry with backoff. |
 | `504 Gateway Timeout` | A phone or edge service missed its deadline. | Retry later; use a new session if the current one cannot recover. |
+
+### Problem details
+
+Every error body has the same members:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "body.query: String should have at least 1 character",
+  "code": "validation",
+  "errors": [
+    {
+      "location": "body.query",
+      "message": "String should have at least 1 character"
+    }
+  ]
+}
+```
+
+| Member | Meaning |
+| --- | --- |
+| `type` | Always `about:blank`. |
+| `title` | The HTTP reason phrase for `status`. |
+| `status` | The HTTP status code. |
+| `detail` | A human-readable explanation. For internal errors this is a generic message, never internal details. |
+| `code` | A stable, machine-readable category. |
+| `errors` | Present on a `422` request-validation problem: one entry per field, with its `location` and `message`. |
+
+The `code` values you can see from Argus:
+
+| `code` | Typical status | Meaning |
+| --- | --- | --- |
+| `validation` | `400`, `422` | The request is invalid, such as a malformed image, an unsupported model, or a field that fails the schema. |
+| `unauthorized` | `401` | The API key is missing or invalid. |
+| `quota_exceeded` | `402` | The organization's balance cannot cover the call. |
+| `permission_denied` | `403` | The credential is not allowed to perform the operation. |
+| `not_found` | `404` | The path or resource does not exist. |
+| `method_not_allowed` | `405` | The path exists but not with this HTTP method. |
+| `conflict` | `409` | The request conflicts with current state. |
+| `unprocessable_entity` | `422` | The request is well formed but breaks a business rule. |
+| `upstream_rejection` | `502` | The model provider failed or rejected the call. |
+| `infrastructure` | `500` | An Argus model or inference component failed. |
+| `error` | `500` | An unexpected internal failure. |
+
+The REST API uses the same shape and the same vocabulary where the categories
+overlap.
 
 <Tabs sync={false}>
   <Tab title="CLI">

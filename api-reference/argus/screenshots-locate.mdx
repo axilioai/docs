@@ -1,0 +1,28 @@
+---
+title: "Screenshots: locate"
+sidebarTitle: "Screenshots: locate"
+openapi: "/api-reference/openapi-argus.json POST /api/v1/screenshots:locate"
+---
+
+Find the element a natural-language query describes, such as
+`"the blue Continue button"`, in a screenshot you supply. A vision-language
+model reads the image and answers in one of two ways when `found` is true:
+
+- **A box.** `bbox` is the element's pixel box in the screenshot.
+- **A matched text.** When you send `texts`, the OCR results for the same
+  screenshot, the model can answer with `matched_text_index` instead. It points
+  into your `texts` list, so you reuse that entry's exact box.
+
+Argus does not run OCR for this operation. To ground answers in text, call
+[Screenshots: detect](/api-reference/argus/screenshots-detect) first and pass
+its text results as `texts`.
+
+Pass a `model` from [Models: list](/api-reference/argus/list-models), or omit
+it to use the default. The call is billed per token on that model, and the
+response reports `prompt_tokens`, `completion_tokens`, and `cost_microdollars`.
+
+If you already have the screen's accessibility tree, use
+[Accessibility trees: locate](/api-reference/argus/accessibility-trees-locate)
+instead. It answers with a node, which is exact where a box is approximate.
+
+Errors use the [problem details](/reference/errors#problem-details) shape.
