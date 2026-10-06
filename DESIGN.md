@@ -166,22 +166,22 @@ There are exactly three page types. Never mix them on one page.
   Signatures and tables, near-zero prose. The REST/OpenAPI reference lives in the
   **API Reference tab**; the **Python SDK reference is class-based** (Playwright
   model) and lives in the Drivers tab's Reference group — one page per object
-  (`Client`, `Driver`, `Element`, `Screen`, `Key`).
+  (`Client`, `Driver`, `Locator`, `Element`, `Screen`, `Key`).
   - **Class-based, always qualified.** The page *is* the class, and every member
-    is written qualified — `element.center`, `driver.find_text()`, never bare
-    `center`/`find_text`. This is the rule: a reader landing on any fragment
+    is written qualified — `element.center`, `locator.tap()`, never bare
+    `center`/`tap`. This is the rule: a reader landing on any fragment
     (search, deep link, the TOC) must know what object it belongs to. Bare member
     names ("## Fields" with a `center` row) are the anti-pattern — they read as
     "fields of *what*?".
   - **Entry anatomy** (per method, Playwright-style): a qualified `###` heading
-    with empty parens (`### \`driver.find_text()\`` — empty parens keep the auto
-    anchor clean, e.g. `#driver-find_text`); a one-line imperative description;
+    with empty parens (`### \`driver.get_by_text()\`` — empty parens keep the auto
+    anchor clean, e.g. `#driver-get_by_text`); a one-line imperative description;
     a signature code block; an Arguments table (`Parameter | Type | Default |
     Description`) when there's more than one arg; and a bold **Returns** line that
     links the return type to its class page. Note exceptions inline (**Raises**).
   - **Guides teach, reference lists.** Task pages (Basics) never document full
     signatures — they show the one call they're about and link the method mention
-    into its reference entry (`[\`find_text\`](/driver/reference#driver-find_text)`).
+    into its reference entry (`[\`get_by_text\`](/driver/reference#driver-get_by_text)`).
     The reference never teaches the model; it points back to the guides for that.
 
 **Hard rules that keep pages honest:**
@@ -243,4 +243,5 @@ direct, and confident, written by someone who has actually run this in productio
 | 2026-08-12 | Go the rest of the way: Inter at vendor-measured metrics; mono = code only; retire the content-area terminal costume | Plex Sans at 15px with mono chrome accents still read "different" next to the vendors. Measured their live pages: both Browserbase and Kernel run Inter 18px/28px body, 36px h1 (600), 24px h2 with 48px above — Mintlify's native system. Removed the `fonts` key, matched those numbers exactly, and dropped the mono sidebar labels, mono/uppercase table headers, and `//` heading eyebrows from content. Docs identity now = dark canvas + sharp corners + hairlines + per-surface accents + wordmark; the reading surface is standard premium docs typography. Supersedes the same-day Plex Sans decision and the "No Inter" anti-slop rule |
 | 2026-08-12 | Retire per-surface rainbow accents → single emerald; lift dark code surface; brighten dark body text | Side-by-side audit against the vendors found three concrete dark-mode defects: body text rendered at the maple default `rgb(159,164,162)` (dim, low-contrast, faintly green), code surfaces sat one shade off the canvas (invisible), and the violet/amber/cyan per-surface accents read as AI-slop (no premium docs site colors sections differently). Fixed: body `#d4d4d4`, code surface lifted to `#16181c` with a firmer border (repointing the copy-button fade var to match), single emerald accent everywhere. Also imposed a deliberate, consistent vertical rhythm (even block spacing, asymmetric heading margins) since the theme defaults read as choppy against our terse content |
 | 2026-08-12 | Adopt Playwright's two-layer doc model for the SDK; add a class-based reference | Studied Playwright vs Browserbase. Browserbase's thin-SDK-page-plus-pointer model fits only because their SDK is a thin session client (real driving is Playwright's API). Ours, like Playwright, *is* the driving API, so it needs Playwright's model: task guides (Basics) that teach + a complete class-based reference (`Client`, `Driver`, `Element`, `Screen`, `Key`) that lists. Root-caused the "Fields for what?" confusion to bare, unqualified members on the old element/screen/key pages; the fix is class-qualified members everywhere. See the Reference-page rules in the IA section |
+| 2026-10-06 | Add a `Locator` reference page; `Element` becomes data only | SDK 0.20.0 / platform-go v0.13.0 moved finding, waiting, and element actions onto Playwright-style locators. `Locator` is now the object guides act on, so it gets its own class page; `Element` stays as the snapshot data `screen.find_text()` returns |
 | 2026-06-27 | One page, one job — split dense pages into many focused ones | Pages averaged 1,000–1,900 words and mixed concept + tutorial + full API reference + essay, forcing a full read to find one thing. `concepts/*` and `guides/*` were ~90% duplicates of each other and of the API Reference tab. New model: three page types (concept / task / reference), never mixed; lead with the answer; ~150–400 words; link instead of repeat. The "Under the hood" and exhaustive-example patterns were a primary cause of bloat and are now restricted to concept pages / one recipes location |

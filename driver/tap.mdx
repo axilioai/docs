@@ -4,7 +4,7 @@ sidebarTitle: "Tap"
 description: "Tap a semantic target or an exact screen coordinate, or press and hold."
 ---
 
-Prefer a semantic or text target when one exists. Use raw coordinates only
+Prefer a text or described target when one exists. Use raw coordinates only
 when the action belongs to a fixed point on the current screen.
 
 <Tabs sync={false}>
@@ -13,28 +13,28 @@ when the action belongs to a fixed point on the current screen.
     axilio phone tap --query "the Continue button"
     ```
 
-    `--query` finds the target with semantic vision and taps its center. You can
-    add `--ocr-engine` or `--model` overrides.
+    `--query` finds the target with semantic vision, waits up to 5 seconds for
+    it to appear, and taps its center. You can add `--ocr-engine` or `--model`
+    overrides.
   </Tab>
 
   <Tab title="Python SDK">
     ```python
-    driver.wait_for_text("Continue").tap()
+    driver.get_by_text("Continue").tap()
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    button, err := driver.WaitForText("Continue", 10*time.Second, false)
-    if err != nil {
-        log.Fatal(err)
-    }
-    if err := button.Tap(); err != nil {
+    if _, err := driver.GetByText("Continue").Tap(); err != nil {
         log.Fatal(err)
     }
     ```
   </Tab>
 </Tabs>
+
+The tap waits up to 5 seconds for the target to appear. Pass `timeout=` (Go:
+`mobile.WithTimeout`) for a slower screen, up to 60 seconds.
 
 ## Tap an exact point
 
@@ -76,29 +76,30 @@ Coordinates start at `(0, 0)` in the screen's top-left corner.
 
   <Tab title="Python SDK">
     ```python
-    photo = driver.find_text("Photo")
-    if photo is not None:
-        photo.long_press(duration_ms=1500)
+    box = driver.get_by_text("Photo").bounding_box().bounds
+    center = {"x": box["x"] + box["width"] // 2, "y": box["y"] + box["height"] // 2}
+    driver.long_press(center, duration_ms=1500)
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    photo, err := driver.FindText("Photo", false)
+    photo, err := driver.GetByText("Photo").BoundingBox()
     if err != nil {
         log.Fatal(err)
     }
-    if photo != nil {
-        if err := photo.LongPress(1500); err != nil {
-            log.Fatal(err)
-        }
+    if err := driver.LongPress(photo.Bounds.Center(), 1500); err != nil {
+        log.Fatal(err)
     }
     ```
   </Tab>
 </Tabs>
 
-Tap and long-press use DCP `Touch.tap` and `Touch.longPress`; they are not REST
-operations.
+A locator has no long-press action, so read the target's position with
+[`bounding_box()`](/driver/locator#locator-bounding_box) and hold its center.
+
+A locator tap uses DCP `Locator.tap`. Coordinate taps and long-presses use
+`Touch.tap` and `Touch.longPress`. None of them is a REST operation.
 
 ## Next steps
 

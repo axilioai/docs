@@ -1,0 +1,220 @@
+---
+title: "Locator reference"
+sidebarTitle: "Locator"
+description: "Find a target on the screen and act on it in one call: actions, queries, refinements, and results."
+---
+
+A **locator** describes a target: visible text, or a plain-language
+description. Create one with [`driver.get_by_text()`](/driver/reference#driver-get_by_text)
+or [`driver.locator()`](/driver/reference#driver-locator). Building a locator
+sends nothing. Each action finds the target on the screen at that moment, waits
+until it can act, then acts, all in one round trip.
+
+```python
+from axilio.platform import Client
+
+with Client().session("android", phone_id="ph_123") as driver:
+    driver.get_by_text("Search").fill("axilio")
+    driver.locator(query="the first result").tap()
+```
+
+<Info>
+  Plain text resolves by OCR. A description, or a refinement such as `nth` or
+  `has`, resolves with one [vision-model](/drivers/models) call. Every action
+  waits up to 5 seconds by default; pass `timeout` in seconds, up to 60. When
+  the target never becomes ready, the call raises `ActionTimeoutError`, which
+  is also a built-in `TimeoutError`. The Go names are in the map at the end.
+</Info>
+
+## Actions
+
+### `locator.tap()`
+
+Wait for the target, then tap its center.
+
+```python
+driver.get_by_text("Continue").tap(timeout=10)
+```
+
+**Returns** [`LocatorResult`](#locatorresult).
+
+### `locator.fill()`
+
+Wait for the target, tap it to focus, then type `text`.
+
+```python
+driver.get_by_text("Search").fill("agentic infrastructure")
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `text` | `str` | required | Text to type. Same limits as [`driver.type_text()`](/driver/reference#driver-type_text). |
+| `timeout` | `float` | `5` | Seconds to wait for the target. |
+
+**Returns** [`LocatorResult`](#locatorresult).
+
+### `locator.press()`
+
+Wait for the target, focus it, then press a named [key](/driver/key).
+
+```python
+from axilio.drivers.mobile import Key
+
+driver.get_by_text("Search").press(Key.ENTER)
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `str` | required | A [`Key`](/driver/key) constant. |
+| `timeout` | `float` | `5` | Seconds to wait for the target. |
+
+**Returns** [`LocatorResult`](#locatorresult).
+
+### `locator.wait_for()`
+
+Wait until the target is visible, or until it is gone, without acting on it.
+
+```python
+driver.get_by_text("Loading").wait_for(state="hidden", timeout=30)
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `"visible" \| "hidden"` | `"visible"` | The state to wait for. |
+| `timeout` | `float` | `5` | Seconds to wait. |
+
+**Returns** [`LocatorResult`](#locatorresult), or `None` for `state="hidden"`.
+
+## Queries
+
+### `locator.text()`
+
+Wait for the target, then return its recognized text.
+
+```python
+total = driver.locator(query="the order total").text()
+```
+
+**Returns** `str`.
+
+### `locator.count()`
+
+Count the matches on the screen right now, zero included. This is the one call
+that never waits. It needs a plain text locator: one with a description,
+`within`, or `has` raises `InvalidArgsError`.
+
+```python
+if driver.get_by_text("Allow notifications").count() > 0:
+    driver.get_by_text("Not now").tap()
+```
+
+**Returns** `int`.
+
+### `locator.bounding_box()`
+
+Wait for the target, then return where it is. Use it for gestures a locator
+doesn't have, such as a long-press or a drag.
+
+```python
+box = driver.get_by_text("Photo").bounding_box().bounds
+print(box["x"], box["y"], box["width"], box["height"])
+```
+
+**Returns** [`LocatorResult`](#locatorresult) with `bounds` set.
+
+## Refinements
+
+Each refinement returns a new locator and keeps the OCR engine and model of the
+one it refines.
+
+### `locator.nth()`
+
+The `n`th match in reading order, counting from zero.
+
+```python
+driver.get_by_text("Add to cart").nth(1).tap()
+```
+
+**Returns** `Locator`.
+
+### `locator.first()`
+
+The first match in reading order. Shorthand for `nth(0)`.
+
+**Returns** `Locator`.
+
+### `locator.within()`
+
+A match that is inside another locator's target.
+
+```python
+dialog = driver.locator(query="the confirmation dialog")
+driver.get_by_text("OK").within(dialog).tap()
+```
+
+**Returns** `Locator`.
+
+### `locator.has()`
+
+A match that contains another locator's target.
+
+```python
+driver.get_by_text("Card").has(driver.get_by_text("Free shipping")).first().tap()
+```
+
+**Returns** `Locator`.
+
+### `locator.filter()`
+
+Add a description on top of the locator's text.
+
+```python
+driver.get_by_text("Delete").filter(query="the red one").tap()
+```
+
+**Returns** `Locator`.
+
+## LocatorResult
+
+What an action or query reports about the target it resolved.
+
+| Python | Go | Description |
+| --- | --- | --- |
+| `result.resolved_by` | `result.ResolvedBy` | How the target was found: `ocr` or `vlm`. Empty when nothing was resolved. |
+| `result.bounds` | `result.Bounds` | Where the target was when the phone acted, in screen pixels. |
+| `result.took_ms` | `result.TookMs` | Time on the phone, waiting included, in milliseconds. |
+| `result.model_name` | `result.ModelName` | The vision model that resolved the target, when `resolved_by` is `vlm`. |
+
+## Go method map
+
+Go builds locators with `driver.GetByText(text, opts...)` and
+`driver.Locator(opts...)`, using the options `mobile.Text`, `mobile.Query`,
+`mobile.Exact`, `mobile.Model`, and `mobile.OCREngine`. Actions take
+`mobile.WithTimeout(d)`.
+
+| Python | Go |
+| --- | --- |
+| `tap(timeout=...)` | `Tap(opts...)` |
+| `fill(text, timeout=...)` | `Fill(text, opts...)` |
+| `press(key, timeout=...)` | `Press(key, opts...)` |
+| `wait_for(state=..., timeout=...)` | `WaitFor(mobile.StateVisible \| mobile.StateHidden, opts...)` |
+| `text(timeout=...)` | `Text(opts...)` |
+| `count()` | `Count(opts...)` |
+| `bounding_box(timeout=...)` | `BoundingBox(opts...)` |
+| `nth(n)` / `first()` | `Nth(n)` / `First()` |
+| `within(other)` / `has(other)` | `Within(other)` / `Has(other)` |
+| `filter(query=...)` | `Filter(query)` |
+
+A Go timeout is reported by `mobile.IsActionTimeout(err)`. Locator actions use
+the DCP `Locator.*` methods; they are not REST operations.
+
+## See also
+
+<CardGroup cols={2}>
+  <Card title="Find" icon="magnifying-glass" href="/driver/find">
+    Choose between text and a description.
+  </Card>
+  <Card title="Driver" icon="mobile" href="/driver/reference">
+    Create locators and run coordinate actions.
+  </Card>
+</CardGroup>

@@ -97,8 +97,8 @@ Cursor resume protects frames sent **to** your client. A connection can still
 drop after you send an input but before its response arrives. At that point,
 you do not know whether the phone executed it.
 
-Give every logical `Touch.*` and `Keyboard.*` command a client-generated
-`idempotencyKey`:
+Give every logical `Touch.*`, `Keyboard.*`, and input `Locator.*` command
+(`tap`, `fill`, `press`) a client-generated `idempotencyKey`:
 
 ```json
 {
@@ -117,9 +117,10 @@ drop, reconnect and resend the same command with a new request `id` and the
 same `idempotencyKey`. The session records the first response and returns it to
 the duplicate without executing the input again.
 
-Do not reuse an idempotency key for a different command. Read operations such
-as `Screen.observe`, `Screen.screenshot`, `Screen.find`, and `Device.info` do
-not need a key.
+Do not reuse an idempotency key for a different command. `Locator.tap`,
+`Locator.fill`, and `Locator.press` take a key like the `Touch` and `Keyboard`
+inputs. Read operations such as `Screen.observe`, `Screen.screenshot`,
+`Device.info`, and the other `Locator` methods do not need one.
 
 ## Keep request IDs monotonic
 

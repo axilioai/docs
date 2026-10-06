@@ -110,8 +110,8 @@ Branch on the status rather than parsing human-readable error text.
 | `1` | Generic failure, including HTTP `402` and `409`. |
 | `2` | Invalid syntax, arguments, values, or HTTP `400`/`422`. |
 | `3` | Missing or rejected credentials, or HTTP `401`/`403`. |
-| `4` | Resource, active allocation, or element not found, or HTTP `404`. |
-| `5` | Timeout, including HTTP `408`. |
+| `4` | Resource or active allocation not found, or HTTP `404`. |
+| `5` | Timeout, including HTTP `408` and an on-screen target that never appears. |
 | `6` | Service or phone unavailable, rate-limited, or HTTP `429`/`5xx`. |
 | `7` | Canceled by the user, shell, or system. |
 
@@ -134,8 +134,9 @@ above.
 | `connection` | `ConnectionError` | `6` | The control transport exhausted its bounded reconnect budget. | Yes |
 | `session_ended` | `SessionEndedError` | `1` | The session ended or the connection was superseded. | No |
 | `control_held` | `ControlHeldError` | `1` | Another controller holds the session's control lease. | No |
-| `element_not_found` | `ElementNotFoundError` | `4` | A semantic selector matched nothing. | No |
-| `timeout` | `TimeoutError` | `5` | A command or wait loop exceeded its deadline. | Yes |
+| `timeout` | `TimeoutError` | `5` | A command exceeded its deadline. | Yes |
+| `action_timeout` | `ActionTimeoutError` | `5` | A locator's target never became actionable within its timeout. Also a built-in `TimeoutError` in Python. | No |
+| `strategy_unavailable` | `StrategyUnavailableError` | `2` | The locator needs a resolver this session doesn't have, such as the accessibility tree. | No |
 
 Prefer the `retryable` value carried by the actual error over a table default.
 The SDK transport automatically attempts bounded reconnect and cursor resume
@@ -149,8 +150,8 @@ before it surfaces a connection error.
 
     case "$status" in
       0) echo "found" ;;
-      4) echo "observe again or refine the description" ;;
-      5|6) echo "retry if the session is still active" ;;
+      5) echo "observe again or refine the description" ;;
+      6) echo "retry if the session is still active" ;;
       *) echo "inspect stderr" ;;
     esac
     ```
@@ -158,12 +159,12 @@ before it surfaces a connection error.
 
   <Tab title="Python SDK">
     ```python
-    from axilio.drivers.mobile import AxilioError, ElementNotFoundError
+    from axilio.drivers.mobile import ActionTimeoutError, AxilioError
 
     with client.session("android", phone_id="ph_123") as driver:
         try:
-            driver.find(query="the Continue button", timeout=5).tap()
-        except ElementNotFoundError:
+            driver.locator(query="the Continue button").tap(timeout=5)
+        except ActionTimeoutError:
             print("observe again or refine the description")
         except AxilioError as error:
             print(error.code, error.retryable, error.message)
@@ -174,9 +175,9 @@ before it surfaces a connection error.
 
   <Tab title="Go SDK">
     ```go
-    element, err := driver.Find("the Continue button")
+    _, err := driver.Locator(mobile.Query("the Continue button")).Tap(mobile.WithTimeout(5 * time.Second))
     if err != nil {
-        if mobile.IsElementNotFound(err) {
+        if mobile.IsActionTimeout(err) {
             log.Print("observe again or refine the description")
             return nil
         }
@@ -186,7 +187,7 @@ before it surfaces a connection error.
         }
         return err
     }
-    return element.Tap()
+    return nil
     ```
   </Tab>
 </Tabs>

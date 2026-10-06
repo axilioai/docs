@@ -18,8 +18,8 @@ be unique inside the organization.
     3. Replace the Android starter source with this code:
 
        ```python
-       driver.find(query="the search box").type_into("axilio")
-       driver.find_text("Search").tap()
+       driver.locator(query="the search box").fill("axilio")
+       driver.get_by_text("Search").tap()
        ```
 
     4. Click **Allocate Phone**. Run individual blocks from the editor gutter while you iterate.
@@ -34,8 +34,8 @@ be unique inside the organization.
   <Tab title="CLI">
     ```bash
     cat > workflow.py <<'PY'
-    driver.find(query="the search box").type_into("axilio")
-    driver.find_text("Search").tap()
+    driver.locator(query="the search box").fill("axilio")
+    driver.get_by_text("Search").tap()
     PY
 
     axilio workflows create search-flow \
@@ -53,8 +53,8 @@ be unique inside the organization.
 
     client = Client()
     source = """\
-    driver.find(query="the search box").type_into("axilio")
-    driver.find_text("Search").tap()
+    driver.locator(query="the search box").fill("axilio")
+    driver.get_by_text("Search").tap()
     """
 
     created = client.workflows.create(
@@ -68,8 +68,8 @@ be unique inside the organization.
 
   <Tab title="Go SDK">
     ```go
-    source := `driver.find(query="the search box").type_into("axilio")
-    driver.find_text("Search").tap()
+    source := `driver.locator(query="the search box").fill("axilio")
+    driver.get_by_text("Search").tap()
     `
 
     created, err := api.Workflows.Create(ctx, &platformgo.WorkflowCreateRequest{
@@ -91,8 +91,8 @@ be unique inside the organization.
 
     ```bash
     cat > workflow.py <<'PY'
-    driver.find(query="the search box").type_into("axilio")
-    driver.find_text("Search").tap()
+    driver.locator(query="the search box").fill("axilio")
+    driver.get_by_text("Search").tap()
     PY
 
     jq -n --rawfile code workflow.py \
