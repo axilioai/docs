@@ -1,10 +1,10 @@
 ---
 title: "Key"
 sidebarTitle: "Key"
-description: "Use the current named-key constant, Enter, from the CLI or either SDK."
+description: "Use the named-key constants, Enter and Caps Lock, from the CLI or either SDK."
 ---
 
-The current named-key set contains only Enter.
+Enter is the named key for everyday use. Caps Lock exists to clear a phone whose Caps Lock is stuck on.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -32,9 +32,9 @@ The current named-key set contains only Enter.
 
 | Interface | Constant or value |
 | --- | --- |
-| CLI | `enter` |
-| Python | `Key.ENTER` (`"enter"`) |
-| Go | `mobile.KeyEnter` (`"enter"`) |
+| CLI | `enter`, `capslock` |
+| Python | `Key.ENTER` (`"enter"`), `Key.CAPSLOCK` (`"capslock"`) |
+| Go | `mobile.KeyEnter` (`"enter"`), `mobile.KeyCapsLock` (`"capslock"`) |
 
 Use Enter to submit a form or trigger the on-screen keyboard's **Go** or
 **Search** action. To enter characters, use [Type](/driver/type).

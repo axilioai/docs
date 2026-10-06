@@ -4,8 +4,8 @@ sidebarTitle: "Keys"
 description: "Press Enter to submit a form or trigger the keyboard's Go or Search action."
 ---
 
-Some steps need a key press instead of a tap. The current named-key set contains
-only Enter.
+Some steps need a key press instead of a tap. Enter is the named key for
+everyday use; see [Key](/driver/key) for the full set.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -20,19 +20,14 @@ only Enter.
     ```python
     from axilio.drivers.mobile import Key
 
-    field = driver.wait_for_text("Search")
-    field.type_into("axilio")
+    driver.get_by_text("Search").fill("axilio")
     driver.key_press(Key.ENTER)
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    field, err := driver.WaitForText("Search", 10*time.Second, false)
-    if err != nil {
-        log.Fatal(err)
-    }
-    if err := field.TypeInto("axilio"); err != nil {
+    if _, err := driver.GetByText("Search").Fill("axilio"); err != nil {
         log.Fatal(err)
     }
     if err := driver.KeyPress(mobile.KeyEnter); err != nil {

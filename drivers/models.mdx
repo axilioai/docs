@@ -6,9 +6,9 @@ description: "Every model the driver can use — the Axilio model line and the v
 
 **Argus** is Axilio's vision model, and it is how the driver sees the screen.
 It runs two families of models. The **Axilio models** read text, icons, and
-layout for `find_text` and `observe`. The **vision-language models** understand
-a description for `find(query=...)`. The public catalog lists both families
-with live pricing.
+layout for `get_by_text()` and `observe()`. The **vision-language models**
+understand a description for `locator(query=...)`. The public catalog lists both
+families with live pricing.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -73,25 +73,18 @@ pass these model IDs to the driver. Pick the tier with an OCR-engine option:
 
   <Tab title="Python SDK">
     ```python
-    driver.find_text("Sign in", ocr_engine="premium")  # Pro
-    driver.find_text("Sign in")                        # Lite, the default
+    driver.get_by_text("Sign in", ocr_engine="premium").tap()  # Pro
     ```
+
+    Leave `ocr_engine` off to use Lite, the default.
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    element, err := driver.FindText(
-        "Sign in",
-        false,
-        mobile.WithOCREngine("premium"),
-    )
-    if err != nil {
+    signIn := driver.GetByText("Sign in", mobile.OCREngine("premium"))
+    if _, err := signIn.Tap(); err != nil {
         log.Fatal(err)
     }
-    if element == nil {
-        log.Fatal("Sign in is not visible")
-    }
-    fmt.Println(element.Center)
     ```
   </Tab>
 </Tabs>
@@ -106,7 +99,7 @@ To use a tier for a whole SDK driver instead of every call, set it once:
         phone_id="ph_123",
         default_ocr_engine="premium",
     ) as driver:
-        driver.find_text("Sign in")  # Pro, no per-call option needed
+        driver.get_by_text("Sign in").tap()  # Pro, no per-call option needed
     ```
   </Tab>
 
@@ -129,15 +122,16 @@ pricing list:
 | `axilio/argus-detect-1` | Icon and element detection | Included in every screen read |
 | `axilio/argus-ocr-lite-1` | Text reading, free tier | `ocr_engine="free"` on a text-only read |
 | `axilio/argus-ocr-pro-1` | Text reading, premium | `ocr_engine="premium"` on a text-only read |
-| `axilio/argus-vision-lite-1` | Text + icons, free tier | The default for `find_text` / `observe` |
+| `axilio/argus-vision-lite-1` | Text + icons, free tier | The default for `get_by_text` / `observe` |
 | `axilio/argus-vision-pro-1` | Text + icons, premium | `ocr_engine="premium"` |
 
 <div id="axilio-argus-models" />
 
 ## Vision-language models
 
-Describing something in plain English, such as `find(query="the heart icon")`,
-runs a vision-language model. Pass a catalog ID to choose one:
+Describing something in plain English, such as `locator(query="the heart icon")`,
+runs a vision-language model. So does refining a text locator with `nth`,
+`within`, `has`, or `filter`. Pass a catalog ID to choose one:
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -149,23 +143,22 @@ runs a vision-language model. Pass a catalog ID to choose one:
 
   <Tab title="Python SDK">
     ```python
-    driver.find(
+    driver.locator(
         query="the buy button",
         model="anthropic/claude-haiku-4.5",
-    )
+    ).tap()
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    element, err := driver.Find(
-        "the buy button",
-        mobile.WithModel("anthropic/claude-haiku-4.5"),
+    buy := driver.Locator(
+        mobile.Query("the buy button"),
+        mobile.Model("anthropic/claude-haiku-4.5"),
     )
-    if err != nil {
+    if _, err := buy.Tap(); err != nil {
         log.Fatal(err)
     }
-    fmt.Println(element.Center)
     ```
   </Tab>
 </Tabs>
@@ -180,7 +173,7 @@ Python and Go can also set a driver default:
         phone_id="ph_123",
         default_model="anthropic/claude-haiku-4.5",
     ) as driver:
-        driver.find(query="the buy button")
+        driver.locator(query="the buy button").tap()
     ```
   </Tab>
 

@@ -1,19 +1,22 @@
 ---
 title: "Find"
 sidebarTitle: "Find"
-description: "Locate something on the screen by visible text or a natural-language description."
+description: "Point at something on the screen by visible text or a natural-language description."
 ---
 
-Find an element before you act on it. Use OCR text matching when a visible label
-exists and semantic vision when the target is easier to describe.
+Point at a target with a [locator](/driver/locator) before you act on it. Use
+visible text when a label exists and a description when the target is easier to
+describe. Building a locator sends nothing: each action finds the target on the
+screen at that moment and waits until it is ready, up to 5 seconds by default.
 
 The examples assume you already selected a
 [dedicated-phone session](/devices/allocate).
 
 ## Find by visible text
 
-Text matching returns the first OCR element that matches. By default the match
-is a case-insensitive substring. Exact matching is case-sensitive.
+Text matching is read by OCR. By default the match is a case-insensitive
+substring. Pass `exact=True` (Go: `mobile.Exact()`) for a case-sensitive exact
+match instead.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -22,25 +25,46 @@ is a case-insensitive substring. Exact matching is case-sensitive.
     axilio phone find-text "Continue" --exact -o json
     ```
 
-    A miss succeeds with `null` in JSON output.
+    `find-text` searches one snapshot of the screen. A miss succeeds with
+    `null` in JSON output.
   </Tab>
 
   <Tab title="Python SDK">
     ```python
-    result = driver.find_text("Continue")
-    if result is not None:
-        result.tap()
+    driver.get_by_text("Continue").tap()
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    result, err := driver.FindText("Continue", false)
+    if _, err := driver.GetByText("Continue").Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+To check whether something is on screen without waiting, use
+[`count()`](/driver/locator#locator-count). It reports the matches right now,
+zero included:
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    banner = driver.get_by_text("Allow notifications")
+    if banner.count() > 0:
+        driver.get_by_text("Not now").tap()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    n, err := driver.GetByText("Allow notifications").Count()
     if err != nil {
         log.Fatal(err)
     }
-    if result != nil {
-        if err := result.Tap(); err != nil {
+    if n > 0 {
+        if _, err := driver.GetByText("Not now").Tap(); err != nil {
             log.Fatal(err)
         }
     }
@@ -48,13 +72,11 @@ is a case-insensitive substring. Exact matching is case-sensitive.
   </Tab>
 </Tabs>
 
-If the screen may still be loading, [wait for the text](/driver/wait) instead of
-acting on a possible empty result.
-
 ## Find every text match
 
-Use a substring for a simple list or a regular expression for structured text.
-The two criteria are mutually exclusive.
+Search one [observed screen](/driver/screen) for a list of matches. Use a
+substring for a simple list or a regular expression for structured text. The two
+criteria are mutually exclusive.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -69,16 +91,21 @@ The two criteria are mutually exclusive.
 
   <Tab title="Python SDK">
     ```python
-    for item in driver.find_all_text(contains="Notification"):
+    screen = driver.observe()
+    for item in screen.find_all_text(contains="Notification"):
         print(item.text)
 
-    prices = driver.find_all_text(pattern=r"\$\d+\.\d{2}")
+    prices = screen.find_all_text(pattern=r"\$\d+\.\d{2}")
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    items, err := driver.FindAllText("Notification", "")
+    screen, err := driver.Observe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    items, err := screen.FindAllText("Notification", "")
     if err != nil {
         log.Fatal(err)
     }
@@ -91,8 +118,8 @@ The two criteria are mutually exclusive.
 
 ## Find by description
 
-Semantic `find` uses a billable [vision model](/drivers/models). It raises an
-element-not-found error when no target matches.
+A description uses a billable [vision model](/drivers/models). When the target
+never appears, the action fails with a timeout.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -100,41 +127,72 @@ element-not-found error when no target matches.
     axilio phone find "the search icon" -o json
     ```
 
-    A miss returns the CLI not-found exit status (`4`). Use
-    `axilio phone tap --query "the search icon"` when you want to find and tap
-    in one command.
+    `find` waits up to `--timeout` (10 seconds by default). A target that never
+    appears exits with the timeout status (`5`). Use
+    `axilio phone tap --query "the search icon"` to find and tap in one command.
   </Tab>
 
   <Tab title="Python SDK">
     ```python
-    from axilio.drivers.mobile import ElementNotFoundError
+    from axilio.drivers.mobile import ActionTimeoutError
 
     try:
-        driver.find(query="the search icon").tap()
-    except ElementNotFoundError:
+        driver.locator(query="the search icon").tap()
+    except ActionTimeoutError:
         print("search icon not found")
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    target, err := driver.Find("the search icon")
-    if err != nil {
-        if mobile.IsElementNotFound(err) {
+    if _, err := driver.Locator(mobile.Query("the search icon")).Tap(); err != nil {
+        if mobile.IsActionTimeout(err) {
             log.Print("search icon not found")
             return
         }
-        log.Fatal(err)
-    }
-    if err := target.Tap(); err != nil {
         log.Fatal(err)
     }
     ```
   </Tab>
 </Tabs>
 
-Review individual inference charges in [Usage](/usage/overview). Prefer OCR
-matching when a stable visible label exists.
+Review individual inference charges in [Usage](/usage/overview). Prefer text
+when a stable visible label exists.
+
+## Narrow a match
+
+When several targets match, pick one by position, by what contains it, or by a
+description:
+
+<Tabs sync={false}>
+  <Tab title="Python SDK">
+    ```python
+    driver.get_by_text("Add to cart").nth(1).tap()
+
+    card = driver.get_by_text("Card").has(driver.get_by_text("Free shipping"))
+    card.first().tap()
+
+    driver.get_by_text("Delete").filter(query="the red one").tap()
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    if _, err := driver.GetByText("Add to cart").Nth(1).Tap(); err != nil {
+        log.Fatal(err)
+    }
+
+    card := driver.GetByText("Card").Has(driver.GetByText("Free shipping"))
+    if _, err := card.First().Tap(); err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+`nth` counts from zero in reading order. Plain text is an OCR match; anything
+more, such as a description, `nth`, `within`, `has`, or `filter`, resolves with
+one vision-model call.
 
 ## Choose the OCR engine and model
 
@@ -146,17 +204,17 @@ matching when a stable visible label exists.
       --model anthropic/claude-haiku-4.5
     ```
 
-    `find`, `find-all-text`, and `observe` accept an OCR-engine override.
-    `find-text` and `wait-for` do not.
+    `find`, `find-all-text`, `observe`, and `tap --query` accept an OCR-engine
+    override. `find-text` and `wait-for` do not.
   </Tab>
 
   <Tab title="Python SDK">
     ```python
-    driver.find_text("Sign in", ocr_engine="premium")
-    driver.find(
+    driver.get_by_text("Sign in", ocr_engine="premium").tap()
+    driver.locator(
         query="the buy button",
         model="anthropic/claude-haiku-4.5",
-    )
+    ).tap()
     ```
 
     Set defaults for one dedicated-phone session:
@@ -168,8 +226,8 @@ matching when a stable visible label exists.
         default_ocr_engine="premium",
         default_model="anthropic/claude-haiku-4.5",
     ) as driver:
-        driver.find_text("Sign in")
-        driver.find(query="the buy button")
+        driver.get_by_text("Sign in").tap()
+        driver.locator(query="the buy button").tap()
     ```
   </Tab>
 
@@ -182,15 +240,21 @@ matching when a stable visible label exists.
     )
     defer driver.Close()
 
-    if _, err := driver.Find("the buy button"); err != nil {
+    buy := driver.Locator(
+        mobile.Query("the buy button"),
+        mobile.Model("anthropic/claude-haiku-4.5"),
+    )
+    if _, err := buy.Tap(); err != nil {
         log.Fatal(err)
     }
     ```
   </Tab>
 </Tabs>
 
-Text filtering and wait loops are client-side helpers. Semantic find is backed
-by DCP `Screen.find`; none of these live phone operations is a REST endpoint.
+Locator actions run on the phone side over DCP `Locator.*` methods. The
+`find-text` and `find-all-text` commands and the `Screen` queries search one
+`Screen.observe` snapshot. None of these live phone operations is a REST
+endpoint.
 
 ## Next steps
 
@@ -201,8 +265,8 @@ by DCP `Screen.find`; none of these live phone operations is a REST endpoint.
   <Card title="Wait" icon="hourglass-half" href="/driver/wait">
     Wait for a target before acting.
   </Card>
-  <Card title="Observe" icon="table-list" href="/driver/observe">
-    Read and search one complete screen snapshot.
+  <Card title="Locator reference" icon="crosshairs" href="/driver/locator">
+    Every locator action and refinement.
   </Card>
   <Card title="Models" icon="layer-group" href="/drivers/models">
     Choose a vision model and understand inference pricing.
