@@ -15,7 +15,8 @@ The examples assume you already selected a
 ## Find by visible text
 
 Text matching is read by OCR. By default the match is a case-insensitive
-substring. Exact matching is case-sensitive.
+substring. Pass `exact=True` (Go: `mobile.Exact()`) for a case-sensitive exact
+match instead.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -31,16 +32,12 @@ substring. Exact matching is case-sensitive.
   <Tab title="Python SDK">
     ```python
     driver.get_by_text("Continue").tap()
-    driver.get_by_text("Continue", exact=True).tap()
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
     if _, err := driver.GetByText("Continue").Tap(); err != nil {
-        log.Fatal(err)
-    }
-    if _, err := driver.GetByText("Continue", mobile.Exact()).Tap(); err != nil {
         log.Fatal(err)
     }
     ```

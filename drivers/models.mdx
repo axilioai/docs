@@ -74,8 +74,9 @@ pass these model IDs to the driver. Pick the tier with an OCR-engine option:
   <Tab title="Python SDK">
     ```python
     driver.get_by_text("Sign in", ocr_engine="premium").tap()  # Pro
-    driver.get_by_text("Sign in").tap()                        # Lite, the default
     ```
+
+    Leave `ocr_engine` off to use Lite, the default.
   </Tab>
 
   <Tab title="Go SDK">
