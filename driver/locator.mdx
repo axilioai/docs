@@ -120,7 +120,9 @@ box = driver.get_by_text("Photo").bounding_box().bounds
 print(box["x"], box["y"], box["width"], box["height"])
 ```
 
-**Returns** [`LocatorResult`](#locatorresult) with `bounds` set.
+**Returns** [`LocatorResult`](#locatorresult) with `bounds` set. A target
+found by a description can come back as a small box or a single point; its
+center is still where to act.
 
 ## Refinements
 
