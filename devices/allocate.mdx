@@ -20,7 +20,8 @@ exact device.
   </Tab>
 
   <Tab title="CLI">
-    ```bash
+    <CodeGroup>
+    ```bash macOS and Linux
     axilio phones list
     eval "$(axilio sessions start --phone-id ph_123 --export)"
 
@@ -28,6 +29,16 @@ exact device.
     axilio sessions stop "$AXILIO_SESSION" --yes
     unset AXILIO_SESSION
     ```
+
+    ```powershell Windows (PowerShell)
+    axilio phones list
+    axilio sessions start --phone-id ph_123 --export | Invoke-Expression
+
+    # Release by session ID and clear the shell selection.
+    axilio sessions stop $env:AXILIO_SESSION --yes
+    Remove-Item Env:AXILIO_SESSION
+    ```
+    </CodeGroup>
 
     `--export` prints a shell assignment that pins later CLI commands to the
     new session. If you do not need that environment variable, run

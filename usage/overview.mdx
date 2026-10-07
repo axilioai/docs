@@ -29,10 +29,7 @@ The public usage surface has three views:
 
   <Tab title="CLI">
     ```bash
-    axilio usage metrics \
-      --from 2026-08-01 \
-      --to 2026-08-28 \
-      --granularity daily
+    axilio usage metrics --from 2026-08-01 --to 2026-08-28 --granularity daily
     ```
 
     Add `-o json` for the chart series as well as the summary.
@@ -180,11 +177,7 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
 
   <Tab title="CLI">
     ```bash
-    axilio usage inferences \
-      --from 2026-08-01 \
-      --to 2026-08-28 \
-      --endpoint locate \
-      --limit 50
+    axilio usage inferences --from 2026-08-01 --to 2026-08-28 --endpoint locate --limit 50
     ```
   </Tab>
 

@@ -40,7 +40,8 @@ detail. Validation responses can also include field-specific errors.
   <Tab title="CLI">
     The CLI writes errors to standard error and returns a stable exit status:
 
-    ```bash
+    <CodeGroup>
+    ```bash macOS and Linux
     axilio runs get run_123
     status=$?
 
@@ -55,6 +56,22 @@ detail. Validation responses can also include field-specific errors.
       *) echo "unclassified failure" ;;
     esac
     ```
+
+    ```powershell Windows (PowerShell)
+    axilio runs get run_123
+
+    switch ($LASTEXITCODE) {
+      0 { "success" }
+      2 { "invalid command or request" }
+      3 { "authentication or permission failure" }
+      4 { "not found" }
+      5 { "timed out" }
+      6 { "service or phone unavailable" }
+      7 { "canceled" }
+      default { "unclassified failure" }
+    }
+    ```
+    </CodeGroup>
   </Tab>
 
   <Tab title="Python SDK">
@@ -144,7 +161,8 @@ before it surfaces a connection error.
 
 <Tabs sync={false}>
   <Tab title="CLI">
-    ```bash
+    <CodeGroup>
+    ```bash macOS and Linux
     axilio phone find "the Continue button" --timeout 5s
     status=$?
 
@@ -155,6 +173,18 @@ before it surfaces a connection error.
       *) echo "inspect stderr" ;;
     esac
     ```
+
+    ```powershell Windows (PowerShell)
+    axilio phone find "the Continue button" --timeout 5s
+
+    switch ($LASTEXITCODE) {
+      0 { "found" }
+      5 { "observe again or refine the description" }
+      6 { "retry if the session is still active" }
+      default { "inspect stderr" }
+    }
+    ```
+    </CodeGroup>
   </Tab>
 
   <Tab title="Python SDK">

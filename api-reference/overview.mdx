@@ -31,6 +31,24 @@ curl https://api.axilio.ai/api/v1/phones/availability \
 Get a key from [**API Keys**](https://app.axilio.ai/dashboard/axilio/api-keys). See
 [Authentication](/authentication) for the SDK equivalent.
 
+### Run the curl examples on Windows
+
+The REST examples use Bash syntax. Git Bash and WSL run them unchanged. To run
+them in PowerShell:
+
+- Call `curl.exe`, which ships with Windows 10 and 11. In Windows PowerShell
+  5.1, `curl` is an alias for `Invoke-WebRequest`.
+- Write environment variables as `$env:AXILIO_API_KEY`.
+- End a continued line with a backtick (`` ` ``) instead of `\`.
+- Windows PowerShell 5.1 strips the double quotes inside a single-quoted JSON
+  argument. Save the body to a file and pass `--data '@body.json'`, or use
+  PowerShell 7.3 or later, which passes it unchanged.
+
+```powershell
+curl.exe https://api.axilio.ai/api/v1/phones/availability `
+  -H "X-Axilio-Api-Key: $env:AXILIO_API_KEY"
+```
+
 ## REST resources
 
 | Resource | What you can do | Reference |

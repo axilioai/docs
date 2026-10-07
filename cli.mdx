@@ -31,9 +31,26 @@ commands also provide structured JSON output.
     The script chooses the binary for your operating system and architecture.
     Set `INSTALL_DIR` if you need a non-default destination.
   </Tab>
+  <Tab title="Windows (PowerShell)">
+    On Windows, install the latest release from PowerShell. The script
+    verifies the published checksum, installs `axilio.exe` to
+    `%LOCALAPPDATA%\Programs\axilio\bin`, and adds that folder to your user
+    `PATH`:
+
+    ```powershell
+    irm https://axilio.ai/install.ps1 | iex
+    ```
+
+    Open a new terminal afterwards. The script works in Windows PowerShell 5.1
+    and PowerShell 7 and needs no administrator rights. Set
+    `$env:INSTALL_DIR` first if you need a non-default destination. Windows
+    has no `man`, so read the installed manual with `axilio help --html`.
+  </Tab>
   <Tab title="Release archive">
     Prebuilt archives for Linux, macOS, and Windows are available on the
-    [GitHub releases page](https://github.com/axilioai/cli/releases).
+    [GitHub releases page](https://github.com/axilioai/cli/releases). On
+    Windows, extract the zip and add the folder that contains `axilio.exe` to
+    your `PATH`.
   </Tab>
 </Tabs>
 
@@ -54,7 +71,8 @@ API key through `AXILIO_API_KEY`. See [Authentication](/authentication).
 List the dedicated phones available to allocate, start a session, inspect the
 screen, and save a screenshot:
 
-```bash
+<CodeGroup>
+```bash macOS and Linux
 axilio phones list
 eval "$(axilio sessions start --phone-id ph_123 --export)"
 
@@ -64,6 +82,18 @@ axilio phone screenshot --out screen.png
 axilio sessions stop "$AXILIO_SESSION" --yes
 unset AXILIO_SESSION
 ```
+
+```powershell Windows (PowerShell)
+axilio phones list
+axilio sessions start --phone-id ph_123 --export | Invoke-Expression
+
+axilio phone observe
+axilio phone screenshot --out screen.png
+
+axilio sessions stop $env:AXILIO_SESSION --yes
+Remove-Item Env:AXILIO_SESSION
+```
+</CodeGroup>
 
 Replace `ph_123` with an ID returned by `axilio phones list`. The exported
 `AXILIO_SESSION` selects the session for subsequent `axilio phone` commands.
@@ -86,15 +116,17 @@ scrolls through the first few **Top** results without changing the account.
 
 <Tip>
   Explore the available commands with `axilio --help`. Run `man axilio` or
-  `axilio help --html` for the complete installed reference.
+  `axilio help --html` (on Windows, `axilio help --html`) for the complete
+  installed reference.
 </Tip>
 
 ### Start a session
 
-In Bash or Zsh, list dedicated phones that can be allocated now, then start a
-session on one and select it for the current shell:
+List dedicated phones that can be allocated now, then start a session on one
+and select it for the current shell:
 
-```bash
+<CodeGroup>
+```bash macOS and Linux
 axilio phones list
 eval "$(axilio sessions start --phone-id ph_123 --export)"
 
@@ -107,9 +139,24 @@ cleanup() {
 trap cleanup EXIT
 ```
 
+```powershell Windows (PowerShell)
+axilio phones list
+axilio sessions start --phone-id ph_123 --export | Invoke-Expression
+
+function cleanup {
+  if ($env:AXILIO_SESSION) {
+    axilio sessions stop $env:AXILIO_SESSION --yes
+    Remove-Item Env:AXILIO_SESSION
+  }
+}
+```
+</CodeGroup>
+
 Replace `ph_123` with an ID from the first command. Every following
-`axilio phone` command uses `AXILIO_SESSION` automatically. The cleanup trap
-releases the phone if a later command fails or you exit the shell.
+`axilio phone` command uses `AXILIO_SESSION` automatically. In Bash or Zsh, the
+cleanup trap releases the phone if a later command fails or you exit the shell.
+PowerShell has no exit trap for an interactive session, so run `cleanup`
+yourself when you finish.
 
 <Note>
   The pre-existing demo below uses `axilio phones mine`, which remains a valid
@@ -167,19 +214,34 @@ This swipe also uses coordinates because it scrolls the whole results view.
 
 ### Stop the session
 
-Stop as soon as you finish, then clear the shell trap:
+Stop as soon as you finish. Keep the session ID for the recording, because
+`cleanup` clears `AXILIO_SESSION`:
 
-```bash
+<CodeGroup>
+```bash macOS and Linux
+SESSION_ID=$AXILIO_SESSION
 cleanup
 trap - EXIT
 ```
 
+```powershell Windows (PowerShell)
+$sessionId = $env:AXILIO_SESSION
+cleanup
+```
+</CodeGroup>
+
 Screen recording is enabled by default unless the session or workflow turns it
 off. Download the recording from the CLI once processing finishes:
 
-```bash
-axilio sessions recording "$AXILIO_SESSION" --wait --out axilio-session.mp4
+<CodeGroup>
+```bash macOS and Linux
+axilio sessions recording "$SESSION_ID" --wait --out axilio-session.mp4
 ```
+
+```powershell Windows (PowerShell)
+axilio sessions recording $sessionId --wait --out axilio-session.mp4
+```
+</CodeGroup>
 
 `--wait` polls while the recording is still processing. Without `--out` the
 command prints the status and a short-lived URL instead. Or open
@@ -245,17 +307,21 @@ newline-delimited JSON because frames arrive over time:
 - `axilio runs watch <run-id> -o json` emits one object per frame and finishes
   with a `watch_end` summary.
 
-`axilio sessions start --phone-id <id> --export` emits shell text for `eval`,
-not JSON. Progress,
-notes, and prompts go to standard error so standard output remains usable by
-scripts.
+`axilio sessions start --phone-id <id> --export` emits a shell assignment, not
+JSON. Bash and Zsh apply it with `eval`, PowerShell with `Invoke-Expression`.
+On Windows it prints PowerShell syntax by default; `--shell posix`,
+`--shell powershell`, or `--shell cmd` picks one explicitly. Progress, notes,
+and prompts go to standard error so standard output remains usable by scripts.
 
 ## Source
 
 The CLI is open source at
 [github.com/axilioai/cli](https://github.com/axilioai/cli). Homebrew packages
 are published through
-[axilioai/homebrew-tap](https://github.com/axilioai/homebrew-tap).
+[axilioai/homebrew-tap](https://github.com/axilioai/homebrew-tap). The install
+scripts are
+[install.sh](https://github.com/axilioai/cli/blob/main/install.sh) and
+[install.ps1](https://github.com/axilioai/cli/blob/main/install.ps1).
 
 ## Next steps
 
