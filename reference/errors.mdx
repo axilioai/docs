@@ -4,6 +4,8 @@ sidebarTitle: "Errors"
 description: "Classify API, phone-control, workflow-run, and Dashboard live-video failures and choose a safe recovery."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Axilio reports failures at four customer-visible layers:
 
 1. **API errors** reject an HTTP request.
@@ -108,6 +110,8 @@ detail. Validation responses can also include field-specific errors.
     REST API References:
 
     - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body --include \
@@ -268,6 +272,8 @@ executing workflow code. A successful fetch of a failed run still returns HTTP
     REST API References:
 
     - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

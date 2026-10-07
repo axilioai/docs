@@ -4,6 +4,8 @@ sidebarTitle: "Usage"
 description: "Review phone sessions, aggregate spend, and individual inference charges."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Usage explains what your organization consumed. Billing explains the balance,
 plan, rentals, and invoices that pay for it.
 
@@ -73,6 +75,8 @@ The public usage surface has three views:
 
     - [**Get usage metrics**](/api-reference/rest/usage/get-usage-metrics): `GET /usage/metrics`
 
+    <WindowsCurlNote />
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/usage/metrics?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&granularity=daily" \
@@ -120,6 +124,8 @@ and billing processing state for each phone session.
     REST API References:
 
     - [**List phone sessions with cost**](/api-reference/rest/usage/list-phone-sessions-with-cost): `GET /usage/sessions`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -212,6 +218,8 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
     REST API References:
 
     - [**List inference calls**](/api-reference/rest/usage/list-inference-calls): `GET /usage/inferences`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

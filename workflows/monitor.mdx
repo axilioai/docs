@@ -4,6 +4,8 @@ sidebarTitle: "Monitor"
 description: "List, inspect, watch, cancel, and summarize workflow runs."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Use the run ID returned at creation time. For a workflow run, that run ID is
 also the session ID. Phone and session details populate after Axilio allocates
 the phone; the ID does not change.
@@ -57,6 +59,8 @@ the phone; the ID does not change.
 
     - [**List runs**](/api-reference/rest/runs/list-runs): `GET /runs`
     - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -126,6 +130,8 @@ retained-data behavior.
 
     - [**Cancel a run**](/api-reference/rest/runs/cancel-a-run): `POST /runs/{run_id}:cancel`
 
+    <WindowsCurlNote />
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request POST \
@@ -181,6 +187,8 @@ bounded time window and statistics for a workflow's total and success rate.
 
     - [**List run history**](/api-reference/rest/runs/list-run-history): `GET /runs/history`
     - [**Get workflow stats**](/api-reference/rest/runs/get-workflow-stats): `GET /runs/stats/{workflow_id}`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

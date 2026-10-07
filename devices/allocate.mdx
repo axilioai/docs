@@ -4,6 +4,8 @@ sidebarTitle: "Allocate"
 description: "Start a session on a dedicated phone and release it safely."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Start a session on any idle dedicated phone, or pass a `phone_id` to choose an
 exact device.
 
@@ -25,18 +27,17 @@ exact device.
     axilio phones list
     eval "$(axilio sessions start --phone-id ph_123 --export)"
 
-    # Release by session ID and clear the shell selection.
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    unset AXILIO_SESSION
+    # Release by session ID. Clear the shell selection only once the stop succeeds.
+    axilio sessions stop "$AXILIO_SESSION" --yes && unset AXILIO_SESSION
     ```
 
     ```powershell Windows (PowerShell)
     axilio phones list
     axilio sessions start --phone-id ph_123 --export | Invoke-Expression
 
-    # Release by session ID and clear the shell selection.
+    # Release by session ID. Clear the shell selection only once the stop succeeds.
     axilio sessions stop $env:AXILIO_SESSION --yes
-    Remove-Item Env:AXILIO_SESSION
+    if ($LASTEXITCODE -eq 0) { Remove-Item Env:AXILIO_SESSION }
     ```
     </CodeGroup>
 
@@ -103,6 +104,8 @@ exact device.
 
     - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
     - [**Release a phone**](/api-reference/rest/phones/release-a-phone): `POST /phones/{phone_id}:deallocate`
+
+    <WindowsCurlNote />
 
     ```bash
     ALLOCATION=$(curl --silent --show-error --fail-with-body \

@@ -4,6 +4,8 @@ sidebarTitle: "Discover"
 description: "Find an idle dedicated phone or inspect every phone your organization rents."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Use the dedicated-phone inventory to choose the `phone_id` for a session. A
 phone can be allocated when its `status` is `active` and
 `current_session_id` is empty. The full inventory also shows phones already in
@@ -60,6 +62,8 @@ a session and phones whose status is `inactive`, `maintenance`, or `suspended`.
     REST API References:
 
     - [**List the organization's phones**](/api-reference/rest/phones/list-the-orgs-phones): `GET /phones`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

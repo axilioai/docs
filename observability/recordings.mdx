@@ -4,6 +4,8 @@ sidebarTitle: "Recordings"
 description: "Configure screen recording, understand its states, and replay or download a completed session."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Screen recording is on by default. When enabled, Axilio records the phone's
 screen and makes the MP4 available after the session ends and its upload
 finishes.
@@ -126,6 +128,8 @@ runs, not sessions that already started.
     - [**Update a workflow**](/api-reference/rest/workflows/update-a-workflow): `PATCH /workflows/{workflow_id}`
 
     Disable recording for one direct allocation:
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -277,6 +281,8 @@ prevent recordings from being created or make older recordings unavailable.
     REST API References:
 
     - [**Get a session recording**](/api-reference/rest/phones/get-a-session-recording): `GET /phones/sessions/{session_id}/recording`
+
+    <WindowsCurlNote />
 
     ```bash
     RECORDING=$(curl --silent --show-error --fail-with-body \

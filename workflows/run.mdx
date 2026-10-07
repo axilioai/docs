@@ -4,6 +4,8 @@ sidebarTitle: "Run"
 description: "Queue a workflow immediately on one or more phones."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 One entry in `runs` creates one run. Its unique run ID is also used as the
 session ID when the phone starts it.
 
@@ -61,6 +63,8 @@ session ID when the phone starts it.
     REST API References:
 
     - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -127,6 +131,8 @@ Create one run entry per execution:
     REST API References:
 
     - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -210,6 +216,8 @@ phone:
     REST API References:
 
     - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /workflows/{workflow_id}/runs`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

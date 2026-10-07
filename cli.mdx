@@ -79,8 +79,7 @@ eval "$(axilio sessions start --phone-id ph_123 --export)"
 axilio phone observe
 axilio phone screenshot --out screen.png
 
-axilio sessions stop "$AXILIO_SESSION" --yes
-unset AXILIO_SESSION
+axilio sessions stop "$AXILIO_SESSION" --yes && unset AXILIO_SESSION
 ```
 
 ```powershell Windows (PowerShell)
@@ -91,7 +90,7 @@ axilio phone observe
 axilio phone screenshot --out screen.png
 
 axilio sessions stop $env:AXILIO_SESSION --yes
-Remove-Item Env:AXILIO_SESSION
+if ($LASTEXITCODE -eq 0) { Remove-Item Env:AXILIO_SESSION }
 ```
 </CodeGroup>
 
@@ -115,9 +114,8 @@ scrolls through the first few **Top** results without changing the account.
   does not post, follow, like, message, or change settings.
 
 <Tip>
-  Explore the available commands with `axilio --help`. Run `man axilio` or
-  `axilio help --html` (on Windows, `axilio help --html`) for the complete
-  installed reference.
+  Explore the available commands with `axilio --help`. Run `axilio help --html`
+  for the complete installed reference, or `man axilio` on macOS and Linux.
 </Tip>
 
 ### Start a session
@@ -132,8 +130,7 @@ eval "$(axilio sessions start --phone-id ph_123 --export)"
 
 cleanup() {
   if [ -n "${AXILIO_SESSION:-}" ]; then
-    axilio sessions stop "$AXILIO_SESSION" --yes
-    unset AXILIO_SESSION
+    axilio sessions stop "$AXILIO_SESSION" --yes && unset AXILIO_SESSION
   fi
 }
 trap cleanup EXIT
@@ -146,7 +143,7 @@ axilio sessions start --phone-id ph_123 --export | Invoke-Expression
 function cleanup {
   if ($env:AXILIO_SESSION) {
     axilio sessions stop $env:AXILIO_SESSION --yes
-    Remove-Item Env:AXILIO_SESSION
+    if ($LASTEXITCODE -eq 0) { Remove-Item Env:AXILIO_SESSION }
   }
 }
 ```
@@ -156,7 +153,8 @@ Replace `ph_123` with an ID from the first command. Every following
 `axilio phone` command uses `AXILIO_SESSION` automatically. In Bash or Zsh, the
 cleanup trap releases the phone if a later command fails or you exit the shell.
 PowerShell has no exit trap for an interactive session, so run `cleanup`
-yourself when you finish.
+yourself when you finish. `cleanup` clears `AXILIO_SESSION` only after the stop
+succeeds, so if a stop fails you can run it again.
 
 <Note>
   The pre-existing demo below uses `axilio phones mine`, which remains a valid

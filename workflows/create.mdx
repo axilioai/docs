@@ -4,6 +4,8 @@ sidebarTitle: "Create and revise"
 description: "Save phone-driving Python and manage its revision history."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 A workflow name can contain letters, digits, hyphens, and underscores. It must
 be unique inside the organization.
 
@@ -89,6 +91,8 @@ be unique inside the organization.
 
     - [**Create a workflow**](/api-reference/rest/workflows/create-a-workflow): `POST /workflows`
 
+    <WindowsCurlNote />
+
     ```bash
     cat > workflow.py <<'PY'
     driver.locator(query="the search box").fill("axilio")
@@ -172,6 +176,8 @@ run.
     - [**Get current workflow code**](/api-reference/rest/workflows/get-current-workflow-code): `GET /workflows/{workflow_id}/code`
     - [**Save workflow code**](/api-reference/rest/workflows/save-workflow-code): `POST /workflows/{workflow_id}/code`
 
+    <WindowsCurlNote />
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/workflows/wf_123/code \
@@ -249,6 +255,8 @@ revision so the action remains auditable.
 
     - [**List workflow revisions**](/api-reference/rest/workflows/list-workflow-revisions): `GET /workflows/{workflow_id}/revisions`
     - [**Restore a workflow revision**](/api-reference/rest/workflows/restore-a-workflow-revision): `POST /workflows/{workflow_id}/code/restore`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
