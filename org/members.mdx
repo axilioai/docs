@@ -4,6 +4,8 @@ sidebarTitle: "Members"
 description: "Manage organization membership in the dashboard and read member or invitation summaries through the public API."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Member and invitation changes are dashboard-only. The public API exposes
 read-only summaries so an integration can audit access without changing the
 organization that issued its key.
@@ -59,6 +61,8 @@ dashboard or the read-only public API for those operations.
 
     - [**List the organization's members**](/api-reference/rest/organization/list-the-organizations-members): `GET /organization/members`
 
+    <WindowsCurlNote />
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/organization/members \
@@ -100,6 +104,8 @@ dashboard or the read-only public API for those operations.
     REST API References:
 
     - [**List pending invitations**](/api-reference/rest/organization/list-pending-invitations): `GET /organization/invitations`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

@@ -4,6 +4,8 @@ sidebarTitle: "Models"
 description: "Every model the driver can use — the Axilio model line and the vision-language models — with slugs, pricing, and how to select each one."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 **Argus** is Axilio's vision model, and it is how the driver sees the screen.
 It runs two families of models. The **Axilio models** read text, icons, and
 layout for `get_by_text()` and `observe()`. The **vision-language models**
@@ -44,6 +46,8 @@ families with live pricing.
     REST API References:
 
     - [**List models**](/api-reference/vision/vision/list-models): `GET /api/v1/vision/models`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -136,8 +140,7 @@ runs a vision-language model. So does refining a text locator with `nth`,
 <Tabs sync={false}>
   <Tab title="CLI">
     ```bash
-    axilio phone find "the buy button" \
-      --model anthropic/claude-haiku-4.5
+    axilio phone find "the buy button" --model anthropic/claude-haiku-4.5
     ```
   </Tab>
 

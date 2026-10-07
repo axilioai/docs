@@ -4,6 +4,8 @@ sidebarTitle: "Overview"
 description: "Choose a dedicated phone, start a session, and release it when you finish."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 A **phone** is a real Android device reserved for your organization. A
 **session** is the period when someone in your organization holds active
 control of that phone.
@@ -79,6 +81,8 @@ always the authority.
 
     - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
     - [**Release a phone**](/api-reference/rest/phones/release-a-phone): `POST /phones/{phone_id}:deallocate`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

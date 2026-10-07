@@ -35,10 +35,17 @@ with `axl_`.
 
     For non-interactive use, expose an API key through the environment:
 
-    ```bash
+    <CodeGroup>
+    ```bash macOS and Linux
     export AXILIO_API_KEY=axl_your_key_here
     axilio status
     ```
+
+    ```powershell Windows (PowerShell)
+    $env:AXILIO_API_KEY = "axl_your_key_here"
+    axilio status
+    ```
+    </CodeGroup>
 
     A browser session can switch organizations with `axilio orgs use
     <organization-slug>`. An API key remains scoped to the organization that
@@ -47,9 +54,15 @@ with `axl_`.
   <Tab title="Python SDK">
     Set the environment variable before starting your process:
 
-    ```bash
+    <CodeGroup>
+    ```bash macOS and Linux
     export AXILIO_API_KEY=axl_your_key_here
     ```
+
+    ```powershell Windows (PowerShell)
+    $env:AXILIO_API_KEY = "axl_your_key_here"
+    ```
+    </CodeGroup>
 
     `Client` reads it automatically:
 
@@ -89,11 +102,22 @@ with `axl_`.
 
     Send the key in the `X-Axilio-Api-Key` header:
 
-    ```bash
+    <CodeGroup>
+    ```bash macOS and Linux
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/files \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
+
+    ```powershell Windows (PowerShell)
+    curl.exe --silent --show-error --fail-with-body `
+      --url https://api.axilio.ai/api/v1/files `
+      --header "X-Axilio-Api-Key: $env:AXILIO_API_KEY"
+    ```
+    </CodeGroup>
+
+    The other REST examples in these docs use Bash syntax. See
+    [Run the curl examples on Windows](/api-reference/overview#run-the-curl-examples-on-windows).
 
     Do not send the key to presigned file upload or download URLs. Those URLs
     authorize the storage request themselves and expire after a short time.

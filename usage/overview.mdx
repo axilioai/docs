@@ -4,6 +4,8 @@ sidebarTitle: "Usage"
 description: "Review phone sessions, aggregate spend, and individual inference charges."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Usage explains what your organization consumed. Billing explains the balance,
 plan, rentals, and invoices that pay for it.
 
@@ -29,10 +31,7 @@ The public usage surface has three views:
 
   <Tab title="CLI">
     ```bash
-    axilio usage metrics \
-      --from 2026-08-01 \
-      --to 2026-08-28 \
-      --granularity daily
+    axilio usage metrics --from 2026-08-01 --to 2026-08-28 --granularity daily
     ```
 
     Add `-o json` for the chart series as well as the summary.
@@ -75,6 +74,8 @@ The public usage surface has three views:
     REST API References:
 
     - [**Get usage metrics**](/api-reference/rest/usage/get-usage-metrics): `GET /usage/metrics`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -123,6 +124,8 @@ and billing processing state for each phone session.
     REST API References:
 
     - [**List phone sessions with cost**](/api-reference/rest/usage/list-phone-sessions-with-cost): `GET /usage/sessions`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -180,11 +183,7 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
 
   <Tab title="CLI">
     ```bash
-    axilio usage inferences \
-      --from 2026-08-01 \
-      --to 2026-08-28 \
-      --endpoint locate \
-      --limit 50
+    axilio usage inferences --from 2026-08-01 --to 2026-08-28 --endpoint locate --limit 50
     ```
   </Tab>
 
@@ -219,6 +218,8 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
     REST API References:
 
     - [**List inference calls**](/api-reference/rest/usage/list-inference-calls): `GET /usage/inferences`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

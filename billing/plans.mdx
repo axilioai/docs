@@ -4,6 +4,8 @@ sidebarTitle: "Dedicated phone pricing"
 description: "Compare daily, weekly, and monthly pricing for dedicated Axilio phones."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Dedicated phones are real Android devices reserved exclusively for your
 organization. Pricing is per phone for the rental period you choose.
 
@@ -79,6 +81,8 @@ Rentals begin in the dashboard:
     REST API References:
 
     - [**List phone rentals**](/api-reference/rest/billing/list-phone-rentals): `GET /billing/phone-rental-subscriptions`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

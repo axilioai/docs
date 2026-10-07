@@ -4,6 +4,8 @@ sidebarTitle: "Session lifecycle"
 description: "Inspect sessions and distinguish idle timeout, connection timeout, and the maximum session duration."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 A session starts when Axilio allocates a phone. The common customer-visible
 boundaries are manual release, an optional idle timeout, and the platform's
 maximum session duration. Axilio can also close a session when its phone
@@ -59,6 +61,8 @@ becomes unavailable.
 
     - [**List sessions**](/api-reference/rest/phones/list-sessions): `GET /phones/sessions`
     - [**Get a session**](/api-reference/rest/phones/get-a-session): `GET /phones/sessions/{session_id}`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -128,6 +132,8 @@ ends at the one-hour platform cap.
     REST API References:
 
     - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

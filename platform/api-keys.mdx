@@ -4,6 +4,8 @@ sidebarTitle: "API keys"
 description: "Create, list, replace, and revoke organization API keys."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 API keys authenticate the CLI, SDKs, and REST API. Each key belongs to one
 organization and starts with `axl_`.
 
@@ -50,6 +52,8 @@ Listing, creating, and deleting API keys requires an organization admin.
     REST API References:
 
     - [**Create an API key**](/api-reference/rest/api-keys/create-an-api-key): `POST /api-keys`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -102,6 +106,8 @@ Listing, creating, and deleting API keys requires an organization admin.
     REST API References:
 
     - [**List API keys**](/api-reference/rest/api-keys/list-api-keys): `GET /api-keys`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -162,6 +168,8 @@ every consumer, then delete the old key.
 
     - [**Create an API key**](/api-reference/rest/api-keys/create-an-api-key): `POST /api-keys`
     - [**Delete an API key**](/api-reference/rest/api-keys/delete-an-api-key): `DELETE /api-keys/{key_id}`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
