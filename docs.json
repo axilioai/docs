@@ -86,6 +86,14 @@
             ]
           },
           {
+            "group": "Webhooks",
+            "icon": "bell",
+            "pages": [
+              "webhooks/overview",
+              "webhooks/events"
+            ]
+          },
+          {
             "group": "Observability",
             "icon": "video",
             "pages": [
