@@ -14,9 +14,15 @@ interaction into a repeatable Python or Go program.
 
 ## Give your AI a phone
 
-Paste this prompt into Claude, Codex, or Cursor. It installs the official CLI,
-asks you to complete secure authentication, verifies a dedicated-phone session
-with a read-only observation, and then helps you build a durable SDK script.
+Paste this prompt into an agent with terminal access to the environment where
+Axilio will run, such as Claude Code, Codex, or Cursor. Tell it which app you
+want to use and the first result you want. The agent checks setup, guides you
+through sign-in and app preparation, completes an approved task on your
+dedicated phone, and gives you a reusable Python or Go script.
+
+A cloud agent runs commands in its own environment. Installing the CLI on your
+computer does not give a separate cloud chat access to it. If your agent cannot
+run terminal commands, use a terminal-capable agent to continue.
 
 <div id="axilio-agent-prompt-copy" />
 
