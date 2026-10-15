@@ -1,10 +1,13 @@
 ---
 title: "Wait"
 sidebarTitle: "Wait"
-description: "Poll the screen for an expected change instead of sleeping for a fixed delay."
+description: "Wait for the screen to reach the state you expect instead of sleeping for a fixed delay."
 ---
 
-Apps take time to load and change. Wait for the state you expect before acting.
+Apps take time to load and change. Every [locator](/driver/locator) action
+already waits up to 5 seconds for its target, so most steps need no separate
+wait. Wait explicitly when you need longer, or when you want to hold until
+something appears or disappears without acting on it.
 
 ## Wait for text to appear
 
@@ -20,22 +23,19 @@ Apps take time to load and change. Wait for the state you expect before acting.
 
   <Tab title="Python SDK">
     ```python
-    welcome = driver.wait_for_text(
-        "Welcome",
-        timeout=30,
-        poll_ms=300,
-    )
+    welcome = driver.get_by_text("Welcome")
+    welcome.wait_for(timeout=30)
     welcome.tap()
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    welcome, err := driver.WaitForText("Welcome", 30*time.Second, false)
-    if err != nil {
+    welcome := driver.GetByText("Welcome")
+    if _, err := welcome.WaitFor(mobile.StateVisible, mobile.WithTimeout(30*time.Second)); err != nil {
         log.Fatal(err)
     }
-    if err := welcome.Tap(); err != nil {
+    if _, err := welcome.Tap(); err != nil {
         log.Fatal(err)
     }
     ```
@@ -53,59 +53,70 @@ Apps take time to load and change. Wait for the state you expect before acting.
 
   <Tab title="Python SDK">
     ```python
-    driver.wait_until_gone("Loading", timeout=30, poll_ms=300)
+    driver.get_by_text("Loading").wait_for(state="hidden", timeout=30)
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    if err := driver.WaitUntilGone("Loading", 30*time.Second, false); err != nil {
+    if _, err := driver.GetByText("Loading").WaitFor(mobile.StateHidden, mobile.WithTimeout(30*time.Second)); err != nil {
         log.Fatal(err)
     }
     ```
   </Tab>
 </Tabs>
 
-Python and Go also accept OCR call options for these helpers. The CLI `wait-for`
-command does not expose an OCR-engine flag.
+A wait can last up to 60 seconds per call. When the time runs out, Python raises
+`ActionTimeoutError` (also a built-in `TimeoutError`) and Go returns an error that
+`mobile.IsActionTimeout` matches. Any locator works here, including a
+description: `driver.locator(query="the order confirmation").wait_for()`.
 
 ## Wait for a custom condition
 
-The SDKs can poll until a predicate accepts the observed screen:
+For a condition a locator can't express, observe the screen in a loop:
 
 <Tabs sync={false}>
   <Tab title="Python SDK">
     ```python
-    screen = driver.wait_for(
-        lambda current: current.find_text("Done") is not None,
-        timeout=30,
-        poll_ms=300,
-    )
+    import time
+
+    deadline = time.monotonic() + 30
+    while driver.observe().find_text("Done") is None:
+        if time.monotonic() > deadline:
+            raise TimeoutError("Done never appeared")
+        time.sleep(0.3)
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    screen, err := driver.WaitFor(func(current mobile.Screen) bool {
-        return current.FindText("Done", false) != nil
-    }, 30*time.Second)
-    if err != nil {
-        log.Fatal(err)
+    deadline := time.Now().Add(30 * time.Second)
+    for {
+        screen, err := driver.Observe()
+        if err != nil {
+            log.Fatal(err)
+        }
+        if screen.FindText("Done", false) != nil {
+            break
+        }
+        if time.Now().After(deadline) {
+            log.Fatal("Done never appeared")
+        }
+        time.Sleep(300 * time.Millisecond)
     }
-    fmt.Println(screen.Hash)
     ```
   </Tab>
 </Tabs>
 
-Wait helpers repeatedly call DCP `Screen.observe` and evaluate the match in the
-client. They are not REST operations. Prefer them to a fixed sleep because they
-continue as soon as the screen is ready.
+Locator waits run on the phone side as one DCP `Locator.waitFor` call, so they
+continue as soon as the screen is ready. The custom loop calls `Screen.observe`
+each time. Neither is a REST operation.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Find" icon="magnifying-glass" href="/driver/find">
-    Understand text and semantic selectors.
+    Point at text or a described target.
   </Card>
   <Card title="Errors" icon="triangle-exclamation" href="/reference/errors">
     Recover from timeouts and other control failures.

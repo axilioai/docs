@@ -4,6 +4,8 @@ sidebarTitle: "Dedicated phones"
 description: "Rent one specific phone, keep its state, and use it without per-session phone-time charges."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 A **dedicated phone** is reserved for your organization for its rental period.
 It keeps its apps and device state between sessions.
 
@@ -56,6 +58,8 @@ The public API, SDKs, and CLI do not start checkout, renew, or cancel a rental.
     REST API References:
 
     - [**List phone rentals**](/api-reference/rest/billing/list-phone-rentals): `GET /billing/phone-rental-subscriptions`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

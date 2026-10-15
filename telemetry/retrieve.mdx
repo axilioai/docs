@@ -4,6 +4,8 @@ sidebarTitle: "Retained telemetry"
 description: "Retrieve the available retained spans and logs for a session through the Dashboard, CLI, SDKs, or REST API."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Retained telemetry is the session record available for post-session review and
 live-gap reconciliation. It contains completed span frames and point-in-time
 log frames, addressed by `session_id`.
@@ -143,6 +145,8 @@ exactly-once audit ledger or a promise that every live frame was stored.
     REST API reference:
 
     - [**List a session's telemetry frames**](/api-reference/rest/runs/list-a-sessions-telemetry-frames): `GET /phones/sessions/{session_id}/frames`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

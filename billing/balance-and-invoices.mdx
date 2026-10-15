@@ -4,6 +4,8 @@ sidebarTitle: "Balance, credits, and invoices"
 description: "Understand credit priority and expiration, add funds, configure alerts, and download invoice PDFs."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 ## Check the balance
 
 <Tabs sync={false}>
@@ -44,6 +46,8 @@ description: "Understand credit priority and expiration, add funds, configure al
     REST API References:
 
     - [**Get account balance**](/api-reference/rest/billing/get-account-balance): `GET /billing/balance`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -201,6 +205,8 @@ customer-portal session.
     - [**List billing history**](/api-reference/rest/billing/list-billing-history): `GET /billing/history`
     - [**Get an invoice PDF URL**](/api-reference/rest/billing/get-an-invoice-pdf-url): `GET /billing/history/{invoice_id}/pdf`
 
+    <WindowsCurlNote />
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/billing/history?limit=20&offset=0" \
@@ -273,6 +279,8 @@ itself remains a dashboard action.
 
     - [**Get auto-recharge settings**](/api-reference/rest/billing/get-auto-recharge-settings): `GET /billing/auto-recharge`
     - [**Update auto-recharge settings**](/api-reference/rest/billing/update-auto-recharge-settings): `PUT /billing/auto-recharge`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -359,6 +367,8 @@ Negative-balance alerts are separate, always enabled, and cannot be turned off.
 
     - [**Get usage-alert settings**](/api-reference/rest/billing/get-usage-alert-settings): `GET /billing/usage-alerts`
     - [**Update usage-alert settings**](/api-reference/rest/billing/update-usage-alert-settings): `PUT /billing/usage-alerts`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

@@ -35,6 +35,8 @@ will follow your selection.
 pip install axilio
 ```
 
+On Windows, run `py -m pip install axilio` if `pip` is not on your `PATH`.
+
   </Tab>
   <Tab title="Go SDK" id="go-install">
 
@@ -50,11 +52,17 @@ go get github.com/axilioai/platform-go@latest
 
 ## 2. Set your API key
 
-```bash
+<CodeGroup>
+```bash macOS and Linux
 export AXILIO_API_KEY=axl_your_key_here
 ```
 
-Keep the key out of source control. Use your platform's secret manager in CI
+```powershell Windows (PowerShell)
+$env:AXILIO_API_KEY = "axl_your_key_here"
+```
+</CodeGroup>
+
+The variable lasts for the current terminal. Keep the key out of source control. Use your platform's secret manager in CI
 and deployed services.
 
 ## 3. Inspect a phone
@@ -180,6 +188,8 @@ you need direct HTTP access.
 ```bash
 python quickstart.py
 ```
+
+On Windows, use `py quickstart.py` if `python` is not on your `PATH`.
 
   </Tab>
   <Tab title="Go SDK" id="go-run">

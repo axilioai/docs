@@ -4,6 +4,8 @@ sidebarTitle: "Overview"
 description: "Understand the organization file library, upload and capture provenance, phone deliveries, filters, and storage limits."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Files is your organization's shared media library. A file can enter the
 library because you uploaded it or because a phone session captured it. Every
 ready file has one ID and can be downloaded locally or delivered to a phone.
@@ -93,6 +95,8 @@ sort by creation time, filename, size, or source.
     REST API References:
 
     - [**List the organization's files**](/api-reference/rest/files/list-the-orgs-files): `GET /files`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

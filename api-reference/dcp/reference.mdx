@@ -35,7 +35,7 @@ more work.
 | --- | --- | --- |
 | `protocol_version` | integer | The protocol version the phone speaks. |
 | `device` | object | The [device descriptor](#device-info), same shape as `Device.info`. |
-| `domains` | string[] | The capability domains this phone advertises, e.g. `["Device", "Keyboard", "Protocol", "Screen", "Touch"]`. |
+| `domains` | string[] | The capability domains this phone advertises, e.g. `["Device", "Keyboard", "Locator", "Protocol", "Screen", "Touch"]`. |
 | `capabilities` | string[] | The exact method names this phone answers, e.g. `["Touch.tap", "Screen.observe", ...]`. |
 
 ## Device
@@ -178,25 +178,114 @@ Read the screen — its text and icons, with bounding boxes.
 | `width`, `height` | integer | Frame dimensions in pixels. |
 | `captured_at` | integer | Frame timestamp, epoch milliseconds. |
 
-### `Screen.find`
-Find one element by describing it in plain English.
+## Locator
 
-```json
-{ "id": 10, "method": "Screen.find", "params": { "query": "the search icon" } }
-```
-
-| Param | Type | Required | Description |
-| --- | --- | --- | --- |
-| `query` | string | Yes | Plain-English description of what to find. |
-| `model` | string | No | A vision model id; defaults to an automatic choice. |
-| `ocr_engine` | string | No | `"free"` or `"premium"`. |
-
-**Result**
+Each `Locator` method finds its target on the current frame, waits until the
+target is ready, then acts or answers, all on the phone side in one round trip.
+A locator is an object of target fields that combine as AND:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `found` | object \| null | The match (`bbox`, `confidence`, `text`), or `null` on a miss. A miss is a result, not an error. |
-| `model_name` | string | The vision model that answered. |
+| `text` | string | Visible text; a case-insensitive substring unless `exact` is true. |
+| `exact` | boolean | Require an exact, case-sensitive text match. |
+| `query` | string | Plain-English description, read by a vision model. |
+| `within` | locator | Refine to a match inside this locator's match. |
+| `has` | locator | Refine to a match that contains this locator's match. |
+| `nth` | integer | Pick the nth match in reading order, zero-based. |
+
+Plain `text` resolves by OCR; anything more uses one vision-model call. The
+contract also defines `role`, `name`, `id`, `states`, and `platform`. They need
+the phone's accessibility tree, which phones don't expose yet, so they fail
+with `StrategyUnavailable`.
+
+Every Locator method accepts these params alongside its own:
+
+| Param | Type | Required | Description |
+| --- | --- | --- | --- |
+| `locator` | object | Yes (except `Locator.press`) | The target, as above. |
+| `timeoutMs` | integer | No | Budget for the whole call, waiting included. Default `5000`, maximum `60000`. Not on `Locator.count`. |
+| `ocrEngine` | string | No | `"free"` or `"premium"`. |
+| `model` | string | No | A vision model id; defaults to an automatic choice. |
+
+When the target never becomes ready within `timeoutMs`, the call fails with
+`ActionTimeout`.
+
+Most results are a **LocatorResult**:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `resolvedBy` | string | How the target was found: `"ocr"` or `"vlm"`. |
+| `bounds` | object | Where the target was when the phone acted: `x`, `y`, `width`, `height`. |
+| `tookMs` | integer | Time on the phone, waiting included. |
+| `modelName` | string | The vision model that resolved the target, when `resolvedBy` is `"vlm"`. |
+
+### `Locator.tap`
+Wait for the target, then tap its center.
+
+```json
+{ "id": 10, "method": "Locator.tap", "params": { "locator": { "query": "the search icon" } } }
+```
+
+Also takes `idempotencyKey`. **Result** — a LocatorResult.
+
+### `Locator.fill`
+Wait for the target, tap it to focus, then type `text` into it.
+
+```json
+{ "id": 11, "method": "Locator.fill", "params": { "locator": { "text": "Search" }, "text": "axilio" } }
+```
+
+Requires `text`; also takes `idempotencyKey`. **Result** — a LocatorResult.
+
+### `Locator.press`
+Press a named key: `"enter"` or `"capslock"`. With a `locator`, the target is
+found, waited for, and focused first; without one, the key goes to whatever has
+focus.
+
+```json
+{ "id": 12, "method": "Locator.press", "params": { "locator": { "text": "Search" }, "key": "enter" } }
+```
+
+Requires `key`; also takes `idempotencyKey`. **Result** — a LocatorResult;
+`resolvedBy` and `bounds` are present only when the press carried a locator.
+
+### `Locator.waitFor`
+Wait until the target reaches a state, re-checking each fresh frame. One call
+replaces a client-side polling loop.
+
+```json
+{ "id": 13, "method": "Locator.waitFor", "params": { "locator": { "text": "Loading" }, "state": "hidden", "timeoutMs": 30000 } }
+```
+
+`state` is `"visible"` (the default) or `"hidden"`. **Result** — a
+LocatorResult; `resolvedBy` and `bounds` are absent for `"hidden"`.
+
+### `Locator.boundingBox`
+Wait for the target, then return where it is.
+
+```json
+{ "id": 14, "method": "Locator.boundingBox", "params": { "locator": { "text": "Photo" } } }
+```
+
+**Result** — a LocatorResult.
+
+### `Locator.text`
+Wait for the target, then return its recognized text.
+
+```json
+{ "id": 15, "method": "Locator.text", "params": { "locator": { "query": "the order total" } } }
+```
+
+**Result** — a LocatorResult plus `text` (string).
+
+### `Locator.count`
+Count the matches on the current screen, zero included. Never waits.
+
+```json
+{ "id": 16, "method": "Locator.count", "params": { "locator": { "text": "Add to cart" } } }
+```
+
+**Result** — `count` (integer), `resolvedBy`, and `tookMs`.
 
 Customer-billed cost is available from the session's
 [retained Telemetry response](/telemetry/retrieve), not from the DCP result.
@@ -227,10 +316,11 @@ whether retrying the same command could succeed:
 | `NoAllocation` | -32001 | No | The session has no active phone allocation. |
 | `NotConnected` | -32002 | No | The server couldn't reach the phone. |
 | `DeviceOffline` | -32004 | Yes | The phone is transiently unavailable. |
-| `ElementNotFound` | -32005 | No | A selector matched nothing. |
 | `Timeout` | -32006 | Yes | The command exceeded its deadline. |
 | `Unauthorized` | -32007 | No | The session credential was rejected. |
 | `Canceled` | -32008 | No | The command was canceled. |
+| `ActionTimeout` | -32009 | No | A Locator target never became ready within `timeoutMs`. |
+| `StrategyUnavailable` | -32010 | No | The locator needs a resolver this session doesn't have, such as the accessibility tree. |
 
 ## Next steps
 
@@ -248,6 +338,6 @@ whether retrying the same command could succeed:
     The ergonomic driver over these methods.
   </Card>
   <Card title="Vision models" icon="eye" href="/drivers/models">
-    Model ids and pricing for `Screen.find`.
+    Model ids and pricing for Locator descriptions.
   </Card>
 </CardGroup>

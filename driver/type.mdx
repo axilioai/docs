@@ -4,7 +4,8 @@ sidebarTitle: "Type"
 description: "Type text into the focused field on a phone."
 ---
 
-Focus a field, then type into it. SDK element helpers combine those two steps.
+Focus a field, then type into it. A locator's `fill` does both: it taps the
+field, then types.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -16,18 +17,13 @@ Focus a field, then type into it. SDK element helpers combine those two steps.
 
   <Tab title="Python SDK">
     ```python
-    field = driver.wait_for_text("Search")
-    field.type_into("agentic infrastructure")
+    driver.get_by_text("Search").fill("agentic infrastructure")
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    field, err := driver.WaitForText("Search", 10*time.Second, false)
-    if err != nil {
-        log.Fatal(err)
-    }
-    if err := field.TypeInto("agentic infrastructure"); err != nil {
+    if _, err := driver.GetByText("Search").Fill("agentic infrastructure"); err != nil {
         log.Fatal(err)
     }
     ```
@@ -64,7 +60,8 @@ including emoji, when the request is otherwise within the limit. To submit a
 form or trigger the keyboard's **Go** or **Search** action, press
 [Enter](/driver/buttons) after typing.
 
-Typing uses DCP `Keyboard.typeText`; it is not a REST operation.
+`fill` uses DCP `Locator.fill`, and typing into the focused field uses
+`Keyboard.typeText`. Neither is a REST operation.
 
 ## Next steps
 

@@ -4,6 +4,8 @@ sidebarTitle: "Live telemetry"
 description: "Follow an active session through the Dashboard, CLI, SDKs, or the read-only telemetry WebSocket."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Live telemetry gives you progressive visibility into a phone session. It uses
 the same span-and-log frame envelope that you can [retrieve later](/telemetry/retrieve),
 but live delivery and retained storage are separate best-effort paths.
@@ -176,6 +178,8 @@ live gap.
     REST API reference:
 
     - [**Mint a telemetry stream URL**](/api-reference/rest/phones/mint-a-telemetry-stream-url): `POST /phones/sessions/{session_id}/telemetry-token`
+
+    <WindowsCurlNote />
 
     ```bash
     TELEMETRY_URL=$(curl --silent --show-error --fail-with-body \

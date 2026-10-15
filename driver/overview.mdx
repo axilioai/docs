@@ -7,9 +7,12 @@ description: "Observe a phone, find a target, act, and verify the next screen wi
 The mobile driver controls the phone inside a session. Its reliable loop is:
 
 1. Observe the current screen.
-2. Find a target by visible text or description.
+2. Point at a target with a locator, by visible text or a description.
 3. Tap, type, swipe, or press a key.
 4. Observe or wait for the expected result.
+
+A locator action finds its target on the screen at that moment and waits until
+it can act, up to 5 seconds by default, so most steps need no separate wait.
 
 Start with a [dedicated-phone session](/devices/allocate), then use the
 interface that fits your program.
@@ -33,8 +36,8 @@ interface that fits your program.
     client = Client()
 
     with client.session("android", phone_id="ph_123") as driver:
-        driver.find(query="the search icon").tap()
-        driver.wait_for_text("Search").type_into("axilio")
+        driver.locator(query="the search icon").tap()
+        driver.get_by_text("Search").fill("axilio")
         driver.key_press("enter")
         screen = driver.observe()
     ```
@@ -42,19 +45,10 @@ interface that fits your program.
 
   <Tab title="Go SDK">
     ```go
-    searchIcon, err := driver.Find("the search icon")
-    if err != nil {
+    if _, err := driver.Locator(mobile.Query("the search icon")).Tap(); err != nil {
         log.Fatal(err)
     }
-    if err := searchIcon.Tap(); err != nil {
-        log.Fatal(err)
-    }
-
-    field, err := driver.WaitForText("Search", 10*time.Second, false)
-    if err != nil {
-        log.Fatal(err)
-    }
-    if err := field.TypeInto("axilio"); err != nil {
+    if _, err := driver.GetByText("Search").Fill("axilio"); err != nil {
         log.Fatal(err)
     }
     if err := driver.KeyPress(mobile.KeyEnter); err != nil {
@@ -113,4 +107,4 @@ Only tap, long-press, and swipe have raw coordinate forms. Finding, waiting,
 typing, key presses, observation, and screenshots use their own typed inputs.
 
 For complete Python signatures and the corresponding Go methods, see the
-[Driver reference](/driver/reference).
+[Driver](/driver/reference) and [Locator](/driver/locator) references.

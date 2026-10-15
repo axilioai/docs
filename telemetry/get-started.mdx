@@ -4,6 +4,8 @@ sidebarTitle: "Get started"
 description: "Follow one phone session live, then inspect its available retained trace."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 This guide takes one phone session from live activity to its retained
 Telemetry record. You need a session ID and access to the session's
 organization.
@@ -108,6 +110,8 @@ the same session-scoped record.
     REST API reference:
 
     - [**List a session's Telemetry frames**](/api-reference/rest/runs/list-a-sessions-telemetry-frames): `GET /phones/sessions/{session_id}/frames`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

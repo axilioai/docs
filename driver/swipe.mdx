@@ -45,39 +45,40 @@ argument explicitly.
 
 ## Drag one element to another
 
+Read both positions with [`bounding_box()`](/driver/locator#locator-bounding_box),
+then swipe between their centers:
+
 <Tabs sync={false}>
   <Tab title="Python SDK">
     ```python
-    card = driver.find_text("Card")
-    archive = driver.find_text("Archive")
-    if card is None or archive is None:
-        raise RuntimeError("drag target is not visible")
-    card.swipe_to(archive, duration_ms=300)
+    def center(box):
+        return {"x": box["x"] + box["width"] // 2, "y": box["y"] + box["height"] // 2}
+
+    card = driver.get_by_text("Card").bounding_box().bounds
+    archive = driver.get_by_text("Archive").bounding_box().bounds
+    driver.swipe(center(card), center(archive), duration_ms=300)
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
-    card, err := driver.FindText("Card", false)
+    card, err := driver.GetByText("Card").BoundingBox()
     if err != nil {
         log.Fatal(err)
     }
-    archive, err := driver.FindText("Archive", false)
+    archive, err := driver.GetByText("Archive").BoundingBox()
     if err != nil {
         log.Fatal(err)
     }
-    if card == nil || archive == nil {
-        log.Fatal("drag target is not visible")
-    }
-    if err := card.SwipeTo(*archive, 300); err != nil {
+    if err := driver.Swipe(card.Bounds.Center(), archive.Bounds.Center(), 300); err != nil {
         log.Fatal(err)
     }
     ```
   </Tab>
 </Tabs>
 
-Element dragging is an SDK composition over DCP `Touch.swipe`. Live swipe
-actions are not REST operations.
+`bounding_box()` waits for each target like any locator action. The drag itself
+is DCP `Touch.swipe`. Live swipe actions are not REST operations.
 
 ## Next steps
 

@@ -4,6 +4,8 @@ sidebarTitle: "Session captures"
 description: "Find media captured from a phone session, interpret capture states, and download or reuse ready files."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 When capture is enabled, Axilio collects supported media that a session
 produces on its phone and stores it in the organization's Files library.
 Capture is enabled by default for sessions and workflow runs. A session or
@@ -55,10 +57,7 @@ only whether bytes are still uploading or ready in storage.
     Or apply the same session filter to the organization library:
 
     ```bash
-    axilio files list \
-      --source capture \
-      --surface phone \
-      --session <session-id>
+    axilio files list --source capture --surface phone --session <session-id>
     ```
 
     Download a ready capture with `axilio files download <file-id>`.
@@ -106,6 +105,8 @@ only whether bytes are still uploading or ready in storage.
     REST API References:
 
     - [**List a session's captured files**](/api-reference/rest/files/list-a-sessions-captured-files): `GET /phones/sessions/{session_id}/files`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

@@ -177,6 +177,7 @@
                 "pages": [
                   "driver/client",
                   "driver/reference",
+                  "driver/locator",
                   "driver/element",
                   "driver/screen",
                   "driver/key"

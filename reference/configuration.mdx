@@ -35,9 +35,15 @@ description: "Configure the CLI, Python SDK, and Go SDK, including precedence, e
 
     For a non-interactive API-key login, keep the value out of command history:
 
-    ```bash
+    <CodeGroup>
+    ```bash macOS and Linux
     printf '%s\n' "$AXILIO_API_KEY" | axilio login
     ```
+
+    ```powershell Windows (PowerShell)
+    $env:AXILIO_API_KEY | axilio login
+    ```
+    </CodeGroup>
 
     Pass an API origin without `/api/v1` to the CLI. Authentication and
     organization selection use their dedicated commands.
@@ -90,13 +96,13 @@ description: "Configure the CLI, Python SDK, and Go SDK, including precedence, e
     ## Local state
 
     Unless `XDG_CONFIG_HOME` is set, CLI state lives under
-    `~/.config/axilio`.
+    `~/.config/axilio`. On Windows that is `%USERPROFILE%\.config\axilio`.
 
     | Location | Contents |
     | --- | --- |
     | `config.json` | Saved API host, API-key state, and active organization. |
-    | OS keychain | Preferred storage for browser OAuth under service `axilio-cli`. |
-    | `oauth.json` | Mode-`0600` OAuth fallback when the OS keychain is unavailable. |
+    | OS keychain | Preferred storage for browser OAuth under service `axilio-cli`: the macOS Keychain, Windows Credential Manager, or the Linux Secret Service. |
+    | `oauth.json` | OAuth fallback when the OS keychain is unavailable. Created with mode `0600` on macOS and Linux. |
     | `sessions/<session-id>.json` | Saved connection details used by `axilio phone`. |
     | `current-session` | Most recently started local session. |
     | `update-check.json` | Daily CLI release-check cache. |

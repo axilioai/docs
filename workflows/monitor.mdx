@@ -4,6 +4,8 @@ sidebarTitle: "Monitor"
 description: "List, inspect, watch, cancel, and summarize workflow runs."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Use the run ID returned at creation time. For a workflow run, that run ID is
 also the session ID. Phone and session details populate after Axilio allocates
 the phone; the ID does not change.
@@ -58,6 +60,8 @@ the phone; the ID does not change.
     - [**List runs**](/api-reference/rest/runs/list-runs): `GET /runs`
     - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
 
+    <WindowsCurlNote />
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --url "https://api.axilio.ai/api/v1/runs?workflow_id=wf_123&limit=20" \
@@ -91,12 +95,15 @@ axilio sessions trace sess_123 --follow
 See [Get started with Telemetry](/telemetry/get-started) for SDK helpers and
 retained-data behavior.
 
-## Cancel a queued or running run
+## Cancel a scheduled, queued or running run
+
+A scheduled run you cancel never starts.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
     Open [**Runs**](https://app.axilio.ai/dashboard/axilio/runs), select the run,
-    and click **Cancel**. A completed, failed, or already canceled run is already
+    and click **Cancel**. Scheduled runs show a **Scheduled** status and
+    their start time. A completed, failed, or already canceled run is already
     terminal.
   </Tab>
 
@@ -125,6 +132,8 @@ retained-data behavior.
     REST API References:
 
     - [**Cancel a run**](/api-reference/rest/runs/cancel-a-run): `POST /runs/{run_id}:cancel`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -181,6 +190,8 @@ bounded time window and statistics for a workflow's total and success rate.
 
     - [**List run history**](/api-reference/rest/runs/list-run-history): `GET /runs/history`
     - [**Get workflow stats**](/api-reference/rest/runs/get-workflow-stats): `GET /runs/stats/{workflow_id}`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \

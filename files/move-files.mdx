@@ -4,6 +4,8 @@ sidebarTitle: "Move files"
 description: "Upload a file, push it to a phone, download it locally, rename supported uploads, and delete it from the library."
 ---
 
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
 Moving a file is a two-part operation:
 
 1. **Upload** stores the local bytes once in your organization's library.
@@ -112,6 +114,8 @@ steps separately.
     - [**Deliver a library file to a phone**](/api-reference/rest/phones/deliver-a-library-file-to-a-phone): `POST /phones/{phone_id}/deliveries`
 
     Register the upload. Use the exact byte count and media type for the file:
+
+    <WindowsCurlNote />
 
     ```bash
     FILE_SIZE=$(wc -c < photo.jpg)
@@ -284,6 +288,8 @@ Axilio authentication header.
 
     Search by filename, then download the first ready match to a path you choose:
 
+    <WindowsCurlNote />
+
     ```bash
     DOWNLOAD_URL=$(curl --silent --show-error --fail-with-body \
       --get \
@@ -361,6 +367,8 @@ name they used at push time.
 
     - [**Rename a file**](/api-reference/rest/files/rename-a-file): `PATCH /files/{file_id}`
 
+    <WindowsCurlNote />
+
     ```bash
     curl --silent --show-error --fail-with-body \
       --request PATCH \
@@ -430,6 +438,8 @@ available yet.
     REST API References:
 
     - [**Delete a file**](/api-reference/rest/files/delete-a-file): `DELETE /files/{file_id}`
+
+    <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
