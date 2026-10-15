@@ -151,6 +151,19 @@ _DESCRIPTION_FRAGMENT_CORRECTIONS = {
         "normally sends one frame object per message."
     ),
     ", 3h token": "",
+    # Argus elements:locate (AXI-2370): the docs describe elements by what a
+    # caller already has, not by which platform API produced them.
+    (
+        "Source-neutral: an Android AccessibilityNodeInfo, a browser AX node or DOM\n"
+        "element, a macOS AX element or a Windows UI Automation element all map\n"
+        "onto it."
+    ): (
+        "Source-neutral: an element from a DOM, a detector's output or any other\n"
+        "UI tree maps onto it."
+    ),
+    "Accessible name; empty when the element has none": (
+        "The element's name or label; empty when the element has none"
+    ),
 }
 
 
@@ -216,7 +229,7 @@ def drop_internal(spec: dict):
 
 
 def nice_tag(tag: str) -> str:
-    # api-keys -> API Keys; AccessibilityTrees -> Accessibility Trees
+    # api-keys -> API Keys; ScreenshotsLocate -> Screenshots Locate
     spaced = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", tag).replace("-", " ")
     return spaced.title().replace("Api", "API")
 

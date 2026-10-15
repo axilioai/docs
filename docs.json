@@ -231,7 +231,7 @@
               "api-reference/argus/list-models",
               "api-reference/argus/screenshots-detect",
               "api-reference/argus/screenshots-locate",
-              "api-reference/argus/accessibility-trees-locate"
+              "api-reference/argus/elements-locate"
             ]
           }
         ]

@@ -21,9 +21,9 @@ example, does not necessarily mean the phone session or DCP control path failed.
 
 HTTP failures from the REST API and the Argus API return an
 [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details body, with
-the content type `application/problem+json`. Branch on the status and the
-`code`, not on the human-readable text. See [Problem details](#problem-details)
-for the full shape.
+the content type `application/problem+json`. Branch on the status, and for
+Argus also on the `code`, never on the human-readable text. See
+[Problem details](#problem-details) for the full shape.
 
 | Status | Meaning | Recovery |
 | --- | --- | --- |
@@ -44,7 +44,8 @@ for the full shape.
 
 ### Problem details
 
-Every error body has the same members:
+Both APIs return the RFC 9457 members `type`, `title`, `status` and `detail`.
+Argus adds a machine-readable `code`. An Argus error looks like this:
 
 ```json
 {
@@ -68,8 +69,8 @@ Every error body has the same members:
 | `title` | The HTTP reason phrase for `status`. |
 | `status` | The HTTP status code. |
 | `detail` | A human-readable explanation. For internal errors this is a generic message, never internal details. |
-| `code` | A stable, machine-readable category. |
-| `errors` | Present on a `422` request-validation problem: one entry per field, with its `location` and `message`. |
+| `code` | Argus only. A stable, machine-readable category. |
+| `errors` | Present on a `422` request-validation problem: one entry per field, with its `location` and `message`. REST API entries also carry the rejected `value`. |
 
 The `code` values you can see from Argus:
 
@@ -87,8 +88,8 @@ The `code` values you can see from Argus:
 | `infrastructure` | `500` | An Argus model or inference component failed. |
 | `error` | `500` | An unexpected internal failure. |
 
-The REST API uses the same shape and the same vocabulary where the categories
-overlap.
+The REST API has no `code` member: branch on `status`, and read `errors` for
+the fields a validation problem names.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -209,7 +210,7 @@ above.
 | `control_held` | `ControlHeldError` | `1` | Another controller holds the session's control lease. | No |
 | `timeout` | `TimeoutError` | `5` | A command exceeded its deadline. | Yes |
 | `action_timeout` | `ActionTimeoutError` | `5` | A locator's target never became actionable within its timeout. Also a built-in `TimeoutError` in Python. | No |
-| `strategy_unavailable` | `StrategyUnavailableError` | `2` | The locator needs a resolver this session doesn't have, such as the accessibility tree. | No |
+| `strategy_unavailable` | `StrategyUnavailableError` | `2` | The locator asks for a resolution strategy this session doesn't offer. | No |
 
 Prefer the `retryable` value carried by the actual error over a table default.
 The SDK transport automatically attempts bounded reconnect and cursor resume

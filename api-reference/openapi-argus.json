@@ -1,191 +1,6 @@
 {
   "components": {
     "schemas": {
-      "AccessibilityTreeLocateRequest": {
-        "description": "Argus POST /accessibility-trees:locate request.\n\nGrounds a natural-language query in an accessibility tree: the model picks\none of `nodes`. The screenshot is optional context; the answer is always a\nnode, never a point.",
-        "properties": {
-          "image": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional base64 screenshot (PNG or JPEG) the node bounds are in",
-            "title": "Image"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "VLM model to use; must be one of the models from GET /models. Omit to use the server's configured default.",
-            "title": "Model"
-          },
-          "nodes": {
-            "description": "Candidate nodes",
-            "items": {
-              "$ref": "#/components/schemas/AccessibilityTreeNode"
-            },
-            "maxItems": 2000,
-            "minItems": 1,
-            "title": "Nodes",
-            "type": "array"
-          },
-          "query": {
-            "description": "Natural-language target description",
-            "minLength": 1,
-            "title": "Query",
-            "type": "string"
-          }
-        },
-        "required": [
-          "query",
-          "nodes"
-        ],
-        "title": "AccessibilityTreeLocateRequest",
-        "type": "object"
-      },
-      "AccessibilityTreeLocateResponse": {
-        "description": "Argus POST /accessibility-trees:locate response.\n\n`node_id` is one of the request's node ids when `found`, else null. It\nnames the node rather than indexing the list, so the answer does not\ndepend on node order. The billing fields match screenshot locate.",
-        "properties": {
-          "completion_tokens": {
-            "default": 0,
-            "description": "Completion (output) tokens the model billed for this call",
-            "minimum": 0.0,
-            "title": "Completion Tokens",
-            "type": "integer"
-          },
-          "confidence": {
-            "description": "Model self-reported confidence",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Confidence",
-            "type": "number"
-          },
-          "cost_microdollars": {
-            "description": "Provider-reported cost in microdollars",
-            "minimum": 0.0,
-            "title": "Cost Microdollars",
-            "type": "integer"
-          },
-          "found": {
-            "description": "Whether the model picked a node",
-            "title": "Found",
-            "type": "boolean"
-          },
-          "latency_ms": {
-            "description": "End-to-end VLM call latency",
-            "minimum": 0.0,
-            "title": "Latency Ms",
-            "type": "integer"
-          },
-          "model": {
-            "description": "Model identifier returned by the provider",
-            "title": "Model",
-            "type": "string"
-          },
-          "node_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The chosen node's id; null when not found",
-            "title": "Node Id"
-          },
-          "prompt_tokens": {
-            "default": 0,
-            "description": "Prompt (input) tokens the model billed for this call",
-            "minimum": 0.0,
-            "title": "Prompt Tokens",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "found",
-          "confidence",
-          "model",
-          "cost_microdollars",
-          "latency_ms"
-        ],
-        "title": "AccessibilityTreeLocateResponse",
-        "type": "object"
-      },
-      "AccessibilityTreeNode": {
-        "description": "One accessibility tree node offered as a candidate target.\n\nDevice-neutral: an Android AccessibilityNodeInfo, a browser AX node, a\nmacOS AX element or a Windows UI Automation element all map onto it.\n`platform` carries native attributes the caller wants the model to see;\nit is opaque to argus and passed through to the model as given.",
-        "properties": {
-          "bounds": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TreeNodeBounds"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Where the node is on screen"
-          },
-          "name": {
-            "default": "",
-            "description": "Accessible name; empty when the node has none",
-            "title": "Name",
-            "type": "string"
-          },
-          "node_id": {
-            "description": "Caller's id for the node, unique in the request",
-            "minLength": 1,
-            "title": "Node Id",
-            "type": "string"
-          },
-          "platform": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Native attributes keyed by platform, passed through to the model",
-            "title": "Platform"
-          },
-          "role": {
-            "description": "Accessibility role, e.g. 'button', 'textbox'",
-            "title": "Role",
-            "type": "string"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Current value (a text field's contents), when any",
-            "title": "Value"
-          }
-        },
-        "required": [
-          "node_id",
-          "role"
-        ],
-        "title": "AccessibilityTreeNode",
-        "type": "object"
-      },
       "BoundingBox": {
         "properties": {
           "x1": {
@@ -269,6 +84,232 @@
           "class_name"
         ],
         "title": "Detection",
+        "type": "object"
+      },
+      "Element": {
+        "description": "One UI element offered as a candidate target.\n\nSource-neutral: an element from a DOM, a detector's output or any other\nUI tree maps onto it. `platform` carries native attributes the caller wants the model\nto see; it is opaque to argus and passed through to the model as given.",
+        "properties": {
+          "bounds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ElementBounds"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where the element is on screen"
+          },
+          "id": {
+            "description": "Caller's id for the element, unique in the request",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "description": "The element's name or label; empty when the element has none",
+            "maxLength": 1024,
+            "title": "Name",
+            "type": "string"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Native attributes keyed by platform, passed through to the model (at most 4096 bytes as JSON)",
+            "title": "Platform"
+          },
+          "role": {
+            "description": "Role, e.g. 'button', 'textbox'",
+            "maxLength": 64,
+            "title": "Role",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current value (a text field's contents), when any",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "id",
+          "role"
+        ],
+        "title": "Element",
+        "type": "object"
+      },
+      "ElementBounds": {
+        "description": "Pixel box of an element, top-left origin.\n\nIn the screenshot's pixel space when the request carries one, else in the\ndevice's screen space. An element scrolled partly off-screen has a\nnegative origin; a collapsed element may have zero width or height.",
+        "properties": {
+          "height": {
+            "description": "Height in pixels",
+            "minimum": 0.0,
+            "title": "Height",
+            "type": "integer"
+          },
+          "width": {
+            "description": "Width in pixels",
+            "minimum": 0.0,
+            "title": "Width",
+            "type": "integer"
+          },
+          "x": {
+            "description": "Left edge in pixels; negative when the element starts off-screen",
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "description": "Top edge in pixels; negative when the element starts off-screen",
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "title": "ElementBounds",
+        "type": "object"
+      },
+      "ElementLocateRequest": {
+        "description": "Argus POST /elements:locate request.\n\nGrounds a natural-language query in a list of UI elements: the model picks\none of `elements`. The screenshot is optional context; the answer is\nalways an element, never a point.",
+        "properties": {
+          "elements": {
+            "description": "Candidate elements",
+            "items": {
+              "$ref": "#/components/schemas/Element"
+            },
+            "maxItems": 2000,
+            "minItems": 1,
+            "title": "Elements",
+            "type": "array"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "maxLength": 16777216,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional base64 screenshot (PNG or JPEG) the element bounds are in",
+            "title": "Image"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "VLM model to use; must be one of the models from GET /models. Omit to use the server's configured default.",
+            "title": "Model"
+          },
+          "query": {
+            "description": "Natural-language target description",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query",
+          "elements"
+        ],
+        "title": "ElementLocateRequest",
+        "type": "object"
+      },
+      "ElementLocateResponse": {
+        "description": "Argus POST /elements:locate response.\n\n`element_id` is one of the request's element ids when `found`, else null.\nIt names the element rather than indexing the list, so the answer does\nnot depend on element order. The billing fields match screenshot locate.",
+        "properties": {
+          "completion_tokens": {
+            "default": 0,
+            "description": "Completion (output) tokens the model billed for this call",
+            "minimum": 0.0,
+            "title": "Completion Tokens",
+            "type": "integer"
+          },
+          "confidence": {
+            "description": "Model self-reported confidence",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "cost_microdollars": {
+            "description": "Provider-reported cost in microdollars",
+            "minimum": 0.0,
+            "title": "Cost Microdollars",
+            "type": "integer"
+          },
+          "element_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The chosen element's id; null when not found",
+            "title": "Element Id"
+          },
+          "found": {
+            "description": "Whether the model picked an element",
+            "title": "Found",
+            "type": "boolean"
+          },
+          "latency_ms": {
+            "description": "End-to-end VLM call latency",
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "description": "Model identifier returned by the provider",
+            "title": "Model",
+            "type": "string"
+          },
+          "prompt_tokens": {
+            "default": 0,
+            "description": "Prompt (input) tokens the model billed for this call",
+            "minimum": 0.0,
+            "title": "Prompt Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "found",
+          "confidence",
+          "model",
+          "cost_microdollars",
+          "latency_ms"
+        ],
+        "title": "ElementLocateResponse",
         "type": "object"
       },
       "HashResult": {
@@ -452,6 +493,7 @@
           },
           "image": {
             "description": "Base64 encoded image data",
+            "maxLength": 16777216,
             "title": "Image",
             "type": "string"
           },
@@ -557,6 +599,7 @@
         "properties": {
           "image": {
             "description": "Base64 encoded image (PNG or JPEG)",
+            "maxLength": 16777216,
             "title": "Image",
             "type": "string"
           },
@@ -709,7 +752,7 @@
             "$ref": "#/components/schemas/ModelPricing"
           },
           "type": {
-            "description": "Model type: 'vlm' for the vision-language models served by the locate methods (POST /screenshots:locate, POST /accessibility-trees:locate); 'detect', 'ocr', and 'vision' for the Axilio model line behind POST /screenshots:detect.",
+            "description": "Model type: 'vlm' for the vision-language models served by the locate methods (POST /screenshots:locate, POST /elements:locate); 'detect', 'ocr', and 'vision' for the Axilio model line behind POST /screenshots:detect.",
             "title": "Type",
             "type": "string"
           }
@@ -844,7 +887,7 @@
         "type": "object"
       },
       "SupportedModelsResponse": {
-        "description": "Response for GET /models.\n\nLists every model Argus supports, each with its final post-markup\npricing: the curated VLMs for the element-locator task (per-token\npricing; pass their id as `model` to POST /screenshots:locate or\nPOST /accessibility-trees:locate) and the Axilio\nmodel line behind POST /screenshots:detect (per-page pricing; selected via the\n`ocr_engine` and `inference_type` request fields \u2014 lite = the free\nengine, pro = premium). Lets a client compare cost and validate\n`find(model=...)` up front instead of round-tripping to /locate and\ngetting a 400.\n\nThe VLM set is curated: `/locate` enforces it \u2014 an unsupported model is\nrejected, so this is the authoritative allowlist, not just advisory.\nThe Axilio ids are not /locate targets.\n\nShaped like a standard /v1/models response ({object: \"list\", data: [...]}).",
+        "description": "Response for GET /models.\n\nLists every model Argus supports, each with its final post-markup\npricing: the curated VLMs for the element-locator task (per-token\npricing; pass their id as `model` to POST /screenshots:locate or\nPOST /elements:locate) and the Axilio\nmodel line behind POST /screenshots:detect (per-page pricing; selected via the\n`ocr_engine` and `inference_type` request fields \u2014 lite = the free\nengine, pro = premium). Lets a client compare cost and validate\n`find(model=...)` up front instead of round-tripping to /locate and\ngetting a 400.\n\nThe VLM set is curated: `/locate` enforces it \u2014 an unsupported model is\nrejected, so this is the authoritative allowlist, not just advisory.\nThe Axilio ids are not /locate targets.\n\nShaped like a standard /v1/models response ({object: \"list\", data: [...]}).",
         "properties": {
           "data": {
             "description": "Supported models, sorted by id.",
@@ -886,43 +929,6 @@
         ],
         "title": "TextElementInput",
         "type": "object"
-      },
-      "TreeNodeBounds": {
-        "description": "Pixel box of a tree node, top-left origin.\n\nIn the screenshot's pixel space when the request carries one, else in the\ndevice's screen space. A collapsed node may have zero width or height.",
-        "properties": {
-          "height": {
-            "description": "Height in pixels",
-            "minimum": 0.0,
-            "title": "Height",
-            "type": "integer"
-          },
-          "width": {
-            "description": "Width in pixels",
-            "minimum": 0.0,
-            "title": "Width",
-            "type": "integer"
-          },
-          "x": {
-            "description": "Left edge in pixels",
-            "minimum": 0.0,
-            "title": "X",
-            "type": "integer"
-          },
-          "y": {
-            "description": "Top edge in pixels",
-            "minimum": 0.0,
-            "title": "Y",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "x",
-          "y",
-          "width",
-          "height"
-        ],
-        "title": "TreeNodeBounds",
-        "type": "object"
       }
     },
     "securitySchemes": {
@@ -940,15 +946,15 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/api/v1/accessibility-trees:locate": {
+    "/api/v1/elements:locate": {
       "post": {
-        "description": "Find the node a query describes in an accessibility tree.\n\nAnswers with one of the request's node ids, or not found; never a point.",
-        "operationId": "accessibility_trees_locate",
+        "description": "Find the element a query describes among the given UI elements.\n\nAnswers with one of the request's element ids, or not found; never a point.",
+        "operationId": "elements_locate",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AccessibilityTreeLocateRequest"
+                "$ref": "#/components/schemas/ElementLocateRequest"
               }
             }
           },
@@ -959,7 +965,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccessibilityTreeLocateResponse"
+                  "$ref": "#/components/schemas/ElementLocateResponse"
                 }
               }
             },
@@ -1031,10 +1037,12 @@
             "AxilioApiKey": []
           }
         ],
-        "summary": "Locate In Tree",
+        "summary": "Locate Element",
         "tags": [
-          "Accessibility Trees"
-        ]
+          "Elements"
+        ],
+        "x-fern-sdk-group-name": "elements",
+        "x-fern-sdk-method-name": "locate"
       }
     },
     "/api/v1/models": {
@@ -1056,7 +1064,9 @@
         "summary": "List Models",
         "tags": [
           "Models"
-        ]
+        ],
+        "x-fern-sdk-group-name": "models",
+        "x-fern-sdk-method-name": "list"
       }
     },
     "/api/v1/screenshots:detect": {
@@ -1153,7 +1163,9 @@
         "summary": "Detect Screenshot",
         "tags": [
           "Screenshots"
-        ]
+        ],
+        "x-fern-sdk-group-name": "screenshots",
+        "x-fern-sdk-method-name": "detect"
       }
     },
     "/api/v1/screenshots:locate": {
@@ -1250,7 +1262,9 @@
         "summary": "Locate In Screenshot",
         "tags": [
           "Screenshots"
-        ]
+        ],
+        "x-fern-sdk-group-name": "screenshots",
+        "x-fern-sdk-method-name": "locate"
       }
     }
   },
@@ -1262,7 +1276,7 @@
   ],
   "tags": [
     {
-      "name": "Accessibility Trees"
+      "name": "Elements"
     },
     {
       "name": "Models"

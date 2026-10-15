@@ -77,7 +77,7 @@ input, so each request and answer fits its input exactly:
 | [Models: list](/api-reference/argus/list-models) | None. Public, no API key. | The model catalog with live pricing. |
 | [Screenshots: detect](/api-reference/argus/screenshots-detect) | A screenshot. | Every detected icon and text element. |
 | [Screenshots: locate](/api-reference/argus/screenshots-locate) | A screenshot and a query. | A pixel box, or a match in OCR text you supplied. |
-| [Accessibility trees: locate](/api-reference/argus/accessibility-trees-locate) | Accessibility tree nodes, a query, and an optional screenshot. | The chosen node's ID, or not found. |
+| [Elements: locate](/api-reference/argus/elements-locate) | UI elements you already have, a query, and an optional screenshot. | The chosen element's ID, or not found. |
 
 Argus uses the same API key header and the same
 [problem details](/reference/errors#problem-details) error shape as the REST

@@ -21,8 +21,8 @@ Pass a `model` from [Models: list](/api-reference/argus/list-models), or omit
 it to use the default. The call is billed per token on that model, and the
 response reports `prompt_tokens`, `completion_tokens`, and `cost_microdollars`.
 
-If you already have the screen's accessibility tree, use
-[Accessibility trees: locate](/api-reference/argus/accessibility-trees-locate)
-instead. It answers with a node, which is exact where a box is approximate.
+If you already have the screen's UI elements, for example from a DOM, use
+[Elements: locate](/api-reference/argus/elements-locate) instead. It answers
+with one of your elements, which is exact where a box is approximate.
 
 Errors use the [problem details](/reference/errors#problem-details) shape.

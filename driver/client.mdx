@@ -1,7 +1,7 @@
 ---
 title: "Client"
 sidebarTitle: "Client"
-description: "Open a dedicated-phone driver with Python, or call the Argus API on your own screenshots and accessibility trees."
+description: "Open a dedicated-phone driver with Python, or call the Argus API on your own screenshots and UI elements."
 ---
 
 import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
@@ -43,16 +43,18 @@ phone when the block exits. An OCR engine or model set on a
 ## Call Argus on your own input
 
 The phone driver already uses Argus for screen understanding. Call the Argus
-API directly when the input is a screenshot or an accessibility tree that you
-provide. Argus has one operation per kind of input, because a screenshot is
-answered with a box and a tree is answered with a node. The CLI does not
-expose a direct Argus command.
+API directly when the input is a screenshot or a list of UI elements that you
+provide, such as DOM nodes. Argus has one operation per kind of input, because
+a screenshot is answered with a box and a list of elements with one of those
+elements. The CLI does not expose a direct Argus command.
 
 <Note>
-  The Python and Go clients for the Argus API are being regenerated for these
-  operations. Until that SDK release, call them over HTTP as shown below. Every
+  The Python and Go clients for the Argus API don't cover these operations yet.
+  Until an SDK release does, call them over HTTP as shown below. Every
   operation except the model list needs your API key in `X-Axilio-Api-Key`.
 </Note>
+
+<WindowsCurlNote />
 
 ### Locate a described target in a screenshot
 
@@ -77,33 +79,34 @@ When `found` is true, the response carries either a pixel `bbox` or, if you
 sent OCR results as `texts`, a `matched_text_index` into that list. The request
 also accepts an optional `model`.
 
-### Locate a described node in an accessibility tree
+### Locate a described element among your UI elements
 
 REST API References:
 
-- [**Accessibility trees: locate**](/api-reference/argus/accessibility-trees-locate): `POST /api/v1/accessibility-trees:locate`
+- [**Elements: locate**](/api-reference/argus/elements-locate): `POST /api/v1/elements:locate`
 
 ```bash
 jq -n \
   --arg query "the Sign in button" \
   '{
     query: $query,
-    nodes: [
-      {node_id: "13", role: "textbox", name: "Password"},
-      {node_id: "14", role: "button", name: "Sign in"}
+    elements: [
+      {id: "13", role: "textbox", name: "Password"},
+      {id: "14", role: "button", name: "Sign in"}
     ]
   }' |
   curl --silent --show-error --fail-with-body \
     --request POST \
-    --url https://argus.axilio.ai/api/v1/accessibility-trees:locate \
+    --url https://argus.axilio.ai/api/v1/elements:locate \
     --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
     --header "Content-Type: application/json" \
     --data-binary @-
 ```
 
-The response names one of your `node_id` values, or reports `found: false`.
-Each node can also carry `value`, pixel `bounds`, and a `platform` object of
-native attributes, and the request accepts an optional screenshot as `image`.
+The response names one of your element IDs as `element_id`, or reports
+`found: false`. Each element can also carry `value`, pixel `bounds`, and a
+`platform` object of native attributes, and the request accepts an optional
+screenshot as `image`.
 
 ### Detect text and icons in a screenshot
 

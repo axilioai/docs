@@ -186,15 +186,15 @@ to track what you actually spend.
 ## Calling Argus directly
 
 The driver runs Argus for you on the live screen. If you have your own image
-or accessibility tree to analyze, call the Argus API directly. It uses the same
+or UI elements to analyze, call the Argus API directly. It uses the same
 models and has one operation per input:
 
 - [**Screenshots: detect**](/api-reference/argus/screenshots-detect) finds
   icons and reads text in an image.
 - [**Screenshots: locate**](/api-reference/argus/screenshots-locate) finds a
   described element in an image.
-- [**Accessibility trees: locate**](/api-reference/argus/accessibility-trees-locate)
-  picks the described node from accessibility tree nodes you send.
+- [**Elements: locate**](/api-reference/argus/elements-locate)
+  picks the described element from UI elements you send, such as DOM nodes.
 
 See [Call Argus on your own input](/driver/client#call-argus-on-your-own-input)
 for examples.
