@@ -15,7 +15,9 @@ model reads the image and answers in one of two ways when `found` is true:
 
 Argus does not run OCR for this operation. To ground answers in text, call
 [Screenshots: detect](/api-reference/argus/screenshots-detect) first and pass
-its text results as `texts`.
+its text results as `texts` unchanged: detect already returns each text box
+normalized to `[0, 1]` of the image, which is the form `texts` takes. Only the
+answer's `bbox` is in pixels.
 
 Pass a `model` from [Models: list](/api-reference/argus/list-models), or omit
 it to use the default. The call is billed per token on that model, and the
