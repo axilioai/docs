@@ -75,14 +75,14 @@
   }
 
   function fetchModels() {
-    // argus 1.2.0 renamed /inference/models to /vision/models; try the new
+    // argus 2.0 moved the catalog from /vision/models to /models; try the new
     // path first and fall back to the old one so the tables keep rendering
     // across the deploy boundary.
-    return fetch(ARGUS + "/vision/models").then(function (r) {
-      if (!r.ok) { throw new Error("vision path not deployed"); }
+    return fetch(ARGUS + "/models").then(function (r) {
+      if (!r.ok) { throw new Error("models path not deployed"); }
       return r.json();
     }).catch(function () {
-      return fetch(ARGUS + "/inference/models").then(function (r) { return r.json(); });
+      return fetch(ARGUS + "/vision/models").then(function (r) { return r.json(); });
     });
   }
 
