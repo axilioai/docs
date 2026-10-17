@@ -18,9 +18,9 @@ a session and phones in every other status:
 | `out_of_service` | The phone needs a repair at the rack. | After Axilio fixes it. |
 | `suspended` | The phone is on hold by an administrator. | When the hold is lifted. |
 
-Only `active` phones can be allocated. Treat any status you do not recognize
-as unavailable: new statuses may be added, and SDK code that switches over
-every value should keep a default branch.
+Only `active` phones can be allocated. Treat any status you don't recognize
+as unavailable, because new statuses may be added. If your code switches over
+every value, keep a default branch.
 
 ## Find a phone
 
