@@ -369,9 +369,10 @@ browser's WebRTC video and input path, not the DCP connection used by the CLI
 and SDKs.
 
 After an established video connection drops, the Dashboard retries up to three
-times before presenting **Reconnect**. A viewer-limit message means another
-Dashboard or embedded viewer occupies the available slot; close one before
-reconnecting.
+times before presenting **Reconnect**. A viewer-limit message means the session
+already has four connected viewers, counting the Dashboard, hosted links, and
+embedded viewers together; close one before reconnecting. See
+[Viewer limit](/observability/live-view#viewer-limit).
 
 The CLI and SDKs do not expose this Dashboard live-video state. If you already
 control the same session, test the independent DCP path:

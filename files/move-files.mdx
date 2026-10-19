@@ -165,9 +165,15 @@ Delivery status moves from `dispatching` to `dispatched`, then to `delivered`
 or `failed`. The phone may also report `bytes_transferred` while a delivery is
 in progress.
 
+A phone accepts up to eight deliveries in flight at once. A delivery counts
+while it is `dispatching` or `dispatched`, for up to 10 minutes after it was
+created. The ninth returns `402` with the detail
+`phone already has 8 pushes in flight; wait for them to finish`. Push again
+once a delivery reaches `delivered` or `failed`.
+
 ## Download a file
 
-Only a ready file has a `download_url`. The URL is short-lived and needs no
+Only a ready file has a `download_url`. The URL lasts 10 minutes and needs no
 Axilio authentication header.
 
 <Tabs>
