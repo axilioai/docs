@@ -44,8 +44,8 @@ Argus also on the `code`, never on the human-readable text. See
 
 ### Low balance
 
-Starting a run, allocating a shared-pool phone, and a billable Argus call each
-need a balance above zero. When the balance is zero or negative, the status
+To start a run, allocate a shared-pool phone, or make a billable Argus call,
+you need a balance above zero. If your balance is zero or negative, the status
 depends on the call:
 
 | Call | Status | `detail` |
@@ -54,9 +54,13 @@ depends on the call:
 | Allocate a shared-pool phone | `409` | `insufficient balance. a positive balance is required, available: $<amount>` |
 | Billable Argus call | `402` | `insufficient balance` |
 
-Allocating a dedicated phone skips the balance check, because its rental is
-paid in advance. A `409` from allocation can also mean the phone is busy, so
-read the `detail` to tell the two apart.
+When you allocate a dedicated phone, Axilio skips the balance check because
+your organization already pays for the rental.
+
+A `409` from allocation can also mean the phone is busy. The `detail` tells a
+person which one it is, but don't parse it in code. After a `409`, read your
+balance with [**Get account balance**](/api-reference/rest/billing/get-account-balance)
+and add funds if it is zero or less.
 
 ### Problem details
 
