@@ -64,7 +64,8 @@ DCP is a phone protocol. A phone advertises these capability domains:
 | --- | --- |
 | `Protocol` | Handshake — negotiate the protocol version and discover capabilities. |
 | `Device` | Read the static device descriptor (screen size, platform, input modalities). |
-| `Screen` | Screenshot, observe (OCR + icons), and find an element by description. |
+| `Screen` | Screenshot and observe (OCR + icons). |
+| `Locator` | Find a target by visible text or a plain-language description, then tap, fill, press, wait for it, read its text, count matches, or get its bounding box, in one round trip. |
 | `Touch` | Tap, long-press, and swipe at pixel coordinates. |
 | `Keyboard` | Type text and press named keys. |
 
