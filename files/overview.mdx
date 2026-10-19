@@ -30,13 +30,21 @@ ready file has one ID and can be downloaded locally or delivered to a phone.
 - A library file can be up to 100 MiB, which is also the phone-delivery
   ceiling. Files stored under the earlier 1 GiB library limit remain listed,
   but a push still refuses anything over 100 MiB.
+- An organization's library holds up to 10,000 files and 50 GiB. Past either
+  limit, registering an upload returns `402` with the detail
+  `file library holds the maximum 10000 files; delete files to upload more` or
+  `org file storage quota exceeded; delete files to free space`. Delete files
+  to make room.
 - Every library listing reports the organization's current file-count and byte
   usage against its quota. Treat those returned limits as authoritative.
+- An upload URL lasts 15 minutes; the response gives the time left in
+  `upload_expires_in_seconds`. An upload not finished in that time stops
+  counting against the quota.
 - An upload becomes usable after its bytes are verified and its status reaches
   `ready`.
 - A capture has a more detailed `capture_state`. It can remain visible even
   when the phone skips it or the transfer fails.
-- Download URLs are short-lived. List the file again to obtain a new URL after
+- Download URLs last 10 minutes. List the file again to obtain a new URL after
   one expires.
 
 Search and filter the library instead of navigating folders. You can filter by

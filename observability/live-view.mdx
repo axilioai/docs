@@ -355,6 +355,18 @@ parameters customize the surround:
 <iframe src="{live_view_url}?frame=device&bg=1e293b"></iframe>
 ```
 
+## Viewer limit
+
+A session accepts up to four connected viewers at once, counting the
+Dashboard, hosted links, and embedded viewers together. A viewer that is still
+connecting does not keep its place: if one of the four has not finished
+connecting when a new viewer arrives, Axilio drops it to make room.
+
+When all four are connected, the next viewer is refused. The hosted viewer
+shows "This session is at its live-viewer limit." and the Dashboard shows
+**Session full**. Neither retries on its own; reconnect after another viewer
+closes.
+
 ## Protect capability URLs
 
 Anyone with a bearer `live_view_url` can watch the phone and—unless the session

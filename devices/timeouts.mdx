@@ -8,8 +8,10 @@ import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
 
 A session starts when Axilio allocates a phone. The common customer-visible
 boundaries are manual release, an optional idle timeout, and the platform's
-maximum session duration. Axilio can also close a session when its phone
-becomes unavailable.
+maximum session duration. Axilio also ends a session when its phone stops
+reporting for about five minutes. That session completes, and its
+`session.ended` [webhook](/webhooks/events) carries `end_reason`
+`device_lost`.
 
 ## Inspect sessions
 
