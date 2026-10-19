@@ -29,11 +29,11 @@ Argus also on the `code`, never on the human-readable text. See
 | --- | --- | --- |
 | `400 Bad Request` | A business rule or input check failed. | Read the detail, correct the request, and do not retry it unchanged. |
 | `401 Unauthorized` | The credential is missing, invalid, or expired. | Run `axilio login` or supply a valid organization-scoped API key. |
-| `402 Payment Required` | Balance, plan, or quota state blocks the operation. | Read the detail, then correct the account requirement in [**Billing**](https://app.axilio.ai/dashboard/axilio/billing). |
+| `402 Payment Required` | A quota blocks the operation: the balance can't cover starting a run, or the organization's file library or a phone's pending file pushes are full. | Read the detail. Add funds in [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), or free up the quota the detail names. |
 | `403 Forbidden` | The caller lacks the required organization permission. | Select the correct organization or ask an administrator for access. |
 | `404 Not Found` | The resource does not exist or is not visible to the organization. | Verify the ID and organization. |
 | `408 Request Timeout` | The request exceeded a server or gateway deadline. | Retry with backoff only when the operation is safe to repeat. |
-| `409 Conflict` | Current state conflicts with the request, such as a busy phone or duplicate active name. | Refresh the resource, resolve the conflict, and try again. |
+| `409 Conflict` | Current state conflicts with the request, such as a busy phone, a duplicate active name, or a shared-pool allocation the balance can't cover. | Refresh the resource, resolve the conflict, and try again. For a low balance, add funds first. |
 | `405 Method Not Allowed` | The path does not accept this HTTP method. | Check the method against the reference page. |
 | `422 Unprocessable Entity` | The body or query does not match the endpoint schema. | Correct the fields identified by the validation errors. |
 | `429 Too Many Requests` | The caller exceeded a rate limit. | Honor retry guidance and back off. |
@@ -41,6 +41,22 @@ Argus also on the `code`, never on the human-readable text. See
 | `502 Bad Gateway` | A phone or edge service rejected the operation. | Read the detail and correct the upstream condition. |
 | `503 Service Unavailable` | A service is temporarily unavailable. | Retry with backoff. |
 | `504 Gateway Timeout` | A phone or edge service missed its deadline. | Retry later; use a new session if the current one cannot recover. |
+
+### Low balance
+
+Starting a run, allocating a shared-pool phone, and a billable Argus call each
+need a balance above zero. When the balance is zero or negative, the status
+depends on the call:
+
+| Call | Status | `detail` |
+| --- | --- | --- |
+| Start a workflow run | `402` | `insufficient balance to start a run` |
+| Allocate a shared-pool phone | `409` | `insufficient balance. a positive balance is required, available: $<amount>` |
+| Billable Argus call | `402` | `insufficient balance` |
+
+Allocating a dedicated phone skips the balance check, because its rental is
+paid in advance. A `409` from allocation can also mean the phone is busy, so
+read the `detail` to tell the two apart.
 
 ### Problem details
 
