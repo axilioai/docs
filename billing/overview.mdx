@@ -20,15 +20,16 @@ Billing and usage are related but separate:
 
 ## Organization plans
 
-Every organization is on one plan. The plan sets the subscription price, the
+Every organization is on one plan. Your plan sets the subscription price, the
 usage credit it includes, the rate for shared-pool phone time, how many runs
-can execute at once, and how long logs and Telemetry are kept:
+can execute at once, and how long Axilio keeps logs and Telemetry:
 
 <div id="axilio-org-plans" />
 
-A paid plan adds its included credit with each paid invoice, so a yearly
-subscription receives twelve months of credit at once. Hobby's credit is a
-one-time starting balance. Enterprise terms are set by contract.
+Each paid invoice adds your plan's included credit to your balance, so a
+yearly subscription gives you twelve months of credit at once. On Hobby, you
+get the credit once, when you sign up. Your Enterprise contract sets its own
+terms, including retention.
 
 The current plan appears on the dashboard's **Billing** page. The **Change
 Plan** modal shows the options available to your organization without
@@ -40,17 +41,17 @@ navigating away from **Billing**. The page's tabs are **Dedicated Phones**,
 A session runs on one of two kinds of phone:
 
 - **Shared pool**: phones from Axilio's fleet, available to every
-  organization. Session time is billed per second at your plan's rate (see
-  the table above). The charge is deducted from your balance when the session
-  ends, at the rate of the plan the session started on.
+  organization. You pay for session time per second, at your plan's rate (see
+  the table above). When the session ends, Axilio deducts the charge from your
+  balance at the rate of the plan the session started on.
 - **Dedicated**: a phone your organization rents for a daily, weekly, or
-  monthly period. The rental is the charge, and its sessions add no
-  phone-time charge. A dedicated rental is separate from the organization
-  plan. See [Dedicated phone pricing](/billing/plans).
+  monthly period. You pay for the rental, and its sessions add no phone-time
+  charge. The rental is separate from your organization plan. See
+  [Dedicated phone pricing](/billing/plans).
 
-An allocation that names neither a `phone_id` nor a `pool` gets a shared-pool
-phone. To use a rented phone, pass `pool: "dedicated"` or the phone's
-`phone_id`. A shared-pool allocation needs a balance above zero; see
+If you allocate without a `phone_id` or a `pool`, you get a shared-pool phone.
+To use a rented phone, pass `pool: "dedicated"` or the phone's `phone_id`. You
+need a balance above zero to allocate a shared-pool phone. See
 [Errors](/reference/errors) for what a low balance returns.
 
 ## What is billed

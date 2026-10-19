@@ -59,6 +59,14 @@
 
   function days(n) { return n === 1 ? "1 day" : n + " days"; }
 
+  // The catalog carries each plan's standard window. A contract can set its
+  // own, so a custom plan's value is only the default.
+  function retention(p) {
+    var n = (p.limits || {}).log_retention_days;
+    if (!n) { return ""; }
+    return days(n) + (isCustom(p) ? " unless your contract sets another" : "");
+  }
+
   function renderOrgPlans(el) {
     fetchPlans().then(function (plans) {
       if (!plans.length) { return fallback(el); }
@@ -79,20 +87,20 @@
           rate,
           custom ? "Custom" : String(lim.max_concurrent_runs || ""),
           lim.max_workflows ? String(lim.max_workflows) : "Unlimited",
-          lim.log_retention_days ? days(lim.log_retention_days) : ""
+          retention(p)
         ];
       });
-      el.innerHTML = buildTable(["Plan", "Price", "Included credit", "Shared-pool phone time", "Concurrent runs", "Saved workflows", "Log and Telemetry retention"], rows);
+      el.innerHTML = buildTable(["Plan", "Price", "Included credit", "Shared-pool phone time", "Concurrent runs", "Saved workflows", "Standard log and Telemetry retention"], rows);
     }).catch(function () { fallback(el); });
   }
 
   function renderPlanRetention(el) {
     fetchPlans().then(function (plans) {
       var rows = plans.filter(function (p) { return (p.limits || {}).log_retention_days; }).map(function (p) {
-        return ["<strong>" + escapeHTML(p.name) + "</strong>", days(p.limits.log_retention_days)];
+        return ["<strong>" + escapeHTML(p.name) + "</strong>", retention(p)];
       });
       if (!rows.length) { return fallback(el); }
-      el.innerHTML = buildTable(["Plan", "Telemetry access window"], rows);
+      el.innerHTML = buildTable(["Plan", "Standard Telemetry access window"], rows);
     }).catch(function () { fallback(el); });
   }
 
