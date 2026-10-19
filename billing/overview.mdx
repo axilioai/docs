@@ -1,7 +1,7 @@
 ---
 title: "Billing"
 sidebarTitle: "Overview"
-description: "Understand dedicated rentals, inference usage, balance, and invoices."
+description: "Understand organization plans, shared-pool phone time, dedicated rentals, inference usage, balance, and invoices."
 ---
 
 Billing and usage are related but separate:
@@ -18,23 +18,47 @@ Billing and usage are related but separate:
 - [**Dedicated phone pricing**](/billing/plans) shows the current daily, weekly,
   and monthly rental prices.
 
-## Organization plans and dedicated rentals
+## Organization plans
 
-An organization plan is an account-level setting shown on the dashboard's
-**Billing** page. It can determine account terms such as included credit,
-concurrency, and usage pricing. The **Change Plan** modal shows the options
-available to your organization without navigating away from **Billing**.
-The page's tabs are **Dedicated Phones**, **Invoices**, and **Preferences**.
+Every organization is on one plan. Your plan sets the subscription price, the
+usage credit it includes, the rate for shared-pool phone time, how many runs
+can execute at once, and how long Axilio keeps logs and Telemetry:
 
-A dedicated rental reserves one specific phone for a daily, weekly, or monthly
-period. It is separate from the organization plan. See
-[Dedicated phone pricing](/billing/plans) for the customer-facing rental
-offering.
+<div id="axilio-org-plans" />
+
+Each paid invoice adds your plan's included credit to your balance, so a
+yearly subscription gives you twelve months of credit at once. On Hobby, you
+get the credit once, when you sign up. Your Enterprise contract sets its own
+terms, including retention.
+
+The current plan appears on the dashboard's **Billing** page. The **Change
+Plan** modal shows the options available to your organization without
+navigating away from **Billing**. The page's tabs are **Dedicated Phones**,
+**Invoices**, and **Preferences**.
+
+## Shared-pool and dedicated phones
+
+A session runs on one of two kinds of phone:
+
+- **Shared pool**: phones from Axilio's fleet, available to every
+  organization. You pay for session time per second, at your plan's rate (see
+  the table above). When the session ends, Axilio deducts the charge from your
+  balance at the rate of the plan the session started on.
+- **Dedicated**: a phone your organization rents for a daily, weekly, or
+  monthly period. You pay for the rental, and its sessions add no phone-time
+  charge. The rental is separate from your organization plan. See
+  [Dedicated phone pricing](/billing/plans).
+
+If you allocate without a `phone_id` or a `pool`, you get a shared-pool phone.
+To use a rented phone, pass `pool: "dedicated"` or the phone's `phone_id`. You
+need a balance above zero to allocate a shared-pool phone. See
+[Errors](/reference/errors) for what a low balance returns.
 
 ## What is billed
 
 | Product | Billing model |
 | --- | --- |
+| Shared-pool phone | Per second of session time, at your plan's rate |
 | Dedicated phone | Flat rental; its sessions add no phone-time charge |
 | Vision inference | Metered per call according to the selected model |
 

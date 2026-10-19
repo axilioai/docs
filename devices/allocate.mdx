@@ -9,6 +9,13 @@ import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
 Start a session on any idle dedicated phone, or pass a `phone_id` to choose an
 exact device.
 
+<Note>
+  If you allocate without a `phone_id` or a `pool`, you get a phone from the
+  shared pool, and you pay for its session time per second. The examples below
+  pass `pool="dedicated"` or a `phone_id` to use a rented phone. See
+  [Shared-pool and dedicated phones](/billing/overview#shared-pool-and-dedicated-phones).
+</Note>
+
 ## Start and release
 
 <Tabs sync={false}>
