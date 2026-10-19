@@ -43,22 +43,28 @@ Telemetry, and `telemetry: false` does not disable a recording.
 
 ## Understand the access window
 
-For the current standard dedicated-phone policy, Telemetry is normally
-accessible for up to 10 days from session creation.
+How long Telemetry stays accessible depends on the
+[organization plan](/billing/overview#organization-plans) the session was
+created under:
 
-Daily, Weekly, and Monthly dedicated rental cadence changes the rental and
-renewal interval. It does not select a different Telemetry retention period.
-An organization-specific policy can still differ from the current standard
-policy.
+<div id="axilio-plan-retention" />
+
+Changing plans later does not change the window for sessions that already
+exist. Daily, Weekly, and Monthly dedicated rentals do not change it either.
+An Enterprise contract can set its own window.
 
 The retention clock begins when the session is created, not when it ends or
 when the last frame arrives. Read `retention_expired` from a retained
 [frames response](/telemetry/retrieve) before interpreting an empty archive.
 
+Once the window closes, the frames response returns no frames and sets
+`retention_expired` to `true`. A daily cleanup job then deletes the stored
+Telemetry. Deletion happens on a later run of that job, not at the instant
+access ends.
+
 <Note>
-  The access period is not a guaranteed minimum. It also does not promise that
-  every physical copy is deleted at the exact instant customer access expires.
-  Access enforcement and physical cleanup are separate lifecycle operations.
+  The access period is not a guaranteed minimum. Access enforcement and
+  physical cleanup are separate lifecycle operations.
 </Note>
 
 If Axilio cannot establish that the session remains inside its access window,

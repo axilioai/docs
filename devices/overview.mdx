@@ -21,6 +21,10 @@ Open [**Phones**](https://app.axilio.ai/dashboard/axilio/phones) to rent a phone
 the dedicated phones your organization already rents. A phone must be idle and
 active before a new session can claim it.
 
+If an allocation names neither a `phone_id` nor a `pool`, it gets a phone from
+the shared pool instead, billed per second of session time. See
+[Shared-pool and dedicated phones](/billing/overview#shared-pool-and-dedicated-phones).
+
 Availability is a snapshot. Another session can claim an idle phone before
 your allocation request reaches the service, so the allocation result is
 always the authority.

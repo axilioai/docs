@@ -1,8 +1,11 @@
 // Live pricing tables. Instead of hardcoding prices, the docs fetch them from the
 // public, CORS-open billing endpoints at view time, so they're never stale:
+//   GET /api/v1/billing/plans
 //   GET /api/v1/billing/phone-rental-plans
 //
 // A page opts in by including an empty element:
+//   <div id="axilio-org-plans" />      -> the organization plans table
+//   <div id="axilio-plan-retention" /> -> each plan's Telemetry access window
 //   <div id="axilio-rental-plans" />   -> the dedicated-phone rental cards
 //   <div id="axilio-models" />         -> the vision-language models table
 //   <div id="axilio-argus-models" />   -> the Axilio (argus) model line table
@@ -15,6 +18,7 @@
   var ARGUS = "https://argus.axilio.ai/api/v1";
 
   function dollars(cents) { return "$" + (cents / 100).toFixed(2); }
+  function microdollars(n) { return "$" + (n / 1e6).toFixed(2); }
   function perMillion(dollarsPerToken) { return "$" + (parseFloat(dollarsPerToken) * 1e6).toFixed(2); }
   function contextWindow(n) { return n >= 1e6 ? (n / 1e6) + "M" : Math.round(n / 1000) + "K"; }
 
@@ -37,6 +41,59 @@
 
   function fallback(el) {
     el.innerHTML = "<p>See the <a href=\"https://axilio.ai\">pricing page</a> for current prices.</p>";
+  }
+
+  function fetchPlans() {
+    return fetch(API + "/billing/plans").then(function (r) { return r.json(); }).then(function (d) {
+      return (d.plans || []).filter(function (p) { return p.is_available; })
+        .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+    });
+  }
+
+  // A plan with no subscription price and no phone-time rate is negotiated
+  // per contract (Enterprise), so its numbers are placeholders, not terms.
+  function isCustom(p) {
+    var pr = p.pricing || {};
+    return !pr.monthly_price_cents && !pr.price_per_second_microdollars;
+  }
+
+  function days(n) { return n === 1 ? "1 day" : n + " days"; }
+
+  function renderOrgPlans(el) {
+    fetchPlans().then(function (plans) {
+      if (!plans.length) { return fallback(el); }
+      var rows = plans.map(function (p) {
+        var pr = p.pricing || {};
+        var lim = p.limits || {};
+        var custom = isCustom(p);
+        var price = custom ? "Custom" : pr.monthly_price_cents ? dollars(pr.monthly_price_cents) + "/month" : "Free";
+        // A free plan's credit is the one-time welcome balance; a paid plan's
+        // is granted again with every paid invoice.
+        var credit = custom ? "Custom" : !pr.included_balance_microdollars ? "None"
+          : microdollars(pr.included_balance_microdollars) + (pr.monthly_price_cents ? "/month" : " at sign-up");
+        var rate = custom ? "Custom" : microdollars(pr.price_per_second_microdollars * 3600) + "/hour";
+        return [
+          "<strong>" + escapeHTML(p.name) + "</strong>",
+          price,
+          credit,
+          rate,
+          custom ? "Custom" : String(lim.max_concurrent_runs || ""),
+          lim.max_workflows ? String(lim.max_workflows) : "Unlimited",
+          lim.log_retention_days ? days(lim.log_retention_days) : ""
+        ];
+      });
+      el.innerHTML = buildTable(["Plan", "Price", "Included credit", "Shared-pool phone time", "Concurrent runs", "Saved workflows", "Log and Telemetry retention"], rows);
+    }).catch(function () { fallback(el); });
+  }
+
+  function renderPlanRetention(el) {
+    fetchPlans().then(function (plans) {
+      var rows = plans.filter(function (p) { return (p.limits || {}).log_retention_days; }).map(function (p) {
+        return ["<strong>" + escapeHTML(p.name) + "</strong>", days(p.limits.log_retention_days)];
+      });
+      if (!rows.length) { return fallback(el); }
+      el.innerHTML = buildTable(["Plan", "Telemetry access window"], rows);
+    }).catch(function () { fallback(el); });
   }
 
   function renderRentals(el) {
@@ -138,6 +195,10 @@
     // div#… (not getElementById): Mintlify slugifies headings into element ids,
     // so a heading like "## Axilio models" also carries id="axilio-models" and
     // getElementById would hand us the heading instead of our anchor div.
+    var op = document.querySelector("div#axilio-org-plans");
+    if (op && !op.dataset.loaded) { op.dataset.loaded = "1"; renderOrgPlans(op); }
+    var pr = document.querySelector("div#axilio-plan-retention");
+    if (pr && !pr.dataset.loaded) { pr.dataset.loaded = "1"; renderPlanRetention(pr); }
     var r = document.querySelector("div#axilio-rental-plans");
     if (r && !r.dataset.loaded) { r.dataset.loaded = "1"; renderRentals(r); }
     var m = document.querySelector("div#axilio-models");
