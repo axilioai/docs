@@ -110,7 +110,7 @@ steps separately.
     REST API References:
 
     - [**Register a file upload**](/api-reference/rest/files/register-a-file-upload): `POST /files`
-    - [**Mark an upload complete**](/api-reference/rest/files/mark-an-upload-complete): `POST /files/{file_id}/complete`
+    - [**Mark an upload complete**](/api-reference/rest/files/mark-an-upload-complete): `POST /files/{file_id}:complete`
     - [**Deliver a library file to a phone**](/api-reference/rest/phones/deliver-a-library-file-to-a-phone): `POST /phones/{phone_id}/deliveries`
 
     Register the upload. Use the exact byte count and media type for the file:
@@ -144,7 +144,7 @@ steps separately.
 
     curl --silent --show-error --fail-with-body \
       --request POST \
-      --url "https://api.axilio.ai/api/v1/files/$FILE_ID/complete" \
+      --url "https://api.axilio.ai/api/v1/files/${FILE_ID}:complete" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
 
@@ -332,7 +332,7 @@ name they used at push time.
   </Tab>
   <Tab title="Python SDK">
     ```python
-    renamed = client.files.rename(
+    renamed = client.files.update(
         "<file-id>",
         filename="launch-photo.jpg",
     )
@@ -357,7 +357,7 @@ name they used at push time.
         ctx := context.Background()
         c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
 
-        renamed, err := c.Files.Rename(ctx, &platformgo.FileRenameRequest{
+        renamed, err := c.Files.Update(ctx, &platformgo.FileRenameRequest{
             FileID:   "<file-id>",
             Filename: "launch-photo.jpg",
         })
@@ -371,7 +371,7 @@ name they used at push time.
   <Tab title="REST API">
     REST API References:
 
-    - [**Rename a file**](/api-reference/rest/files/rename-a-file): `PATCH /files/{file_id}`
+    - [**Update a file**](/api-reference/rest/files/update-a-file): `PATCH /files/{file_id}`
 
     <WindowsCurlNote />
 

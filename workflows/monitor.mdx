@@ -146,8 +146,9 @@ A scheduled run you cancel never starts.
 
 ## Read history and statistics
 
-Recent runs and historical reporting are separate queries. Use history for a
-bounded time window and statistics for a workflow's total and success rate.
+Recent runs and historical reporting are separate queries. Use history for the
+runs that finished in a time window, and statistics for a workflow's total and
+success rate.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -162,11 +163,11 @@ bounded time window and statistics for a workflow's total and success rate.
     from datetime import datetime, timezone
 
     history = client.runs.list_historic(
-        start_date=datetime(2026, 8, 1, tzinfo=timezone.utc),
-        end_date=datetime(2026, 8, 28, tzinfo=timezone.utc),
+        completed_after=datetime(2026, 8, 1, tzinfo=timezone.utc),
+        completed_before=datetime(2026, 8, 28, tzinfo=timezone.utc),
         workflow_id="wf_123",
     )
-    stats = client.runs.stats("wf_123")
+    stats = client.workflows.get_run_stats("wf_123")
     print(stats.total_runs, stats.success_rate)
     ```
   </Tab>
@@ -174,12 +175,12 @@ bounded time window and statistics for a workflow's total and success rate.
   <Tab title="Go SDK">
     ```go
     history, err := api.Runs.ListHistoric(ctx, &platformgo.RunsListHistoricRequest{
-        StartDate:  platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
-        EndDate:    platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
-        WorkflowID: platformgo.String("wf_123"),
+        CompletedAfter:  platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
+        CompletedBefore: platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
+        WorkflowID:      platformgo.String("wf_123"),
     })
 
-    stats, err := api.Runs.Stats(ctx, &platformgo.RunsStatsRequest{
+    stats, err := api.Workflows.GetRunStats(ctx, &platformgo.WorkflowsGetRunStatsRequest{
         WorkflowID: "wf_123",
     })
     ```
@@ -189,17 +190,17 @@ bounded time window and statistics for a workflow's total and success rate.
     REST API References:
 
     - [**List run history**](/api-reference/rest/runs/list-run-history): `GET /runs/history`
-    - [**Get workflow stats**](/api-reference/rest/runs/get-workflow-stats): `GET /runs/stats/{workflow_id}`
+    - [**Get a workflow's run stats**](/api-reference/rest/workflows/get-a-workflows-run-stats): `GET /workflows/{workflow_id}/run-stats`
 
     <WindowsCurlNote />
 
     ```bash
     curl --silent --show-error --fail-with-body \
-      --url "https://api.axilio.ai/api/v1/runs/history?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&workflow_id=wf_123&limit=50&offset=0" \
+      --url "https://api.axilio.ai/api/v1/runs/history?completed_after=2026-08-01T00%3A00%3A00Z&completed_before=2026-08-28T00%3A00%3A00Z&workflow_id=wf_123&limit=50&offset=0" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
 
     curl --silent --show-error --fail-with-body \
-      --url https://api.axilio.ai/api/v1/runs/stats/wf_123 \
+      --url https://api.axilio.ai/api/v1/workflows/wf_123/run-stats \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
   </Tab>

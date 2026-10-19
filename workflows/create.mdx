@@ -226,7 +226,7 @@ revision so the action remains auditable.
     for revision in history.revisions or []:
         print(revision.revision, revision.id, revision.message)
 
-    client.workflows.restore_revision("wf_123", revision_id="rev_456")
+    client.workflows.restore_revision("wf_123", "rev_456")
     ```
   </Tab>
 
@@ -242,7 +242,7 @@ revision so the action remains auditable.
 
     restored, err := api.Workflows.RestoreRevision(
         ctx,
-        &platformgo.WorkflowRestoreRevisionRequest{
+        &platformgo.WorkflowsRestoreRevisionRequest{
             WorkflowID: "wf_123",
             RevisionID: "rev_456",
         },
@@ -254,7 +254,7 @@ revision so the action remains auditable.
     REST API References:
 
     - [**List workflow revisions**](/api-reference/rest/workflows/list-workflow-revisions): `GET /workflows/{workflow_id}/revisions`
-    - [**Restore a workflow revision**](/api-reference/rest/workflows/restore-a-workflow-revision): `POST /workflows/{workflow_id}/code/restore`
+    - [**Restore a workflow revision**](/api-reference/rest/workflows/restore-a-workflow-revision): `POST /workflows/{workflow_id}/revisions/{revision_id}:restore`
 
     <WindowsCurlNote />
 
@@ -265,10 +265,8 @@ revision so the action remains auditable.
 
     curl --silent --show-error --fail-with-body \
       --request POST \
-      --url https://api.axilio.ai/api/v1/workflows/wf_123/code/restore \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
-      --header "Content-Type: application/json" \
-      --data '{"revision_id":"rev_456"}'
+      --url "https://api.axilio.ai/api/v1/workflows/wf_123/revisions/rev_456:restore" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
   </Tab>
 </Tabs>
