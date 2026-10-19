@@ -10,16 +10,18 @@ name: API Spec Drift
 # previous + new backend version and the list of backend PRs that landed
 # between them.
 #
-# Why version-keyed: info.version only moves on a real customer-facing API
-# change (a CI gate enforces the bump), so this never fires for prose-only
-# spec edits. One PR per version, on its own branch, keeps each release's docs
-# review self-contained.
+# Why version-keyed: a CI gate makes every public-spec change bump
+# info.version, description-only edits included, so each production version
+# that changed the spec gets exactly one PR, on its own branch, keeping each
+# release's docs review self-contained.
 #
-# Why a PR and not auto-generated docs: the api-reference/ pages are
-# hand-written prose shaped around the Python SDK (docs.json has no `openapi`
-# field), so this can't write the docs. It points the author at the backend
-# PRs that drove the change. The guarantee is "a new API version can't ship
-# without a docs PR landing in the queue."
+# What the PR carries: docs.json renders the REST endpoint pages from the
+# committed api-reference/openapi-backend.json, so the PR regenerates that file
+# from the production spec (scripts/sync-openapi.py) and fails if production
+# isn't serving the version that was just deployed. The guide pages are
+# hand-written prose, so the PR also points the author at the backend PRs that
+# drove the change. The guarantee is "a new API version can't ship without a
+# docs PR landing in the queue."
 
 on:
   repository_dispatch:
@@ -42,6 +44,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Regenerate the backend API reference
+        # Fail rather than commit a spec from another version, e.g. a cached
+        # response or a deploy that hasn't finished rolling out.
+        run: |
+          python3 scripts/sync-openapi.py --only backend
+          synced="$(jq -r .info.version api-reference/openapi-backend.json)"
+          if [[ "${synced}" != "${NEW_VERSION}" ]]; then
+            echo "::error::production serves backend v${synced}, expected v${NEW_VERSION}"
+            exit 1
+          fi
+
       - name: Record version + assemble PR body
         env:
           # base64-encoded Markdown list of contributing backend PRs, built by
@@ -58,13 +71,13 @@ jobs:
           {
             echo "The backend shipped a new **production API version**: \`${PREV_VERSION:-none}\` → \`${NEW_VERSION}\`."
             echo
-            echo "The \`api-reference/\` pages are hand-written prose, so they don't"
-            echo "update automatically. Review the backend PRs below and edit the"
-            echo "affected MDX **on this branch** before merging."
+            echo "This PR regenerates \`api-reference/openapi-backend.json\` from the"
+            echo "production spec, so the endpoint reference updates when it merges."
             echo
             echo "> [!IMPORTANT]"
-            echo "> Merging this PR as-is updates no docs — it only records the"
-            echo "> version marker. A human must edit the reference pages."
+            echo "> The guide pages are hand-written and don't update automatically."
+            echo "> Review the backend PRs below and edit the affected MDX **on this"
+            echo "> branch** before merging."
             echo
             echo "## Contributing backend PRs"
             echo
@@ -85,5 +98,5 @@ jobs:
           base: main
           labels: docs-drift
           title: "docs: review API reference for backend v${{ env.NEW_VERSION }}"
-          commit-message: "chore(spec): record backend v${{ env.NEW_VERSION }}"
+          commit-message: "chore(spec): sync the API reference to backend v${{ env.NEW_VERSION }}"
           body-path: /tmp/pr-body.md
