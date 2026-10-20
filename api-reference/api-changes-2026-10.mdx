@@ -82,6 +82,7 @@ brew upgrade axilio
 | Usage metrics costs (were US dollars as decimals) | `infra_costs.total`, `infra_costs.this_period`; `cost_by_product.sessions`, `.inference`, `.other`; each spend chart point's `value` | `infra_costs.total_microdollars` (`this_period` was always equal to it and is gone); `cost_by_product.sessions_microdollars`, `.inference_microdollars`, `.other_microdollars`; `amount_microdollars` |
 | Usage metrics compute-minutes chart point | `value` | `minutes` |
 | Supported app | `model_status` in upper case (`TRAINED`) | lower case (`trained`) |
+| Usage session (`GET /usage/sessions`) | `allocated_by` in upper case (`WORKFLOW_EDITOR`) | lower case (`workflow_editor`), as on `GET /phones/sessions` |
 | Balance | `purchased_next_expiry` | `purchased_expires_at` |
 | Subscription | `current_period_start`, `current_period_end`, `trial_end`, `pending_downgrade_effective_date`, `monthly_price`, `yearly_price` | `current_period_start_at`, `current_period_end_at`, `trial_end_at`, `pending_downgrade_at`, `monthly_price_microdollars`, `yearly_price_microdollars` |
 | Auto-recharge settings | `threshold_cents`, `target_cents` | `threshold_microdollars`, `target_microdollars` |
