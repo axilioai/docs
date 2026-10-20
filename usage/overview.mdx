@@ -50,8 +50,8 @@ The public usage surface has three views:
         granularity="daily",
         timezone="America/Chicago",
     )
-    print(metrics.cost_by_product.sessions)
-    print(metrics.cost_by_product.inference)
+    print(metrics.cost_by_product.sessions_microdollars)
+    print(metrics.cost_by_product.inference_microdollars)
     ```
   </Tab>
 
@@ -66,7 +66,7 @@ The public usage surface has three views:
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println(metrics.CostByProduct.Sessions, metrics.CostByProduct.Inference)
+    fmt.Println(metrics.CostByProduct.SessionsMicrodollars, metrics.CostByProduct.InferenceMicrodollars)
     ```
   </Tab>
 
@@ -243,9 +243,8 @@ Each inference row names the Argus operation it billed in `endpoint`:
 
 Pass any of these values in `endpoint`, which repeats to match several.
 
-Aggregate `cost_by_product` values are US dollars. Session and inference row
-fields whose names end in `_microdollars` use microdollars. One US dollar
-equals 1,000,000 microdollars.
+Every amount is in microdollars, and its name ends in `_microdollars`. One US
+dollar equals 1,000,000 microdollars.
 
 ## Next steps
 
