@@ -4,9 +4,8 @@ sidebarTitle: "Versioning & deprecation"
 description: "How the API is versioned, what can change without notice, how deprecations are announced, and the rate limits that apply to every caller."
 ---
 
-You can build against the Axilio API without watching for surprise breakage.
-This page is the contract: what stays stable, what can change, and exactly how
-you'll hear about anything that goes away.
+This page covers what stays stable, what can change, and how you'll hear about
+anything that changes or goes away.
 
 ## Versioning
 
@@ -23,10 +22,11 @@ https://api.axilio.ai/api/v1
   request fields, new response fields, new enum values, and new headers can
   appear at any time. Write your client so extra fields it doesn't recognize
   are ignored, not errors.
-- **Breaking changes don't ship to `/api/v1`.** Removing or renaming a field,
-  changing a field's type or meaning, tightening validation on existing
-  requests, or removing an endpoint would land in a new version prefix
-  (`/api/v2`), never silently in place.
+- **Breaking changes are listed on a dated changes page.** When a release
+  renames or removes a field, parameter, path or webhook field in `/api/v1`,
+  a changes page lists every old name with its replacement, for example
+  [October 2026](/api-reference/api-changes-2026-10). Upgrade your SDK and CLI
+  with that release.
 
 The [OpenAPI spec](https://api.axilio.ai/openapi.json) is regenerated with
 every release and carries the current API version in `info.version`. If you
@@ -34,8 +34,9 @@ generate a client, generate it from there.
 
 ## Deprecation
 
-When an endpoint or field is scheduled for removal, you hear about it three
-ways, well before anything stops working:
+When an endpoint or field is deprecated ahead of its removal, rather than
+changed in a release, you hear about it three ways, well before anything stops
+working:
 
 1. **In the spec and on these pages.** The operation is marked deprecated in
    the OpenAPI spec (`deprecated: true`) and badged on its reference page,
@@ -48,7 +49,8 @@ ways, well before anything stops working:
    at least **90 days** after the `Sunset` header first appears, and we
    contact organizations that are still calling it before it goes away.
 
-Nothing is removed quietly: no `Sunset` header, no removal.
+Nothing is removed quietly: every removal is either deprecated first or listed
+on a changes page.
 
 ## Rate limits
 

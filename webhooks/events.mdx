@@ -260,7 +260,8 @@ The `data` for each session event, exactly as a **Test** delivery sends it:
 | `auto_recharge.failed` | An automatic top-up fails. Axilio turns auto-recharge off until you turn it back on. |
 
 Amounts use the same units as the [billing API](/billing/balance-and-invoices):
-balances in microdollars with a formatted `balance_display`, invoices in cents.
+every amount is in microdollars (1,000,000 = $1.00), and balances also carry a
+formatted `balance_display`.
 
 ```json
 {

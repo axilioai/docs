@@ -199,7 +199,7 @@ Axilio authentication header.
 
     import httpx
 
-    page = client.files.list(q="photo.jpg")
+    page = client.files.list(search="photo.jpg")
     item = next((file for file in page.files or [] if file.download_url), None)
     if item is None:
         raise RuntimeError("no ready file matched photo.jpg")
@@ -239,7 +239,7 @@ Axilio authentication header.
         c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
 
         page, err := files.List(ctx, c, &platformgo.FilesListRequest{
-            Q: platformgo.String("photo.jpg"),
+            Search: platformgo.String("photo.jpg"),
         })
         if err != nil {
             log.Fatal(err)
@@ -300,7 +300,7 @@ Axilio authentication header.
     DOWNLOAD_URL=$(curl --silent --show-error --fail-with-body \
       --get \
       --url https://api.axilio.ai/api/v1/files \
-      --data-urlencode "q=photo.jpg" \
+      --data-urlencode "search=photo.jpg" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY" |
       jq -r '[.files[]? | select(.status == "ready" and .download_url)][0].download_url // empty')
 

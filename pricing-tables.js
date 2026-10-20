@@ -138,14 +138,9 @@
   }
 
   function fetchModels() {
-    // argus 2.0 moved the catalog from /vision/models to /models; try the new
-    // path first and fall back to the old one so the tables keep rendering
-    // across the deploy boundary.
     return fetch(ARGUS + "/models").then(function (r) {
-      if (!r.ok) { throw new Error("models path not deployed"); }
+      if (!r.ok) { throw new Error("models: " + r.status); }
       return r.json();
-    }).catch(function () {
-      return fetch(ARGUS + "/vision/models").then(function (r) { return r.json(); });
     });
   }
 
