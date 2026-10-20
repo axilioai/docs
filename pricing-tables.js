@@ -18,7 +18,6 @@
   var ARGUS = "https://argus.axilio.ai/api/v1";
 
   function microdollars(n) { return "$" + (n / 1e6).toFixed(2); }
-  function perMillion(dollarsPerToken) { return "$" + (parseFloat(dollarsPerToken) * 1e6).toFixed(2); }
   function contextWindow(n) { return n >= 1e6 ? (n / 1e6) + "M" : Math.round(n / 1000) + "K"; }
 
   function escapeHTML(value) {
@@ -161,8 +160,8 @@
           "<strong>" + m.name + "</strong>",
           m.owned_by || "",
           contextWindow(m.context_window || 0),
-          perMillion(pr.input || 0),
-          perMillion(pr.output || 0)
+          microdollars(pr.input_microdollars_per_million_tokens || 0),
+          microdollars(pr.output_microdollars_per_million_tokens || 0)
         ];
       });
       el.innerHTML = buildTable(["Model", "Provider", "Context", "Input / 1M", "Output / 1M"], rows);
@@ -186,7 +185,7 @@
       if (!models.length) { return fallback(el); }
       var rows = models.map(function (m) {
         var pr = m.pricing || {};
-        var price = pr.per_page ? "$" + pr.per_page + " per call" : "Free";
+        var price = pr.per_page_microdollars ? "$" + pr.per_page_microdollars / 1e6 + " per call" : "Free";
         return [
           "<strong>" + m.name + "</strong>",
           "<code>" + m.id + "</code>",

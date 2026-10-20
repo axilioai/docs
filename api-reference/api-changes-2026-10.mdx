@@ -93,6 +93,7 @@ brew upgrade axilio
 | Webhook delivery metrics point | `time_bucket` | `period_start_at` |
 | Plans (`GET /billing/plans`, public) | `pricing.monthly_price_cents`, `pricing.yearly_price_cents`, `sort_order` | `pricing.monthly_price_microdollars`, `pricing.yearly_price_microdollars`, `display_order` |
 | Phone rental plans (`GET /billing/phone-rental-plans`, public) | `price_cents` | `price_microdollars` |
+| Model catalog (Argus `GET /models`) | `pricing.input`, `pricing.output` (US dollars per token, as strings); `pricing.per_page` (US dollars per call, as a string) | `pricing.input_microdollars_per_million_tokens`, `pricing.output_microdollars_per_million_tokens`, `pricing.per_page_microdollars` (integers) |
 
 ## Webhook payloads
 
