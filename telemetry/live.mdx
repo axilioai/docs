@@ -177,14 +177,14 @@ live gap.
 
     REST API reference:
 
-    - [**Mint a telemetry stream URL**](/api-reference/rest/phones/mint-a-telemetry-stream-url): `POST /phones/sessions/{session_id}/telemetry-token`
+    - [**Mint a telemetry stream URL**](/api-reference/rest/phones/mint-a-telemetry-stream-url): `POST /phones/sessions/{session_id}:createTelemetryToken`
 
     <WindowsCurlNote />
 
     ```bash
     TELEMETRY_URL=$(curl --silent --show-error --fail-with-body \
       --request POST \
-      --url https://api.axilio.ai/api/v1/phones/sessions/sess_123/telemetry-token \
+      --url https://api.axilio.ai/api/v1/phones/sessions/sess_123:createTelemetryToken \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
       | jq -r '.telemetry_url')
 

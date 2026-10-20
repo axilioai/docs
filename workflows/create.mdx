@@ -147,7 +147,7 @@ run.
     current = client.workflows.get_code("wf_123")
     print(current.revision, current.source)
 
-    saved = client.workflows.save_code(
+    saved = client.workflows.create_revision(
         "wf_123",
         source=open("workflow.py", encoding="utf-8").read(),
         message="handle sign-in",
@@ -162,7 +162,7 @@ run.
         WorkflowID: "wf_123",
     })
 
-    saved, err := api.Workflows.SaveCode(ctx, &platformgo.WorkflowSaveCodeRequest{
+    saved, err := api.Workflows.CreateRevision(ctx, &platformgo.WorkflowCreateRevisionRequest{
         WorkflowID: "wf_123",
         Source:     string(sourceBytes),
         Message:    platformgo.String("handle sign-in"),
@@ -174,7 +174,7 @@ run.
     REST API References:
 
     - [**Get current workflow code**](/api-reference/rest/workflows/get-current-workflow-code): `GET /workflows/{workflow_id}/code`
-    - [**Save workflow code**](/api-reference/rest/workflows/save-workflow-code): `POST /workflows/{workflow_id}/code`
+    - [**Save workflow code**](/api-reference/rest/workflows/save-workflow-code): `POST /workflows/{workflow_id}/revisions`
 
     <WindowsCurlNote />
 
@@ -188,7 +188,7 @@ run.
       '{source:$source, message:$message}' |
       curl --silent --show-error --fail-with-body \
         --request POST \
-        --url https://api.axilio.ai/api/v1/workflows/wf_123/code \
+        --url https://api.axilio.ai/api/v1/workflows/wf_123/revisions \
         --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
         --header "Content-Type: application/json" \
         --data-binary @-
