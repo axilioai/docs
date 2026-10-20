@@ -66,6 +66,9 @@ brew upgrade axilio
 | `GET /phones/sessions/{session_id}/files` | `q` | `search` |
 | `GET /files` | `sort`, `order`, `q` | `order_by`, `search` |
 | `GET /billing/history` | `sort_by`, `sort_order`, `date_from`, `date_to` | `order_by`, `invoiced_after`, `invoiced_before` |
+| `GET /billing/phone-rental-subscriptions` | none: every rental in one response | pages with `limit` (default and maximum 100) and `offset`; filters `search`, `status`, `plan_interval`, `cancel_at_period_end`, `payment_status`, `current_period_end_after`, `current_period_end_before`; sorts with `order_by` |
+
+`GET /api-keys` also takes `search`, `created_by_id`, `created_after`, `created_before` and `order_by`. `GET /workflows` also takes `order_by`, whose field is a path into the listed item, for example `order_by=workflow.name asc`. Both are additions, so existing calls keep working.
 
 ## Response fields
 
@@ -87,6 +90,8 @@ brew upgrade axilio
 | Phone rental subscription | `current_period_start`, `current_period_end`, `plan_price_cents` | `current_period_start_at`, `current_period_end_at`, `plan_price_microdollars` |
 | Phone rental summary | `combined_monthly_cents`; each interval's `monthly_cents`; the upcoming charge's `amount_cents` and `date` | `combined_monthly_microdollars`; `monthly_microdollars`; `amount_microdollars` and `due_at` |
 | Webhook delivery metrics point | `time_bucket` | `period_start_at` |
+| Plans (`GET /billing/plans`, public) | `pricing.monthly_price_cents`, `pricing.yearly_price_cents`, `sort_order` | `pricing.monthly_price_microdollars`, `pricing.yearly_price_microdollars`, `display_order` |
+| Phone rental plans (`GET /billing/phone-rental-plans`, public) | `price_cents` | `price_microdollars` |
 
 ## Webhook payloads
 
