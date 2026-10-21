@@ -210,8 +210,10 @@ expose this operation.
 </Tabs>
 
 This operation preserves the session's allocation-time `view_only` and
-`disabled` settings. It refuses inactive sessions, sessions outside your
-organization, and sessions whose live view was disabled. Its response is a
+`disabled` settings. A caller with the viewer role always gets a watch-only
+URL; only members and admins get one that can drive the phone, and only when
+the session wasn't allocated with `view_only`. It refuses inactive sessions,
+sessions outside your organization, and sessions whose live view was disabled. Its response is a
 bearer viewer URL even when the original allocation used organization
 authentication. Minting a new URL does not revoke an older one.
 
