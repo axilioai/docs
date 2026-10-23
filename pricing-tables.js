@@ -59,11 +59,26 @@
 
   function days(n) { return n === 1 ? "1 day" : n + " days"; }
 
+  // A plan keeps every data class for default_retention_days unless it
+  // overrides a class; telemetry_retention_days is that override for
+  // Telemetry. log_retention_days is the older name, read until the API
+  // stops serving it.
+  function first() {
+    for (var i = 0; i < arguments.length; i++) {
+      if (arguments[i] !== undefined && arguments[i] !== null) { return arguments[i]; }
+    }
+    return null;
+  }
+  function telemetryDays(p) {
+    var lim = p.limits || {};
+    return first(lim.telemetry_retention_days, lim.default_retention_days, lim.log_retention_days);
+  }
+
   // The catalog carries each plan's standard window. A contract can set its
   // own, so a custom plan's value is only the default.
   function retention(p) {
-    var n = (p.limits || {}).log_retention_days;
-    if (!n) { return ""; }
+    var n = telemetryDays(p);
+    if (n === null) { return ""; }
     return days(n) + (isCustom(p) ? " unless your contract sets another" : "");
   }
 
@@ -90,13 +105,13 @@
           retention(p)
         ];
       });
-      el.innerHTML = buildTable(["Plan", "Price", "Included credit", "Shared-pool phone time", "Concurrent runs", "Saved workflows", "Standard log and Telemetry retention"], rows);
+      el.innerHTML = buildTable(["Plan", "Price", "Included credit", "Shared-pool phone time", "Concurrent runs", "Saved workflows", "Standard Telemetry retention"], rows);
     }).catch(function () { fallback(el); });
   }
 
   function renderPlanRetention(el) {
     fetchPlans().then(function (plans) {
-      var rows = plans.filter(function (p) { return (p.limits || {}).log_retention_days; }).map(function (p) {
+      var rows = plans.filter(function (p) { return telemetryDays(p) !== null; }).map(function (p) {
         return ["<strong>" + escapeHTML(p.name) + "</strong>", retention(p)];
       });
       if (!rows.length) { return fallback(el); }
