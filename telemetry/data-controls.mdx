@@ -31,15 +31,16 @@ This setting is all-or-nothing:
   available live when storage is disabled is outdated.
 </Warning>
 
-Recording is a separate control. `recording: false` does not disable
-Telemetry, and `telemetry: false` does not disable a recording.
+Recording is a separate control, and it is off by default. Leaving recording
+off does not disable Telemetry, and `telemetry: false` does not disable a
+recording.
 
 | Configuration | Telemetry | Recording |
 | --- | --- | --- |
-| Neither setting is disabled | Live and retained | Captured |
-| `telemetry: false` | Not created | Captured unless separately disabled |
-| `recording: false` | Live and retained | Not captured |
-| Both are `false` | Not created | Not captured |
+| Defaults | Live and retained | Not captured |
+| `recording: true` | Live and retained | Captured |
+| `telemetry: false` | Not created | Not captured |
+| `recording: true` and `telemetry: false` | Not created | Captured |
 
 ## Understand the access window
 

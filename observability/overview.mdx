@@ -43,12 +43,13 @@ compare screen changes with the operations that caused them.
 
 ## Control recording separately
 
-Recording and Telemetry are enabled by default, but they are independent:
+Telemetry is enabled by default and recording is off by default. They are
+independent:
 
-- `recording: false` prevents the screen recording and rolling thumbnail from
-  being written.
+- `recording: true` writes a screen recording of the session. Without it, no
+  recording is written.
 - `telemetry: false` prevents both live and retained Telemetry without
-  disabling recording.
+  affecting recording.
 
 See [Telemetry data controls](/telemetry/data-controls) for retention,
 sensitive-data, and Telemetry opt-out guidance.
