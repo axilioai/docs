@@ -127,7 +127,7 @@ in a [raw frame](/telemetry/frames) without appearing in **Timeline** details.
 
 ## Protect Telemetry access
 
-Retained frames and Telemetry-token requests use your customer API key and
+Retained frames and the event stream accept your customer API key and
 require organization viewer access. A session outside your organization is
 reported the same way as a missing session.
 
@@ -139,10 +139,9 @@ A live `telemetry_url` is a session-scoped bearer secret:
 - do not share it as a device-control or recording credential; and
 - discard it when you no longer need it.
 
-The URL is read-only and stops working no later than the end of the active
-session. There is no refresh message inside the WebSocket. See
-[Live telemetry](/telemetry/live) for attaching and minting another URL while
-the session remains active.
+The URL is read-only, scoped to one session, and expires about an hour after
+it is issued. Read the session again for a fresh one. See
+[Live telemetry](/telemetry/live).
 
 ## Data-handling checklist
 

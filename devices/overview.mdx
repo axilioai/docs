@@ -118,8 +118,8 @@ An allocation returns a `phone_id`, `session_id`, `control_url`, and
 live view:
 
 - `control_url` connects to the Device Control Protocol.
-- `telemetry_url` connects to [live Telemetry](/telemetry/live). The URL is
-  still present when `telemetry=false`, but that session emits no frames.
+- `telemetry_url` opens the session's [live Telemetry](/telemetry/live)
+  event stream. It is omitted when `telemetry=false`.
 - `live_view_url` opens the hosted interactive viewer when live view is
   enabled.
 

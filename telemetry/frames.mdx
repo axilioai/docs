@@ -7,7 +7,7 @@ description: "Parse the span and log frames used by live and retained telemetry.
 A frame is the JSON wire representation of one telemetry span or log. Live
 telemetry and retained retrieval use the same tolerant envelope. Telemetry is
 the product concept; frames are the format you parse when you use the API,
-SDKs, CLI JSON output, or raw WebSocket.
+SDKs, CLI JSON output, or the raw event stream.
 
 Current producers emit two top-level frame kinds: `span` and `log`.
 

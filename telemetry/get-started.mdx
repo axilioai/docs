@@ -76,8 +76,7 @@ the same session-scoped record.
 
     The helper retrieves every retained page. Use `telemetry.summary()` for a
     summary and `telemetry.logs()` for logs only. To follow an active session,
-    pass an allocation or token-mint `telemetry_url`, then iterate
-    `telemetry.tail()`. See [Follow live Telemetry](/telemetry/live) for the
+    iterate `telemetry.tail()`. See [Follow live Telemetry](/telemetry/live) for the
     complete live example.
   </Tab>
 
@@ -102,7 +101,7 @@ the same session-scoped record.
 
     Import the helper from
     `github.com/axilioai/platform-go/drivers/telemetry`. It retrieves every
-    retained page. Use `Tail(ctx)` with a live URL to follow an active session;
+    retained page. Use `telemetry.Tail` with the session's stream URL to follow an active session;
     see [Follow live Telemetry](/telemetry/live) for the complete stream loop.
   </Tab>
 
@@ -125,22 +124,21 @@ the same session-scoped record.
     response-level cost maps, and `retention_expired`. Continue through the
     pages instead of assuming the first response contains the whole session.
 
-    For active streaming, mint a read-only URL with
-    `POST /phones/sessions/{session_id}/telemetry-token`, then follow the raw
-    WebSocket contract in [Live Telemetry](/telemetry/live).
+    For active streaming, read `GET /realtime/sessions/{session_id}/events`
+    (Server-Sent Events) with the same key; see [Live Telemetry](/telemetry/live).
   </Tab>
 </Tabs>
 
 ## 3. Follow the live-to-retained handoff
 
-The live URL works only while the session is active. When the session ends,
-switch to retained retrieval by the same `session_id`.
+The live stream starts with the retained trace so far and closes when the
+session ends. After that, retained retrieval by the same `session_id` holds
+the record.
 
 The Dashboard and CLI reconcile the live view with retained history. The SDK
-helpers expose both paths so your application can do the same. A custom
-WebSocket reader must perform that handoff itself. If it detects a live gap,
-retrieve all available retained pages before treating the local view as
-reconciled.
+helpers expose both paths so your application can do the same. If a custom
+reader suspects a live gap, retrieve all available retained pages before
+treating the local view as reconciled.
 
 <Note>
   Telemetry is best effort. Live delivery can replay frames or contain gaps,
