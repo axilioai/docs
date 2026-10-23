@@ -103,7 +103,7 @@ every metrics endpoint added later will too.
 
 | Parameter | Rule |
 | --- | --- |
-| `period_start_at`, `period_end_at` | Both optional. The end defaults to now, and the start to 7 days before the end. The start may be at most a year before now. |
+| `period_start_at`, `period_end_at` | Both optional. The end defaults to now, and the start to 7 days before the end. The start may be at most a year before now. The window holds its start and not its end. |
 | `granularity` | `hour` or `day`, default `day`. `hour` is allowed for windows of 7 days or less; a longer one is a 422. |
 | `time_zone` | An IANA name such as `America/Los_Angeles`, default `UTC`. A day starts at local midnight and an hour on the local hour. An unknown name is a 422. |
 | `group_by` | Optional, one dimension from the endpoint's list: `product` on usage, `endpoint_id` on webhooks. |
@@ -112,7 +112,7 @@ The response is `{"points": [...]}`: one point per bucket (and per group),
 oldest first, each with `period_start_at` and every measure. A measure is
 named for its unit (`_microdollars`, `_ms`, `_rate` from 0 to 1, or a plain
 count) and is zero for a bucket with no activity. A latency is null when no
-attempt in the bucket recorded one.
+attempt in the bucket recorded one. A webhooks window that needs more buckets than the gateway returns in one read is a 422; shorten it.
 
 ## Webhook payloads
 
