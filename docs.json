@@ -210,7 +210,8 @@
             "icon": "circle-info",
             "pages": [
               "api-reference/overview",
-              "api-reference/versioning"
+              "api-reference/versioning",
+              "api-reference/api-changes-2026-10"
             ]
           },
           {

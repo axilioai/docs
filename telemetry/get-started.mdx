@@ -126,7 +126,7 @@ the same session-scoped record.
     pages instead of assuming the first response contains the whole session.
 
     For active streaming, mint a read-only URL with
-    `POST /phones/sessions/{session_id}/telemetry-token`, then follow the raw
+    `POST /phones/sessions/{session_id}:createTelemetryToken`, then follow the raw
     WebSocket contract in [Live Telemetry](/telemetry/live).
   </Tab>
 </Tabs>

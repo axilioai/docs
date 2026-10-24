@@ -513,6 +513,10 @@
           "ocr_engine": {
             "default": "free",
             "description": "OCR engine to use: 'free' or 'premium'",
+            "enum": [
+              "free",
+              "premium"
+            ],
             "title": "Ocr Engine",
             "type": "string"
           }
@@ -753,6 +757,12 @@
           },
           "type": {
             "description": "Model type: 'vlm' for the vision-language models served by the locate methods (POST /screenshots:locate, POST /elements:locate); 'detect', 'ocr', and 'vision' for the Axilio model line behind POST /screenshots:detect.",
+            "enum": [
+              "vlm",
+              "detect",
+              "ocr",
+              "vision"
+            ],
             "title": "Type",
             "type": "string"
           }
@@ -769,34 +779,34 @@
         "type": "object"
       },
       "ModelPricing": {
-        "description": "The customer's billed rates in USD.\n\nVLMs price per token (input/output); the Axilio model line prices per\npage, where one screenshot is one page \u2014 so per_page reads as the price\nof one call. A rate is \"0\" when that unit is free for the model.",
+        "description": "The customer's billed rates, in integer microdollars (1,000,000 = $1.00).\n\nVLMs price per token (input/output per million tokens); the Axilio model\nline prices per page, where one screenshot is one page, so\nper_page_microdollars reads as the price of one call. A rate is 0 when\nthat unit is free for the model.",
         "properties": {
-          "input": {
-            "description": "USD per input token.",
-            "title": "Input",
-            "type": "string"
+          "input_microdollars_per_million_tokens": {
+            "description": "Price per million input tokens, in microdollars (1,000,000 = $1.00), after markup.",
+            "title": "Input Microdollars Per Million Tokens",
+            "type": "integer"
           },
-          "output": {
-            "description": "USD per output token.",
-            "title": "Output",
-            "type": "string"
+          "output_microdollars_per_million_tokens": {
+            "description": "Price per million output tokens, in microdollars (1,000,000 = $1.00), after markup.",
+            "title": "Output Microdollars Per Million Tokens",
+            "type": "integer"
           },
-          "per_page": {
+          "per_page_microdollars": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "USD per page (one screenshot = one page) for the per-page-billed Axilio models. Absent for per-token models.",
-            "title": "Per Page"
+            "description": "Price per page (one screenshot = one page), in microdollars (1,000,000 = $1.00), after markup, for the per-page-billed Axilio models. Absent for per-token models.",
+            "title": "Per Page Microdollars"
           }
         },
         "required": [
-          "input",
-          "output"
+          "input_microdollars_per_million_tokens",
+          "output_microdollars_per_million_tokens"
         ],
         "title": "ModelPricing",
         "type": "object"

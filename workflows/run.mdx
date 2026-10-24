@@ -149,7 +149,7 @@ It applies to every run in the request.
 - `start_at` is an RFC 3339 timestamp at least 60 seconds and at most 30 days
   ahead. Anything else returns `422` with the error on `start_at`.
 - A booked run is listed with status `scheduled` and trigger `scheduled`, and
-  its response carries `start_at`. Filter for it with `status_filter=scheduled`.
+  its response carries `start_at`. Filter for it with `status=scheduled`.
 - A run starts within about 15 seconds of `start_at`, then waits for a phone
   like any queued run. Runs booked for the same time are not guaranteed to
   start in any particular order.

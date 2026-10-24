@@ -34,7 +34,7 @@ The public API, SDKs, and CLI do not start checkout, renew, or cancel a rental.
     rentals = client.billing.get_rental_subscriptions()
 
     for rental in rentals.subscriptions or []:
-        print(rental.phone_id, rental.status, rental.current_period_end)
+        print(rental.phone_id, rental.status, rental.current_period_end_at)
     ```
   </Tab>
 
@@ -49,7 +49,7 @@ The public API, SDKs, and CLI do not start checkout, renew, or cancel a rental.
         if rental.PhoneID != nil {
             phoneID = *rental.PhoneID
         }
-        fmt.Println(phoneID, rental.Status, rental.CurrentPeriodEnd)
+        fmt.Println(phoneID, rental.Status, rental.CurrentPeriodEndAt)
     }
     ```
   </Tab>
