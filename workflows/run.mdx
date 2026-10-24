@@ -310,6 +310,11 @@ phone:
   not put passwords, API keys, or other secrets in `variables`.
 </Warning>
 
+Axilio keeps a finished run's `variables` for your plan's data retention
+window, 30 days unless your plan or contract sets another, then deletes them.
+After that, the run still reads back with its status and timings but without
+`variables`. A scheduled or running run keeps its variables until it finishes.
+
 ## Next steps
 
 <CardGroup cols={2}>
