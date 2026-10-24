@@ -19,6 +19,13 @@ The public usage surface has three views:
 
 ## Aggregate metrics
 
+`GET /usage/metrics` returns your spend as points: one per hour or day in the
+time zone you name, each with the total, phone-session and inference spend in
+microdollars (zero when nothing was billed). Add `group_by=product` for one
+series per product. The window defaults to the last 7 days and may start at
+most a year back; hour buckets need a window of 7 days or less. Every metrics
+endpoint takes the same window parameters.
+
 <Tabs sync={false}>
   <Tab title="Dashboard">
     Open [**Usage → Sessions**](https://app.axilio.ai/dashboard/axilio/usage/sessions)
@@ -31,10 +38,10 @@ The public usage surface has three views:
 
   <Tab title="CLI">
     ```bash
-    axilio usage metrics --from 2026-08-01 --to 2026-08-28 --granularity daily
+    axilio usage metrics --from 2026-08-01 --to 2026-08-28 --granularity day
     ```
 
-    Add `-o json` for the chart series as well as the summary.
+    Add `-o json` for every point as well as the total.
   </Tab>
 
   <Tab title="Python SDK">
@@ -47,26 +54,31 @@ The public usage surface has three views:
     metrics = client.usage.get_metrics(
         period_start_at=start,
         period_end_at=end,
-        granularity="daily",
-        timezone="America/Chicago",
+        granularity="day",
+        time_zone="America/Chicago",
     )
-    print(metrics.cost_by_product.sessions_microdollars)
-    print(metrics.cost_by_product.inference_microdollars)
+    for point in metrics.points:
+        print(point.period_start_at, point.session_cost_microdollars, point.inference_cost_microdollars)
+    total = sum(point.total_cost_microdollars for point in metrics.points)
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
     metrics, err := api.Usage.GetMetrics(ctx, &platformgo.UsageGetMetricsRequest{
-        PeriodStartAt: platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
-        PeriodEndAt:   platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
-        Granularity:   platformgo.UsageGetMetricsRequestGranularityDaily.Ptr(),
-        Timezone:      platformgo.String("America/Chicago"),
+        PeriodStartAt: platformgo.Time(platformgo.MustParseDateTime("2026-08-01T00:00:00Z")),
+        PeriodEndAt:   platformgo.Time(platformgo.MustParseDateTime("2026-08-28T00:00:00Z")),
+        Granularity:   platformgo.UsageGetMetricsRequestGranularityDay.Ptr(),
+        TimeZone:      platformgo.String("America/Chicago"),
     })
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println(metrics.CostByProduct.SessionsMicrodollars, metrics.CostByProduct.InferenceMicrodollars)
+    var total int64
+    for _, point := range metrics.Points {
+        total += point.TotalCostMicrodollars
+    }
+    fmt.Println(total)
     ```
   </Tab>
 
@@ -79,7 +91,7 @@ The public usage surface has three views:
 
     ```bash
     curl --silent --show-error --fail-with-body \
-      --url "https://api.axilio.ai/api/v1/usage/metrics?period_start_at=2026-08-01T00%3A00%3A00Z&period_end_at=2026-08-28T00%3A00%3A00Z&granularity=daily" \
+      --url "https://api.axilio.ai/api/v1/usage/metrics?period_start_at=2026-08-01T00%3A00%3A00Z&period_end_at=2026-08-28T00%3A00%3A00Z&granularity=day&time_zone=America%2FChicago" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
   </Tab>

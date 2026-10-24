@@ -116,10 +116,10 @@ Dashboard editor session. Do not allocate another phone inside saved workflow
 source. Select the dedicated phone when you
 [queue the run](/workflows/run#select-dedicated-phones).
 
-Recording, Telemetry, and file capture default to enabled. Set
-`recording=false` to suppress video, `telemetry=false` to suppress both live and
-archived Telemetry, or `capture=false` to skip session file capture for every
-run.
+Telemetry and file capture default to enabled, and recording defaults to off.
+Set `recording=true` to record video of every run, `telemetry=false` to
+suppress both live and archived Telemetry, or `capture=false` to skip session
+file capture for every run.
 
 ## Pull and save code
 
@@ -173,7 +173,7 @@ run.
   <Tab title="REST API">
     REST API References:
 
-    - [**Get current workflow code**](/api-reference/rest/workflows/get-current-workflow-code): `GET /workflows/{workflow_id}/code`
+    - [**Get workflow code**](/api-reference/rest/workflows/get-workflow-code): `GET /workflows/{workflow_id}/code`
     - [**Save workflow code**](/api-reference/rest/workflows/save-workflow-code): `POST /workflows/{workflow_id}/revisions`
 
     <WindowsCurlNote />

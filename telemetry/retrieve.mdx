@@ -135,8 +135,7 @@ exactly-once audit ledger or a promise that every live frame was stored.
     `api.Runs.SessionsListFrames(...)` operation when you need raw pages. Use
     `view.Summary(ctx)` for a derived summary and `view.Logs(ctx, false)` for
     retained logs; pass `true` to tail live logs. Use `view.Tail(ctx)` to follow
-    every live frame kind and inspect `stream.Gapped()` during
-    [gap recovery](/telemetry/reliability#recover-after-a-replay-gap).
+    every live frame kind; see [Live telemetry](/telemetry/live).
   </Tab>
 
   <Tab title="REST API">
@@ -229,16 +228,14 @@ your finalized billing records for organization-wide reconciliation.
 
 ## Recover after a live gap
 
-When a raw reader receives `RESYNC_REQUIRED`, or an SDK reports a gap:
+A live frame dropped at publish never reaches the stream. If you suspect a
+gap:
 
 1. Retrieve every available `/frames` page for the session.
 2. Rebuild or reconcile your local trace by frame identity and timeline time.
 3. If the session is still active, reconnect to [live telemetry](/telemetry/live)
-   using a current opaque cursor.
+   with your last cursor as `Last-Event-ID`.
 4. Continue to tolerate replayed frames after reconnect.
-
-A live reconnect does not fill missing retained history automatically. The
-available retained record is the recovery source.
 
 ## Next steps
 
@@ -247,7 +244,7 @@ available retained record is the recovery source.
     Interpret frame fields, types, relationships, and attributes.
   </Card>
   <Card title="Live telemetry" icon="signal-stream" href="/telemetry/live">
-    Follow an active session and resume from an opaque cursor.
+    Follow a session and resume from an opaque cursor.
   </Card>
   <Card title="Telemetry dashboard" icon="timeline" href="/telemetry/understand-a-trace">
     Diagnose timing, output, failures, and cost annotations.
