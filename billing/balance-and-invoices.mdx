@@ -28,7 +28,7 @@ import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
     print(balance.balance_display)
     print(balance.included_microdollars)
     print(balance.purchased_microdollars)
-    print(balance.purchased_next_expiry)
+    print(balance.purchased_expires_at)
     ```
   </Tab>
 
@@ -93,8 +93,8 @@ result as separate fields:
 - `included_microdollars` is the unused included credit in the current period.
 - `purchased_microdollars` is the total remaining purchased credit across all
   unexpired lots.
-- `purchased_next_expiry` is the expiration time of the purchased lot that
-  expires next. It is empty when no purchased credit remains.
+- `purchased_expires_at` is when the purchased lot that expires next stops
+  being usable. It is absent when no purchased credit remains.
 
 When `balance_microdollars` is negative, both live-credit fields are zero. The
 next grant or purchase repays that deficit before adding spendable credit.
@@ -253,8 +253,8 @@ itself remains a dashboard action.
 
     updated = client.billing.update_auto_recharge(
         enabled=True,
-        threshold_cents=500,
-        target_cents=2500,
+        threshold_microdollars=5_000_000,
+        target_microdollars=25_000_000,
     )
     ```
   </Tab>
@@ -265,10 +265,10 @@ itself remains a dashboard action.
 
     updated, err := api.Billing.UpdateAutoRecharge(
         ctx,
-        &platformgo.SubscriptionAutoRechargeSettings{
-            Enabled:        true,
-            ThresholdCents: 500,
-            TargetCents:    2500,
+        &platformgo.SubscriptionAutoRechargeSettingsUpdate{
+            Enabled:               platformgo.Bool(true),
+            ThresholdMicrodollars: platformgo.Int64(5_000_000),
+            TargetMicrodollars:    platformgo.Int64(25_000_000),
         },
     )
     ```
@@ -278,7 +278,7 @@ itself remains a dashboard action.
     REST API References:
 
     - [**Get auto-recharge settings**](/api-reference/rest/billing/get-auto-recharge-settings): `GET /billing/auto-recharge`
-    - [**Update auto-recharge settings**](/api-reference/rest/billing/update-auto-recharge-settings): `PUT /billing/auto-recharge`
+    - [**Update auto-recharge settings**](/api-reference/rest/billing/update-auto-recharge-settings): `PATCH /billing/auto-recharge`
 
     <WindowsCurlNote />
 
@@ -288,14 +288,14 @@ itself remains a dashboard action.
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
 
     curl --silent --show-error --fail-with-body \
-      --request PUT \
+      --request PATCH \
       --url https://api.axilio.ai/api/v1/billing/auto-recharge \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
       --header "Content-Type: application/json" \
       --data '{
         "enabled": true,
-        "threshold_cents": 500,
-        "target_cents": 2500
+        "threshold_microdollars": 5000000,
+        "target_microdollars": 25000000
       }'
     ```
   </Tab>
@@ -331,11 +331,11 @@ Negative-balance alerts are separate, always enabled, and cannot be turned off.
   <Tab title="Python SDK">
     ```python
     alerts = client.billing.get_usage_alerts()
-    print(alerts.enabled, alerts.threshold_cents)
+    print(alerts.enabled, alerts.threshold_microdollars)
 
     updated = client.billing.update_usage_alerts(
         enabled=True,
-        threshold_cents=1000,
+        threshold_microdollars=10_000_000,
     )
     ```
   </Tab>
@@ -346,19 +346,19 @@ Negative-balance alerts are separate, always enabled, and cannot be turned off.
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println(alerts.Enabled, alerts.ThresholdCents)
+    fmt.Println(alerts.Enabled, alerts.ThresholdMicrodollars)
 
     updated, err := api.Billing.UpdateUsageAlerts(
         ctx,
-        &platformgo.SubscriptionUsageAlertSettings{
-            Enabled:        true,
-            ThresholdCents: 1000,
+        &platformgo.SubscriptionUsageAlertSettingsUpdate{
+            Enabled:               platformgo.Bool(true),
+            ThresholdMicrodollars: platformgo.Int64(10_000_000),
         },
     )
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println(updated.Enabled, updated.ThresholdCents)
+    fmt.Println(updated.Enabled, updated.ThresholdMicrodollars)
     ```
   </Tab>
 
@@ -366,7 +366,7 @@ Negative-balance alerts are separate, always enabled, and cannot be turned off.
     REST API References:
 
     - [**Get usage-alert settings**](/api-reference/rest/billing/get-usage-alert-settings): `GET /billing/usage-alerts`
-    - [**Update usage-alert settings**](/api-reference/rest/billing/update-usage-alert-settings): `PUT /billing/usage-alerts`
+    - [**Update usage-alert settings**](/api-reference/rest/billing/update-usage-alert-settings): `PATCH /billing/usage-alerts`
 
     <WindowsCurlNote />
 
@@ -376,17 +376,19 @@ Negative-balance alerts are separate, always enabled, and cannot be turned off.
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
 
     curl --silent --show-error --fail-with-body \
-      --request PUT \
+      --request PATCH \
       --url https://api.axilio.ai/api/v1/billing/usage-alerts \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
       --header "Content-Type: application/json" \
       --data '{
         "enabled": true,
-        "threshold_cents": 1000
+        "threshold_microdollars": 10000000
       }'
     ```
   </Tab>
 </Tabs>
 
+Both updates are partial: send only the fields you are changing, and the
+others keep their values. Amounts are in microdollars (1,000,000 = $1.00).
 Updating auto-recharge or alerts requires an organization admin. An API key
 inherits its creator's organization role.

@@ -45,28 +45,28 @@ The public usage surface has three views:
     end = datetime(2026, 8, 28, tzinfo=timezone.utc)
 
     metrics = client.usage.get_metrics(
-        start_date=start,
-        end_date=end,
+        period_start_at=start,
+        period_end_at=end,
         granularity="daily",
         timezone="America/Chicago",
     )
-    print(metrics.cost_by_product.sessions)
-    print(metrics.cost_by_product.inference)
+    print(metrics.cost_by_product.sessions_microdollars)
+    print(metrics.cost_by_product.inference_microdollars)
     ```
   </Tab>
 
   <Tab title="Go SDK">
     ```go
     metrics, err := api.Usage.GetMetrics(ctx, &platformgo.UsageGetMetricsRequest{
-        StartDate:   platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
-        EndDate:     platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
-        Granularity: platformgo.UsageGetMetricsRequestGranularityDaily.Ptr(),
-        Timezone:    platformgo.String("America/Chicago"),
+        PeriodStartAt: platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
+        PeriodEndAt:   platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
+        Granularity:   platformgo.UsageGetMetricsRequestGranularityDaily.Ptr(),
+        Timezone:      platformgo.String("America/Chicago"),
     })
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println(metrics.CostByProduct.Sessions, metrics.CostByProduct.Inference)
+    fmt.Println(metrics.CostByProduct.SessionsMicrodollars, metrics.CostByProduct.InferenceMicrodollars)
     ```
   </Tab>
 
@@ -79,7 +79,7 @@ The public usage surface has three views:
 
     ```bash
     curl --silent --show-error --fail-with-body \
-      --url "https://api.axilio.ai/api/v1/usage/metrics?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&granularity=daily" \
+      --url "https://api.axilio.ai/api/v1/usage/metrics?period_start_at=2026-08-01T00%3A00%3A00Z&period_end_at=2026-08-28T00%3A00%3A00Z&granularity=daily" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
   </Tab>
@@ -101,8 +101,8 @@ and billing processing state for each phone session.
   <Tab title="Python SDK">
     ```python
     sessions = client.usage.list_sessions(
-        start_date=start,
-        end_date=end,
+        allocated_after=start,
+        allocated_before=end,
         limit=50,
     )
     for session in sessions.sessions or []:
@@ -113,9 +113,9 @@ and billing processing state for each phone session.
   <Tab title="Go SDK">
     ```go
     sessions, err := api.Usage.ListSessions(ctx, &platformgo.UsageListSessionsRequest{
-        StartDate: platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
-        EndDate:   platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
-        Limit:     platformgo.Int64(50),
+        AllocatedAfter:  platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
+        AllocatedBefore: platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
+        Limit:           platformgo.Int64(50),
     })
     ```
   </Tab>
@@ -129,7 +129,7 @@ and billing processing state for each phone session.
 
     ```bash
     curl --silent --show-error --fail-with-body \
-      --url "https://api.axilio.ai/api/v1/usage/sessions?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&limit=50" \
+      --url "https://api.axilio.ai/api/v1/usage/sessions?allocated_after=2026-08-01T00%3A00%3A00Z&allocated_before=2026-08-28T00%3A00%3A00Z&limit=50" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
   </Tab>
@@ -137,18 +137,20 @@ and billing processing state for each phone session.
 
 ### Filter, order, and page session usage
 
-`start_date` and `end_date` are required RFC 3339 timestamps. A session-usage
-request also supports:
+`allocated_after` and `allocated_before` are required RFC 3339 timestamps: the
+response covers the sessions allocated in that window. A session-usage request
+also supports:
 
-- `session_status_filter`;
-- `processed_status_filter`;
+- `session_status` (`active`, `completed`, `cancelled` or `expired`;
+  repeatable);
+- `processed_status` (`pending`, `billed` or `failed`; repeatable);
 - `workflow_id`;
 - `allocated_by`;
 - `search`;
 - `limit` from 1 through 100, defaulting to 50; and
 - a nonnegative `offset`, defaulting to 0.
 
-Use `order_by` with one of `allocated_at`, `deallocated_at`, `duration`,
+Use `order_by` with one of `allocated_at`, `deallocated_at`, `duration_seconds`,
 `cost_microdollars`, `session_status`, `processed_status`, `allocated_by`,
 `session_id`, or `workflow_id`, followed optionally by `asc` or `desc`. The
 default is `allocated_at desc`.
@@ -190,9 +192,9 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
   <Tab title="Python SDK">
     ```python
     inferences = client.usage.list_inferences(
-        start_date=start,
-        end_date=end,
-        endpoint_filter=["locate"],
+        created_after=start,
+        created_before=end,
+        endpoint=["locate"],
         limit=50,
     )
     for inference in inferences.inferences or []:
@@ -205,10 +207,12 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
     inferences, err := api.Usage.ListInferences(
         ctx,
         &platformgo.UsageListInferencesRequest{
-            StartDate:      platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
-            EndDate:        platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
-            EndpointFilter: []string{"locate"},
-            Limit:          platformgo.Int64(50),
+            CreatedAfter:  platformgo.MustParseDateTime("2026-08-01T00:00:00Z"),
+            CreatedBefore: platformgo.MustParseDateTime("2026-08-28T00:00:00Z"),
+            Endpoint: []platformgo.UsageListInferencesRequestEndpointItem{
+                platformgo.UsageListInferencesRequestEndpointItemLocate,
+            },
+            Limit: platformgo.Int64(50),
         },
     )
     ```
@@ -223,7 +227,7 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
 
     ```bash
     curl --silent --show-error --fail-with-body \
-      --url "https://api.axilio.ai/api/v1/usage/inferences?start_date=2026-08-01T00%3A00%3A00Z&end_date=2026-08-28T00%3A00%3A00Z&endpoint_filter=locate&limit=50" \
+      --url "https://api.axilio.ai/api/v1/usage/inferences?created_after=2026-08-01T00%3A00%3A00Z&created_before=2026-08-28T00%3A00%3A00Z&endpoint=locate&limit=50" \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
     ```
   </Tab>
@@ -237,11 +241,10 @@ Each inference row names the Argus operation it billed in `endpoint`:
 | `locate` | [Screenshots: locate](/api-reference/argus/screenshots-locate) | Per token, on the model that ran |
 | `element_locate` | [Elements: locate](/api-reference/argus/elements-locate) | Per token, on the model that ran |
 
-Pass any of these values as the endpoint filter.
+Pass any of these values in `endpoint`, which repeats to match several.
 
-Aggregate `cost_by_product` values are US dollars. Session and inference row
-fields whose names end in `_microdollars` use microdollars. One US dollar
-equals 1,000,000 microdollars.
+Every amount is in microdollars, and its name ends in `_microdollars`. One US
+dollar equals 1,000,000 microdollars.
 
 ## Next steps
 
