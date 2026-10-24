@@ -1,0 +1,124 @@
+---
+title: "API changes, October 2026"
+sidebarTitle: "October 2026 changes"
+description: "Every parameter, field, path and webhook payload renamed in API 0.126.0, with what to use instead."
+---
+
+API 0.126.0 makes the REST API follow one set of naming rules everywhere. Some
+parameters, response fields, paths and webhook fields have new names. The old
+names stop working in this release, so update your code and upgrade your
+clients.
+
+## Upgrade your clients
+
+The SDK and CLI releases that follow API 0.126.0 use the new names. Earlier
+releases call the old ones and fail.
+
+```bash
+pip install -U axilio
+go get github.com/axilioai/platform-go@latest
+brew upgrade axilio
+```
+
+## The rules
+
+| Concept | Rule |
+| --- | --- |
+| Sort | One `order_by=<field> [asc\|desc]`, for example `order_by=created_at desc` (URL-encoded as `created_at%20desc`). The direction defaults to `desc`. |
+| Filters | Named after the field they match: `status`, never `status_filter`. Most filters repeat to match several values. |
+| Search | Free text is `search`. |
+| Time windows | `<field>_after` and `<field>_before`, over the field they filter, for example `allocated_after`. |
+| Timestamps | Every timestamp field ends in `_at`. |
+| Money | Every amount is in microdollars: 1,000,000 = $1.00, so cents × 10,000. Fields end in `_microdollars`. |
+| Updates | `PATCH`, with only the fields you are changing. |
+| Actions | A `:verb` on the resource, for example `POST /files/{file_id}:complete`. |
+| Paths | A `POST` creates in a collection or runs a `:verb`. A subset of a list is a filter, never a path segment. |
+| Spelling | Runs and sessions say `cancelled` (`cancelled_at`). Billing keeps Stripe's `canceled`. |
+
+## Paths and methods
+
+| Before | Now |
+| --- | --- |
+| `GET /runs/stats/{workflow_id}` | `GET /workflows/{workflow_id}/run-stats` |
+| `POST /workflows/{workflow_id}/code/restore` with `revision_id` in the body | `POST /workflows/{workflow_id}/revisions/{revision_id}:restore`, no body |
+| `PATCH /phones/{phone_id}/nickname` | `PATCH /phones/{phone_id}` with `{"nickname": "..."}` |
+| `POST /files/{file_id}/complete` | `POST /files/{file_id}:complete` |
+| `POST /workflows/{workflow_id}/code` | `POST /workflows/{workflow_id}/revisions` |
+| `POST /phones/sessions/{session_id}/live-view-token` | `POST /phones/sessions/{session_id}:createLiveViewToken` |
+| `POST /phones/sessions/{session_id}/telemetry-token` | Removed. Read `GET /realtime/sessions/{session_id}/events` with your API key; see [Live Telemetry](/telemetry/live). |
+| `GET /phones/apps/supported` | `GET /phones/supported-apps` |
+| `GET /phones/sessions/active` | `GET /phones/sessions?status=active` |
+| `PUT /billing/auto-recharge` | `PATCH /billing/auto-recharge` |
+| `PUT /billing/usage-alerts` | `PATCH /billing/usage-alerts` |
+
+## Query parameters
+
+| Endpoint | Before | Now |
+| --- | --- | --- |
+| `GET /runs` | `status_filter`, `trigger_filter` | `status`, `trigger` |
+| `GET /runs/history` | `start_date`, `end_date`, `status_filter` | `completed_after`, `completed_before`, `status` |
+| `GET /usage/metrics` | `start_date`, `end_date` | `period_start_at`, `period_end_at` |
+| `GET /usage/sessions` | `start_date`, `end_date`, `session_status_filter`, `processed_status_filter` | `allocated_after`, `allocated_before`, `session_status`, `processed_status` |
+| `GET /usage/sessions` | `order_by` field `duration` | `duration_seconds` |
+| `GET /usage/inferences` | `start_date`, `end_date`, `endpoint_filter` | `created_after`, `created_before`, `endpoint` |
+| `GET /phones` | `sort`, `order`, `type`, `last_active_after`, `last_active_before` | `order_by`, `phone_type`, `last_heartbeat_after`, `last_heartbeat_before` |
+| `GET /phones/sessions` | `sort`, `order`, `started_after`, `started_before`, `ended_after`, `ended_before` | `order_by`, `allocated_after`, `allocated_before`, `deallocated_after`, `deallocated_before` |
+| `GET /phones/sessions/{session_id}/files` | `q` | `search` |
+| `GET /files` | `sort`, `order`, `q` | `order_by`, `search` |
+| `GET /billing/history` | `sort_by`, `sort_order`, `date_from`, `date_to` | `order_by`, `invoiced_after`, `invoiced_before` |
+| `GET /billing/phone-rental-subscriptions` | none: every rental in one response | pages with `limit` (default and maximum 100) and `offset`; filters `search`, `status`, `plan_interval`, `cancel_at_period_end`, `payment_status`, `current_period_end_after`, `current_period_end_before`; sorts with `order_by` |
+
+`GET /api-keys` also takes `search`, `created_by_id`, `created_after`, `created_before` and `order_by`. `GET /workflows` also takes `order_by`, whose field is a path into the listed item, for example `order_by=workflow.name asc`. Both are additions, so existing calls keep working.
+
+## Response fields
+
+| Resource | Before | Now |
+| --- | --- | --- |
+| Phone | `last_heartbeat`, `last_interaction_timestamp` | `last_heartbeat_at`, `last_interaction_at` |
+| Session (list item and detail) | `nickname` | `phone_nickname` |
+| Run | `canceled_at` | `cancelled_at` |
+| Run history item | `run_id`, `org_id`, `canceled_at` | `id`, `organization_id`, `cancelled_at` |
+| Usage metrics | `period_start`, `period_end`; each chart point's `timestamp` | `period_start_at`, `period_end_at`; `period_start_at` |
+| Usage metrics costs (were US dollars as decimals) | `infra_costs.total`, `infra_costs.this_period`; `cost_by_product.sessions`, `.inference`, `.other`; each spend chart point's `value` | `infra_costs.total_microdollars` (`this_period` was always equal to it and is gone); `cost_by_product.sessions_microdollars`, `.inference_microdollars`, `.other_microdollars`; `amount_microdollars` |
+| Usage metrics compute-minutes chart point | `value` | `minutes` |
+| Supported app | `model_status` in upper case (`TRAINED`) | lower case (`trained`) |
+| Usage session (`GET /usage/sessions`) | `allocated_by` in upper case (`WORKFLOW_EDITOR`) | lower case (`workflow_editor`), as on `GET /phones/sessions` |
+| Balance | `purchased_next_expiry` | `purchased_expires_at` |
+| Subscription | `current_period_start`, `current_period_end`, `trial_end`, `pending_downgrade_effective_date`, `monthly_price`, `yearly_price` | `current_period_start_at`, `current_period_end_at`, `trial_end_at`, `pending_downgrade_at`, `monthly_price_microdollars`, `yearly_price_microdollars` |
+| Auto-recharge settings | `threshold_cents`, `target_cents` | `threshold_microdollars`, `target_microdollars` |
+| Usage-alert settings and active alerts | `threshold_cents`, `balance_cents` | `threshold_microdollars`, `balance_microdollars` |
+| Invoice (billing history) | `invoice_date`, `due_date`, `amount_cents`, `amount_dollars`, `formatted_amount`; `billing_cycle` as `month` or `year` on synced invoices | `invoiced_at`, `due_at`, `amount_microdollars`, `amount_display`; `billing_cycle` is always `daily`, `weekly`, `monthly` or `yearly` |
+| Phone rental subscription | `current_period_start`, `current_period_end`, `plan_price_cents` | `current_period_start_at`, `current_period_end_at`, `plan_price_microdollars` |
+| Phone rental summary | `combined_monthly_cents`; each interval's `monthly_cents`; the upcoming charge's `amount_cents` and `date` | `combined_monthly_microdollars`; `monthly_microdollars`; `amount_microdollars` and `due_at` |
+| Webhook delivery metrics point | `time_bucket` | `period_start_at` |
+| Plans (`GET /billing/plans`, public) | `pricing.monthly_price_cents`, `pricing.yearly_price_cents`, `sort_order` | `pricing.monthly_price_microdollars`, `pricing.yearly_price_microdollars`, `display_order` |
+| Phone rental plans (`GET /billing/phone-rental-plans`, public) | `price_cents` | `price_microdollars` |
+| Model catalog (Argus `GET /models`) | `pricing.input`, `pricing.output` (US dollars per token, as strings); `pricing.per_page` (US dollars per call, as a string) | `pricing.input_microdollars_per_million_tokens`, `pricing.output_microdollars_per_million_tokens`, `pricing.per_page_microdollars` (integers) |
+
+## Webhook payloads
+
+| Events | Before | Now |
+| --- | --- | --- |
+| `run.*` | `canceled_at` | `cancelled_at` |
+| `invoice.paid`, `invoice.payment_failed` | `amount_cents`, `invoice_date` | `amount_microdollars`, `invoiced_at` |
+| `subscription.*` | `current_period_start`, `current_period_end` | `current_period_start_at`, `current_period_end_at` |
+| `phone.rental.*` | `plan_price_cents`, `current_period_start`, `current_period_end` | `plan_price_microdollars`, `current_period_start_at`, `current_period_end_at` |
+
+A phone rental's `canceled_at` and a subscription's `canceled` status keep
+Stripe's spelling.
+
+## SDK methods
+
+The SDKs take the new parameter names as arguments (`period_start_at=` in
+Python, `PeriodStartAt` in Go). These methods also moved:
+
+| Python before | Python now | Go now |
+| --- | --- | --- |
+| `client.runs.stats(workflow_id)` | `client.workflows.get_run_stats(workflow_id)` | `api.Workflows.GetRunStats` |
+| `client.workflows.restore_revision(workflow_id, revision_id=...)` | `client.workflows.restore_revision(workflow_id, revision_id)` | `api.Workflows.RestoreRevision` with `WorkflowsRestoreRevisionRequest` |
+| `client.phones.nickname(...)` | `client.phones.update(phone_id, nickname=...)` | `api.Phones.Update` |
+| `client.files.rename(file_id, filename=...)` | `client.files.update(file_id, filename=...)` | `api.Files.Update` |
+| `client.workflows.save_code(workflow_id, source=...)` | `client.workflows.create_revision(workflow_id, source=...)` | `api.Workflows.CreateRevision` with `WorkflowCreateRevisionRequest` |
+| `client.phones.active_sessions()` | `client.phones.list_sessions(status=["active"])` | `api.Phones.ListSessions` |
+| `client.billing.update_auto_recharge(threshold_cents=..., target_cents=...)` | `client.billing.update_auto_recharge(threshold_microdollars=..., target_microdollars=...)` | `api.Billing.UpdateAutoRecharge` with `SubscriptionAutoRechargeSettingsUpdate` |
+| `client.billing.update_usage_alerts(threshold_cents=...)` | `client.billing.update_usage_alerts(threshold_microdollars=...)` | `api.Billing.UpdateUsageAlerts` with `SubscriptionUsageAlertSettingsUpdate` |

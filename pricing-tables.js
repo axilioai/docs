@@ -17,9 +17,7 @@
   var API = "https://api.axilio.ai/api/v1";
   var ARGUS = "https://argus.axilio.ai/api/v1";
 
-  function dollars(cents) { return "$" + (cents / 100).toFixed(2); }
   function microdollars(n) { return "$" + (n / 1e6).toFixed(2); }
-  function perMillion(dollarsPerToken) { return "$" + (parseFloat(dollarsPerToken) * 1e6).toFixed(2); }
   function contextWindow(n) { return n >= 1e6 ? (n / 1e6) + "M" : Math.round(n / 1000) + "K"; }
 
   function escapeHTML(value) {
@@ -46,7 +44,7 @@
   function fetchPlans() {
     return fetch(API + "/billing/plans").then(function (r) { return r.json(); }).then(function (d) {
       return (d.plans || []).filter(function (p) { return p.is_available; })
-        .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+        .sort(function (a, b) { return (a.display_order || 0) - (b.display_order || 0); });
     });
   }
 
@@ -54,7 +52,7 @@
   // per contract (Enterprise), so its numbers are placeholders, not terms.
   function isCustom(p) {
     var pr = p.pricing || {};
-    return !pr.monthly_price_cents && !pr.price_per_second_microdollars;
+    return !pr.monthly_price_microdollars && !pr.price_per_second_microdollars;
   }
 
   function days(n) { return n === 1 ? "1 day" : n + " days"; }
@@ -74,11 +72,11 @@
         var pr = p.pricing || {};
         var lim = p.limits || {};
         var custom = isCustom(p);
-        var price = custom ? "Custom" : pr.monthly_price_cents ? dollars(pr.monthly_price_cents) + "/month" : "Free";
+        var price = custom ? "Custom" : pr.monthly_price_microdollars ? microdollars(pr.monthly_price_microdollars) + "/month" : "Free";
         // A free plan's credit is the one-time welcome balance; a paid plan's
         // is granted again with every paid invoice.
         var credit = custom ? "Custom" : !pr.included_balance_microdollars ? "None"
-          : microdollars(pr.included_balance_microdollars) + (pr.monthly_price_cents ? "/month" : " at sign-up");
+          : microdollars(pr.included_balance_microdollars) + (pr.monthly_price_microdollars ? "/month" : " at sign-up");
         var rate = custom ? "Custom" : microdollars(pr.price_per_second_microdollars * 3600) + "/hour";
         return [
           "<strong>" + escapeHTML(p.name) + "</strong>",
@@ -129,7 +127,7 @@
           popular,
           "<div class=\"axilio-rental-eyebrow\">Dedicated phone</div>",
           "<h3>" + escapeHTML(p.name) + "</h3>",
-          "<div class=\"axilio-rental-price\"><strong>" + dollars(p.price_cents) + "</strong><span>/" + escapeHTML(p.interval) + "</span></div>",
+          "<div class=\"axilio-rental-price\"><strong>" + microdollars(p.price_microdollars) + "</strong><span>/" + escapeHTML(p.interval) + "</span></div>",
           "<div class=\"axilio-rental-per-phone\">per phone</div>",
           "<ul>" + featureList + "</ul>",
           "</article>"
@@ -140,14 +138,9 @@
   }
 
   function fetchModels() {
-    // argus 2.0 moved the catalog from /vision/models to /models; try the new
-    // path first and fall back to the old one so the tables keep rendering
-    // across the deploy boundary.
     return fetch(ARGUS + "/models").then(function (r) {
-      if (!r.ok) { throw new Error("models path not deployed"); }
+      if (!r.ok) { throw new Error("models: " + r.status); }
       return r.json();
-    }).catch(function () {
-      return fetch(ARGUS + "/vision/models").then(function (r) { return r.json(); });
     });
   }
 
@@ -162,8 +155,8 @@
           "<strong>" + m.name + "</strong>",
           m.owned_by || "",
           contextWindow(m.context_window || 0),
-          perMillion(pr.input || 0),
-          perMillion(pr.output || 0)
+          microdollars(pr.input_microdollars_per_million_tokens || 0),
+          microdollars(pr.output_microdollars_per_million_tokens || 0)
         ];
       });
       el.innerHTML = buildTable(["Model", "Provider", "Context", "Input / 1M", "Output / 1M"], rows);
@@ -187,7 +180,7 @@
       if (!models.length) { return fallback(el); }
       var rows = models.map(function (m) {
         var pr = m.pricing || {};
-        var price = pr.per_page ? "$" + pr.per_page + " per call" : "Free";
+        var price = pr.per_page_microdollars ? "$" + pr.per_page_microdollars / 1e6 + " per call" : "Free";
         return [
           "<strong>" + m.name + "</strong>",
           "<code>" + m.id + "</code>",
