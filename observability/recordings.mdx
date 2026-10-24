@@ -6,9 +6,9 @@ description: "Configure screen recording, understand its states, and replay or d
 
 import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
 
-Screen recording is on by default. When enabled, Axilio records the phone's
-screen and makes the MP4 available after the session ends and its upload
-finishes.
+Screen recording is off by default. Turn it on for a session or a workflow,
+and Axilio records the phone's screen and makes the MP4 available after the
+session ends and its upload finishes.
 
 Recordings are keyed by `session_id`, so the same lookup works for workflow
 runs and directly allocated sessions.
@@ -20,24 +20,29 @@ runs, not sessions that already started.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    Configure one directly allocated session:
+    Record one directly allocated session:
 
     1. Open [**Sessions**](https://app.axilio.ai/dashboard/axilio/sessions).
     2. Click **Allocate A Phone**.
     3. Expand **advanced configuration**.
-    4. Turn **recording** off if you do not want Axilio to capture the screen.
+    4. Turn **recording** on.
     5. Click **Allocate**.
 
-    The Dashboard does not currently expose the workflow-level recording
-    setting. Use the CLI when creating a workflow, or use an SDK or REST to
-    update one.
+    Record a workflow's future runs:
+
+    1. Open the workflow in the editor and open its options.
+    2. Turn **Record runs** on and save.
+
+    A run that was not recorded shows **Recording was off** in the session
+    viewer, with a **Record future runs** button that turns recording on for
+    its workflow.
   </Tab>
 
   <Tab title="CLI">
-    Disable recording when you create a workflow:
+    Record a workflow's runs when you create it:
 
     ```bash
-    axilio workflows create checkout-flow --recording=false
+    axilio workflows create checkout-flow --recording=true
     ```
 
     Confirm its current setting with `axilio workflows get <workflow-id>`.
@@ -46,7 +51,7 @@ runs, not sessions that already started.
   </Tab>
 
   <Tab title="Python SDK">
-    Disable recording for one direct allocation:
+    Record one direct allocation:
 
     ```python
     from axilio.platform import Client
@@ -55,11 +60,11 @@ runs, not sessions that already started.
     allocation = client.phones.allocate(
         phone_type="android",
         phone_id="ph_123",
-        recording=False,
+        recording=True,
     )
     ```
 
-    Disable recording for future runs of an existing workflow:
+    Record future runs of an existing workflow:
 
     ```python
     from axilio.platform import Client
@@ -67,7 +72,7 @@ runs, not sessions that already started.
     client = Client()
     client.workflows.update(
         "wf_123",
-        recording=False,
+        recording=True,
     )
     ```
   </Tab>
@@ -89,12 +94,12 @@ runs, not sessions that already started.
     func main() {
         ctx := context.Background()
         api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
-        recordingOff := false
+        recordingOn := true
 
         allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
             PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
             PhoneID:   platformgo.String("ph_123"),
-            Recording: &recordingOff,
+            Recording: &recordingOn,
         })
         if err != nil {
             log.Fatal(err)
@@ -110,7 +115,7 @@ runs, not sessions that already started.
 
         if _, err := api.Workflows.Update(ctx, &platformgo.WorkflowUpdateRequest{
             WorkflowID: "wf_123",
-            Recording:  &recordingOff,
+            Recording:  &recordingOn,
         }); err != nil {
             log.Fatal(err)
         }
@@ -127,7 +132,7 @@ runs, not sessions that already started.
     - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
     - [**Update a workflow**](/api-reference/rest/workflows/update-a-workflow): `PATCH /workflows/{workflow_id}`
 
-    Disable recording for one direct allocation:
+    Record one direct allocation:
 
     <WindowsCurlNote />
 
@@ -140,11 +145,11 @@ runs, not sessions that already started.
       --data '{
         "phone_type": "android",
         "phone_id": "ph_123",
-        "recording": false
+        "recording": true
       }'
     ```
 
-    Disable recording for future runs of an existing workflow:
+    Record future runs of an existing workflow:
 
     ```bash
     curl --silent --show-error --fail-with-body \
@@ -152,14 +157,14 @@ runs, not sessions that already started.
       --url https://api.axilio.ai/api/v1/workflows/wf_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
       --header "Content-Type: application/json" \
-      --data '{"recording":false}'
+      --data '{"recording":true}'
     ```
   </Tab>
 </Tabs>
 
-When recording is disabled, Axilio does not write a recording or rolling
-thumbnail for that session. Your organization's data-retention policy can also
-prevent recordings from being created or make older recordings unavailable.
+When recording is off, Axilio does not write a recording for that session.
+Your organization's data-retention policy can also prevent recordings from
+being created or make older recordings unavailable.
 
 ## Replay or download a recording
 
@@ -172,7 +177,7 @@ prevent recordings from being created or make older recordings unavailable.
 
     The **Timeline** and **Console** stay synchronized with playback. Select a
     timeline bar or console entry to seek to that point. The viewer shows a
-    processing, expired, or unavailable state when no playable URL exists.
+    processing, expired, or recording-off state when no playable URL exists.
   </Tab>
 
   <Tab title="CLI">
@@ -183,8 +188,8 @@ prevent recordings from being created or make older recordings unavailable.
     axilio sessions recording sess_123 -o json
     ```
 
-    The lookup exits 0 for `ready`, `pending`, and `expired`, so a script can
-    branch on the `status` field.
+    The lookup exits 0 for `ready`, `pending`, `expired`, and `off`, so a
+    script can branch on the `status` field.
 
     Download the MP4. `--wait` polls while the recording is still processing
     (default timeout 10 minutes, exit status 5 when it elapses), and `--force`
@@ -309,13 +314,13 @@ prevent recordings from being created or make older recordings unavailable.
 | Status | Meaning |
 | --- | --- |
 | `ready` | `url` contains a playback link that stays valid for one hour. |
-| `pending` | No recording object is available. The session may still be active, its upload may still be processing, or recording may have been disabled. |
+| `pending` | The session recorded, but the recording is not available yet. The session may still be active, or its upload may still be processing. |
 | `expired` | The recording is outside the organization's retention window. |
+| `off` | The session was not recorded. No recording will appear. |
 
-Only `ready` includes a URL. If you know recording was enabled and the session
-has completed, fetch the lookup again while its upload processes, or let
-`axilio sessions recording <session-id> --wait` poll for you. `pending`
-alone does not promise that a recording will appear.
+Only `ready` includes a URL. For `pending`, fetch the lookup again while the
+upload processes, or let `axilio sessions recording <session-id> --wait` poll
+for you.
 
 ## Next steps
 

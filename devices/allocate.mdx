@@ -148,7 +148,7 @@ use the exact-phone path shown above, so give them a dedicated `phone_id`.
 The public API can also set:
 
 - `name` and `tags` to organize sessions
-- `recording` to enable or disable video
+- `recording` to record video of the session (off by default)
 - `telemetry` to enable or suppress both live and retained Telemetry for this
   directly allocated session
 - `capture` to add media produced on the phone to [Files](/files/overview)
@@ -156,8 +156,8 @@ The public API can also set:
 - `ttl.idle_timeout_seconds` to release an unattended phone
 - `workflow_id` to associate an explicitly allocated session with a workflow
 
-Recording, Telemetry, file capture, and interactive token-authenticated live
-view default to enabled. A session name uses 1 to 64 letters, numbers, dots,
+Telemetry, file capture, and interactive token-authenticated live view default
+to enabled; recording defaults to off. A session name uses 1 to 64 letters, numbers, dots,
 hyphens, or underscores and must be unique among active sessions. An allocation
 accepts up to 50 tags; tag keys are limited to 40 UTF-8 bytes and values to 128
 UTF-8 bytes.
