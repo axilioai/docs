@@ -1,7 +1,7 @@
 ---
 title: "API Reference"
 sidebarTitle: "Overview"
-description: "Use the Axilio REST API for phones, workflows, Files, Telemetry, usage, billing, and organization resources."
+description: "Use the Axilio REST API for phones, agents, runs, Files, Telemetry, usage, billing, and organization resources."
 ---
 
 The REST reference is generated from Axilio's public OpenAPI contract. It covers
@@ -54,7 +54,7 @@ curl.exe https://api.axilio.ai/api/v1/phones/availability `
 | Resource | What you can do | Reference |
 |---|---|---|
 | **Phones and sessions** | Check availability, allocate and release phones, inspect sessions, manage phones, and mint live-view or Telemetry stream URLs. | [List phones](/api-reference/rest/phones/list-the-orgs-phones) · [Check availability](/api-reference/rest/phones/phone-availability-summary) |
-| **Workflows and runs** | Create and revise workflows, start runs immediately, inspect run history and statistics, and cancel runs. | [List workflows](/api-reference/rest/workflows/list-workflows) · [List runs](/api-reference/rest/runs/list-runs) |
+| **Agents and runs** | Create and revise agents, schedule them, start ad hoc or saved runs, pause, answer and follow up, stream a run, read its steps and script, cancel runs, and read run metrics. | [List agents](/api-reference/rest/agents/list-agents) · [Start a run](/api-reference/rest/runs/start-a-run) |
 | **Files** | Upload and manage organization library files, deliver a file to a phone, and list files captured during a session. | [List files](/api-reference/rest/files/list-the-orgs-files) · [List session files](/api-reference/rest/files/list-a-sessions-captured-files) |
 | **Telemetry** | Read a session's Telemetry frames or follow its live event stream. | [List frames](/api-reference/rest/runs/list-a-sessions-telemetry-frames) · [Stream telemetry](/api-reference/rest/phones/stream-a-sessions-telemetry) |
 | **Usage and billing** | Read phone-session and inference usage, account balance, invoices, plan details, and billing preferences. Admins can update auto-recharge and usage-alert settings. | [List session usage](/api-reference/rest/usage/list-phone-sessions-with-cost) · [Get balance](/api-reference/rest/billing/get-account-balance) |
@@ -90,8 +90,8 @@ so each role includes the permissions of the roles below it:
 
 | Role | Can do |
 |---|---|
-| **Viewer** | Read organization, phone, session, workflow, run, file, Telemetry, usage, and billing resources. |
-| **Member** | Everything a viewer can do, plus allocate and manage phones, start or cancel runs, edit workflows, and manage or deliver files. |
+| **Viewer** | Read organization, phone, session, agent, run, file, Telemetry, usage, and billing resources. |
+| **Member** | Everything a viewer can do, plus allocate and manage phones, start, pause, answer or cancel runs, edit agents and schedules, and manage or deliver files. |
 | **Admin** | Everything a member can do, plus manage API keys, view pending invitations, and update auto-recharge or usage-alert settings. |
 
 Authenticated operations declare an `x-required-role` value in the OpenAPI

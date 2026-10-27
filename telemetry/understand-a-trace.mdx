@@ -47,7 +47,7 @@ The raw relationship uses three identifiers:
 | `span_id` | Identifies one operation span. |
 | `parent_span_id` | Links an operation to the span that contains or caused it. A root omits it. |
 
-Completed run spans also preserve the workflow and user context needed to
+Completed run spans also preserve the agent and user context needed to
 identify where a run came from.
 
 Retained Telemetry sorts spans by `start_time_unix_nano` and logs by

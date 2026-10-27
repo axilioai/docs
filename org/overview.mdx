@@ -6,7 +6,7 @@ description: "Understand organization scope, switch organizations, and read orga
 
 import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
 
-An **organization** owns its phones, sessions, workflows, runs, files, API keys,
+An **organization** owns its phones, sessions, agents, runs, files, API keys,
 usage, and billing.
 
 An API key selects one organization for Python SDK, Go SDK, and REST API
@@ -30,7 +30,7 @@ belongs to.
     axilio orgs use example-org
 
     # Override the selection for one command.
-    axilio --org another-org workflows list
+    axilio --org another-org agents list
     ```
 
     Organization switching requires an OAuth login. API-key logins stay bound

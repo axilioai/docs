@@ -1,0 +1,229 @@
+---
+title: "Run a task or an agent"
+sidebarTitle: "Run"
+description: "Start an ad hoc task or a saved agent on a shared or dedicated phone, now, later, or many at once."
+---
+
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
+`POST /runs` starts one run. Send a `task` for an ad hoc run with nothing
+saved, or an `agent_id` to run a saved agent's current revision with its
+settings. The response is the run, with its `id`, `status` and `stream_url`.
+
+<Note>
+  The Python and Go SDKs add these endpoints in their next release. Until
+  then, use the CLI or the REST API shown here.
+</Note>
+
+## Run an ad hoc task
+
+An ad hoc run takes its settings in the request: `model`, `output_schema`,
+`max_steps`, `max_cost_microdollars`, `timeout_seconds`,
+`pause_timeout_seconds`, `recording_enabled` and `telemetry_enabled`. Leave
+them out for the [defaults](/agents/overview#agent-settings).
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Run a task**](https://app.axilio.ai/dashboard/axilio/agents/run).
+    2. Describe the task, for example "Open Settings and report the Android version".
+    3. Optionally, use the options under the box to pick the phone, a result schema, the model and the limits.
+    4. Press **Enter**. The run's page opens with the phone and the agent's steps.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /runs`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/runs \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "task": "Open Settings, go to About phone, and report the Android version.",
+        "output_schema": {
+          "type": "object",
+          "properties": {"android_version": {"type": "string"}},
+          "required": ["android_version"]
+        },
+        "max_cost_microdollars": 2000000
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Run a saved agent
+
+A saved agent's run uses the agent's current revision, model, output schema,
+limits and data settings.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Agents**](https://app.axilio.ai/dashboard/axilio/agents) and select the agent.
+    2. Click **Run**.
+    3. Optionally, choose the phone and, for an instructions agent, the network. Then start the run.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs start --agent agent_123 --variables '{"query": "coffee"}' --watch
+    ```
+
+    `--watch` follows the run to its end, like `axilio runs watch`.
+    `--phone-id` pins the run to a dedicated phone, and `--start-timeout`
+    sets how long it may wait for one.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /runs`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/runs \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "agent_id": "agent_123",
+        "variables": {"query": "coffee"},
+        "start_timeout_seconds": 300
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+`variables` is a JSON object. The run's code reads it as the `variables` dict,
+in both code and agent-mode runs.
+
+`start_timeout_seconds` is how long a queued run may wait for a phone before
+Axilio cancels it, from 60 to 86,400 seconds. The default is 300.
+
+<Warning>
+  Axilio stores and delivers run variables as plaintext. Do not put passwords,
+  API keys, or other secrets in `variables`.
+</Warning>
+
+Axilio keeps a finished run's `variables` for your plan's data retention
+window, 30 days unless your plan or contract sets another, then deletes them.
+After that, the run still reads back with its status and timings but without
+`variables`.
+
+## Choose the phone
+
+Leave out `targets` to run on a shared phone. To run on one of your dedicated
+phones, send one target:
+
+```json
+"targets": [{"device_class": "phone", "phone_id": "ph_123"}]
+```
+
+| Target | Phone |
+| --- | --- |
+| No `targets` | A phone from the shared pool, billed per second. |
+| `{"device_class": "phone", "ownership": "dedicated"}` | Any free dedicated phone of your organization. |
+| `{"device_class": "phone", "phone_id": "ph_123"}` | That dedicated phone. It must be active, or the request returns `400`. If it is busy, the run waits for it, up to its start timeout. |
+| `"capabilities": {"accessibility": true}` | Adds accessibility mode, which needs a phone that supports it. |
+
+A run takes at most one target.
+
+## Give the run internet access
+
+An agent-mode run's code reaches only the phone by default
+(`network: "restricted"`). Set `network: "internet"` when its code needs the
+public internet, for example to download a file. Code runs always have
+internet access, so a code agent's run takes no `network`.
+
+## Keep the phone for follow-ups
+
+After an agent-mode run's turn ends, the run holds its phone for
+`keep_alive_seconds`, so you can send a follow-up on the same screen. The
+default is 120 seconds on `POST /runs` and 0 in a batch. The range is 0 to
+3600, and 0 releases the phone as soon as the turn ends.
+
+A shared phone bills for the hold. Set `keep_alive_seconds: 0` when nobody
+will follow up. See [Pause and follow up](/agents/pause-and-follow-up).
+
+## Book a run for later
+
+Set `start_at` to start the run at a later time instead of now. For recurring
+runs, use a [schedule](/agents/schedules).
+
+```bash
+curl --silent --show-error --fail-with-body \
+  --request POST \
+  --url https://api.axilio.ai/api/v1/runs \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"agent_id": "agent_123", "start_at": "2026-11-01T03:00:00Z"}'
+```
+
+- `start_at` is an RFC 3339 timestamp from a minute to 30 days ahead.
+- A booked run reads status `scheduled` and trigger `scheduled` until it
+  starts. Filter for it with `status=scheduled`.
+- A run starts within about 15 seconds of `start_at`, then waits for a phone
+  like any queued run. `start_timeout_seconds` counts from then.
+- A booked run holds no concurrency slot while it waits.
+- You can [cancel](/agents/monitor#cancel-a-run) a booked run any time
+  before it starts. It then never runs, and a `run.cancelled` webhook is sent.
+
+## Start many runs
+
+`POST /runs:batchCreate` takes up to 1,000 requests, each shaped like a
+`POST /runs` body. All the runs are created, or none is, and an error names the
+request it is for.
+
+<Tabs sync={false}>
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Start several runs**](/api-reference/rest/runs/start-several-runs): `POST /runs:batchCreate`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/runs:batchCreate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "requests": [
+          {"agent_id": "agent_123", "targets": [{"device_class": "phone", "phone_id": "ph_123"}]},
+          {"agent_id": "agent_123", "targets": [{"device_class": "phone", "phone_id": "ph_456"}]},
+          {"agent_id": "agent_123", "variables": {"query": "tea"}}
+        ]
+      }'
+    ```
+
+    The response lists the runs in request order.
+  </Tab>
+</Tabs>
+
+A batch can't name the same dedicated phone twice.
+
+## Concurrency and balance
+
+Your plan's concurrency limit counts running and paused runs. While your
+organization is at the limit, `POST /runs` and `POST /runs:batchCreate` return
+`409`. An accepted batch's runs beyond the limit wait in the queue for a free
+slot. Starting a run with a balance of zero or less returns `402`. See
+[Errors](/reference/errors#low-balance).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Monitor runs" icon="list" href="/agents/monitor">
+    Stream, inspect, cancel and measure the runs.
+  </Card>
+  <Card title="Pause and follow up" icon="comments" href="/agents/pause-and-follow-up">
+    Answer a paused run and send follow-ups.
+  </Card>
+</CardGroup>

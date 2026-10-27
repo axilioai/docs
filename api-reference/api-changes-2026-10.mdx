@@ -1,8 +1,128 @@
 ---
 title: "API changes, October 2026"
 sidebarTitle: "October 2026 changes"
-description: "Every parameter, field, path and webhook payload renamed in API 0.126.0, with what to use instead."
+description: "Workflows become agents and the run's error_message becomes error in the Agents release, and every rename in API 0.126.0, with what to use instead."
 ---
+
+Two October releases change the API in ways that break existing clients:
+
+- The [Agents release](#agents-release) replaces workflows with agents and
+  renames the run's `error_message` to `error`.
+- [API 0.126.0](#naming-rules) renames parameters, fields, paths
+  and webhook fields to follow one set of naming rules.
+
+## Agents release
+
+The Agents release replaces workflows with [agents](/agents/overview). An
+agent's revision is either code, like a workflow's, or instructions: a task
+in plain English that a model works through on the phone. Runs can now start
+from an ad hoc task, pause for a person, take follow-ups on the same phone,
+and run on a schedule. Workflows are not carried over: recreate each one as a
+code agent.
+
+The old routes and names stop working in this release. There is no
+compatibility period, so update your code and clients before you upgrade.
+
+### Upgrade to CLI 0.14
+
+CLI 0.14.0 follows this release. See
+[Upgrade from an earlier CLI](/cli#upgrade-from-an-earlier-cli) for its breaking changes.
+The Python and Go SDKs follow in their next releases. Until then, call the new
+endpoints over REST.
+
+```bash
+brew upgrade axilio
+```
+
+### Removed paths
+
+| Before | Now |
+| --- | --- |
+| `POST /workflows`, `GET /workflows`, `GET`, `PATCH` and `DELETE /workflows/{workflow_id}` | The same operations on `/agents` and `/agents/{agent_id}`. An agent takes `code` or `instructions`. |
+| `POST /workflows/{workflow_id}/runs` | `POST /runs` with `agent_id` for one run, or `POST /runs:batchCreate` for up to 1,000. |
+| `GET /workflows/{workflow_id}/code` | `GET /agents/{agent_id}/revisions/{revision_id}`, whose `code` holds the script. The agent's `current_revision_id` names the current one. |
+| `POST /workflows/{workflow_id}/revisions` with `source` | `POST /agents/{agent_id}/revisions` with `kind` (`code` or `instructions`) and `code` or `instructions`. |
+| `GET /workflows/{workflow_id}/revisions[/{revision_id}]` | `GET /agents/{agent_id}/revisions[/{revision_id}]` |
+| `POST /workflows/{workflow_id}/revisions/{revision_id}:restore` | `POST /agents/{agent_id}:rollback` with `{"revision_id": "..."}` |
+| `GET /workflows/{workflow_id}/run-stats` | `GET /runs/metrics?group_by=agent` |
+| `GET /runs/history` | `GET /runs` lists runs, and `GET /runs/metrics` counts them over a window. |
+
+### Renamed and removed fields
+
+| Where | Before | Now |
+| --- | --- | --- |
+| Run | `error_message` | `error` |
+| Run | `workflow_id`, `workflow_name` | `agent_id`, `agent_name`. An ad hoc run has neither. |
+| Run start | `runs[]` entries with `variables` as a one-element list | One `POST /runs` body per run, with `variables` as an object. Batches send `requests[]`. |
+| `GET /runs` | `workflow_id` | `agent_id` |
+| Session (list item and detail) | `workflow_id`, `workflow_name`; `source` `workflow` | `agent_id`, `agent_name`; `source` `agent` |
+| Session `allocated_by` | `workflow_editor` | Removed. The values are `dashboard_run`, `api_run` and `interactive`. |
+| `GET /phones/sessions`, `GET /usage/sessions` | `workflow_id` filter; `order_by` field `workflow_id` on usage | `agent_id` |
+| Usage session | `workflow_id` | `agent_id` |
+| `POST /phones:allocate` | `workflow_id` | Removed. |
+| Allocation response | `workflow_started_at` | `allocated_at` |
+| Release response | `workflow_id` | `agent_id` |
+| Plans (`GET /billing/plans`) | `limits.max_workflows` | `limits.max_agents` |
+
+The CLI's `runs watch -o json` ends with `error` in place of `error_message`:
+
+```json
+{"error":null,"run_id":"...","status":"completed","watch_end":true}
+```
+
+### Changed behavior
+
+- A run has a `mode`: `agent` when a model drives it, `code` when a script
+  runs. Every former workflow run is a code run.
+- A run can be `paused`, which joins the run status enum and the `status`
+  filter on `GET /runs`.
+- `POST /runs` returns `409` while your organization is at its concurrency
+  limit.
+- After an agent-mode run's turn ends, or after you cancel a running or
+  paused agent-mode run, the run holds its phone for `keep_alive_seconds`: 120
+  seconds by default on `POST /runs`, 0 in a batch. A shared phone bills for
+  that time. Release it with `POST /phones/{phone_id}:deallocate` and the run's
+  `session_id`, or set `keep_alive_seconds: 0`. See
+  [Pause and follow up](/agents/pause-and-follow-up#release-the-phone-early).
+
+### New endpoints and fields
+
+- Agents: `/agents`, their revisions, `:rollback`, and
+  `/revisions/{revision_id}:promote` for a fix a repair proposed. See
+  [Create an agent](/agents/create).
+- Runs: `POST /runs` takes an ad hoc `task` or an `agent_id`, `targets`,
+  `network`, `keep_alive_seconds` and limits. `:pause`, `:resume` and
+  `:sendMessage` pause, answer and follow up. See
+  [Run a task or an agent](/agents/run).
+- A run carries `mode`, `task`, `output`, `result_text`, `usage`,
+  `input_request`, `repair`, `turn`, `turns`, `keep_alive_expires_at` and
+  `stream_url`. `GET /runs` filters by `schedule_id`, `mode` and
+  `device_class`.
+- `GET /realtime/runs/{run_id}/events` streams a run, and
+  `GET /runs/{run_id}/events`, `/steps` and `/script` read its events, model
+  steps and executed code. See [Monitor runs](/agents/monitor).
+- Schedules: `/agents/{agent_id}/schedules`, with `:pause`, `:resume` and
+  `:run`. See [Schedule an agent](/agents/schedules).
+- Metrics: `GET /runs/metrics` and `GET /sessions/metrics`, on the
+  [metrics contract](#metrics). `GET /usage/metrics` adds the `agent`,
+  `model`, `api_key`, `schedule` and `device_class` groups, and the
+  `session_seconds`, `input_tokens` and `output_tokens` measures.
+- `GET /usage/inferences` adds the `agent_chat` endpoint: one model step of an
+  agent-mode run.
+- `GET /models` lists the models an agent can use.
+
+### Agent webhook payloads
+
+| Events | Before | Now |
+| --- | --- | --- |
+| `run.*` | `workflow_id` | `agent_id`, plus `mode`, `revision_id`, `schedule_id`, `repaired` and `turn` |
+| `session.started`, `session.ended` | `workflow_id` | `agent_id` |
+
+New events: `run.paused`, `run.resumed`, `schedule.paused`, `schedule.ended`
+and `schedule.occurrence_skipped`. A run with follow-ups fires `run.started`
+and its end event once per turn. See [Webhook events](/webhooks/events).
+
+## Naming rules
 
 API 0.126.0 makes the REST API follow one set of naming rules everywhere. Some
 parameters, response fields, paths and webhook fields have new names. The old
@@ -10,7 +130,7 @@ names stop working in this release, so update your code and upgrade your
 clients. The same release puts every metrics endpoint on one contract (see
 [Metrics](#metrics)).
 
-## Upgrade your clients
+### Upgrade your clients
 
 The SDK and CLI releases that follow API 0.126.0 use the new names. Earlier
 releases call the old ones and fail.
@@ -21,7 +141,7 @@ go get github.com/axilioai/platform-go@latest
 brew upgrade axilio
 ```
 
-## The rules
+### The rules
 
 | Concept | Rule |
 | --- | --- |
@@ -37,7 +157,10 @@ brew upgrade axilio
 | Paths | A `POST` creates in a collection or runs a `:verb`. A subset of a list is a filter, never a path segment. |
 | Spelling | Runs and sessions say `cancelled` (`cancelled_at`). Billing keeps Stripe's `canceled`. |
 
-## Paths and methods
+### Paths and methods
+
+The Agents release later removed the workflow routes in this table. See
+[Removed paths](#removed-paths).
 
 | Before | Now |
 | --- | --- |
@@ -53,7 +176,7 @@ brew upgrade axilio
 | `PUT /billing/auto-recharge` | `PATCH /billing/auto-recharge` |
 | `PUT /billing/usage-alerts` | `PATCH /billing/usage-alerts` |
 
-## Query parameters
+### Query parameters
 
 | Endpoint | Before | Now |
 | --- | --- | --- |
@@ -73,7 +196,7 @@ brew upgrade axilio
 
 `GET /api-keys` also takes `search`, `created_by_id`, `created_after`, `created_before` and `order_by`. `GET /workflows` also takes `order_by`, whose field is a path into the listed item, for example `order_by=workflow.name asc`. Both are additions, so existing calls keep working.
 
-## Response fields
+### Response fields
 
 | Resource | Before | Now |
 | --- | --- | --- |
@@ -96,7 +219,7 @@ brew upgrade axilio
 | Phone rental plans (`GET /billing/phone-rental-plans`, public) | `price_cents` | `price_microdollars` |
 | Model catalog (Argus `GET /models`) | `pricing.input`, `pricing.output` (US dollars per token, as strings); `pricing.per_page` (US dollars per call, as a string) | `pricing.input_microdollars_per_million_tokens`, `pricing.output_microdollars_per_million_tokens`, `pricing.per_page_microdollars` (integers) |
 
-## Metrics
+### Metrics
 
 `GET /usage/metrics` and `GET /webhooks/metrics` follow one contract, and
 every metrics endpoint added later will too.
@@ -114,7 +237,7 @@ named for its unit (`_microdollars`, `_ms`, `_rate` from 0 to 1, or a plain
 count) and is zero for a bucket with no activity. A latency is null when no
 attempt in the bucket recorded one. A webhooks window that needs more buckets than the gateway returns in one read is a 400; shorten it.
 
-## Webhook payloads
+### Webhook payloads
 
 | Events | Before | Now |
 | --- | --- | --- |
@@ -126,7 +249,7 @@ attempt in the bucket recorded one. A webhooks window that needs more buckets th
 A phone rental's `canceled_at` and a subscription's `canceled` status keep
 Stripe's spelling.
 
-## SDK methods
+### SDK methods
 
 The SDKs take the new parameter names as arguments (`period_start_at=` in
 Python, `PeriodStartAt` in Go). These methods also moved:
