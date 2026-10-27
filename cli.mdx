@@ -228,7 +228,7 @@ cleanup
 ```
 </CodeGroup>
 
-Screen recording is off by default. When a session or workflow turns it on,
+Screen recording is off by default. When a session or agent turns it on,
 download the recording from the CLI once processing finishes:
 
 <CodeGroup>
@@ -273,13 +273,70 @@ Once the sequence is reliable, reproduce it with the
 coordinate gestures only where the whole screen must move, observe after
 important transitions, and preserve guaranteed session cleanup.
 
+## Run agents
+
+An [agent](/agents/overview) is a saved task for a phone, as instructions for
+a model or as Python code. These commands need CLI 0.14.0 or later.
+
+Create an agent, run it, and follow the run to its end:
+
+```bash
+axilio agents create android-version \
+  --instructions "Open Settings, go to About phone, and report the Android version."
+axilio agents list --search android
+axilio runs start --agent <agent-id> --watch
+```
+
+Author a code agent and keep its revisions:
+
+```bash
+axilio agents create search-flow --code search.py
+axilio agents pull <agent-id> --out search.py
+axilio agents push <agent-id> search.py -m "handle sign-in"
+axilio agents revisions <agent-id>
+axilio agents rollback <agent-id> <revision-id>
+```
+
+Inspect and measure runs:
+
+```bash
+axilio runs list --agent <agent-id> --status failed
+axilio runs list --mode agent --schedule <schedule-id>
+axilio runs get <run-id>
+axilio runs metrics --agent <agent-id>
+axilio runs cancel <run-id> --yes
+```
+
+`runs start` runs the agent's current revision. `--phone-id` pins the run to a
+dedicated phone, `--variables` passes a JSON object of inputs, and `--watch`
+follows the run like `runs watch`. `runs metrics` covers the last 7 days
+unless you pass `--from` and `--to`.
+
+### Upgrade from an earlier CLI
+
+CLI 0.14.0 follows the Agents release of the API. It has three breaking
+changes:
+
+- `workflows` is now `agents`, and `workflows restore` is now
+  `agents rollback`. `runs start` takes `--agent <agent-id>` instead of a
+  workflow ID, and `--count` is gone. `sessions start --workflow` is gone, and
+  `sessions list --history --workflow` is now `--agent`.
+- `runs history` and `runs stats` are removed. `runs list` filters by
+  `--agent`, `--schedule`, `--mode` and `--status`, and `runs metrics`
+  replaces `runs stats`.
+- The run's `error_message` field is now `error` in JSON output, including the
+  final `watch_end` line of `runs watch`.
+
+Upgrade with `brew upgrade axilio` or `axilio upgrade`.
+
 ## Command map
 
 | Command group | Customer tasks |
 |---|---|
 | `axilio phones`, `axilio sessions` | Discover phones and manage phone sessions |
 | `axilio phone` | Observe and control the selected session's phone |
-| `axilio workflows`, `axilio runs` | Author workflows and start, inspect, cancel, or watch runs |
+| `axilio agents` | Create agents and manage their revisions |
+| `axilio runs` | Start, list, inspect, watch, cancel, and measure runs |
 | `axilio files` | Upload, list, download, push, and delete library files |
 | `axilio usage` | Read usage metrics and per-inference records |
 | `axilio billing` | Read the organization's balance and plan |

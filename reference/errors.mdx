@@ -1,7 +1,7 @@
 ---
 title: "Errors and recovery"
 sidebarTitle: "Errors"
-description: "Classify API, phone-control, workflow-run, and Dashboard live-video failures and choose a safe recovery."
+description: "Classify API, phone-control, run, and Dashboard live-video failures and choose a safe recovery."
 ---
 
 import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
@@ -10,7 +10,7 @@ Axilio reports failures at four customer-visible layers:
 
 1. **API errors** reject an HTTP request.
 2. **Phone-control errors** occur over the Device Control Protocol.
-3. **Run failures** happen after a workflow run was accepted.
+3. **Run failures** happen after a run was accepted.
 4. **Dashboard live-video errors** affect the browser viewer separately from
    SDK or CLI control.
 
@@ -33,14 +33,14 @@ Argus also on the `code`, never on the human-readable text. See
 | `403 Forbidden` | The caller lacks the required organization permission. | Select the correct organization or ask an administrator for access. |
 | `404 Not Found` | The resource does not exist or is not visible to the organization. | Verify the ID and organization. |
 | `408 Request Timeout` | The request exceeded a server or gateway deadline. | Retry with backoff only when the operation is safe to repeat. |
-| `409 Conflict` | Current state conflicts with the request, such as a busy phone, a duplicate active name, or a shared-pool allocation the balance can't cover. | Refresh the resource, resolve the conflict, and try again. For a low balance, add funds first. |
+| `409 Conflict` | Current state conflicts with the request, such as a busy phone, a duplicate active name, a run started while the organization is at its concurrency limit, a follow-up after a run's phone hold ended, or a shared-pool allocation the balance can't cover. | Refresh the resource, resolve the conflict, and try again. For a low balance, add funds first. |
 | `405 Method Not Allowed` | The path does not accept this HTTP method. | Check the method against the reference page. |
 | `422 Unprocessable Entity` | The body or query does not match the endpoint schema. | Correct the fields identified by the validation errors. |
 | `429 Too Many Requests` | The caller exceeded a rate limit. | Honor retry guidance and back off. |
 | `500 Internal Server Error` | Axilio encountered an unexpected failure. | Retry once with backoff; report it if it persists. |
-| `502 Bad Gateway` | A phone or edge service rejected the operation. | Read the detail and correct the upstream condition. |
+| `502 Bad Gateway` | A phone, or the service in front of it, rejected the operation. | Read the detail and correct the upstream condition. |
 | `503 Service Unavailable` | A service is temporarily unavailable. | Retry with backoff. |
-| `504 Gateway Timeout` | A phone or edge service missed its deadline. | Retry later; use a new session if the current one cannot recover. |
+| `504 Gateway Timeout` | A phone, or the service in front of it, missed its deadline. | Retry later; use a new session if the current one cannot recover. |
 
 ### Low balance
 
@@ -50,7 +50,7 @@ depends on the call:
 
 | Call | Status | `detail` |
 | --- | --- | --- |
-| Start a workflow run | `402` | `insufficient balance to start a run` |
+| Start a run | `402` | `insufficient balance to start a run` |
 | Allocate a shared-pool phone | `409` | `insufficient balance. a positive balance is required, available: $<amount>` |
 | Billable Argus call | `402` | `insufficient balance` |
 
@@ -304,10 +304,10 @@ or coordinate with the existing controller instead of retrying against the
 one-controller guardrail. See [Reconnect and resume](/api-reference/dcp/reconnect)
 for the transport contract.
 
-## Workflow-run failures
+## Run failures
 
-Creating a run can succeed while the run later fails waiting for a phone or
-executing workflow code. A successful fetch of a failed run still returns HTTP
+Starting a run can succeed while the run later fails waiting for a phone or
+while it runs. A successful fetch of a failed run still returns HTTP
 `200` and CLI exit status `0`; branch on the run's `status` field.
 
 <Tabs sync={false}>
@@ -321,7 +321,7 @@ executing workflow code. A successful fetch of a failed run still returns HTTP
     ```python
     run = client.runs.get("run_123")
     if run.status == "failed":
-        print(run.error_message)
+        print(run.error)
     ```
   </Tab>
 
@@ -334,8 +334,8 @@ executing workflow code. A successful fetch of a failed run still returns HTTP
         log.Fatal(err)
     }
     if run.GetStatus() == platformgo.RunResponseStatusFailed {
-        if message := run.GetErrorMessage(); message != nil {
-            log.Print(*message)
+        if reason := run.GetError(); reason != nil {
+            log.Print(*reason)
         }
     }
     ```
@@ -351,12 +351,16 @@ executing workflow code. A successful fetch of a failed run still returns HTTP
     ```bash
     curl --silent --show-error --fail-with-body \
       --url https://api.axilio.ai/api/v1/runs/run_123 \
-      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" |
+      jq '{status, error}'
     ```
   </Tab>
 </Tabs>
 
-Use `error_message` for the terminal reason. Inspect the run's
+Use `error` for the terminal reason. It was named `error_message` before API
+0.151.0. An agent-mode run also lists each step in
+[`GET /runs/{run_id}/steps`](/agents/monitor#read-the-runs-steps), with the
+step's own `error`. Inspect the run's
 [Telemetry](/telemetry/overview) and
 [retained record](/telemetry/retrieve) for the execution sequence and output
 logs.

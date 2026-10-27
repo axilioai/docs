@@ -6,16 +6,16 @@ description: "Configure screen recording, understand its states, and replay or d
 
 import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
 
-Screen recording is off by default. Turn it on for a session or a workflow,
-and Axilio records the phone's screen and makes the MP4 available after the
-session ends and its upload finishes.
+Screen recording is off by default. Turn it on for a session, an agent, or an
+ad hoc run, and Axilio records the phone's screen and makes the MP4 available
+after the session ends and its upload finishes.
 
-Recordings are keyed by `session_id`, so the same lookup works for workflow
-runs and directly allocated sessions.
+Recordings are keyed by `session_id`, so the same lookup works for runs and
+directly allocated sessions. A run's session ID is its run ID.
 
 ## Configure recording
 
-Recording is an allocation-time setting. Changing a workflow affects its future
+Recording is an allocation-time setting. Changing an agent affects its future
 runs, not sessions that already started.
 
 <Tabs sync={false}>
@@ -28,26 +28,25 @@ runs, not sessions that already started.
     4. Turn **recording** on.
     5. Click **Allocate**.
 
-    Record a workflow's future runs:
-
-    1. Open the workflow in the editor and open its options.
-    2. Turn **Record runs** on and save.
+    Record an ad hoc run: on
+    [**Run a task**](https://app.axilio.ai/dashboard/axilio/agents/run), turn
+    on **Record the screen** before you start the run.
 
     A run that was not recorded shows **Recording was off** in the session
-    viewer, with a **Record future runs** button that turns recording on for
-    its workflow.
+    viewer. For a saved agent's run, members also see **Record future runs**,
+    which turns recording on for the agent.
   </Tab>
 
   <Tab title="CLI">
-    Record a workflow's runs when you create it:
+    Record an agent's runs when you create it:
 
     ```bash
-    axilio workflows create checkout-flow --recording=true
+    axilio agents create checkout-flow --code checkout.py --recording=true
     ```
 
-    Confirm its current setting with `axilio workflows get <workflow-id>`.
-    The CLI does not expose a recording flag on `sessions start` or an update
-    command for an existing workflow.
+    Confirm its current setting with `axilio agents get <agent-id>`. The CLI
+    does not expose a recording flag on `sessions start` or an update command
+    for an existing agent.
   </Tab>
 
   <Tab title="Python SDK">
@@ -64,17 +63,8 @@ runs, not sessions that already started.
     )
     ```
 
-    Record future runs of an existing workflow:
-
-    ```python
-    from axilio.platform import Client
-
-    client = Client()
-    client.workflows.update(
-        "wf_123",
-        recording=True,
-    )
-    ```
+    To record an agent's future runs, use the REST API until the SDK adds
+    agents in its next release.
   </Tab>
 
   <Tab title="Go SDK">
@@ -112,25 +102,20 @@ runs, not sessions that already started.
                 log.Printf("release phone: %v", err)
             }
         }()
-
-        if _, err := api.Workflows.Update(ctx, &platformgo.WorkflowUpdateRequest{
-            WorkflowID: "wf_123",
-            Recording:  &recordingOn,
-        }); err != nil {
-            log.Fatal(err)
-        }
     }
     ```
 
-    The allocation setting applies only to `allocation.SessionID`. The
-    workflow update applies to future runs.
+    The allocation setting applies only to `allocation.SessionID`. To record
+    an agent's future runs, use the REST API until the SDK adds agents in its
+    next release.
   </Tab>
 
   <Tab title="REST API">
     REST API References:
 
     - [**Allocate a phone**](/api-reference/rest/phones/allocate-a-phone): `POST /phones:allocate`
-    - [**Update a workflow**](/api-reference/rest/workflows/update-a-workflow): `PATCH /workflows/{workflow_id}`
+    - [**Update an agent**](/api-reference/rest/agents/update-an-agent): `PATCH /agents/{agent_id}`
+    - [**Start a run**](/api-reference/rest/runs/start-a-run): `POST /runs`
 
     Record one direct allocation:
 
@@ -149,16 +134,19 @@ runs, not sessions that already started.
       }'
     ```
 
-    Record future runs of an existing workflow:
+    Record future runs of an existing agent:
 
     ```bash
     curl --silent --show-error --fail-with-body \
       --request PATCH \
-      --url https://api.axilio.ai/api/v1/workflows/wf_123 \
+      --url https://api.axilio.ai/api/v1/agents/agent_123 \
       --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
       --header "Content-Type: application/json" \
-      --data '{"recording":true}'
+      --data '{"recording_enabled": true}'
     ```
+
+    Record one ad hoc run by sending `"recording_enabled": true` on
+    `POST /runs`.
   </Tab>
 </Tabs>
 

@@ -1,0 +1,261 @@
+---
+title: "Monitor runs"
+sidebarTitle: "Monitor"
+description: "List, inspect, stream, cancel and measure runs, and read each run's steps and script."
+---
+
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
+Use the run ID returned when the run started. It is also the run's session ID.
+Phone and session details fill in once the run gets a phone; the ID doesn't
+change.
+
+<Note>
+  The Python and Go SDKs add the agents endpoints in their next release. Until
+  then, use the CLI or the REST API shown here.
+</Note>
+
+## List and inspect runs
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open [**Runs**](https://app.axilio.ai/dashboard/axilio/runs) and filter the
+    list. Open a run for its phone, its chat of steps, its timeline, its cost
+    and its recording.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs list --agent agent_123 --status failed
+    axilio runs list --mode agent
+    axilio runs get run_123
+    ```
+
+    `runs list` also filters by `--schedule`. Add `-o json` for the complete
+    machine-readable result.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List runs**](/api-reference/rest/runs/list-runs): `GET /runs`
+    - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/runs?agent_id=agent_123&status=failed&limit=20" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/runs/run_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+`GET /runs` filters by `agent_id`, `schedule_id`, `mode`, `status`,
+`trigger` and `device_class`, and searches run IDs with `search`. `status` and
+`trigger` repeat to match several values.
+
+## Read how a run ended
+
+A run that started can still fail later, while it waits for a phone or while
+it runs. Fetching a failed run returns HTTP `200`, so branch on `status`:
+
+| Field | What it holds |
+| --- | --- |
+| `status` | `scheduled`, `queued`, `running`, `paused`, `completed`, `failed` or `cancelled`. |
+| `output` | A completed run's result, which matches its `output_schema`. |
+| `result_text` | A short account of the result. |
+| `error` | Why the run failed. |
+| `usage` | The model steps, tokens and cost of the run's model calls, across its turns. |
+| `repair` | On a code run, whether the model took over and the fix it proposed. |
+
+```bash
+curl --silent --show-error --fail-with-body \
+  --url https://api.axilio.ai/api/v1/runs/run_123 \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY" |
+  jq '{status, output, result_text, error}'
+```
+
+## Stream a run
+
+Every run has a `stream_url`: its live events as
+[Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
+The URL carries a short-lived read-only token, so a browser can open it as is.
+A server can send the API key header instead:
+
+```bash
+curl --no-buffer --silent --show-error --fail-with-body \
+  --url https://api.axilio.ai/api/v1/realtime/runs/run_123/events \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+```
+
+Each event's name is the frame kind (`span` or `log`), its data is the
+[frame](/telemetry/frames) as JSON, and its `id` is a resume cursor. The
+stream carries the run's spans, the model's text as it streams
+(`model_delta` logs), and the run's own events, all logs:
+
+| `log_type` | When |
+| --- | --- |
+| `run_status` | The run starts on its phone or goes back to running. The last event of the stream is the run's final `run_status`. |
+| `run_input_required` | The run paused. The body is the question, and the attributes carry the input request's ID, reason and `expires_at`. |
+| `run_resumed` | A person answered. The body is the action, never the answer. |
+| `run_result` | How the run ended on its phone, with the result or the error. |
+| `user_message` | A message you sent with `:sendMessage` reached the run. |
+
+The stream ends when the run ends. To resume after a dropped connection, send
+the last event's `id` as the `Last-Event-ID` header. The run's own events and
+the model's text are kept for 10 minutes, so a reader that comes back later
+gets the run's retained spans and its final `run_status`. Dedupe on the span ID
+and phase across reconnects. With Telemetry off, the stream still carries the
+run's own events and the model's text, live only.
+
+To poll instead of holding a connection, page through the same events with
+`GET /runs/{run_id}/events?cursor=...`. A live run's page always has a
+`next_cursor`; an ended run's last page closes with its final `run_status`.
+
+The CLI follows a run to its end with `runs watch`:
+
+```bash
+axilio runs watch run_123
+axilio runs watch run_123 -o json
+```
+
+In JSON mode, the output is one JSON object per line, ending with a summary
+that carries the run's `error`:
+
+```json
+{"error":"the Search button never appeared","run_id":"run_123","status":"failed","watch_end":true}
+```
+
+`runs watch` exits with 0 when the run completed, 1 when it failed, and 7 when
+it was cancelled or you stopped watching. See
+[Live Telemetry](/telemetry/live).
+
+## Read the run's steps
+
+`GET /runs/{run_id}/steps` lists an agent-mode run's model steps, oldest
+first: what each step sent the model, the model's answer and tool calls, links
+to the step's screenshots, and its tokens and cost. Page with `cursor` and
+`next_cursor`. The screenshot links are short-lived, so read the steps again
+for fresh links.
+
+```bash
+curl --silent --show-error --fail-with-body \
+  --url "https://api.axilio.ai/api/v1/runs/run_123/steps?limit=20" \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+```
+
+The list is empty once the run's transcript has passed your plan's retention,
+or when your organization keeps none.
+
+## Read the run's script
+
+`GET /runs/{run_id}/script` returns every cell the run executed, in order:
+as one Python file in `script`, and one by one in `cells`, each with its
+`status` (`ok`, `error` or `running`). Failed and exploratory cells are
+included. A code run's first cell is its revision's script.
+
+```bash
+curl --silent --show-error --fail-with-body \
+  --url https://api.axilio.ai/api/v1/runs/run_123/script \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY" | jq -r .script
+```
+
+The script is kept with the run's data, so it outlives the step transcript.
+`partial: true` means some cells may be missing. To turn a good run into a
+code agent, [save the run as an agent](/agents/create#save-a-run-as-an-agent)
+with `from: "script"`.
+
+## Cancel a run
+
+| Run status | What cancelling does |
+| --- | --- |
+| `scheduled` or `queued` | The run never starts. |
+| `running` or `paused`, agent mode | The run stops, then holds its phone for `keep_alive_seconds` so you can still follow up. A shared phone bills for that hold. See [Cancel and the hold](/agents/pause-and-follow-up#cancel-and-the-hold). |
+| `running` or `paused`, code mode | The run stops and releases its phone. |
+| `completed`, `failed` or `cancelled` | Nothing. The call returns `404`. |
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open the run from [**Runs**](https://app.axilio.ai/dashboard/axilio/runs)
+    and cancel or stop it from its page.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs cancel run_123 --yes
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Cancel a run**](/api-reference/rest/runs/cancel-a-run): `POST /runs/{run_id}:cancel`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/runs/run_123:cancel" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+To release a held phone right away, end the run's session. See
+[Release the phone early](/agents/pause-and-follow-up#release-the-phone-early).
+
+## Measure runs
+
+`GET /runs/metrics` returns your finished runs over a window as points, one per
+hour or day, on the shared
+[metrics contract](/api-reference/api-changes-2026-10#metrics). Each point has
+`runs`, `completed_runs`, `failed_runs`, `cancelled_runs`, `success_rate`,
+`duration_p50_ms`, `duration_p95_ms`, `total_cost_microdollars` and
+`model_steps`. Split the points with `group_by`: `agent`, `revision`,
+`status`, `trigger`, `mode`, `schedule` or `device_class`.
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio runs metrics
+    axilio runs metrics --agent agent_123 --from 2026-10-01 --to 2026-10-27
+    ```
+
+    The table has one row per agent. Its success rate is completed runs over
+    completed and failed runs.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get run metrics**](/api-reference/rest/runs/get-run-metrics): `GET /runs/metrics`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/runs/metrics?group_by=agent&granularity=day&time_zone=America%2FLos_Angeles" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+- A run counts in the bucket it finished in. Runs still going are not counted.
+- A point's `success_rate` is completed runs over finished runs, from 0 to 1.
+- A run's cost is its phone time plus the inference made under it. Phone time
+  is billed when the session ends, so a run's cost can land after the run does.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Pause and follow up" icon="comments" href="/agents/pause-and-follow-up">
+    Answer a paused run and send follow-ups.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/webhooks/events#runs">
+    Get each run's lifecycle events pushed to you.
+  </Card>
+</CardGroup>

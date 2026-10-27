@@ -13,7 +13,7 @@ once and Axilio sends it a signed `POST` when the run completes.
   <Card title="Event reference" icon="list" href="/webhooks/events">
     Every event type, when it fires, and what its payload contains.
   </Card>
-  <Card title="Runs" icon="diagram-project" href="/workflows/monitor">
+  <Card title="Runs" icon="diagram-project" href="/agents/monitor">
     The run lifecycle the `run.*` events report.
   </Card>
 </CardGroup>
@@ -25,7 +25,8 @@ once and Axilio sends it a signed `POST` when the run completes.
 3. Choose the event types to receive, or subscribe to all of them.
 4. Copy the signing secret. It starts with `whsec_` and is shown once.
 
-Event types are grouped by area: runs, sessions, billing, files and phones.
+Event types are grouped by area: runs, schedules, sessions, billing, files and
+phones.
 Subscribe narrowly. An endpoint that only handles `run.failed` should not
 receive `session.started`.
 
@@ -41,7 +42,8 @@ Every delivery is a `POST` with a JSON body in the same shape:
   "test": false,
   "data": {
     "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
-    "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+    "mode": "agent",
+    "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
     "status": "completed",
     "trigger": "api",
     "started_at": "2026-09-24T12:00:00Z",

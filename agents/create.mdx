@@ -1,0 +1,334 @@
+---
+title: "Create an agent"
+sidebarTitle: "Create and revise"
+description: "Save a task as instructions or code, add revisions, roll back, and promote a repaired script."
+---
+
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
+An agent's name can contain letters, digits, hyphens and underscores. It must
+be unique in the organization.
+
+<Note>
+  The Python and Go SDKs add agents in their next release. Until then, use the
+  CLI or the REST API shown here.
+</Note>
+
+## Create an instructions agent
+
+Instructions are a task in plain English. A model works through them on the
+phone. Add an `output_schema` when you want a structured result.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    The dashboard makes an agent from a run:
+
+    1. Open [**Agents**](https://app.axilio.ai/dashboard/axilio/agents) and click **Create agent**. This opens **Run a task**.
+    2. Describe the task, for example: "Open Settings, go to About phone, and report the Android version exactly as shown." Then start the run.
+    3. When the run has ended, click **Save as agent** on the run. See [Save a run as an agent](#save-a-run-as-an-agent).
+
+    To set a **Result schema**, the **Model** or the limits, open the agent and click **Edit**.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio agents create android-version \
+      --instructions "Open Settings, go to About phone, and report the Android version exactly as shown."
+    ```
+
+    `--model` picks the model. Leave it out for the platform default.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Create an agent**](/api-reference/rest/agents/create-an-agent): `POST /agents`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/agents \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "name": "android-version",
+        "instructions": "Open Settings, go to About phone, and report the Android version exactly as shown.",
+        "output_schema": {
+          "type": "object",
+          "properties": {"android_version": {"type": "string"}},
+          "required": ["android_version"]
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Create a code agent
+
+A code agent runs a Python script with no model. The script drives `phone`,
+reads its inputs from `variables` and reports its result with `run.done`. See
+[What a run's code can use](/agents/overview#what-a-runs-code-can-use).
+
+```python search.py
+phone.locator(query="the search box").fill(variables.get("query", "axilio"))
+phone.get_by_text("Search").tap()
+run.done({"searched": True})
+```
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    The dashboard makes an agent from a run, so a code agent starts as a
+    saved run or as an existing agent you change:
+
+    - Save a run's script: on an ended run, click **Save as agent** and choose to save the script.
+    - Change an existing agent to code: open the agent, click **Edit** and choose **Code**. Paste the script under **Script**, choose what happens **When a step fails** (**Fail the run**, **Ask a person** or **Repair it**), and save.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio agents create search-flow --code search.py
+    ```
+
+    `--code` saves the file as revision 1. Leave out both `--code` and
+    `--instructions` to create an empty agent and push code later. The CLI
+    caps code files at 256 KiB.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Create an agent**](/api-reference/rest/agents/create-an-agent): `POST /agents`
+
+    <WindowsCurlNote />
+
+    ```bash
+    jq -n --rawfile code search.py \
+      '{name:"search-flow", code:$code, on_failure:"ask"}' |
+      curl --silent --show-error --fail-with-body \
+        --request POST \
+        --url https://api.axilio.ai/api/v1/agents \
+        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+        --header "Content-Type: application/json" \
+        --data-binary @-
+    ```
+  </Tab>
+</Tabs>
+
+Send `instructions` or `code`, not both. A name already used in the
+organization returns `409`. An unsupported model or an invalid output schema
+returns `400`.
+
+## Handle a failed step
+
+A code revision's `on_failure` decides what a run does when a step fails, for
+example when an element can't be found:
+
+| `on_failure` | What happens |
+| --- | --- |
+| `fail` (default) | The run fails, with the reason in `error`. |
+| `ask` | The run pauses with reason `step_check_failed`. A person can fix the screen in the live view, then resume with `retry` to run the script again, or `complete` to end the run with their own result. See [Answer a paused run](/agents/pause-and-follow-up#answer-a-paused-run). |
+| `repair` | The model takes over in the same run. It finishes the task from the current screen, so the run can still succeed, and proposes a fixed script as a new revision. |
+
+A repaired run has `repair.repaired: true` and, when it proposed a fix,
+`repair.proposed_revision_id`. The proposed revision has `proposal_state:
+"waiting"` and is not used until a person promotes it. Repair time and model
+steps count against the run's limits and are billed like any model step.
+
+## Save a run as an agent
+
+Save an ad hoc run as an agent once it has ended. With `from: "task"` (the
+default), the run's task becomes an instructions revision. With
+`from: "script"`, the code the run executed becomes a code revision. The run's
+model, output schema and limits fill in any setting you leave out.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open the run from [**Runs**](https://app.axilio.ai/dashboard/axilio/runs).
+    2. Click **Save as agent**. It shows on a run that has ended and wasn't started from a saved agent.
+    3. Enter a name and choose whether to save the task or the script.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Create an agent**](/api-reference/rest/agents/create-an-agent): `POST /agents`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/agents \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"name": "android-version-script", "source_run_id": "run_123", "from": "script"}'
+    ```
+  </Tab>
+</Tabs>
+
+## Pull and push code
+
+Each push adds a revision, which becomes the one runs use.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open the agent from [**Agents**](https://app.axilio.ai/dashboard/axilio/agents) and click **Edit**.
+    2. Change the instructions or the script.
+    3. Save. The change becomes a new version.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio agents pull agent_123 --out search.py
+    # Edit search.py.
+    axilio agents push agent_123 search.py --message "handle sign-in"
+    ```
+
+    `pull` prints the code to stdout without `--out`. An agent whose current
+    revision is instructions has no code to pull.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Get an agent**](/api-reference/rest/agents/get-an-agent): `GET /agents/{agent_id}`
+    - [**Get a revision**](/api-reference/rest/agents/get-a-revision): `GET /agents/{agent_id}/revisions/{revision_id}`
+    - [**Add a revision**](/api-reference/rest/agents/add-a-revision): `POST /agents/{agent_id}/revisions`
+
+    <WindowsCurlNote />
+
+    Read the agent's `current_revision_id`, then fetch that revision's `code`
+    or `instructions`:
+
+    ```bash
+    REVISION_ID=$(curl --silent --show-error --fail-with-body \
+      --url https://api.axilio.ai/api/v1/agents/agent_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" | jq -r .current_revision_id)
+
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/agents/agent_123/revisions/$REVISION_ID" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" | jq -r .code > search.py
+    ```
+
+    Add a revision. `kind` is `code` or `instructions`:
+
+    ```bash
+    jq -n --rawfile code search.py \
+      '{kind:"code", code:$code, message:"handle sign-in", on_failure:"repair"}' |
+      curl --silent --show-error --fail-with-body \
+        --request POST \
+        --url https://api.axilio.ai/api/v1/agents/agent_123/revisions \
+        --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+        --header "Content-Type: application/json" \
+        --data-binary @-
+    ```
+  </Tab>
+</Tabs>
+
+An agent can switch kind: add an instructions revision to a code agent, or the
+reverse. Revisions are never changed or removed.
+
+## Roll back or promote a revision
+
+A rollback copies an earlier revision forward as the newest one, so history
+only grows. Promoting makes a repair's proposed fix the current revision.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open the agent, click **Edit**, and open **Version history**.
+    2. Select a version to read it.
+    3. Click **Restore** to roll back to it, or **Use this fix** on a proposed fix.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio agents revisions agent_123
+    axilio agents rollback agent_123 rev_456
+    ```
+
+    The CLI doesn't promote proposed fixes yet. Use the Dashboard or the REST
+    API.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**List an agent's revisions**](/api-reference/rest/agents/list-an-agents-revisions): `GET /agents/{agent_id}/revisions`
+    - [**Roll an agent back to an earlier revision**](/api-reference/rest/agents/roll-an-agent-back-to-an-earlier-revision): `POST /agents/{agent_id}:rollback`
+    - [**Promote a proposed fix**](/api-reference/rest/agents/promote-a-proposed-fix): `POST /agents/{agent_id}/revisions/{revision_id}:promote`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --url "https://api.axilio.ai/api/v1/agents/agent_123/revisions?limit=20" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/agents/agent_123:rollback" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"revision_id": "rev_456"}'
+
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/agents/agent_123/revisions/rev_789:promote" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+Promoting returns `409` when the revision is not a fix waiting to be promoted,
+or when the agent has moved on from the revision the repaired run ran. Such a
+fix reads `proposal_state: "superseded"`.
+
+## Change settings or delete an agent
+
+`PATCH /agents/{agent_id}` changes the name, model, output schema, limits and
+data settings. Fields you leave out keep their values, and `output_schema:
+null` clears the schema. Instructions and code change only through revisions.
+
+Deleting an agent removes it and its revisions, and cancels its schedules' runs
+that haven't started. Its past runs stay in the run list.
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio agents get agent_123
+    axilio agents delete agent_123 --yes
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Update an agent**](/api-reference/rest/agents/update-an-agent): `PATCH /agents/{agent_id}`
+    - [**Delete an agent**](/api-reference/rest/agents/delete-an-agent): `DELETE /agents/{agent_id}`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request PATCH \
+      --url https://api.axilio.ai/api/v1/agents/agent_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"max_steps": 100, "recording_enabled": true}'
+
+    curl --silent --show-error --fail-with-body \
+      --request DELETE \
+      --url https://api.axilio.ai/api/v1/agents/agent_123 \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Run the agent" icon="play" href="/agents/run">
+    Start a run now, later, or many at once.
+  </Card>
+  <Card title="Schedule the agent" icon="calendar" href="/agents/schedules">
+    Run it on a recurring cron schedule.
+  </Card>
+</CardGroup>

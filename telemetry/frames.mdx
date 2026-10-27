@@ -77,7 +77,9 @@ Current producers use these `span_type` values:
 | Value | Meaning |
 | --- | --- |
 | `session` | Root lifetime of the phone session. |
-| `run` | Workflow run or editor cell. |
+| `run` | A run, or a cell run from a session. |
+| `model_step` | One model step of an agent-mode run. Nests under the run span. |
+| `agent_cell` | One cell of Python an agent-mode run executed. The SDK calls it made nest under it. |
 | `sdk_call` | One Axilio SDK operation. |
 | `inference` | Inference work, usually nested under an SDK call. |
 | `file_push` | File delivery to the phone. |
@@ -127,6 +129,8 @@ An output log can look like this:
 | `output_error` | Run error details. |
 | `kernel_status` | Kernel lifecycle state. |
 | `transfer_progress` | Point-in-time file-transfer progress. |
+| `model_delta` | A piece of an agent-mode run's model text as it streams. Live only. |
+| `run_status`, `run_input_required`, `run_resumed`, `run_result`, `user_message` | A run's own events, carried on its [stream](/agents/monitor#stream-a-run). Live only. |
 
 The `log_type` vocabulary is open. Preserve, render, or ignore an unfamiliar
 value without failing the rest of the trace.
@@ -147,7 +151,7 @@ session
 ```
 
 `file_push` and `media_capture` spans are normally session-level siblings of a
-run. A workflow-less interactive SDK call can sit directly under the session.
+run. An interactive SDK call outside any run can sit directly under the session.
 
 Use `span_id` as the identity when you pair a live `start` with its `end`,
 deduplicate a replay, or join an SDK-call cost map. Use
@@ -164,7 +168,8 @@ Common cross-cutting keys include:
 | Attribute | Meaning |
 | --- | --- |
 | `axilio.session.id` | Session identity. |
-| `axilio.workflow.id` | Workflow identity when applicable. |
+| `axilio.run.id` | The run a span or log belongs to, when it belongs to one. |
+| `axilio.workflow.id` | The agent's ID on a saved agent's run. The attribute keeps its earlier name. |
 | `axilio.device.class` | Device class. Current phone sessions use `phone`. |
 | `axilio.device.id` | Device identity. |
 | `axilio.duration_ns` | Source-measured duration in nanoseconds. |

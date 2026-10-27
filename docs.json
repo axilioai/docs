@@ -67,13 +67,15 @@
             ]
           },
           {
-            "group": "Workflows and Runs",
-            "icon": "diagram-project",
+            "group": "Agents and Runs",
+            "icon": "robot",
             "pages": [
-              "workflows/overview",
-              "workflows/create",
-              "workflows/run",
-              "workflows/monitor"
+              "agents/overview",
+              "agents/create",
+              "agents/run",
+              "agents/pause-and-follow-up",
+              "agents/schedules",
+              "agents/monitor"
             ]
           },
           {
@@ -275,15 +277,15 @@
     },
     {
       "source": "/concepts/workflows-and-runs",
-      "destination": "/workflows/overview"
+      "destination": "/agents/overview"
     },
     {
       "source": "/concepts/sandbox-mode",
-      "destination": "/workflows/overview"
+      "destination": "/agents/overview"
     },
     {
       "source": "/workflows/sandbox-mode",
-      "destination": "/workflows/overview"
+      "destination": "/agents/overview"
     },
     {
       "source": "/guides/allocating-devices",
@@ -295,15 +297,15 @@
     },
     {
       "source": "/guides/running-workflows",
-      "destination": "/workflows/create"
+      "destination": "/agents/create"
     },
     {
       "source": "/guides/parallel-execution",
-      "destination": "/workflows/run"
+      "destination": "/agents/run"
     },
     {
       "source": "/scaling/parallel-sessions",
-      "destination": "/workflows/run"
+      "destination": "/agents/run"
     },
     {
       "source": "/scaling/rate-limits",
@@ -311,7 +313,7 @@
     },
     {
       "source": "/scaling/workflow-engine",
-      "destination": "/workflows/overview"
+      "destination": "/agents/overview"
     },
     {
       "source": "/guides/best-practices",
@@ -420,6 +422,34 @@
     {
       "source": "/api-reference/vision/vision/run-locate",
       "destination": "/api-reference/argus/screenshots-locate"
+    },
+    {
+      "source": "/workflows/overview",
+      "destination": "/agents/overview"
+    },
+    {
+      "source": "/workflows/create",
+      "destination": "/agents/create"
+    },
+    {
+      "source": "/workflows/run",
+      "destination": "/agents/run"
+    },
+    {
+      "source": "/workflows/monitor",
+      "destination": "/agents/monitor"
+    },
+    {
+      "source": "/workflows",
+      "destination": "/agents/overview"
+    },
+    {
+      "source": "/api-reference/rest/workflows/:slug*",
+      "destination": "/api-reference/api-changes-2026-10"
+    },
+    {
+      "source": "/api-reference/rest/runs/list-run-history",
+      "destination": "/api-reference/rest/runs/list-runs"
     }
   ],
   "footer": {

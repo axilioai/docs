@@ -1,0 +1,295 @@
+---
+title: "Pause and follow up"
+sidebarTitle: "Pause and follow up"
+description: "Pause a run for a person, answer it, message an agent while it works, and continue a finished run on the same phone."
+---
+
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
+A run can stop to ask a person something, take messages while it works, and
+continue with more turns after it ends. The Dashboard's run page does all of
+this from one chat. The API endpoints are below.
+
+<Note>
+  The Python and Go SDKs add these endpoints in their next release. Until
+  then, use the REST API shown here.
+</Note>
+
+## Why a run pauses
+
+A run reads status `paused` when it waits on a person. Three things pause a
+run:
+
+- The agent asks, for example for a one-time code (`requested_by: "agent"`).
+- A script calls `run.ask`, or a step fails under `on_failure: "ask"`
+  (`requested_by: "code"`).
+- You call `POST /runs/{run_id}:pause` (`requested_by: "caller"`).
+
+While paused, the run keeps its phone and makes no model calls. Its
+`input_request` says what it needs:
+
+```json
+"input_request": {
+  "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
+  "requested_by": "agent",
+  "reason": "one_time_code_required",
+  "message": "Enter the 6-digit code sent to the phone",
+  "response_schema": {"type": "string", "pattern": "^[0-9]{6}$"},
+  "created_at": "2026-10-27T17:02:11Z",
+  "expires_at": "2026-10-27T17:12:11Z"
+}
+```
+
+| `reason` | Meaning |
+| --- | --- |
+| `one_time_code_required` | The run needs a code, such as one sent by text or email. |
+| `approval_required` | The run wants a yes or no before it goes on. |
+| `choice_required` | The run needs you to pick between options. |
+| `challenge_blocked` | A check the run can't pass on its own, such as a captcha, blocks it. Solve it in the live view, then answer. |
+| `step_check_failed` | A step of a code run failed under `on_failure: "ask"`. |
+| `caller_requested` | You paused the run through the API or the Dashboard. |
+
+`expires_at` is the earliest of the run's pause timeout
+(`pause_timeout_seconds`, 600 by default), its time limit, and the end of its
+session. If nobody answers by then, the run fails with `input_timeout`. A
+`run.paused` webhook fires when the run pauses. It carries the reason, never
+the message.
+
+## Pause a run
+
+`POST /runs/{run_id}:pause` asks a running run to pause, with reason
+`caller_requested`. An agent-mode run pauses at its next model step: a step
+already running finishes first. A code run pauses at its script's next phone
+action. The call returns the run as it is, and the run reads `paused` once the
+pause lands. A run that is not running returns `409`.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open the run and click **Pause the run** next to the message box. Click
+    **Resume the run** to go on.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Pause a run**](/api-reference/rest/runs/pause-a-run): `POST /runs/{run_id}:pause`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/runs/run_123:pause" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## Answer a paused run
+
+`POST /runs/{run_id}:resume` names the `input_request_id` it answers and an
+`action`:
+
+| `action` | What it does |
+| --- | --- |
+| `answer` (default) | Hands the run your `response`, which must match the request's `response_schema`. Add a `message` for a note to the agent. |
+| `retry` | Runs a code run's script again, from where the phone is now. Only for `step_check_failed`. |
+| `complete` | Ends the run as completed with your `output`, which must match the run's output schema, and an optional `result_text`. |
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open the run. The question shows in the chat. Type the answer and send it.
+    For a failed script step, you can take control of the phone in the live
+    view first, then retry the script or complete the run with your own
+    result.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Resume a paused run**](/api-reference/rest/runs/resume-a-paused-run): `POST /runs/{run_id}:resume`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/runs/run_123:resume" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "input_request_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
+        "response": "481516"
+      }'
+    ```
+
+    To retry a failed script step, or to finish the run yourself, send one of
+    these bodies instead:
+
+    ```json
+    {"input_request_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44", "action": "retry"}
+    ```
+
+    ```json
+    {
+      "input_request_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
+      "action": "complete",
+      "output": {"android_version": "16"},
+      "result_text": "Read the version from the screen myself."
+    }
+    ```
+  </Tab>
+</Tabs>
+
+A response or output that doesn't match its schema returns `422`. A run that
+is not paused, a different `input_request_id`, or an expired request returns
+`409`. With `answer` or `retry`, the run reads `running` again once its phone
+has the answer, and `run.resumed` fires.
+
+<Warning>
+  Never send a password as an answer. An answer joins the run's record, and in
+  an agent-mode run it is also sent to the model. If the run needs a sign-in,
+  sign in on the phone yourself from the live view, then answer.
+</Warning>
+
+## Message an agent while it works
+
+`POST /runs/{run_id}:sendMessage` sends a message to an agent-mode run that is
+running or paused. The model reads it before its next step, as a message from
+the person running the task. Use it to steer the run, for example "Use the
+work account". A message never resumes a paused run: answer the pause with
+`:resume`.
+
+```bash
+curl --silent --show-error --fail-with-body \
+  --request POST \
+  --url "https://api.axilio.ai/api/v1/runs/run_123:sendMessage" \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "Use the work account, not the personal one."}'
+```
+
+- A run holds at most 20 unread messages. A message past that, or one that
+  arrives as the run finishes, may never be read.
+- A message is required and can be up to 64 KiB. An empty or larger message
+  returns `400`.
+- The run's stream carries each message the run receives as a `user_message`
+  event.
+- A code run, or a run that is queued or scheduled, returns `409`.
+
+## Follow up after a turn
+
+A task and its follow-ups are one run. When an agent-mode run's turn ends
+(completed, failed or cancelled), the run holds its phone until
+`keep_alive_expires_at`, set from the run's `keep_alive_seconds` (120 seconds
+by default on `POST /runs`). A `:sendMessage` in that time starts the run's
+next **turn** on the same phone, with the same screen and the same Python
+state. The run goes back to `queued`, then `running`.
+
+```bash
+# Turn 1
+curl --silent --show-error --fail-with-body \
+  --request POST \
+  --url https://api.axilio.ai/api/v1/runs \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"task": "Open Settings, then Wi-Fi, and report whether Wi-Fi is on.", "keep_alive_seconds": 300}'
+
+# Turn 2, before keep_alive_expires_at
+curl --silent --show-error --fail-with-body \
+  --request POST \
+  --url "https://api.axilio.ai/api/v1/runs/run_123:sendMessage" \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "Now list the saved networks."}'
+```
+
+- `turn` is the current turn's number, from 1. `turns` lists every turn,
+  oldest first, each with its opening `message`, `status`, `result_text`,
+  `output`, `error`, `model` and `usage`. Turn 1 has no message: it runs the
+  task.
+- The run's top-level `status`, `result_text`, `output`, `error`,
+  `started_at` and `completed_at` are the latest turn's. `usage` is the sum of
+  every turn.
+- Each turn gets the run's full limits: `max_steps`, `max_cost_microdollars`
+  and `timeout_seconds`. A follow-up can set `model` for its turn and nothing
+  else.
+- After the hold ends, `:sendMessage` returns `409` and the chat is over.
+  Start a new run, which may get a different phone.
+- The model sees a summary of the earlier turns and continues from the screen
+  as the last turn left it.
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    Open the run. While the phone is held, the phone stays live and the message
+    box stays open, so you can type a follow-up. After the hold, the page
+    reads "This chat has ended. Run again to start a new run."
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Send a message to a run**](/api-reference/rest/runs/send-a-message-to-a-run): `POST /runs/{run_id}:sendMessage`
+    - [**Get a run**](/api-reference/rest/runs/get-a-run): `GET /runs/{run_id}`
+  </Tab>
+</Tabs>
+
+Each turn fires `run.started` and then `run.completed`, `run.failed` or
+`run.cancelled` again, with `turn` in the payload. See
+[Webhook events](/webhooks/events#runs).
+
+## Release the phone early
+
+A held phone stays yours until the hold ends. A shared phone bills for that
+time. To release it sooner, end the run's session. The run's `session_id` is
+its run ID.
+
+<Tabs sync={false}>
+  <Tab title="CLI">
+    ```bash
+    axilio sessions stop run_123 --yes
+    ```
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Release a phone**](/api-reference/rest/phones/release-a-phone): `POST /phones/{phone_id}:deallocate`
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url "https://api.axilio.ai/api/v1/phones/ph_123:deallocate" \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{"session_id": "run_123"}'
+    ```
+
+    With `session_id`, only that session ends. If the phone has already moved
+    on, nothing is released and the call still succeeds.
+  </Tab>
+</Tabs>
+
+To skip the hold entirely, start the run with `keep_alive_seconds: 0`. On a
+dedicated phone, a session you start on the phone, or another run pinned to
+it, also ends the hold.
+
+## Cancel and the hold
+
+Cancelling a running or paused agent-mode run stops it and then holds the
+phone for `keep_alive_seconds`, as when a turn ends, so you can still follow up
+with `:sendMessage`. A shared phone bills for that hold. Release the phone as
+above, or set `keep_alive_seconds: 0`, if you don't want it. A code run
+releases its phone when cancelled. See
+[Cancel a run](/agents/monitor#cancel-a-run).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Monitor runs" icon="list" href="/agents/monitor">
+    Stream a run's steps and read its script.
+  </Card>
+  <Card title="Webhook events" icon="bell" href="/webhooks/events">
+    Get run.paused, run.resumed and each turn's events.
+  </Card>
+</CardGroup>

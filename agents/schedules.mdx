@@ -1,0 +1,115 @@
+---
+title: "Schedule an agent"
+sidebarTitle: "Schedules"
+description: "Run a saved agent on a recurring cron schedule in your time zone."
+---
+
+import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
+
+A schedule starts a run of an agent at each occurrence of a cron expression.
+Its runs have trigger `scheduled` and carry the schedule's `schedule_id`. For a
+single run at a later time, set `start_at` on
+[`POST /runs`](/agents/run#book-a-run-for-later) instead.
+
+<Note>
+  The Python and Go SDKs add schedules in their next release. Until then, use
+  the Dashboard or the REST API shown here.
+</Note>
+
+## Create a schedule
+
+<Tabs sync={false}>
+  <Tab title="Dashboard">
+    1. Open [**Agents**](https://app.axilio.ai/dashboard/axilio/agents) and select the agent.
+    2. Click **Schedule**, then **Add schedule**.
+    3. Pick **When** it runs, such as **Every weekday at 9:00 AM**, or choose **Custom** and enter a cron expression.
+    4. Pick the **Time zone**.
+    5. Choose what happens **If the last run is still going**: **Skip this time** or **Start another anyway**.
+    6. Click **Add schedule**. When you edit a schedule later, the button reads **Save schedule**.
+  </Tab>
+
+  <Tab title="REST API">
+    REST API References:
+
+    - [**Create a schedule**](/api-reference/rest/agents/create-a-schedule): `POST /agents/{agent_id}/schedules`
+
+    <WindowsCurlNote />
+
+    ```bash
+    curl --silent --show-error --fail-with-body \
+      --request POST \
+      --url https://api.axilio.ai/api/v1/agents/agent_123/schedules \
+      --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+      --header "Content-Type: application/json" \
+      --data '{
+        "name": "weekday morning",
+        "cron_expression": "0 9 * * 1-5",
+        "time_zone": "America/Los_Angeles",
+        "overlap_policy": "skip",
+        "run_template": {
+          "variables": {"query": "coffee"},
+          "targets": [{"device_class": "phone", "phone_id": "ph_123"}]
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+| Field | What it does |
+| --- | --- |
+| `cron_expression` | Required. Five fields: minute, hour, day of month, month, day of week. `0 9 * * 1-5` is 09:00 on weekdays. |
+| `time_zone` | Required. The IANA time zone the expression is read in, such as `America/Los_Angeles` or `UTC`. 09:00 stays 09:00 local time across daylight saving changes. |
+| `overlap_policy` | `skip` (default) drops an occurrence while the schedule's previous run is scheduled, queued, running or paused. `queue` starts it anyway, and it waits for a phone like any run. |
+| `run_template` | What each run starts with: `variables`, `targets`, `network` (instructions agents only) and `revision_id`. Leave out `revision_id` to run the agent's current revision at each occurrence. |
+| `start_at`, `end_at` | Optional. No occurrence before `start_at`, or at or after `end_at`. Once `end_at` passes, the schedule ends. |
+| `name` | An optional label. |
+
+A cron expression or time zone that doesn't parse, an expression that never
+fires, or an agent with no revision returns `400`.
+
+## How occurrences run
+
+- A run starts up to about 30 seconds after its occurrence, then waits for a
+  phone like any queued run.
+- Each occurrence starts at most one run.
+- On a day when daylight saving skips a time, a schedule for that time doesn't
+  run. On a day that repeats a time, it runs once.
+- After an outage, only the latest missed occurrence runs.
+- A scheduled run holds no phone after it ends, so it has no follow-up window.
+- When an occurrence starts no run, a `schedule.occurrence_skipped` webhook
+  fires with a `reason`: `overlap` (the previous run hadn't finished),
+  `agents_unavailable` (Agents isn't available to your organization) or
+  `model_unavailable` (the agent's model can no longer be used). The schedule
+  goes on.
+
+## Pause, resume, run now, change or delete
+
+| Action | Endpoint | Effect |
+| --- | --- | --- |
+| Pause | `POST /agents/{agent_id}/schedules/{schedule_id}:pause` | Starts no runs until resumed, and cancels its runs that haven't started. Fires `schedule.paused`. |
+| Resume | `POST /agents/{agent_id}/schedules/{schedule_id}:resume` | Counts from now. Occurrences missed while paused don't run. An ended schedule stays ended. |
+| Run now | `POST /agents/{agent_id}/schedules/{schedule_id}:run` | Starts a run from the template now, whatever the schedule's state or overlap policy. Its trigger is `manual` or `api`, not `scheduled`. |
+| Change | `PATCH /agents/{agent_id}/schedules/{schedule_id}` | Changes the fields you send. `run_template` is replaced whole. `null` clears `start_at` or `end_at`. |
+| Delete | `DELETE /agents/{agent_id}/schedules/{schedule_id}` | Removes the schedule and cancels its runs that haven't started. Runs it already started keep going. |
+
+In the Dashboard, open the agent and click **Schedule** to turn a schedule on
+or off, edit it, or delete it.
+
+A schedule's `state` is `active`, `paused` or `ended`. `next_run_at` is when
+the next occurrence starts a run, and `last_run_id` is the run it last
+started. A schedule that reaches its `end_at`, or has no occurrence left, ends
+and fires `schedule.ended` once.
+
+List a schedule's runs with `GET /runs?schedule_id=...` or
+`axilio runs list --schedule <schedule-id>`.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Monitor runs" icon="list" href="/agents/monitor">
+    Inspect and measure the runs a schedule starts.
+  </Card>
+  <Card title="Webhook events" icon="bell" href="/webhooks/events#schedules">
+    Get schedule.paused, schedule.ended and skipped occurrences.
+  </Card>
+</CardGroup>
