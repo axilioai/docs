@@ -21,14 +21,13 @@ phone. Add an `output_schema` when you want a structured result.
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    1. Open [**Agents**](https://app.axilio.ai/dashboard/axilio/agents) and click **Create agent**.
-    2. Enter a **Name**.
-    3. Under **Instructions**, describe the task, for example: "Open Settings, go to About phone, and report the Android version exactly as shown."
-    4. Optionally, set a **Result schema**, the **Model** and the limits.
-    5. Save the agent.
+    The dashboard makes an agent from a run:
 
-    You can also save a finished run as an agent. Open the run and click
-    **Save as agent**. See [Save a run as an agent](#save-a-run-as-an-agent).
+    1. Open [**Agents**](https://app.axilio.ai/dashboard/axilio/agents) and click **Create agent**. This opens **Run a task**.
+    2. Describe the task, for example: "Open Settings, go to About phone, and report the Android version exactly as shown." Then start the run.
+    3. When the run has ended, click **Save as agent** on the run. See [Save a run as an agent](#save-a-run-as-an-agent).
+
+    To set a **Result schema**, the **Model** or the limits, open the agent and click **Edit**.
   </Tab>
 
   <Tab title="CLI">
@@ -80,11 +79,11 @@ run.done({"searched": True})
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
-    1. Open [**Agents**](https://app.axilio.ai/dashboard/axilio/agents) and click **Create agent**.
-    2. Enter a **Name** and choose **Script**.
-    3. Paste the script.
-    4. Choose what happens **When a step fails**: **Fail the run**, **Ask a person** or **Repair it**.
-    5. Save the agent.
+    The dashboard makes an agent from a run, so a code agent starts as a
+    saved run or as an existing agent you change:
+
+    - Save a run's script: on an ended run, click **Save as agent** and choose to save the script.
+    - Change an existing agent to code: open the agent, click **Edit** and choose **Code**. Paste the script under **Script**, choose what happens **When a step fails** (**Fail the run**, **Ask a person** or **Repair it**), and save.
   </Tab>
 
   <Tab title="CLI">
@@ -147,7 +146,7 @@ model, output schema and limits fill in any setting you leave out.
 <Tabs sync={false}>
   <Tab title="Dashboard">
     1. Open the run from [**Runs**](https://app.axilio.ai/dashboard/axilio/runs).
-    2. Click **Save as agent**.
+    2. Click **Save as agent**. It shows on a run that has ended and wasn't started from a saved agent.
     3. Enter a name and choose whether to save the task or the script.
   </Tab>
 

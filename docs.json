@@ -449,7 +449,7 @@
     },
     {
       "source": "/api-reference/rest/runs/list-run-history",
-      "destination": "/api-reference/rest/runs/get-run-metrics"
+      "destination": "/api-reference/rest/runs/list-runs"
     }
   ],
   "footer": {
