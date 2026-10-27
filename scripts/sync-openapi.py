@@ -164,6 +164,26 @@ _DESCRIPTION_FRAGMENT_CORRECTIONS = {
     "Accessible name; empty when the element has none": (
         "The element's name or label; empty when the element has none"
     ),
+    # Agents (AXI-3006): the run's network is what its code can reach. The
+    # docs describe that, not where the code runs.
+    "The sandbox's network for an instructions run:": (
+        "The network an instructions run's code can reach:"
+    ),
+    "The sandbox's network for each run of an instructions agent:": (
+        "The network each run of an instructions agent can reach:"
+    ),
+    "The sandbox's network:": "The network the run's code can reach:",
+    "bound as variables in the kernel.": (
+        "available to the run's code as the variables dict."
+    ),
+    "or its edge stopped mid-run.": "or its phone stopped mid-run.",
+    "and the edge refuses one past that,": "and a message past that is refused,",
+    "it reads running once the edge has the input,": (
+        "it reads running once the run's phone has the input,"
+    ),
+    "it reads completed once the edge ends it,": (
+        "it reads completed once the run ends on its phone,"
+    ),
 }
 
 
