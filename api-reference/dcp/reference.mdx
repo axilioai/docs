@@ -228,6 +228,11 @@ Wait for the target, then tap its center.
 
 Also takes `idempotencyKey`. **Result** — a LocatorResult.
 
+When the locator reads the screen and matches several elements on a settled
+frame, this fails with `ActionTimeout` instead of tapping one, and so do
+`Locator.fill` and `Locator.press` with a locator. The message lists the matches.
+Pick one with `nth`, or narrow the locator with `exact`.
+
 ### `Locator.fill`
 Wait for the target, tap it to focus, then type `text` into it.
 

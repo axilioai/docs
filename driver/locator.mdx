@@ -19,12 +19,23 @@ with Client().session("android", phone_id="ph_123") as driver:
 ```
 
 <Info>
-  Plain text resolves by OCR. A description, or a refinement such as `nth` or
-  `has`, resolves with one [vision-model](/drivers/models) call. Every action
-  waits up to 5 seconds by default; pass `timeout` in seconds, up to 60. When
-  the target never becomes ready, the call raises `ActionTimeoutError`, which
-  is also a built-in `TimeoutError`. The Go names are in the map at the end.
+  Plain text resolves by OCR, and `nth` on it picks from those matches. A
+  description, or a refinement such as `within` or `has`, resolves with one
+  [vision-model](/drivers/models) call. Every action waits up to 5 seconds by
+  default; pass `timeout` in seconds, up to 60. When the target never becomes
+  ready, the call raises `ActionTimeoutError`, which is also a built-in
+  `TimeoutError`. The Go names are in the map at the end.
 </Info>
+
+<Warning>
+  An action on text that matches several elements on the screen raises
+  `ActionTimeoutError` instead of acting on one. OCR reads text behind a dialog
+  too, so the first match may not be the one you can see. The error lists each
+  match with its index. Use that index with [`nth`](#locator-nth), or narrow the
+  locator with `exact=True` or more specific text. `tap`, `fill` and `press`
+  behave this way. Calls that only read the screen, such as `text`, still report
+  the first match.
+</Warning>
 
 ## Actions
 
@@ -131,7 +142,9 @@ one it refines.
 
 ### `locator.nth()`
 
-The `n`th match in reading order, counting from zero.
+The `n`th match in reading order, counting from zero. On plain text, this picks
+from the OCR matches with no vision-model call. An `n` past the last match finds
+nothing, so the call times out.
 
 ```python
 driver.get_by_text("Add to cart").nth(1).tap()
@@ -141,7 +154,9 @@ driver.get_by_text("Add to cart").nth(1).tap()
 
 ### `locator.first()`
 
-The first match in reading order. Shorthand for `nth(0)`.
+The first match in reading order. Shorthand for `nth(0)`. On a screen with a
+dialog open, the first match can be text behind it, so check the index the error
+lists rather than adding `first()` by default.
 
 **Returns** `Locator`.
 

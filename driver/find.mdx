@@ -161,13 +161,17 @@ when a stable visible label exists.
 
 ## Narrow a match
 
-When several targets match, pick one by position, by what contains it, or by a
-description:
+When text matches several elements on the screen, `tap`, `fill` and `press` raise
+`ActionTimeoutError` and list the matches, because the first one may be behind a
+dialog. Pick one by position, by matching the whole text, by what contains it, or
+by a description:
 
 <Tabs sync={false}>
   <Tab title="Python SDK">
     ```python
     driver.get_by_text("Add to cart").nth(1).tap()
+
+    driver.get_by_text("Save", exact=True).tap()
 
     card = driver.get_by_text("Card").has(driver.get_by_text("Free shipping"))
     card.first().tap()
@@ -182,6 +186,10 @@ description:
         log.Fatal(err)
     }
 
+    if _, err := driver.GetByText("Save", mobile.Exact()).Tap(); err != nil {
+        log.Fatal(err)
+    }
+
     card := driver.GetByText("Card").Has(driver.GetByText("Free shipping"))
     if _, err := card.First().Tap(); err != nil {
         log.Fatal(err)
@@ -190,9 +198,9 @@ description:
   </Tab>
 </Tabs>
 
-`nth` counts from zero in reading order. Plain text is an OCR match; anything
-more, such as a description, `nth`, `within`, `has`, or `filter`, resolves with
-one vision-model call.
+`nth` counts from zero in reading order. Plain text is an OCR match, and `nth` on
+it picks from those matches. Anything more, such as a description, `within`,
+`has`, or `filter`, resolves with one vision-model call.
 
 ## Choose the OCR engine and model
 
