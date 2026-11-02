@@ -105,7 +105,10 @@ exactly-once audit ledger or a promise that every live frame was stored.
 
     func main() {
         ctx := context.Background()
-        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        api := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
         view := telemetry.NewSession(api, "sess_123")
 
         trace, err := view.Trace(ctx)
