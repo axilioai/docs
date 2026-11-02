@@ -27,12 +27,29 @@ compatibility period, so update your code and clients before you upgrade.
 
 CLI 0.14.0 follows this release. See
 [Upgrade from an earlier CLI](/cli#upgrade-from-an-earlier-cli) for its breaking changes.
-The Python and Go SDKs follow in their next releases. Until then, call the new
-endpoints over REST.
-
 ```bash
 brew upgrade axilio
 ```
+
+### Upgrade the SDKs
+
+Python SDK 0.23.0 and Go SDK v0.16.0 follow this release, and earlier versions
+can't call the removed paths. In Python, `client.workflows` is now
+`client.agents`, runs start with `client.runs.start()`, and
+`client.session(workflow_id=...)` is gone.
+
+```bash
+pip install --upgrade axilio
+go get github.com/axilioai/platform-go@v0.16.0
+```
+
+### Actions on text that matches several elements
+
+When a locator reads the screen (accessibility off, or `strategy="vision"`), an
+action on text that matches several elements now raises `ActionTimeoutError` and
+lists the matches, instead of acting on the first. Scripts that relied on the
+first match need `first()`, `nth()`, `exact` or more specific text. See
+[Locators](/driver/locator).
 
 ### Removed paths
 
@@ -45,7 +62,7 @@ brew upgrade axilio
 | `GET /workflows/{workflow_id}/revisions[/{revision_id}]` | `GET /agents/{agent_id}/revisions[/{revision_id}]` |
 | `POST /workflows/{workflow_id}/revisions/{revision_id}:restore` | `POST /agents/{agent_id}:rollback` with `{"revision_id": "..."}` |
 | `GET /workflows/{workflow_id}/run-stats` | `GET /runs/metrics?group_by=agent` |
-| `GET /runs/history` | `GET /runs` lists runs, and `GET /runs/metrics` counts them over a window. |
+| `GET /runs/history` | Archived run records have no list endpoint now. `GET /runs` lists recent runs, and `GET /runs/metrics` counts them over a window. |
 
 ### Renamed and removed fields
 

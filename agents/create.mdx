@@ -9,11 +9,6 @@ import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
 An agent's name can contain letters, digits, hyphens and underscores. It must
 be unique in the organization.
 
-<Note>
-  The Python and Go SDKs add agents in their next release. Until then, use the
-  CLI or the REST API shown here.
-</Note>
-
 ## Create an instructions agent
 
 Instructions are a task in plain English. A model works through them on the
@@ -37,6 +32,52 @@ phone. Add an `output_schema` when you want a structured result.
     ```
 
     `--model` picks the model. Leave it out for the platform default.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    agent = client.agents.create(
+        name="android-version",
+        instructions="Open Settings, go to About phone, and report the Android version exactly as shown.",
+    )
+    print(agent.id)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        api := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
+        instructions := "Open Settings, go to About phone, and report the Android version exactly as shown."
+        agent, err := api.Agents.Create(context.Background(), &platformgo.AgentCreateRequest{
+            Name:         "android-version",
+            Instructions: &instructions,
+        })
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println(agent.ID)
+    }
+    ```
   </Tab>
 
   <Tab title="REST API">

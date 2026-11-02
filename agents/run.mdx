@@ -10,10 +10,7 @@ import WindowsCurlNote from "/snippets/windows-curl-note.mdx";
 saved, or an `agent_id` to run a saved agent's current revision with its
 settings. The response is the run, with its `id`, `status` and `stream_url`.
 
-<Note>
-  The Python and Go SDKs add these endpoints in their next release. Until
-  then, use the CLI or the REST API shown here.
-</Note>
+The SDKs need Python 0.23.0 or Go v0.16.0 or later.
 
 ## Run an ad hoc task
 
@@ -28,6 +25,66 @@ them out for the [defaults](/agents/overview#agent-settings).
     2. Describe the task, for example "Open Settings and report the Android version".
     3. Optionally, use the options under the box to pick the phone, a result schema, the model and the limits.
     4. Press **Enter**. The run's page opens with the phone and the agent's steps.
+  </Tab>
+
+  <Tab title="CLI">
+    ```bash
+    axilio runs start --task "Open Settings, go to About phone, and report the Android version." --watch
+    ```
+
+    `--task` runs the instruction without saving an agent. Pass `--task` or
+    `--agent`, not both. The run takes one of your dedicated phones, whichever
+    is free, and `--phone-id` pins a specific one.
+  </Tab>
+
+  <Tab title="Python SDK">
+    ```python
+    from axilio.platform import Client
+
+    client = Client()
+    run = client.runs.start(
+        task="Open Settings, go to About phone, and report the Android version.",
+        targets=[{"device_class": "phone", "ownership": "dedicated"}],
+    )
+    print(run.id)
+    ```
+  </Tab>
+
+  <Tab title="Go SDK">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+        "os"
+
+        platformgo "github.com/axilioai/platform-go"
+        "github.com/axilioai/platform-go/client"
+        "github.com/axilioai/platform-go/option"
+    )
+
+    func main() {
+        api := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
+        task := "Open Settings, go to About phone, and report the Android version."
+        ownership := platformgo.RunTargetOwnershipDedicated
+        run, err := api.Runs.Start(context.Background(), &platformgo.AgentRunCreateRequest{
+            Task: &task,
+            Targets: []*platformgo.RunTarget{{
+                DeviceClass: platformgo.RunTargetDeviceClassPhone,
+                Ownership:   &ownership,
+            }},
+        })
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println(run.ID)
+    }
+    ```
   </Tab>
 
   <Tab title="REST API">
@@ -73,9 +130,9 @@ limits and data settings.
     axilio runs start --agent agent_123 --variables '{"query": "coffee"}' --watch
     ```
 
-    `--watch` follows the run to its end, like `axilio runs watch`.
-    `--phone-id` pins the run to a dedicated phone, and `--start-timeout`
-    sets how long it may wait for one.
+    `--watch` follows the run to its end, like `axilio runs watch`. The run
+    takes one of your dedicated phones, whichever is free. `--phone-id` pins a
+    specific one, and `--start-timeout` sets how long it may wait.
   </Tab>
 
   <Tab title="REST API">
@@ -127,7 +184,7 @@ phones, send one target:
 
 | Target | Phone |
 | --- | --- |
-| No `targets` | A phone from the shared pool, billed per second. |
+| No `targets` | A phone from the shared pool, billed per second. The CLI always sends a dedicated target instead. |
 | `{"device_class": "phone", "ownership": "dedicated"}` | Any free dedicated phone of your organization. |
 | `{"device_class": "phone", "phone_id": "ph_123"}` | That dedicated phone. It must be active, or the request returns `400`. If it is busy, the run waits for it, up to its start timeout. |
 | `"capabilities": {"accessibility": true}` | Adds accessibility mode, which needs a phone that supports it. |

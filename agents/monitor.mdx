@@ -10,10 +10,8 @@ Use the run ID returned when the run started. It is also the run's session ID.
 Phone and session details fill in once the run gets a phone; the ID doesn't
 change.
 
-<Note>
-  The Python and Go SDKs add the agents endpoints in their next release. Until
-  then, use the CLI or the REST API shown here.
-</Note>
+In the SDKs (Python 0.23.0 or Go v0.16.0 or later), these endpoints are on
+`client.runs` in Python and `client.Runs` in Go.
 
 ## List and inspect runs
 
@@ -124,15 +122,21 @@ axilio runs watch run_123
 axilio runs watch run_123 -o json
 ```
 
-In JSON mode, the output is one JSON object per line, ending with a summary
-that carries the run's `error`:
+The watch ends when the run does, even while the run's phone is still held for
+a follow-up. If the run pauses for a person, the watch prints the question and
+keeps following. Answer it in the Dashboard.
+
+In JSON mode, the output is one JSON object per line. A pause adds a line with
+`"input_required": true` and the run's `input_request`. The last line is a
+summary with the run's status, `error`, `result_text` and `output`:
 
 ```json
-{"error":"the Search button never appeared","run_id":"run_123","status":"failed","watch_end":true}
+{"error":"the Search button never appeared","output":null,"result_text":null,"run_id":"run_123","status":"failed","watch_end":true}
 ```
 
 `runs watch` exits with 0 when the run completed, 1 when it failed, and 7 when
-it was cancelled or you stopped watching. See
+it was cancelled or you stopped watching. A cancelled run's error includes its
+reason when it has one. See
 [Live Telemetry](/telemetry/live).
 
 ## Read the run's steps

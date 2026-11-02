@@ -63,8 +63,8 @@ runs, not sessions that already started.
     )
     ```
 
-    To record an agent's future runs, use the REST API until the SDK adds
-    agents in its next release.
+    To record an agent's future runs, set `recording_enabled=True` with
+    `client.agents.update()` (Python SDK 0.23.0 or later).
   </Tab>
 
   <Tab title="Go SDK">
@@ -106,8 +106,8 @@ runs, not sessions that already started.
     ```
 
     The allocation setting applies only to `allocation.SessionID`. To record
-    an agent's future runs, use the REST API until the SDK adds agents in its
-    next release.
+    an agent's future runs, set `RecordingEnabled` with `api.Agents.Update`
+    (Go SDK v0.16.0 or later).
   </Tab>
 
   <Tab title="REST API">

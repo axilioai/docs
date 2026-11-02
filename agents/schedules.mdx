@@ -11,10 +11,8 @@ Its runs have trigger `scheduled` and carry the schedule's `schedule_id`. For a
 single run at a later time, set `start_at` on
 [`POST /runs`](/agents/run#book-a-run-for-later) instead.
 
-<Note>
-  The Python and Go SDKs add schedules in their next release. Until then, use
-  the Dashboard or the REST API shown here.
-</Note>
+In the SDKs (Python 0.23.0 or Go v0.16.0 or later), these endpoints are on
+`client.agents` in Python and `client.Agents` in Go.
 
 ## Create a schedule
 
