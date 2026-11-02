@@ -161,7 +161,8 @@ when a stable visible label exists.
 
 ## Narrow a match
 
-When text matches several elements on the screen, `tap`, `fill` and `press` raise
+When the locator reads the screen (accessibility off, or `strategy="vision"`)
+and text matches several elements, `tap`, `fill` and `press` raise
 `ActionTimeoutError` and list the matches, because the first one may be behind a
 dialog. Pick one by position, by matching the whole text, by what contains it, or
 by a description:

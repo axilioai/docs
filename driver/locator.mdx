@@ -28,7 +28,8 @@ with Client().session("android", phone_id="ph_123") as driver:
 </Info>
 
 <Warning>
-  An action on text that matches several elements on the screen raises
+  When the locator reads the screen (accessibility off, or `strategy="vision"`),
+  an action on text that matches several elements raises
   `ActionTimeoutError` instead of acting on one. OCR reads text behind a dialog
   too, so the first match may not be the one you can see. The error lists each
   match with its index. Use that index with [`nth`](#locator-nth), or narrow the
