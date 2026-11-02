@@ -229,7 +229,7 @@ above.
 | `session_ended` | `SessionEndedError` | `1` | The session ended or the connection was superseded. | No |
 | `control_held` | `ControlHeldError` | `1` | Another controller holds the session's control lease. | No |
 | `timeout` | `TimeoutError` | `5` | A command exceeded its deadline. | Yes |
-| `action_timeout` | `ActionTimeoutError` | `5` | A locator's target never became actionable within its timeout. Also a built-in `TimeoutError` in Python. | No |
+| `action_timeout` | `ActionTimeoutError` | `5` | A locator's target never became actionable within its timeout, or an action found several matches on the screen. Also a built-in `TimeoutError` in Python. | No |
 | `strategy_unavailable` | `StrategyUnavailableError` | `2` | The locator asks for a resolution strategy this session doesn't offer. | No |
 
 Prefer the `retryable` value carried by the actual error over a table default.
