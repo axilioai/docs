@@ -133,7 +133,10 @@ func run() error {
     }
 
     ctx := context.Background()
-    c := client.NewClient(option.WithAPIKey(apiKey))
+    c := client.NewClient(
+        option.WithAPIKey(apiKey),
+        option.WithBaseURL("https://api.axilio.ai/api/v1"),
+    )
 
     session, err := c.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
         PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,

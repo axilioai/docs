@@ -86,7 +86,10 @@ phone. Use a [recording](/observability/recordings) after the session ends.
 
     func main() {
         ctx := context.Background()
-        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        api := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
 
         allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
             PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,
@@ -178,7 +181,10 @@ expose this operation.
     )
 
     func main() {
-        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        api := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
         grant, err := api.Phones.SessionLiveViewToken(
             context.Background(),
             &platformgo.PhonesSessionLiveViewTokenRequest{SessionID: "sess_123"},
@@ -256,7 +262,10 @@ expose these allocation options. Configure them with an SDK or REST:
 
     func main() {
         ctx := context.Background()
-        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        api := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
 
         allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
             PhoneType: platformgo.PhoneAllocateRequestPhoneTypeAndroid,

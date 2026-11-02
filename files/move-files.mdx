@@ -87,7 +87,10 @@ steps separately.
 
     func main() {
         ctx := context.Background()
-        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        c := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
 
         stored, err := files.Upload(ctx, c, "./photo.jpg")
         if err != nil {
@@ -236,7 +239,10 @@ Axilio authentication header.
 
     func main() {
         ctx := context.Background()
-        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        c := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
 
         page, err := files.List(ctx, c, &platformgo.FilesListRequest{
             Search: platformgo.String("photo.jpg"),
@@ -355,7 +361,10 @@ name they used at push time.
 
     func main() {
         ctx := context.Background()
-        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        c := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
 
         renamed, err := c.Files.Update(ctx, &platformgo.FileRenameRequest{
             FileID:   "<file-id>",
@@ -432,7 +441,10 @@ available yet.
 
     func main() {
         ctx := context.Background()
-        c := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        c := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
 
         if err := files.Delete(ctx, c, "<file-id>"); err != nil {
             log.Fatal(err)

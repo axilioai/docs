@@ -83,7 +83,10 @@ runs, not sessions that already started.
 
     func main() {
         ctx := context.Background()
-        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        api := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
         recordingOn := true
 
         allocation, err := api.Phones.Allocate(ctx, &platformgo.PhoneAllocateRequest{
@@ -234,7 +237,10 @@ being created or make older recordings unavailable.
 
     func main() {
         ctx := context.Background()
-        api := client.NewClient(option.WithAPIKey(os.Getenv("AXILIO_API_KEY")))
+        api := client.NewClient(
+            option.WithAPIKey(os.Getenv("AXILIO_API_KEY")),
+            option.WithBaseURL("https://api.axilio.ai/api/v1"),
+        )
 
         recording, err := api.Phones.SessionRecording(
             ctx,
