@@ -12,6 +12,9 @@ The stream is Server-Sent Events (`text/event-stream`): it starts with the
 retained trace so far, then follows new frames as they happen, and closes when
 the session ends.
 
+To follow one run, including its pauses, its result and the model's text, read
+the run's `stream_url` instead. See [Stream a run](/agents/monitor#stream-a-run).
+
 ## Follow a session
 
 <Tabs sync={false}>
@@ -35,7 +38,7 @@ the session ends.
     axilio sessions trace sess_123 --follow
     ```
 
-    Follow a workflow run from its queue state through its final outcome:
+    Follow a run from its queue state through its final outcome:
 
     ```bash
     axilio runs watch run_123
@@ -52,7 +55,7 @@ the session ends.
     ends with:
 
     ```json
-    {"watch_end":true,"run_id":"...","status":"completed","error_message":null}
+    {"error":null,"run_id":"...","status":"completed","watch_end":true}
     ```
 
     `runs watch` exits with 0 for completed, 1 for failed, and 7 for cancelled

@@ -2,7 +2,7 @@
 title: "Webhook event reference"
 sidebarTitle: "Event reference"
 description: "Every webhook event Axilio sends: when it fires, what its data contains, and how to recognise a duplicate."
-keywords: ["webhook events", "event types", "run.completed", "session.ended", "phone.offline"]
+keywords: ["webhook events", "event types", "run.completed", "run.paused", "schedule.ended", "session.ended", "phone.offline"]
 ---
 
 Each event describes one change to one resource. Its `type` names the resource
@@ -30,7 +30,12 @@ from the event type and the resource:
 
 | Events | `id` |
 |---|---|
-| `run.*`, `session.started`, `session.ended`, `phone.rental.activated`, `phone.rental.canceled`, `subscription.canceled` | `<type>:<resource id>`. These happen once per resource. |
+| `run.started`, `run.completed`, `run.failed`, `run.cancelled` | `<type>:<run id>` for a run's first turn, and `<type>:<run id>:<turn>` for each [follow-up turn](/agents/pause-and-follow-up#follow-up-after-a-turn). |
+| `run.paused`, `run.resumed` | `<type>:<input request id>`. A run can pause more than once. |
+| `session.started`, `session.ended`, `phone.rental.activated`, `phone.rental.canceled`, `subscription.canceled` | `<type>:<resource id>`. These happen once per resource. |
+| `schedule.ended` | `<type>:<schedule id>`. Once per schedule. |
+| `schedule.paused` | `<type>:<schedule id>:<time of the pause>`. |
+| `schedule.occurrence_skipped` | `<type>:<schedule id>:<occurrence time>`. |
 | `phone.maintenance_*`, `phone.offline`, `phone.online`, `phone.rental.past_due`, `subscription.updated` | `<type>:<resource id>:<time of the change>`. These can happen many times. |
 | `session.recording_ready` | `<type>:<session id>:<time the recording was ready>`. One per recording. |
 | `invoice.paid`, `auto_recharge.*` | `<type>:<Stripe invoice id>` |
@@ -42,17 +47,25 @@ from the event type and the resource:
 
 | Event | Fires when |
 |---|---|
-| `run.started` | A queued run gets a phone and starts executing. |
-| `run.completed` | A run finishes successfully. |
-| `run.failed` | A run fails while executing, or Axilio could not queue or dispatch it. Fetch the run for its error message. |
-| `run.cancelled` | A run stops before it finishes. `reason` is `user` (you cancelled it) or `queue_timeout` (it waited longer than its start timeout for a phone). |
+| `run.started` | A queued run gets a phone and starts, or a follow-up turn starts. |
+| `run.completed` | A run, or one of its turns, finishes successfully. |
+| `run.failed` | A run, or one of its turns, fails while running, or Axilio could not queue or dispatch it. Fetch the run for its `error`. |
+| `run.cancelled` | A run stops before it finishes. `reason` is `user` (you cancelled it), `queue_timeout` (it waited longer than its start timeout for a phone) or `schedule` (its schedule was paused, ended or deleted, or its agent was deleted, before it started). |
+| `run.paused` | A run pauses to ask a person for input. `reason` says why and `requested_by` says who asked. Fetch the run for the question. |
+| `run.resumed` | A paused run was answered and is running again. |
 
 `data` carries these fields of the [run](/api-reference/rest/runs/get-a-run):
-`id`, `workflow_id`, `device_class`, `phone_id`, `session_id`, `status`,
-`trigger`, `started_at`, `completed_at`, `cancelled_at`, `success` and
-`created_at`. A field with no value yet is left out, so a run still waiting for
-a phone has no `device_class` or `phone_id`. `run.cancelled` adds `reason`. Fetch the run for
-anything else, such as its variables, error message or recording.
+`id`, `mode`, `agent_id`, `revision_id`, `schedule_id`, `device_class`,
+`phone_id`, `session_id`, `status`, `trigger`, `started_at`, `completed_at`,
+`cancelled_at`, `success`, `created_at`, `repaired` and `turn`. A field with no
+value yet is left out, so a run still waiting for a phone has no
+`device_class` or `phone_id`, and an ad hoc run has no `agent_id`. `repaired`
+is `true` on a code run the model took over. `turn` is the turn the event is
+about: a run with follow-ups fires `run.started` and its end event once per
+turn. `run.cancelled` adds `reason`. `run.paused` adds `input_request_id`,
+`reason` and `requested_by`, and `run.resumed` adds `input_request_id`. Fetch
+the run for anything else, such as its task, variables, output, `error` or
+recording.
 
 ```json
 {
@@ -62,11 +75,14 @@ anything else, such as its variables, error message or recording.
   "test": false,
   "data": {
     "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
-    "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+    "mode": "agent",
+    "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+    "revision_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
     "status": "cancelled",
     "trigger": "api",
     "cancelled_at": "2026-09-24T12:00:05Z",
     "created_at": "2026-09-24T11:59:57Z",
+    "turn": 1,
     "reason": "user"
   }
 }
@@ -80,7 +96,9 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
 ```json
 {
   "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
-  "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "mode": "agent",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "revision_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
   "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
@@ -89,6 +107,7 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
   "started_at": "2026-09-24T12:00:00Z",
   "cancelled_at": "2026-09-24T12:00:05Z",
   "created_at": "2026-09-24T11:59:57Z",
+  "turn": 1,
   "reason": "user"
 }
 ```
@@ -99,7 +118,9 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
 ```json
 {
   "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
-  "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "mode": "agent",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "revision_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
   "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
@@ -108,7 +129,8 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
   "started_at": "2026-09-24T12:00:00Z",
   "completed_at": "2026-09-24T12:00:45Z",
   "success": true,
-  "created_at": "2026-09-24T11:59:57Z"
+  "created_at": "2026-09-24T11:59:57Z",
+  "turn": 1
 }
 ```
 
@@ -118,7 +140,9 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
 ```json
 {
   "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
-  "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "mode": "agent",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "revision_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
   "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
@@ -127,7 +151,52 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
   "started_at": "2026-09-24T12:00:00Z",
   "completed_at": "2026-09-24T12:00:12Z",
   "success": false,
-  "created_at": "2026-09-24T11:59:57Z"
+  "created_at": "2026-09-24T11:59:57Z",
+  "turn": 1
+}
+```
+
+  </Accordion>
+  <Accordion title="run.paused">
+
+```json
+{
+  "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
+  "mode": "agent",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "revision_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
+  "device_class": "phone",
+  "phone_id": "k3Vq8ZrT2mXa",
+  "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
+  "status": "paused",
+  "trigger": "api",
+  "started_at": "2026-09-24T12:00:00Z",
+  "created_at": "2026-09-24T11:59:57Z",
+  "turn": 1,
+  "input_request_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
+  "reason": "one_time_code_required",
+  "requested_by": "agent"
+}
+```
+
+  </Accordion>
+  <Accordion title="run.resumed">
+
+```json
+{
+  "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
+  "mode": "agent",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "revision_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
+  "device_class": "phone",
+  "phone_id": "k3Vq8ZrT2mXa",
+  "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
+  "status": "running",
+  "trigger": "api",
+  "started_at": "2026-09-24T12:00:00Z",
+  "created_at": "2026-09-24T11:59:57Z",
+  "turn": 1,
+  "input_request_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44"
 }
 ```
 
@@ -137,14 +206,17 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
 ```json
 {
   "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a11",
-  "workflow_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "mode": "agent",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "revision_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a44",
   "device_class": "phone",
   "phone_id": "k3Vq8ZrT2mXa",
   "session_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a33",
   "status": "running",
   "trigger": "api",
   "started_at": "2026-09-24T12:00:00Z",
-  "created_at": "2026-09-24T11:59:57Z"
+  "created_at": "2026-09-24T11:59:57Z",
+  "turn": 1
 }
 ```
 
@@ -167,11 +239,15 @@ The `data` for each run event, exactly as a **Test** delivery sends it:
   [idle timeout](/devices/timeouts).
 - **`max_duration`**: the session reached the maximum session length.
 - **`run_finished`**: the run that the session served finished.
+
+A run that holds its phone after a turn ends its session with `idle_timeout`
+when the hold runs out, or `released` when you release the phone or start a
+session on it.
 - **`device_lost`**: the phone stopped answering during the session.
 
 `data` for `session.started` and `session.ended` carries these fields of the
 [session](/devices/timeouts): `session_id`, `status`, `source`,
-`device_class`, `phone_id`, `workflow_id`, `allocated_at`, `deallocated_at` and
+`device_class`, `phone_id`, `agent_id`, `allocated_at`, `deallocated_at` and
 `is_dedicated_phone`. A field with no value yet is left out.
 `session.recording_ready` carries `session_id`, `device_class` and `phone_id`;
 fetch the recording with
@@ -239,6 +315,62 @@ The `data` for each session event, exactly as a **Test** delivery sends it:
   "phone_id": "k3Vq8ZrT2mXa",
   "allocated_at": "2026-09-24T12:00:00Z",
   "is_dedicated_phone": false
+}
+```
+
+  </Accordion>
+</AccordionGroup>
+
+## Schedules
+
+| Event | Fires when |
+|---|---|
+| `schedule.paused` | You pause a [schedule](/agents/schedules). It starts no runs until resumed, and its runs that hadn't started are cancelled. |
+| `schedule.ended` | A schedule reaches its `end_at` or has no occurrence left. It starts no more runs. Reaching `end_at` also cancels its runs that hadn't started. |
+| `schedule.occurrence_skipped` | A schedule's run was due but didn't start. `reason` is `overlap` (its previous run hadn't finished, under the `skip` policy), `agents_unavailable` (Agents isn't available to your organization) or `model_unavailable` (the agent's model can no longer be used). |
+
+`data` carries the schedule's `id`, `agent_id`, `state`, `next_run_at` and
+`created_at`, never its run template. `schedule.occurrence_skipped` adds
+`occurrence_at` and `reason`.
+
+The `data` for each schedule event, exactly as a **Test** delivery sends it:
+
+<AccordionGroup>
+  <Accordion title="schedule.ended">
+
+```json
+{
+  "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a55",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "state": "ended",
+  "created_at": "2026-10-20T16:00:00Z"
+}
+```
+
+  </Accordion>
+  <Accordion title="schedule.occurrence_skipped">
+
+```json
+{
+  "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a55",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "state": "active",
+  "next_run_at": "2026-10-26T16:00:00Z",
+  "created_at": "2026-10-20T16:00:00Z",
+  "occurrence_at": "2026-10-25T16:00:00Z",
+  "reason": "overlap"
+}
+```
+
+  </Accordion>
+  <Accordion title="schedule.paused">
+
+```json
+{
+  "id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a55",
+  "agent_id": "0199a3c2-58c1-7f3a-9f2e-2f9a6a2f6a22",
+  "state": "paused",
+  "created_at": "2026-10-20T16:00:00Z"
 }
 ```
 
@@ -682,7 +814,7 @@ The `data` for each platform event, exactly as a **Test** delivery sends it:
   <Card title="Webhooks" icon="bell" href="/webhooks/overview">
     Register a destination and verify signatures.
   </Card>
-  <Card title="Monitor runs" icon="diagram-project" href="/workflows/monitor">
+  <Card title="Monitor runs" icon="diagram-project" href="/agents/monitor">
     What each run status means.
   </Card>
 </CardGroup>

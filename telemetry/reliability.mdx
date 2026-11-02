@@ -85,7 +85,7 @@ used by your application before relying on a compatibility fix.
 
 | Symptom | What it can mean | What to do |
 | --- | --- | --- |
-| No live or retained frames | Telemetry was disabled, you lack access, or data was not produced. | Check the direct-allocation or workflow Telemetry setting and your organization access. |
+| No live or retained frames | Telemetry was disabled, you lack access, or data was not produced. | Check the direct-allocation, agent or run Telemetry setting and your organization access. |
 | Retained request returns `retention_expired=true` | The record is outside its customer access window. | Treat it as expired, not as proof that the session was never observed or that every physical copy was deleted. |
 | Telemetry is withheld without an ordinary expired result | Axilio could not establish retention eligibility and failed safe. | Treat the failure separately from an empty trace. Retry only with a bounded policy and contact support if it persists. |
 | Live frames repeat after reconnect | Duplication-permitting replay. | Deduplicate before applying the frame to your local trace. |
@@ -95,7 +95,7 @@ used by your application before relying on a compatibility fix.
 | SDK input/output is in raw frames but not Dashboard details | The Dashboard exposes curated fields rather than every raw attribute. | Inspect raw REST or SDK frames. |
 | The stream closes after completion, then answers `204` | The session is over and nothing is left after your cursor. | Stop reconnecting; the retained frames are the record. |
 | A run response has no `logs` field | Run output moved to Telemetry. | Use **Console**, `sessions trace`, `runs watch`, or an SDK log helper. |
-| A workflow was deleted | Session history remains separately addressable while retained. | Query by `session_id` instead of through the workflow. |
+| An agent was deleted | Session history remains separately addressable while retained. | Query by `session_id` instead of through the agent. |
 | A cost is zero or absent | It can be genuinely zero, pending, unavailable, too small to register at the reported precision, omitted by a failed lookup, or outside retention. | Check map-key presence, `retention_expired`, usage `processed_status`, and finalized billing records. Do not infer “free” from zero alone. |
 
 For REST failures, parse the Problem Details response and follow

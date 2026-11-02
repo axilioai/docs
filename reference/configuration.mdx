@@ -173,8 +173,8 @@ description: "Configure the CLI, Python SDK, and Go SDK, including precedence, e
     | `AXILIO_BASE_URL` | Overrides the Platform API origin without `/api/v1`. |
     | `AXILIO_ARGUS_BASE_URL` | Overrides the Argus origin. |
 
-    Hosted workflow sandboxes inject their own runtime configuration. Do not
-    set or depend on internal sandbox variables in local or CI configuration.
+    Hosted runs inject their own runtime configuration. Do not set or depend
+    on their internal variables in local or CI configuration.
 
     ## Per-request overrides
 
@@ -231,8 +231,8 @@ description: "Configure the CLI, Python SDK, and Go SDK, including precedence, e
     If you choose to read `AXILIO_API_KEY` in your Go program, pass its value
     to `option.WithAPIKey` as shown above.
 
-    Hosted workflow sandboxes inject their own runtime configuration. Do not
-    set or depend on internal sandbox variables in local or CI configuration.
+    Hosted runs inject their own runtime configuration. Do not set or depend
+    on their internal variables in local or CI configuration.
 
     ## Per-request overrides
 

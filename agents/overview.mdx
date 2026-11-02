@@ -1,0 +1,123 @@
+---
+title: "Agents and runs"
+sidebarTitle: "Overview"
+description: "Hand a phone a task in plain English or as Python, save it as an agent, and run it from the API, the CLI, the Dashboard or a schedule."
+---
+
+An **agent** is a task for a phone that you save to run again. Each agent has
+numbered **revisions**, and each revision is one of two kinds:
+
+- **Instructions**: a task in plain English, such as "Open Settings and report
+  the Android version". A model works through it on the phone, one step at a
+  time, until it can report a result.
+- **Code**: a Python script that drives the phone with the Axilio SDK. It runs
+  as written, with no model, unless a failed step hands it to the model to
+  repair.
+
+A **run** is one execution on a phone. A run starts from a saved agent or from
+an ad hoc `task` with nothing saved. Its run ID is also the ID of the phone
+session it runs in.
+
+## Run modes
+
+Every run has a `mode`:
+
+| Mode | What drives the phone | Where it comes from |
+| --- | --- | --- |
+| `agent` | A model works through the task. It writes and runs Python against the SDK, looks at the screen after each step, and calls `run.done` with the result. | An ad hoc `task`, or an agent whose current revision is instructions. |
+| `code` | Your script runs. | An agent whose current revision is code. |
+
+Both modes run the same SDK on the same phones, so the script an agent-mode run
+leaves behind can be saved as a code revision. See
+[Read the run's script](/agents/monitor#read-the-runs-script).
+
+## Lifecycle
+
+1. Start a run with `POST /runs`, the CLI, the Dashboard or a
+   [schedule](/agents/schedules). A run booked with `start_at` is `scheduled`
+   until then.
+2. The run is `queued` until a phone is free, then `running`.
+3. A run can be `paused` to ask a person for input, such as a one-time code or
+   an approval. See [Pause and follow up](/agents/pause-and-follow-up).
+4. The run ends `completed`, `failed` or `cancelled`. A completed run carries
+   `output` (which matches the run's `output_schema`, if it has one) and
+   `result_text`, a short account of the result. A failed run carries `error`.
+5. After an agent-mode run ends, it holds its phone for `keep_alive_seconds`
+   (120 seconds by default on `POST /runs`). A message sent with `:sendMessage`
+   in that time starts the run's next **turn** on the same phone. After the
+   hold, the phone is released and you start a new run.
+
+## What a run's code can use
+
+Instructions runs write their own code. Code revisions use the same names:
+
+| Name | What it is |
+| --- | --- |
+| `phone` | The run's phone, as the SDK's driver. `driver` is the same object, so code written for a session runs unchanged. |
+| `variables` | A dict of the run's inputs, from the run's `variables`. |
+| `run.done(output, result_text=None)` | Records the run's result. `output` must be JSON and must match the run's `output_schema`, if it has one. |
+| `run.ask(message, response_schema=None, reason="approval_required")` | Pauses the run for a person and returns their answer. `reason` is `one_time_code_required`, `approval_required`, `choice_required` or `challenge_blocked`. |
+
+```python
+phone.get_by_text("Settings").tap()
+phone.get_by_text("About phone").tap()
+version = phone.locator(query="the Android version number").text()
+run.done({"android_version": version}, result_text=f"Android {version}")
+```
+
+<Warning>
+  Never ask a person for a password with `run.ask`. An answer joins the run's
+  record, and in an agent-mode run it is also sent to the model.
+</Warning>
+
+## Agent settings
+
+An agent's settings apply to each of its runs. An ad hoc run takes the same
+settings on `POST /runs`.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `model` | The platform default | The model an instructions run calls. `GET /models` lists the models you can use and their prices. |
+| `output_schema` | None | A JSON Schema the run's `output` must match. Leave it out to accept any result. |
+| `max_steps` | 500 | The most model steps a run may take, from 1 to 500. |
+| `max_cost_microdollars` | 10,000,000 ($10) | The most a run's model steps may cost. |
+| `timeout_seconds` | 3600 | The longest a run may take, at most one hour. |
+| `pause_timeout_seconds` | 600 | The longest a paused run waits for an answer, from 60 to 3600 seconds. |
+| `recording_enabled` | `false` | Records the phone's screen. See [Recordings](/observability/recordings). |
+| `telemetry_enabled` | `true` | Produces [live and retained Telemetry](/telemetry/data-controls). |
+| `capture_enabled` | `true` | Saves media the run produces on the phone to your [Files](/files/overview) library. |
+| `accessibility_enabled` | `false` | Runs in accessibility mode, which needs a phone that supports it. |
+
+A code revision also sets `on_failure`, which decides what happens when a step
+fails. See [Handle a failed step](/agents/create#handle-a-failed-step).
+
+## Limits and billing
+
+- A run, its pauses included, fits inside the one-hour session limit.
+- An agent-mode run can't reach the public internet by default. Set
+  `network: "internet"` on the run if its code needs it. Code runs always have
+  internet access.
+- Model steps are billed as inference with the `agent_chat` endpoint. See
+  [Usage](/usage/overview).
+- A shared phone bills phone time for as long as the run's session lasts,
+  including a paused run and the hold after a turn. A dedicated phone bills
+  nothing per session.
+- Your plan's concurrency limit counts running and paused runs. While you are at
+  the limit, `POST /runs` returns `409`.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Create an agent" icon="square-plus" href="/agents/create">
+    Save instructions or code and manage revisions.
+  </Card>
+  <Card title="Run a task or an agent" icon="play" href="/agents/run">
+    Start ad hoc and saved runs on shared or dedicated phones.
+  </Card>
+  <Card title="Pause and follow up" icon="comments" href="/agents/pause-and-follow-up">
+    Answer a paused run and continue a run with more turns.
+  </Card>
+  <Card title="Monitor runs" icon="list" href="/agents/monitor">
+    Stream, inspect, cancel and measure runs.
+  </Card>
+</CardGroup>

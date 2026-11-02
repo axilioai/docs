@@ -31,7 +31,6 @@ with client.session("android", phone_id="ph_123") as driver:
 | --- | --- | --- | --- |
 | `phone_type` | `"android"` | `"android"` | Device kind. Android is the supported customer platform. |
 | `phone_id` | `str` | `None` | Dedicated phone to allocate. Pass this for customer-facing sessions. |
-| `workflow_id` | `str` | `None` | Associate a direct allocation with a workflow. |
 | `open_timeout` | `float` | `10.0` | Seconds to wait while opening the DCP connection. |
 | `default_ocr_engine` | `str` | `None` | Session-wide OCR default; omission resolves to `free`. |
 | `default_model` | `str` | `None` | Session-wide semantic-vision model; omission lets the service choose. |

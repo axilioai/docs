@@ -99,11 +99,13 @@
           credit,
           rate,
           custom ? "Custom" : String(lim.max_concurrent_runs || ""),
-          lim.max_workflows ? String(lim.max_workflows) : "Unlimited",
+          // max_agents replaced max_workflows in the Agents release; read
+          // either until every environment serves the new name.
+          (lim.max_agents || lim.max_workflows) ? String(lim.max_agents || lim.max_workflows) : "Unlimited",
           retention(p)
         ];
       });
-      el.innerHTML = buildTable(["Plan", "Price", "Included credit", "Shared-pool phone time", "Concurrent runs", "Saved workflows", "Standard Telemetry retention"], rows);
+      el.innerHTML = buildTable(["Plan", "Price", "Included credit", "Shared-pool phone time", "Concurrent runs", "Saved agents", "Standard Telemetry retention"], rows);
     }).catch(function () { fallback(el); });
   }
 

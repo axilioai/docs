@@ -68,8 +68,8 @@ header (seconds). Back off for that long and retry; the response body is the
 standard [error shape](/reference/errors).
 
 The default budget is generous for normal use, including fleet-scale work: one
-`runs` call fans a workflow across many phones, so driving thousands of phones
-does not mean thousands of API calls. If you're hitting the limit with a
+`runs:batchCreate` call starts up to 1,000 runs across many phones, so
+driving thousands of phones does not mean thousands of API calls. If you're hitting the limit with a
 legitimate workload, [contact us](https://axilio.ai/contact).
 
 ## What to do as a client

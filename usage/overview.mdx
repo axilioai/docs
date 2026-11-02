@@ -15,16 +15,30 @@ The public usage surface has three views:
 | --- | --- |
 | Metrics | How much session and inference usage occurred in a reporting window? |
 | Sessions | Which phone sessions contributed time and cost? |
-| Inferences | Which vision calls contributed cost and latency? |
+| Inferences | Which vision calls and agent model steps contributed cost and latency? |
 
 ## Aggregate metrics
 
 `GET /usage/metrics` returns your spend as points: one per hour or day in the
 time zone you name, each with the total, phone-session and inference spend in
-microdollars (zero when nothing was billed). Add `group_by=product` for one
-series per product. The window defaults to the last 7 days and may start at
-most a year back; hour buckets need a window of 7 days or less. Every metrics
-endpoint takes the same window parameters.
+microdollars (zero when nothing was billed), and the phone time
+(`session_seconds`) and tokens (`input_tokens`, `output_tokens`) it bought.
+Add `group_by` for one series per group:
+
+| `group_by` | Splits spend by |
+| --- | --- |
+| `product` | `session` (phone time) or `inference`. |
+| `agent` | The agent whose run spent it. Spend outside an agent has an empty `agent`. |
+| `model` | The model that served the inference. Phone time has an empty `model`. |
+| `api_key` | The API key that started the work. |
+| `schedule` | The [schedule](/agents/schedules) that started the run. |
+| `device_class` | What the spend drove: `phone`. |
+
+Every group splits the same total. A dedicated phone's sessions bill nothing,
+so they add no `session_seconds`. The window defaults to the last 7 days and
+may start at most a year back; hour buckets need a window of 7 days or less.
+Every metrics endpoint takes the same window parameters. For run counts,
+success rate and duration, see [Measure runs](/agents/monitor#measure-runs).
 
 <Tabs sync={false}>
   <Tab title="Dashboard">
@@ -107,7 +121,7 @@ and billing processing state for each phone session.
     Open
     [**Usage → Sessions**](https://app.axilio.ai/dashboard/axilio/usage/sessions),
     then filter by session status, billing state, allocation source, or date.
-    Search can match a session or workflow ID.
+    Search can match a session, agent, or phone ID.
   </Tab>
 
   <Tab title="Python SDK">
@@ -156,25 +170,25 @@ also supports:
 - `session_status` (`active`, `completed`, `cancelled` or `expired`;
   repeatable);
 - `processed_status` (`pending`, `billed` or `failed`; repeatable);
-- `workflow_id`;
-- `allocated_by`;
+- `agent_id`;
+- `allocated_by` (`dashboard_run`, `api_run` or `interactive`; repeatable);
 - `search`;
 - `limit` from 1 through 100, defaulting to 50; and
 - a nonnegative `offset`, defaulting to 0.
 
 Use `order_by` with one of `allocated_at`, `deallocated_at`, `duration_seconds`,
 `cost_microdollars`, `session_status`, `processed_status`, `allocated_by`,
-`session_id`, or `workflow_id`, followed optionally by `asc` or `desc`. The
+`session_id`, or `agent_id`, followed optionally by `asc` or `desc`. The
 default is `allocated_at desc`.
 
 The response contains `sessions`, `total`, `limit`, and `offset`. Continue
 requesting pages until you have consumed `total`.
 
-Each row identifies the session, workflow, and phone and reports session,
+Each row identifies the session, agent, and phone and reports session,
 inference, and total microdollar cost. It can also include allocation and
 deallocation time, duration, session and processing status, billing plan,
-allocation source, and session metadata. An interactive pending session can
-use an empty `workflow_id` because it was not created by a workflow.
+allocation source, and session metadata. An interactive session has an empty
+`agent_id`, because no agent's run created it.
 
 <Warning>
   Read `processed_status` before interpreting cost. A numeric zero on a
@@ -245,13 +259,14 @@ session-usage table. Use the dashboard, an SDK, or REST for this view.
   </Tab>
 </Tabs>
 
-Each inference row names the Argus operation it billed in `endpoint`:
+Each inference row names the operation it billed in `endpoint`:
 
-| `endpoint` | Argus operation | Billed |
+| `endpoint` | Operation | Billed |
 | --- | --- | --- |
 | `detect` | [Screenshots: detect](/api-reference/argus/screenshots-detect) | Per page, on the Axilio model line |
 | `locate` | [Screenshots: locate](/api-reference/argus/screenshots-locate) | Per token, on the model that ran |
 | `element_locate` | [Elements: locate](/api-reference/argus/elements-locate) | Per token, on the model that ran |
+| `agent_chat` | One model step of an agent-mode [run](/agents/overview) | Per token, on the run's model |
 
 Pass any of these values in `endpoint`, which repeats to match several.
 

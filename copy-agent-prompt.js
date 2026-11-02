@@ -73,7 +73,7 @@
     "   otherwise use Python. Keep the dedicated phone configurable, preserve cleanup,",
     "   and explain how to run it with securely supplied SDK credentials. Clearly",
     "   identify anything untested.",
-    "   Create an Axilio workflow only if I ask."
+    "   Create an Axilio agent only if I ask."
   ].join("\n");
 
   function copyText(value) {
