@@ -234,7 +234,8 @@ curl --silent --show-error --fail-with-body \
 ## Start many runs
 
 `POST /runs:batchCreate` takes up to 1,000 requests, each shaped like a
-`POST /runs` body. All the runs are created, or none is, and an error names the
+`POST /runs` body. A batch can't hold more runs than your `queued_runs`
+limit. All the runs are created, or none is, and an error names the
 request it is for.
 
 <Tabs sync={false}>
@@ -268,10 +269,13 @@ A batch can't name the same dedicated phone twice.
 
 ## Concurrency and balance
 
-Your plan's concurrency limit counts running and paused runs. While your
-organization is at the limit, `POST /runs` and `POST /runs:batchCreate` return
-`409`. An accepted batch's runs beyond the limit wait in the queue for a free
-slot. Starting a run with a balance of zero or less returns `402`. See
+Your `concurrent_runs` limit counts running and paused runs, and
+`queued_runs` counts runs waiting to start. While your organization is at
+either, `POST /runs` and `POST /runs:batchCreate` return `429` with
+`quota_exceeded` and a `Retry-After`. A batch larger than `queued_runs` is
+refused without `Retry-After`, since waiting won't make it fit. An accepted
+batch's runs beyond `concurrent_runs` wait in the queue for a free slot. See
+[Quota limits](/reference/errors#quota-limits). Starting a run with a balance of zero or less returns `402`. See
 [Errors](/reference/errors#low-balance).
 
 ## Next steps
