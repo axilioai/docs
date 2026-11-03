@@ -21,22 +21,22 @@ example, does not necessarily mean the phone session or DCP control path failed.
 
 HTTP failures from the REST API and the Argus API return an
 [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details body, with
-the content type `application/problem+json`. Branch on the status, and for
-Argus also on the `code`, never on the human-readable text. See
+the content type `application/problem+json`. Branch on the status, and on the
+`code` when there is one, never on the human-readable text. See
 [Problem details](#problem-details) for the full shape.
 
 | Status | Meaning | Recovery |
 | --- | --- | --- |
 | `400 Bad Request` | A business rule or input check failed. | Read the detail, correct the request, and do not retry it unchanged. |
 | `401 Unauthorized` | The credential is missing, invalid, or expired. | Run `axilio login` or supply a valid organization-scoped API key. |
-| `402 Payment Required` | A quota blocks the operation: the balance can't cover starting a run, or the organization's file library or a phone's pending file pushes are full. | Read the detail. Add funds in [**Billing**](https://app.axilio.ai/dashboard/axilio/billing), or free up the quota the detail names. |
-| `403 Forbidden` | The caller lacks the required organization permission. | Select the correct organization or ask an administrator for access. |
+| `402 Payment Required` | The balance can't cover the operation, such as starting a run. | Add funds in [**Billing**](https://app.axilio.ai/dashboard/axilio/billing). |
+| `403 Forbidden` | The caller lacks the required organization permission, or the organization can't use the feature. | Select the correct organization or ask an administrator for access. For a feature, follow the `next_step`. |
 | `404 Not Found` | The resource does not exist or is not visible to the organization. | Verify the ID and organization. |
 | `408 Request Timeout` | The request exceeded a server or gateway deadline. | Retry with backoff only when the operation is safe to repeat. |
-| `409 Conflict` | Current state conflicts with the request, such as a busy phone, a duplicate active name, a run started while the organization is at its concurrency limit, a follow-up after a run's phone hold ended, or a shared-pool allocation the balance can't cover. | Refresh the resource, resolve the conflict, and try again. For a low balance, add funds first. |
+| `409 Conflict` | Current state conflicts with the request, such as a busy phone, a duplicate active name, a follow-up after a run's phone hold ended, or a shared-pool allocation the balance can't cover. | Refresh the resource, resolve the conflict, and try again. For a low balance, add funds first. |
 | `405 Method Not Allowed` | The path does not accept this HTTP method. | Check the method against the reference page. |
 | `422 Unprocessable Entity` | The body or query does not match the endpoint schema. | Correct the fields identified by the validation errors. |
-| `429 Too Many Requests` | The caller exceeded a rate limit. | Honor retry guidance and back off. |
+| `429 Too Many Requests` | The caller exceeded the API rate limit, or the organization is at one of its [limits](#quota-limits). | With `Retry-After`, wait that long and retry. Without it, waiting won't help: see [Quota limits](#quota-limits). |
 | `500 Internal Server Error` | Axilio encountered an unexpected failure. | Retry once with backoff; report it if it persists. |
 | `502 Bad Gateway` | A phone, or the service in front of it, rejected the operation. | Read the detail and correct the upstream condition. |
 | `503 Service Unavailable` | A service is temporarily unavailable. | Retry with backoff. |
@@ -62,10 +62,88 @@ person which one it is, but don't parse it in code. After a `409`, read your
 balance with [**Get account balance**](/api-reference/rest/billing/get-account-balance)
 and add funds if it is zero or less.
 
+### Quota limits
+
+Every organization has limits, such as how many runs it has at once, how many
+messages it sends an hour, or how many files it stores. An action that would
+go past one returns `429` with the code `quota_exceeded`:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Runs at once: limit is 10, using 10. Try again when one finishes, or ask us to raise the limit.",
+  "code": "quota_exceeded",
+  "next_step": {"action": "request_increase"}
+}
+```
+
+The `detail` names the limit, its value, and what you use now, for a person
+to read. Don't parse it. To read limits in code, call
+[`GET /quotas`](#check-your-limits-first).
+
+Some limits free up by themselves: a run finishes, or the hour rolls over.
+Their refusals carry a `Retry-After` header, so wait that long and try again.
+A refusal without `Retry-After` doesn't clear by waiting. Free up what the
+detail names, such as deleting files, or ask for a higher limit.
+
+| Limit | Key | Retry-After |
+| --- | --- | --- |
+| Runs at once | `concurrent_runs` | Yes |
+| Queued runs | `queued_runs` | Yes, except a batch larger than the limit |
+| Messages sent an hour | `messages_sent_per_hour` | Yes |
+| Messages per phone every 30 minutes | `messages_sent_per_phone` | Yes |
+| File pushes per phone every 10 minutes | `file_pushes_per_phone` | Yes |
+| Phones rented | `max_dedicated_phones` | No |
+| Files | `files` | No |
+| Storage | `file_storage_bytes` | No |
+
+A `next_step` of `request_increase` means you can ask for more. A limit
+without a `next_step` protects the phones or our infrastructure, and can't be
+raised.
+
+<Note>
+  Before this change, starting a run while at the concurrency limit returned
+  `409`, and a full file library returned `402`. Both now return `429` with
+  `quota_exceeded`. If your code branched on those statuses, branch on the
+  `429` and its `code` instead.
+</Note>
+
+#### Check your limits first
+
+`GET /quotas` lists every limit with its `limit` and current `usage`.
+`GET /quotas/{quota_id}` returns one, such as `concurrent_runs`:
+
+```bash
+curl --silent --show-error --fail-with-body \
+  --url https://api.axilio.ai/api/v1/quotas/concurrent_runs \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY"
+```
+
+A limit with `"fixed": true` can't be raised.
+
+#### Ask for a higher limit
+
+Send `POST /access-requests` with the limit's `key`, the `requested_value` you
+need, and a `reason`. You can also ask from **Settings → Access** in the
+Dashboard. We review each request.
+
+```bash
+curl --silent --show-error --fail-with-body \
+  --request POST \
+  --url https://api.axilio.ai/api/v1/access-requests \
+  --header "X-Axilio-Api-Key: $AXILIO_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{"key": "concurrent_runs", "requested_value": 25, "reason": "Nightly batch across our fleet"}'
+```
+
 ### Problem details
 
 Both APIs return the RFC 9457 members `type`, `title`, `status` and `detail`.
-Argus adds a machine-readable `code`. An Argus error looks like this:
+Argus adds a machine-readable `code` to every error, and the REST API adds
+`code` and `next_step` when it refuses an action for your organization's
+access or limits. An Argus error looks like this:
 
 ```json
 {
@@ -89,7 +167,8 @@ Argus adds a machine-readable `code`. An Argus error looks like this:
 | `title` | The HTTP reason phrase for `status`. |
 | `status` | The HTTP status code. |
 | `detail` | A human-readable explanation. For internal errors this is a generic message, never internal details. |
-| `code` | Argus only. A stable, machine-readable category. |
+| `code` | A stable, machine-readable category. Always present from Argus; from the REST API, on a refusal. |
+| `next_step` | REST API refusals only. `action` says what you can do: `request_increase`, `request_access`, `add_funds`, `change_phone_setting`, `contact_sales` or `contact_support`. Absent when nothing you do changes the answer. |
 | `errors` | Present on a `422` request-validation problem: one entry per field, with its `location` and `message`. REST API entries also carry the rejected `value`. |
 
 The `code` values you can see from Argus:
@@ -108,8 +187,20 @@ The `code` values you can see from Argus:
 | `infrastructure` | `500` | An Argus model or inference component failed. |
 | `error` | `500` | An unexpected internal failure. |
 
-The REST API has no `code` member: branch on `status`, and read `errors` for
-the fields a validation problem names.
+The `code` values the REST API returns on a refusal:
+
+| `code` | Status | Meaning |
+| --- | --- | --- |
+| `quota_exceeded` | `429` | The organization is at one of its [limits](#quota-limits). |
+| `<feature>_unavailable` | `403` | The feature isn't available to the organization yet, such as `agents_unavailable`. |
+| `needs_entitlement` | `403` | The organization doesn't have the feature. `next_step` says whether you can ask for it. |
+| `disabled_on_phone` | `403` | The feature is turned off in the phone's settings. |
+| `org_suspended` | `403` | The organization is suspended. It can read, but not create. |
+| `insufficient_balance` | `402` | The balance can't cover the operation. |
+| `no_subscription` | `402` | The operation needs a subscription. |
+
+Other REST API errors have no `code`: branch on `status`, and read `errors`
+for the fields a validation problem names.
 
 <Tabs sync={false}>
   <Tab title="CLI">
@@ -157,8 +248,10 @@ the fields a validation problem names.
         run = client.runs.get("run_123")
     except ApiError as error:
         print(error.status_code, error.body)
-        if error.status_code in {429, 500, 503, 504}:
+        if error.status_code in {500, 503, 504}:
             print("retry with backoff when the operation is safe")
+        elif error.status_code == 429 and (error.headers or {}).get("retry-after"):
+            print("wait for Retry-After, then retry")
         else:
             raise
     ```

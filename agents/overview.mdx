@@ -102,8 +102,9 @@ fails. See [Handle a failed step](/agents/create#handle-a-failed-step).
 - A shared phone bills phone time for as long as the run's session lasts,
   including a paused run and the hold after a turn. A dedicated phone bills
   nothing per session.
-- Your plan's concurrency limit counts running and paused runs. While you are at
-  the limit, `POST /runs` returns `409`.
+- Your `concurrent_runs` limit counts running and paused runs. While you are at
+  it, `POST /runs` returns `429` with `quota_exceeded` and a `Retry-After`. See
+  [Quota limits](/reference/errors#quota-limits).
 
 ## Next steps
 
