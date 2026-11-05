@@ -52,7 +52,7 @@ depends on the call:
 | --- | --- | --- |
 | Start a run | `402` | `insufficient balance to start a run` |
 | Allocate a shared-pool phone | `409` | `insufficient balance. a positive balance is required, available: $<amount>` |
-| Billable Argus call | `402` | `insufficient balance` |
+| Billable Argus call | `402` | `The organization's balance is spent. Add funds to keep spending.` |
 
 When you allocate a dedicated phone, Axilio skips the balance check because
 your organization already pays for the rental.
@@ -98,7 +98,8 @@ The `code` values you can see from Argus:
 | --- | --- | --- |
 | `validation` | `400`, `422` | The request is invalid, such as a malformed image, an unsupported model, or a field that fails the schema. |
 | `unauthorized` | `401` | The API key is missing or invalid. |
-| `quota_exceeded` | `402` | The organization's balance cannot cover the call. |
+| `insufficient_balance` | `402` | The organization's balance is spent. Add funds. |
+| `budget_exceeded` | `402` | A stop budget the organization set was reached this month. Raise the budget, or wait for the month to roll over. |
 | `permission_denied` | `403` | The credential is not allowed to perform the operation. |
 | `not_found` | `404` | The path or resource does not exist. |
 | `method_not_allowed` | `405` | The path exists but not with this HTTP method. |
